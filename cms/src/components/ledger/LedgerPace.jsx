@@ -50,48 +50,69 @@ export default function LedgerPace({ report, onRefresh, onOpen, focusSkill }) {
 
       <section className="rounded-xl border bg-[#1a1a1e] border-white/10 p-4 space-y-2" aria-label="Stages">
         <h3 className={sectionHead}>Stages at Maxed</h3>
-        <p className="text-[10px] text-gray-500">When a new game first has everything planned for each stage, at the Maxed player's rates (the curve's player), against its budget: the pace curve's time to the level the next tier opens at (red beyond ±{tol} %). Timed with the reference guild's heroes (about one a tier): a stage is had no sooner than they can put in all its work and the stages' before, each level and each price once, however fast every skill would climb side by side.</p>
+        <p className="text-[10px] text-gray-500">
+          Leaving a stage means settling the next place: one hero reaches the level it asks in its one or two skills and pays its price. The way out is the soonest of the next stage's places at the Maxed player's rates (the curve's player), timed with the stage's heroes (about one a tier), against the budget: the pace curve's time to the level the next tier opens at (red beyond ±{tol} %). A place's goods are the world seed's, so its price here is its coins. The full content is everything planned for the stage, information only: it is done over the following hours, alongside the new place.
+        </p>
         <table className="w-full" style={{ borderCollapse: 'collapse' }}>
           <thead>
             <tr>
-              <th style={{ ...head, textAlign: 'left', width: 110 }}>Stage</th>
-              <th style={{ ...head, textAlign: 'left', width: 100 }}>Budget</th>
-              <th style={{ ...head, textAlign: 'left', width: 120 }}>Maxed</th>
-              <th style={{ ...head, textAlign: 'left', width: 190 }}>Heroes</th>
-              <th style={{ ...head, textAlign: 'left' }}>Slowest</th>
+              <th style={{ ...head, textAlign: 'left', width: 100 }}>Stage</th>
+              <th style={{ ...head, textAlign: 'left', width: 90 }}>Budget</th>
+              <th style={{ ...head, textAlign: 'left', width: 250 }}>Way out at Maxed</th>
+              <th style={{ ...head, textAlign: 'left', width: 70 }}>Heroes</th>
+              <th style={{ ...head, textAlign: 'left' }}>Full content (information)</th>
             </tr>
           </thead>
           <tbody>
             {stages.map((s) => {
-              const off = s.budgetMinutes ? (s.hours * 60) / s.budgetMinutes - 1 : 0;
-              const red = Math.abs(off) * 100 > tol;
+              const g = s.gate;
+              const off = g.place && s.budgetMinutes ? (g.hours * 60) / s.budgetMinutes - 1 : 0;
+              const red = !Number.isFinite(off) || Math.abs(off) * 100 > tol;
+              const later = g.place ? g.needs.filter((n) => n.hours > g.hours) : [];
               return (
                 <tr key={s.tier} data-stage={s.tier}>
                   <td style={cell}>{tierLabel(s.tier)}</td>
                   <td style={{ ...cell, color: 'var(--color-text-muted)' }}>{formatMinutes(s.budgetMinutes)}</td>
-                  <td style={{ ...cell, color: red ? 'var(--color-error)' : 'var(--color-success)' }} data-stage-hours>
-                    {hoursText(s.hours)} ({off >= 0 ? '+' : ''}{Math.round(off * 100)} %){!s.complete || s.untimed.length ? '*' : ''}
-                  </td>
-                  <td style={{ ...cell, color: 'var(--color-text-secondary)' }} data-stage-heroes>
-                    {PACE_TEXT.heroes(s.heroes)}
-                    {s.entries > 0 && (
-                      <div className="text-gray-500" style={{ fontWeight: s.byWork ? 700 : 400 }}>
-                        their work {hoursText(s.workHours)}{s.byWork ? ' (sets it)' : ''}; side by side {hoursText(s.pathHours)}
-                      </div>
+                  <td style={{ ...cell, color: 'var(--color-text-secondary)' }} data-stage-gate>
+                    {g.place ? (
+                      <>
+                        <div style={{ color: red ? 'var(--color-error)' : 'var(--color-success)' }} data-stage-hours>
+                          {hoursText(g.hours)}{Number.isFinite(off) ? ` (${off >= 0 ? '+' : ''}${Math.round(off * 100)} %)` : ''}{g.complete ? '' : '*'}
+                        </div>
+                        <div>{g.name}: {wayOutAsks(g)}</div>
+                        <div className="text-gray-500" style={{ fontWeight: g.byWork ? 700 : 400 }}>
+                          their work {hoursText(g.workHours)}{g.byWork ? ' (sets it)' : ''}; side by side {hoursText(g.pathHours)}
+                        </div>
+                        {later.length > 0 && (
+                          <div className="text-gray-500" data-stage-gate-needs>also waits for {later.map((n) => `${n.name} (${hoursText(n.hours)})`).join(', ')}</div>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-gray-500" data-stage-gate-none>{g.why === 'last' ? 'the last stage' : `no place of ${tierLabel(g.next)} to settle`}</span>
                     )}
                   </td>
-                  <td style={{ ...cell, color: 'var(--color-text-secondary)' }}>
-                    {s.slowest.slice(0, 3).map((x, i) => (
-                      <span key={x.key}>{i > 0 && ', '}<Link k={x.key} name={name(x.key)} onOpen={onOpen} /> {hoursText(x.hours)}</span>
-                    ))}
-                    {s.untimed.length > 0 && <span className="text-gray-500"> · {s.untimed.length} not timed</span>}
+                  <td style={{ ...cell, color: 'var(--color-text-secondary)' }} data-stage-heroes>{PACE_TEXT.heroes(s.heroes)}</td>
+                  <td style={{ ...cell, color: 'var(--color-text-muted)' }} data-stage-content>
+                    {s.entries > 0 ? (
+                      <>
+                        <div>
+                          {hoursText(s.hours)}{!s.complete || s.untimed.length ? '*' : ''}, {s.entries} {s.entries === 1 ? 'entry' : 'entries'}; their work {hoursText(s.workHours)}{s.byWork ? ' (sets it)' : ''}, side by side {hoursText(s.pathHours)}
+                        </div>
+                        <div>
+                          {s.slowest.slice(0, 3).map((x, i) => (
+                            <span key={x.key}>{i > 0 && ', '}<Link k={x.key} name={name(x.key)} onOpen={onOpen} /> {hoursText(x.hours)}</span>
+                          ))}
+                          {s.untimed.length > 0 && <span> · {s.untimed.length} not timed</span>}
+                        </div>
+                      </>
+                    ) : 'nothing planned'}
                   </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
-        <p className="text-[10px] text-gray-500">* a floor: some entries or steps are not timed (never reached, a fighting style's levels, or a step the calculator cannot time).</p>
+        <p className="text-[10px] text-gray-500">* a floor: a level asked is a fighting style's, or some entries or steps are not timed (never reached, or a step the calculator cannot time).</p>
       </section>
 
       <Layouts pace={pace} onOpen={onOpen} />
@@ -214,7 +235,7 @@ function Layouts({ pace, onOpen }) {
     <section className="rounded-xl border bg-[#1a1a1e] border-white/10 p-4 space-y-2" aria-label="Layouts">
       <h3 className={sectionHead}>Layouts</h3>
       <p className="text-[10px] text-gray-500">
-        A camp works {n.sparse} nodes in the sparse layout and {n.dense} in the dense one (Ledger settings); the pace above is timed {pace.settings.layout}. A node that rests no longer than it works keeps one hero busy on two, and the layout then moves nothing; one that rests longer makes more the more of it stands in reach (red beyond ±{tol} %).
+        A camp works {n.sparse} nodes in the sparse layout and {n.dense} in the dense one; at a Forest, an Orchard or a Quarry, the whole allowance of {pace.settings.layoutSpawners.sparse} and of {pace.settings.layoutSpawners.dense} of them (Ledger settings); the pace above is timed {pace.settings.layout}. A node that rests no longer than it works keeps one hero busy on two, and the layout then moves nothing; one that rests longer makes more the more of it stands in reach (red beyond ±{tol} %).
       </p>
       {nodes.length === 0 ? (
         <p className="text-[11px] text-gray-500" data-layout-nodes="0">No node makes past the tolerance more in the dense layout.</p>
@@ -222,7 +243,7 @@ function Layouts({ pace, onOpen }) {
         <ul className="text-[11px] space-y-0.5" data-layout-nodes={nodes.length}>
           {nodes.map((r) => (
             <li key={r.work.key} style={{ color: 'var(--color-warning)' }}>
-              <Link k={r.work.entry} name={pace.workName(r.work)} onOpen={onOpen} />: {rateText(r.sparse)} an hour with {n.sparse}, {rateText(r.dense)} with {n.dense} (+{Math.round(r.off * 100)} %)
+              <Link k={r.work.entry} name={pace.workName(r.work)} onOpen={onOpen} />: {rateText(r.sparse)} an hour with {r.nodes.sparse}, {rateText(r.dense)} with {r.nodes.dense} (+{Math.round(r.off * 100)} %)
             </li>
           ))}
         </ul>
@@ -265,6 +286,12 @@ function Layouts({ pace, onOpen }) {
       )}
     </section>
   );
+}
+
+/** What a way out asks, in words: "Mining 10 + 420 coins". */
+function wayOutAsks(g) {
+  const parts = [...g.asks.map((a) => `${PACE_TEXT.skill(a.skill)} ${a.level}`), ...(g.coins > 0 ? [PACE_TEXT.coins(g.coins)] : [])];
+  return parts.join(' + ') || 'nothing';
 }
 
 const CALIBRATION_TEXT = {

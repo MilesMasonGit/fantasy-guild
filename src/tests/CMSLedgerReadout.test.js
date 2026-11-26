@@ -6,8 +6,9 @@ import crypto from 'crypto';
 
 import { runCli, USAGE } from '../../cms/cliCommands.mjs';
 import { saveWorkspaceFile } from '../../cms/workspaceFile.js';
-import { ledgerReadout } from '../../cms/src/engine/ledgerReadout.js';
+import { ledgerReadout, readoutText } from '../../cms/src/engine/ledgerReadout.js';
 import { paceWorkspace } from './fixtures/paceWorld.js';
+import { WORLD_FIXTURE_RAW, worldWorkspace } from './fixtures/ledgerWorldMap.js';
 
 /**
  * The ledger's read-out for the balancer (`npm run cms -- ledger`, brief 880 L1): run on the pace
@@ -72,7 +73,7 @@ describe('npm run cms -- ledger', () => {
         expect(fs.readdirSync(path.join(dir, 'workspace'))).toEqual(['workspace.json']);
 
         const out = JSON.parse(fs.readFileSync(jsonFile, 'utf8'));
-        expect(out).toMatchObject({ format: 'fantasy-guild-ledger-readout', version: 3, profiles: { opt: 'maxed', typ: 'typical', bare: 'bare' } });
+        expect(out).toMatchObject({ format: 'fantasy-guild-ledger-readout', version: 4, profiles: { opt: 'maxed', typ: 'typical', bare: 'bare' } });
         expect(out.workspace).toMatchObject({ revision: 1 });
         for (const section of ['guild', 'pace', 'rows', 'stages', 'layouts', 'boostBudget', 'checks', 'notes', 'units', 'counts']) expect(out, section).toHaveProperty(section);
 
@@ -147,22 +148,32 @@ describe('npm run cms -- ledger', () => {
         expect(budgetChecks.length).toBeGreaterThan(0);
         expect(new Set(out.boostBudget.over.map((o) => `${o.kind}|${o.profile}`)).size).toBe(budgetChecks.length);
         expect(out.stages[0]).toMatchObject({ profile: 'maxed', endsAt: 10, heroes: 1 });
-        // ⭐ Stages timed with the reference guild's heroes: the later of the slowest path and the heroes' work.
-        for (const s of out.stages.filter((x) => x.entries)) {
-            expect(s.minutes).toBeCloseTo(Math.max(s.pathMinutes, s.workMinutes), 1);
-            expect(s.heroMinutes).toBeCloseTo(s.levelHeroMinutes + s.stepHeroMinutes, 1);
-            expect(typeof s.byWork).toBe('boolean');
+        // ⭐ A stage's full content, information only, timed with the reference guild's heroes: the later of the slowest path and the heroes' work.
+        for (const s of out.stages.filter((x) => x.content.entries)) {
+            expect(s.content.minutes).toBeCloseTo(Math.max(s.content.pathMinutes, s.content.workMinutes), 1);
+            expect(s.content.heroMinutes).toBeCloseTo(s.content.levelHeroMinutes + s.content.stepHeroMinutes, 1);
+            expect(typeof s.content.byWork).toBe('boolean');
         }
+        // ⭐ What the budget times is the way out; the last stage has none.
+        for (const s of out.stages.filter((x) => x.gate)) {
+            expect(s.minutes).toBe(s.gate.minutes);
+            expect(s.gate.minutes).toBeCloseTo(Math.max(s.gate.pathMinutes, s.gate.workMinutes), 1);
+            expect(s.offPct).toBeCloseTo((s.gate.minutes / s.budgetMinutes - 1) * 100, 0);
+        }
+        expect(out.stages[out.stages.length - 1]).toMatchObject({ gate: null, minutes: null, gateWhy: 'the last stage: no place after it' });
         expect(out.guild.heroes.map((h) => h.heroes)).toEqual([1, 1, 2, 3, 4, 5, 6, 8]);
-        expect(out.guild).toMatchObject({ gatherersPerMaker: 2.2, layout: 'sparse', layoutNodes: { sparse: 2, dense: 4 }, sitePlaces: { buildings: 8, perKind: 4 } });
+        expect(out.guild).toMatchObject({
+            gatherersPerMaker: 2.2, layout: 'sparse', layoutNodes: { sparse: 2, dense: 4 }, layoutSpawners: { sparse: 1, dense: 2 }, sitePlaces: { places: 12, buildings: 8, perKind: 4 }
+        });
         // ⭐ Both layouts, the warning where they differ, and the vein the dense layout makes more of.
         expect(out.layouts).toMatchObject({ timed: 'sparse', other: 'dense', nodes: { sparse: 2, dense: 4 } });
         expect(out.layouts.skills.mining).toMatchObject({ warn: true });
         expect(out.layouts.skills.mining.dense.opt).toBeLessThan(out.layouts.skills.mining.sparse.opt);
         expect(out.layouts.warnings).toContain('mining');
         expect(out.layouts.nodesOff.map((n) => n.entry)).toEqual(['token:token_vein']);
-        // ⭐ Each work's site: the buildings in its places, with their copies, and its camp's nodes.
-        expect(vein.site.opt).toMatchObject({ places: 4, room: 8, byKind: { yield: 4 }, camp: { id: 'token_mining_camp', nodes: 2 } });
+        expect(out.layouts.nodesOff[0].nodes).toEqual({ sparse: 2, dense: 4 });
+        // ⭐ Each work's site: the buildings in its places, with their copies, and its camp's nodes; the camp and the second vein take two places.
+        expect(vein.site.opt).toMatchObject({ places: 4, room: 8, taken: 2, byKind: { yield: 4 }, camp: { id: 'token_mining_camp', nodes: 2, spawners: 0 } });
         expect(vein.site.opt.buildings).toEqual([{ id: 'token_mine', name: 'Mine', count: 4, kinds: ['yield'] }]);
         // An arrival is never before its path.
         for (const row of out.rows.filter((x) => x.arriveTyp !== null)) expect(row.arriveTyp, row.key).toBeGreaterThanOrEqual(row.pathTyp - 1e-6);
@@ -239,5 +250,30 @@ describe('npm run cms -- ledger', () => {
         expect(r.code).toBe(1);
         expect(r.err).toMatch(/No workspace/);
         expect(fs.readdirSync(dir)).toEqual([]);
+    });
+});
+
+describe('the read-out\'s stages', () => {
+    it('⭐ gives each stage its way out, what its budget times, and its full content beside it as information', () => {
+        const world = structuredClone(WORLD_FIXTURE_RAW);
+        world.prices[1] = { ...world.prices[1], skills: [{ skill: 'line', level: 3 }], coins: 30 };
+        const ws = { ...worldWorkspace(), world };
+        ws.items.item_copper_ore.value = 1;
+        const out = ledgerReadout(ws, { layouts: false });
+        const camp = out.stages[0];
+        expect(camp.gate).toMatchObject({ place: 'wedge:ores:1', name: 'Ores ring 1', ring: 1, coins: 30, asks: [{ skill: 'mining', level: 3 }], complete: true });
+        expect(camp.minutes).toBe(camp.gate.minutes);
+        expect(camp.gate.minutes).toBeCloseTo(camp.gate.levelMinutes + camp.gate.priceMinutes, 2);
+        expect(camp.gate.asks[0].minutes).toBeCloseTo(camp.gate.levelMinutes, 2);
+        expect(camp.offPct).toBeCloseTo((camp.gate.minutes / camp.budgetMinutes - 1) * 100, 0);
+        expect(camp.content.entries).toBeGreaterThan(0);
+        expect(camp.content.minutes).toBeGreaterThan(0);
+        // Plane 1's way out is an iron place, which needs Ring 2 opened and the place before it.
+        expect(out.stages[1].gate.needs.map((n) => n.key).sort()).toEqual(['ring:2', 'wedge:ores:1']);
+        // The fixture's world holds no place of Plane 4.
+        expect(out.stages[3]).toMatchObject({ gate: null, minutes: null, offPct: null, gateWhy: 'no place of Plane 4 to settle' });
+        const text = readoutText(out).join('\n');
+        expect(text).toMatch(/^Starter Camp \| .+: Ores ring 1, mining 3 \+ 30 coins \| .+ \| 1 \| .+, \d+ \(\d+\)/m);
+        expect(text).toMatch(/^Plane 3 \| no place of Plane 4 to settle \|/m);
     });
 });

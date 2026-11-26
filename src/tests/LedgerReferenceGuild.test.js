@@ -41,7 +41,7 @@ describe('the reference guild\'s settings', () => {
         expect(s.heroesByTier.map(p => [p.tier, p.heroes])).toEqual([[0, 1], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5], [6, 6], [7, 8]]);
         expect(s.layouts).toEqual({ sparse: 2, dense: 4 });
         expect(s.layout).toBe('sparse');
-        expect(s.sitePlaces).toEqual({ buildings: 8, perKind: 4 });
+        expect(s.sitePlaces).toEqual({ places: 12, buildings: 8, perKind: 4 });
         expect(settingsOf({ campMembers: 3 })).not.toHaveProperty('campMembers');
         expect([0, 1, 2, 6, 7, 9].map(t => heroesAt(s, t))).toEqual([1, 1, 2, 6, 8, 8]);
         // One chain is at most one maker and 2.2 gatherers: the guild's heroes until it has more.
@@ -247,8 +247,12 @@ describe('a work site is timed by its building places', () => {
         expect(vein.setup.supports).toEqual(expect.arrayContaining([{ id: 'token_mine', count: 4 }, { id: 'token_lore', count: 4 }]));
         expect(vein.rate.perCycle.item_copper_ore).toBeCloseTo(pace.rateAt(VEIN, PROFILE.BARE).rate.perCycle.item_copper_ore * 2);
         // With room for twelve, the Rush Hut takes four more; the Gold Statue's yield still has no place.
-        const roomy = paceOf(siteContent(), { sitePlaces: { buildings: 12, perKind: 4 } }).siteOf(VEIN, PROFILE.MAXED);
+        const roomy = paceOf(siteContent(), { sitePlaces: { places: 14, buildings: 12, perKind: 4 } }).siteOf(VEIN, PROFILE.MAXED);
         expect(Object.fromEntries(roomy.buildings.map(b => [b.id, b.count]))).toEqual({ token_mine: 4, token_lore: 4, token_rush: 4 });
+        // The twelve places round the vein hold its camp and its second vein too: ten for buildings, two Rush Huts.
+        const round = paceOf(siteContent(), { sitePlaces: { buildings: 12, perKind: 4 } }).siteOf(VEIN, PROFILE.MAXED);
+        expect(round).toMatchObject({ room: 10, taken: 2 });
+        expect(Object.fromEntries(round.buildings.map(b => [b.id, b.count]))).toEqual({ token_mine: 4, token_lore: 4, token_rush: 2 });
     });
 
     it('⭐ Maxed fills the places itself when Typical holds none', () => {

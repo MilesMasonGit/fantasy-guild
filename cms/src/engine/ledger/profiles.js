@@ -53,12 +53,15 @@ import { hallTracksOf, hallGraph, freeRanks, openingPath, starRulesOf, starMoves
  * rate before it).
  *
  * **A work site** (BALANCE_RULES sections 5 and 8): a camp works `campNodes` nodes in
- * turn (a vein, a Field, a forest's trees: the layout's), and stands within reach of them, so its
- * own rules reach them too (a Sawmill's double loot, a Mine Head's quicker rest). The buildings round
- * a work hold `sitePlaces.buildings` places, at most `sitePlaces.perKind` of them boosting one kind
- * (speed, XP, yield or rare finds, {@link supportKinds}), and the same building may stand in several
- * of them: each copy is chosen as any boost is, Typical's when it pays back, Maxed's while it lifts
- * the rate and the site has room. The neighbour a work needs and its camp take no building place.
+ * turn (a vein, a Field: the layout's), or, for a node of a spawner's family (a Forest's trees, an
+ * Orchard's, a Quarry's outcrops), the whole allowance of each of the layout's `campSpawners`
+ * spawners, and stands within reach of them, so its own rules reach them too (a Sawmill's double
+ * loot, a Mine Head's quicker rest). The site's `sitePlaces.places` round the node worked hold its
+ * camp, its other nodes and its spawners ({@link placesTaken}); the rest hold buildings, at most
+ * `sitePlaces.buildings`, at most `sitePlaces.perKind` of them boosting one kind (speed, XP, yield
+ * or rare finds, {@link supportKinds}), and the same building may stand in several of them: each
+ * copy is chosen as any boost is, Typical's when it pays back, Maxed's while it lifts the rate and
+ * the site has room. A neighbour the work needs that is not its spawner takes no place.
  *
  * Pure: reads only the rate book and what it is handed.
  */
@@ -123,8 +126,27 @@ export function pickKindOf(pick, rate) {
 /** The nodes a camp hands one hero by default: the sparse layout's (`settings.layouts`). */
 const DEFAULT_CAMP_NODES = 2;
 
-/** A site's building places by default (`settings.sitePlaces`). */
-const DEFAULT_SITE_PLACES = Object.freeze({ buildings: 8, perKind: 4 });
+/** The spawners a site worked from one stands by default: the sparse layout's (`settings.layoutSpawners`). */
+const DEFAULT_CAMP_SPAWNERS = 1;
+
+/** A site's places by default (`settings.sitePlaces`). */
+const DEFAULT_SITE_PLACES = Object.freeze({ places: 12, buildings: 8, perKind: 4 });
+
+/** A spawner's allowance: the most of its family it keeps standing, at least one. */
+function allowanceOf(book, id) {
+    const n = Math.floor(Number(book.token(id)?.spawner?.allowance));
+    return n >= 1 ? n : 1;
+}
+
+/**
+ * The nodes a camp hands one hero at a work, and the spawners standing for them, for a layout's
+ * `nodes` and `spawners`: a node of a spawner's family comes only by its spawner's allowance, so a
+ * site worked from one counts each spawner's whole allowance (owner, 2026-11-26); fights take no camp.
+ */
+export function campNodesOf(book, ctx, { nodes, spawners }) {
+    if (ctx?.family && ctx.kind !== WORK.FIGHT) return { nodes: spawners * allowanceOf(book, ctx.family), spawners };
+    return { nodes, spawners: 0 };
+}
 
 /** The kind of boost each axis a building moves on a work is counted under, for the site's places a kind. */
 const AXIS_KIND = Object.freeze({
@@ -233,8 +255,10 @@ function familySpawnerOf(book, def, spawners) {
  * @param {(rate: object, cap: number, profile: string) => number} [options.inputScale]  the share of a rate
  *   the guild can feed at that profile (its materials in full where anything makes them, what its
  *   boosts spend by one hero on each): a boost that starves its work is worth that much less
- * @param {number} [options.campNodes]  the nodes a camp hands one hero (a vein, a Field, a forest's trees)
- * @param {{ buildings: number, perKind: number }} [options.sitePlaces]  a work site's building places, and the most boosting one kind
+ * @param {number} [options.campNodes]  the nodes a camp hands one hero (a vein, a Field)
+ * @param {number} [options.campSpawners]  the spawners a site worked from one stands, each with its whole allowance (a Forest's trees)
+ * @param {{ places: number, buildings: number, perKind: number }} [options.sitePlaces]  a work site's places round the node, the most
+ *   that hold buildings, and the most boosting one kind
  * @param {(itemId: string, cap: number) => number} [options.hallUnitHours]  hours one of an item takes
  *   to gather at Typical before the Hall (a Hall rank's price); Bare's when absent
  * @param {(coins: number, cap: number) => number} [options.hallCoinHours]  hours `coins` take to earn at
@@ -242,8 +266,9 @@ function familySpawnerOf(book, def, spawners) {
  */
 export function buildProfiles(book, {
     tierOf, unitHours, costHours, horizonHours, hallHorizonHours = horizonHours, inputScale = () => 1, campNodes = DEFAULT_CAMP_NODES,
-    sitePlaces = DEFAULT_SITE_PLACES, hallUnitHours = unitHours, hallCoinHours = () => Infinity
+    campSpawners = DEFAULT_CAMP_SPAWNERS, sitePlaces = DEFAULT_SITE_PLACES, hallUnitHours = unitHours, hallCoinHours = () => Infinity
 }) {
+    const site = { ...DEFAULT_SITE_PLACES, ...sitePlaces };
     const tokenIds = book.tokenIds();
     const supports = tokenIds.filter(id => {
         const def = book.token(id);
@@ -358,10 +383,31 @@ export function buildProfiles(book, {
         return out;
     }
 
+    /** The nodes a camp hands one hero at a work in the layout timed, and the spawners standing for them ({@link campNodesOf}). */
+    const siteNodesOf = (ctx) => campNodesOf(book, ctx, { nodes: campNodes, spawners: campSpawners });
+
+    /**
+     * The places round the node a work site's own Tokens take, the node itself at the centre: where a
+     * camp may work it, the camp and the layout's other nodes and spawners (a vein's second node; a
+     * Forest and its other trees); else the work's own spawner and the rest of its allowance, or none.
+     * Counted the same whether or not a profile has its camp yet.
+     */
+    function placesTaken(ctx) {
+        if (ctx.camps.length) {
+            const own = siteNodesOf(ctx);
+            return 1 + own.spawners + (own.nodes - 1);
+        }
+        if (ctx.family && ctx.kind !== WORK.FIGHT) return allowanceOf(book, ctx.family);
+        return 0;
+    }
+
+    /** A work site's building places: what its own Tokens leave of the places round it, at most `sitePlaces.buildings`. */
+    const roomOf = (ctx) => Math.max(0, Math.min(site.buildings, site.places - placesTaken(ctx)));
+
     /**
      * Whether a work site has a place for one more copy of a building: fewer buildings than its
-     * places, and fewer than the most a kind may hold boosting each kind the building moves. The
-     * neighbour the work needs and its camp are not buildings.
+     * building places ({@link roomOf}), and fewer than the most a kind may hold boosting each kind the
+     * building moves. The neighbour the work needs is not a building.
      */
     function siteHasRoom(ctx, setup, offer) {
         let total = 0;
@@ -372,8 +418,8 @@ export function buildProfiles(book, {
             total += n;
             for (const k of supportKinds(ctx, id)) byKind[k] = (byKind[k] || 0) + n;
         }
-        if (total >= sitePlaces.buildings) return false;
-        return offer.kinds.every(k => (byKind[k] || 0) < sitePlaces.perKind);
+        if (total >= roomOf(ctx)) return false;
+        return offer.kinds.every(k => (byKind[k] || 0) < site.perKind);
     }
 
     /** The setup every profile starts from: what the work needs to run, one copy, the lowest tool, the Hall ranks a new guild holds. */
@@ -406,11 +452,12 @@ export function buildProfiles(book, {
             if (!within(tokenTier(id), cap)) continue;
             const family = ctx.family ? { spawner: ctx.family } : undefined;
             // The camp stands by the nodes it works, so its own rules reach them; a hero works from one camp, so it takes another's place.
+            const members = siteNodesOf(ctx).nodes;
             out.push({
                 kind: BOOST_KIND.CAMP, id, factor: factorId(BOOST_KIND.SUPPORT, id), oneOff: true, camp: true,
                 apply: (s) => ({
                     ...s, supports: [...list(s.supports).filter(e => !ctx.camps.includes(typeof e === 'string' ? e : e?.id)), id],
-                    camp: { id, members: campNodes }, ...(family ? { family } : {})
+                    camp: { id, members }, ...(family ? { family } : {})
                 })
             });
         }
@@ -699,8 +746,10 @@ export function buildProfiles(book, {
 
     /**
      * The buildings a setup stands round a piece of work, in its site's places: `{ places, room,
-     * perKind, byKind, buildings: [{ id, count, kinds }], camp }`, `places` the copies standing,
-     * `room` the site's building places, `camp` the camp it works from and the nodes that hands it.
+     * taken, perKind, byKind, buildings: [{ id, count, kinds }], camp }`, `places` the copies
+     * standing, `room` the site's building places, `taken` the places its camp, other nodes and
+     * spawners take ({@link placesTaken}), `camp` the camp it works from, the nodes that hands it and
+     * the spawners they stand for.
      */
     function siteOf(target, setup) {
         const ctx = contextOf(target);
@@ -715,12 +764,16 @@ export function buildProfiles(book, {
             places += count;
             for (const k of kinds) byKind[k] = (byKind[k] || 0) + count;
         }
-        const camp = isObject(setup.camp) ? { id: setup.camp.id, nodes: setup.camp.members ?? null } : typeof setup.camp === 'string' ? { id: setup.camp, nodes: null } : null;
-        return { places, room: sitePlaces.buildings, perKind: sitePlaces.perKind, byKind, buildings, camp };
+        const spawners = siteNodesOf(ctx).spawners;
+        const camp = isObject(setup.camp) ? { id: setup.camp.id, nodes: setup.camp.members ?? null, spawners }
+            : typeof setup.camp === 'string' ? { id: setup.camp, nodes: null, spawners } : null;
+        return { places, room: roomOf(ctx), taken: placesTaken(ctx), perKind: site.perKind, byKind, buildings, camp };
     }
 
     return {
         contextOf, profileOf, bareSetup, offers, valueOf, everythingOf, siteOf, supportKinds,
+        /** The nodes a camp hands one hero at a work for a layout's nodes and spawners ({@link campNodesOf}). */
+        campNodesOf: (target, layout) => campNodesOf(book, contextOf(target), layout),
         hallTracks: tracks, hallTrack: (id) => trackById.get(id) || null, hallPriceHours, hallRankOn, rankWithin
     };
 }

@@ -146,8 +146,14 @@ describe('the tab', { timeout: 20000 }, () => {
         fireEvent.click(view.getAllByText('Construction')[0]);
         expect(view.getByRole('tab', { name: 'Pace' }).getAttribute('aria-selected')).toBe('true');
         expect(view.container.querySelector('[data-breakdown="construction|0"]')).toBeTruthy();
-        expect(view.container.querySelector('[data-stage="0"] [data-stage-hours]').textContent).toMatch(/^11 h 9 min/);
+        // ⭐ The way out (the next place's level and price) is what the budget times; the full content is information, never red.
+        expect(view.container.querySelector('[data-stage="0"] [data-stage-hours]').textContent).toMatch(/^26 min \(-26 %\)$/);
+        expect(view.container.querySelector('[data-stage="0"] [data-stage-gate]').textContent).toMatch(/Trees ring 1: Forestry 5/);
+        expect(view.container.querySelector('[data-stage="0"] [data-stage-content]').textContent).toMatch(/^11 h 9 min, 20 entries/);
+        expect(view.container.querySelector('[data-stage="0"] [data-stage-content]').getAttribute('style')).not.toMatch(/error|success/);
         expect(view.container.querySelector('[data-stage="0"] [data-stage-heroes]').textContent).toMatch(/^1 hero/);
+        expect(view.container.querySelector('[data-stage="3"] [data-stage-gate-none]').textContent).toBe('no place of Plane 4 to settle');
+        expect(view.container.querySelector('[data-stage="7"] [data-stage-gate-none]').textContent).toBe('the last stage');
         expect(view.container.querySelector('[data-hall="roster_size|2"]')).toBeTruthy();
     });
 
@@ -160,7 +166,8 @@ describe('the tab', { timeout: 20000 }, () => {
         await waitFor(() => expect(view.container.querySelector('[data-layout-spread]')).toBeTruthy(), { timeout: 20000 });
         expect(view.container.querySelector('[data-layout-skill="mining"]').textContent).toMatch(/Mining.*Maxed .* d.*Maxed .* d/);
         // The stages say their heroes, and what their work takes.
-        expect(view.container.querySelector('[data-stage="0"] [data-stage-heroes]').textContent).toMatch(/^1 hero.*their work .* side by side/);
+        expect(view.container.querySelector('[data-stage="0"] [data-stage-heroes]').textContent).toMatch(/^1 hero/);
+        expect(view.container.querySelector('[data-stage="0"] [data-stage-gate]').textContent).toMatch(/their work .* side by side/);
     });
 
     it('edits the reference guild: heroes by stage, the layouts’ nodes and the layout timed, a site’s places', () => {
@@ -175,7 +182,11 @@ describe('the tab', { timeout: 20000 }, () => {
         expect(store().planSettings.layout).toBe('dense');
         set('Building places', '10');
         set('Places a kind', '3');
-        expect(store().planSettings.sitePlaces).toEqual({ buildings: 10, perKind: 3 });
+        expect(store().planSettings.sitePlaces).toEqual({ places: 12, buildings: 10, perKind: 3 });
+        set('Places round a node', '14');
+        expect(store().planSettings.sitePlaces).toEqual({ places: 14, buildings: 10, perKind: 3 });
+        set('Dense layout spawners', '3');
+        expect(store().planSettings.layoutSpawners).toEqual({ sparse: 1, dense: 3 });
         expect(view.queryByLabelText('Camp copies')).toBeNull();
     });
 

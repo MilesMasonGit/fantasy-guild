@@ -338,10 +338,13 @@ describe('checks D', () => {
         expect(wall.related).toContain('token:token_big_hut');
     });
 
-    it('a stage over its budget, Bare out of its bounds, a long gather', () => {
+    it('a stage with no way out to time, Bare out of its bounds, a long gather', () => {
         const f = findings();
-        // The Starter Camp is done when the curve reaches level 10, 35 minutes in, and timed at Maxed.
-        expect(f.find(x => x.check === 'stage-budget' && x.key === 'stage:0').message).toMatch(/at Maxed, \d+ % over its budget of 35 min/);
+        // The Starter Camp's budget, 35 minutes, times its way out (LedgerStageGate); this world has no world map, so no place to settle.
+        expect(f.find(x => x.check === 'stage-budget' && x.key === 'stage:0')).toMatchObject({
+            severity: 'info',
+            message: expect.stringMatching(/^Starter Camp has no place of Plane 1 to settle, so its way out is not timed against its budget of 35 min\. Its full content \(\d+ entries, had .+ in\) is information\.$/)
+        });
         // Against the curve: Bare past its 3x and, the curve's player being Maxed, Typical past its 2x.
         expect(f.filter(x => x.check === 'profile-bounds' && x.key === 'skill:construction').map(x => x.message.split(':')[0]).sort()).toEqual(['Bare', 'Typical']);
         expect(f.find(x => x.check === 'unlock-wall' && x.key === 'token:token_statue').message).toMatch(/gathering Oak Wood/);

@@ -24,7 +24,7 @@ import { MAX_SKILL_LEVEL } from '../../../src/utils/XPCurve.js';
  */
 
 export const READOUT_FORMAT = 'fantasy-guild-ledger-readout';
-export const READOUT_VERSION = 3;
+export const READOUT_VERSION = 4;
 
 /** The solver's players and the ledger profiles they are read at. */
 export const READOUT_PROFILES = Object.freeze({ opt: PROFILE.MAXED, typ: PROFILE.TYPICAL, bare: PROFILE.BARE });
@@ -40,9 +40,10 @@ export const NOTES = Object.freeze([
     'Times are hero-work hours turned to minutes: heroes work around the clock. A skill\'s levels are one hero\'s climb on its chain; a stage and an arrival also wait for the guild\'s heroes to do all the work on the way (heroes, stages).',
     'heroes lists the reference guild\'s heroes by stage (BALANCE_RULES section 8: about one a tier, a Ledger setting), each arriving as the curve reaches its tier, and the heroes one chain has there (chainHeroes: the guild\'s, at most one maker and gatherersPerMaker gatherers).',
     'gatherers and brewers (per level and profile) are the heroes a level\'s work needs besides its maker to run in full: the gatherers down its chain and the brewers of the drinks and potions its boosts spend (each with their own gatherers), at the same profile\'s setup. chain is the share of its full pace the level runs at: the chain\'s heroes over the heroes it needs, each doing its share of everything in turn, at most 1. guild is the hero-hours the level takes: its hours times the chain\'s heroes at work, the lesser of what it needs and what it has.',
-    'A stage\'s minutes are the later of its slowest entry\'s arrival and the time the guild\'s heroes take to put in all the work planned for it and the stages before (workMinutes, from heroMinutes of hero time: each level and each price once); pathMinutes is the slowest entry\'s path with every skill levelled side by side, and byWork says the heroes set it. An entry\'s arrival is likewise the later of its path and its own path\'s work.',
-    'layouts times each skill\'s days to 99 at both layouts (a camp working the sparse or the dense layout\'s nodes, a Ledger setting; the pace and everything else here is the timed one) and warns where they differ past the tolerance; nodes lists the nodes the dense layout makes past the tolerance more of (the layout check).',
-    'site (per entry with a work, at opt and typ) is the buildings its profile stands round the work in its site\'s places (BALANCE_RULES section 5: room for sitePlaces.buildings, at most sitePlaces.perKind boosting one kind), each with its copies and the kinds it boosts, and the camp it works from with the nodes that hands it.',
+    'A stage\'s minutes are its way out (owner, 2026-11-26: leaving a stage means settling the next place), what its budget times (offPct): gate is the soonest of the next stage\'s places, its level in the one or two skills it asks (asks, each by its own hero: levelMinutes) then its settle price (coins, earned from then: priceMinutes), along pathMinutes, and no sooner than the stage\'s heroes can put in that work (heroMinutes at workMinutes; byWork says they set it). needs lists what else settling it needs (the place before, the ring\'s star) at their arrivals, as information. A place\'s goods are the world seed\'s, which the ledger does not hold: the price is its coins. gateWhy says why a stage has no way out (the last stage; no place of the next tier).',
+    'A stage\'s content is its full content, information only and held to no budget: the later of its slowest entry\'s arrival and the time the guild\'s heroes take to put in all the work planned for it and the stages before (workMinutes, from heroMinutes of hero time: each level and each price once); pathMinutes is the slowest entry\'s path with every skill levelled side by side, and byWork says the heroes set it. An entry\'s arrival is likewise the later of its path and its own path\'s work.',
+    'layouts times each skill\'s days to 99 at both layouts (a camp working the sparse or the dense layout\'s nodes; a site worked from a spawner, a Forest, an Orchard or a Quarry, the whole allowance of each of the layout\'s layoutSpawners: Ledger settings; the pace and everything else here is the timed one) and warns where they differ past the tolerance; nodesOff lists the nodes the dense layout makes past the tolerance more of (the layout check), with each layout\'s nodes.',
+    'site (per entry with a work, at opt and typ) is the buildings its profile stands round the work in its site\'s places (BALANCE_RULES section 5: sitePlaces.places round the node, of which its camp, other nodes and spawners take taken; room is what they leave, at most sitePlaces.buildings, at most sitePlaces.perKind boosting one kind), each with its copies and the kinds it boosts, and the camp it works from with the nodes that hands it and the spawners they stand for.',
     'Levels above the highest level any entry asks (pastTop) are worked at the best work open by the last stage; their best work is not named, and their guild time and gatherers keep the last named level\'s.',
     'An entry\'s numbers (xp, seconds, inputs, makes) are its work\'s own at Bare: one action, before boosts. Items have no work of their own: see via for the work that first gives them.',
     'Arrivals (arriveOpt, arriveTyp) are minutes from a new game along the ledger\'s path; null when never reached, and for Planned entries (the ledger times nothing Planned).',
@@ -50,7 +51,6 @@ export const NOTES = Object.freeze([
     'boostBudget lists the budget\'s cells by tier and, under over, every total a profile holds over its cell (the boost-budget check).',
 ]);
 
-const finite = (n) => (Number.isFinite(n) ? n : null);
 const minutes = (hours) => (Number.isFinite(hours) ? round(hours * 60, 3) : null);
 const round = (n, places = 2) => (Number.isFinite(n) ? Math.round(n * 10 ** places) / 10 ** places : null);
 
@@ -149,6 +149,7 @@ function heroesOf(pace) {
 function layoutsOf(pace, both = true) {
     const nodes = pace.layoutRows().map((r) => ({
         entry: r.work.entry, work: pace.workName(r.work), camp: r.camp, sparse: round(r.sparse, 2), dense: round(r.dense, 2), offPct: round(r.off * 100, 1),
+        nodes: { ...r.nodes }, ...(r.spawner ? { spawner: r.spawner, spawners: { ...r.spawners } } : {}),
     }));
     const other = pace.settings.layout === 'sparse' ? 'dense' : 'sparse';
     const base = { timed: pace.settings.layout, other, nodes: { ...pace.settings.layouts }, tolerancePct: pace.settings.tolerancePct, nodesOff: nodes };
@@ -169,9 +170,21 @@ function siteText(pace, report, target, profile) {
     if (!site) return null;
     const name = (id) => report.ledger.world.names.get(`token:${id}`) ?? id;
     return {
-        places: site.places, room: site.room, byKind: site.byKind,
+        places: site.places, room: site.room, taken: site.taken, byKind: site.byKind,
         buildings: site.buildings.map((b) => ({ id: b.id, name: name(b.id), count: b.count, kinds: b.kinds })),
         camp: site.camp ? { ...site.camp, name: name(site.camp.id) } : null,
+    };
+}
+
+/** A stage's way out (`pace.gateOf`) in the read-out's units, or null when it has none. */
+function gateText(g) {
+    if (!g.place) return null;
+    return {
+        place: g.place, name: g.name, ring: g.ring, places: g.places,
+        asks: g.asks.map((a) => ({ skill: a.skill, level: a.level, minutes: a.hours === null ? null : minutes(a.hours) })), coins: g.coins,
+        minutes: minutes(g.hours), levelMinutes: minutes(g.levelHours), priceMinutes: minutes(g.priceHours), pathMinutes: minutes(g.pathHours),
+        workMinutes: minutes(g.workHours), heroMinutes: minutes(g.heroHours), byWork: g.byWork, complete: g.complete,
+        needs: g.needs.map((n) => ({ key: n.key, name: n.name, minutes: minutes(n.hours) })),
     };
 }
 
@@ -258,14 +271,21 @@ export function ledgerReadout(state = {}, { report = null, layouts = true } = {}
     const stages = pace.settings.stages.map((s) => {
         const stage = pace.stageOf(s.tier);
         const work = stage.entries ? pace.workOfStage(s.tier) : null;
+        const g = stage.gate;
         return {
-            tier: s.tier, label: tierLabel(s.tier), profile: stage.profile, entries: stage.entries,
-            minutes: stage.entries ? minutes(finite(stage.hours) ?? Infinity) : null, untimed: stage.untimed.length, budgetMinutes: round(s.budgetMinutes, 3), endsAt: s.endsAt,
-            heroes: stage.heroes,
-            ...(work ? {
-                pathMinutes: minutes(stage.pathHours), workMinutes: minutes(stage.workHours), heroMinutes: minutes(stage.heroHours), byWork: stage.byWork,
-                levels: work.levels, levelHeroMinutes: minutes(work.levelHeroHours), stepHeroMinutes: minutes(work.stepHeroHours),
-            } : {}),
+            tier: s.tier, label: tierLabel(s.tier), profile: stage.profile, budgetMinutes: round(s.budgetMinutes, 3), endsAt: s.endsAt, heroes: stage.heroes,
+            // What the budget times: the way out.
+            minutes: g.place ? minutes(g.hours) : null,
+            offPct: g.place && Number.isFinite(g.hours) ? round((g.hours * 60 / s.budgetMinutes - 1) * 100, 1) : null,
+            gate: gateText(g),
+            ...(g.place ? {} : { gateWhy: g.why === 'last' ? 'the last stage: no place after it' : `no place of ${tierLabel(g.next)} to settle` }),
+            content: {
+                entries: stage.entries, untimed: stage.untimed.length, minutes: stage.entries ? minutes(stage.hours) : null,
+                ...(work ? {
+                    pathMinutes: minutes(stage.pathHours), workMinutes: minutes(stage.workHours), heroMinutes: minutes(stage.heroHours), byWork: stage.byWork,
+                    levels: work.levels, levelHeroMinutes: minutes(work.levelHeroHours), stepHeroMinutes: minutes(work.stepHeroHours),
+                } : {}),
+            },
         };
     });
     const nameOf = (key) => (key ? ledger.world.names.get(key) ?? parseKey(key).id : null);
@@ -278,7 +298,7 @@ export function ledgerReadout(state = {}, { report = null, layouts = true } = {}
         notes: [...NOTES],
         guild: {
             heroes: heroesOf(pace), gatherersPerMaker: pace.settings.gatherersPerMaker, layout: pace.settings.layout, layoutNodes: { ...pace.settings.layouts },
-            sitePlaces: { ...pace.settings.sitePlaces },
+            layoutSpawners: { ...pace.settings.layoutSpawners }, sitePlaces: { ...pace.settings.sitePlaces },
         },
         pace: skills,
         rows,
@@ -303,10 +323,14 @@ export function readoutText(out) {
     for (const [skill, p] of Object.entries(out.pace).sort(([a], [b]) => a.localeCompare(b))) {
         lines.push(`${skill} ${p.days.opt ?? 'never'} ${p.days.typ ?? 'never'} ${p.days.bare ?? 'never'} ${p.days.guild ?? 'never'} ${p.days.curve} ${p.top}`);
     }
-    lines.push('', 'Stage | Maxed time | budget | entries (untimed) | heroes | path side by side | the heroes\' work');
+    lines.push('', 'Stage | the way out at Maxed (what the budget times) | budget | heroes | full content, information: Maxed time, entries (untimed), the heroes\' work');
     for (const s of out.stages) {
-        const heroes = s.workMinutes !== undefined ? ` | ${s.heroes} | ${fmtMin(s.pathMinutes)} | ${fmtMin(s.workMinutes)}${s.byWork ? ' (sets it)' : ''}` : ` | ${s.heroes}`;
-        lines.push(`${s.label} ${fmtMin(s.minutes)} ${fmtMin(s.budgetMinutes)} ${s.entries} (${s.untimed})${heroes}`);
+        const g = s.gate;
+        const asks = g ? [...g.asks.map((a) => `${a.skill} ${a.level}`), ...(g.coins > 0 ? [`${g.coins} coins`] : [])].join(' + ') : '';
+        const way = g ? `${fmtMin(g.minutes)}${s.offPct === null ? '' : ` (${s.offPct > 0 ? '+' : ''}${s.offPct} %)`}: ${g.name}, ${asks}${g.byWork ? ', its heroes set it' : ''}${g.complete ? '' : ', a floor'}` : s.gateWhy;
+        const c = s.content;
+        const content = c.entries ? `${fmtMin(c.minutes)}, ${c.entries} (${c.untimed})${c.workMinutes !== undefined ? `, ${fmtMin(c.workMinutes)}${c.byWork ? ' (sets it)' : ''}` : ''}` : 'nothing planned';
+        lines.push(`${s.label} | ${way} | ${fmtMin(s.budgetMinutes)} | ${s.heroes} | ${content}`);
     }
     const l = out.layouts;
     if (l?.skipped) {

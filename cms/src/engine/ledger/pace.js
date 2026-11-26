@@ -112,6 +112,8 @@ export const PACE_TEXT = Object.freeze({
     waits: Object.freeze({ need: 'waits for', level: 'levels', own: 'its own time' }),
     coins: (n) => `${n} ${n === 1 ? 'coin' : 'coins'}`,
     heroes: (n) => `${n} ${n === 1 ? 'hero' : 'heroes'}`,
+    /** A count of a named thing: "1 Oak Forest", "2 Quarries". */
+    count: (n, name) => `${n} ${n === 1 ? name : /[^aeiou]y$/i.test(name) ? `${name.slice(0, -1)}ies` : /(s|x|ch|sh)$/i.test(name) ? `${name}es` : `${name}s`}`,
     rate: (n) => (n >= 100 ? `${Math.round(n)}` : n >= 10 ? n.toFixed(1) : n.toFixed(2)),
     earning: (n) => `earning ${n} ${n === 1 ? 'coin' : 'coins'}`,
     noCoins: 'nothing earns its coins by then',
@@ -412,6 +414,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         tierOf: tierOfKey, unitHours, costHours, hallUnitHours, horizonHours: () => settings.paybackHours, hallHorizonHours: () => settings.hallPaybackHours,
         hallCoinHours: (coins, cap) => coinCostHours(coins, BEFORE_HALL, cap),
         campNodes: settings.layouts[settings.layout],
+        campSpawners: settings.layoutSpawners[settings.layout],
         sitePlaces: settings.sitePlaces,
         // As `fed` feeds it: materials in full by the gatherers they need, what boosts spend by one hero on each.
         inputScale: (rate, cap, profile) => {
@@ -1268,11 +1271,124 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         return out;
     }
 
+    // ── the way out of a stage ─────────────────────────────────────────────────────────────────
+    /** The world's places by the tier they are of (a settle rule's rung): `Map<tier, key[]>`. */
+    const placesByTier = new Map();
+    for (const [key, at] of reach) {
+        const rule = at?.rule;
+        if (rule?.how !== HOW.SETTLE || at.planned || !Number.isInteger(at.tier) || !Number.isInteger(rule.floor)) continue;
+        if (!placesByTier.has(rule.floor)) placesByTier.set(rule.floor, []);
+        placesByTier.get(rule.floor).push(key);
+    }
+
+    /**
+     * Hours from a new game to a skill level at a profile with no work later than stage `cap`, and the
+     * guild's hero-hours they take: each level as its track has it ({@link trackOf}: at the stage that
+     * first asks past it), but at `cap` where that stage is later, and on past the track's top.
+     * `{ hours, work }`. A way out is levelled with its own stage's work, never the next stage's.
+     */
+    function levelTimeTo(skill, level, profile, cap) {
+        const target = Math.min(MAX_SKILL_LEVEL, Math.floor(level));
+        const track = trackOf(skill);
+        let hours = 0;
+        let work = 0;
+        for (let l = 1; l < target && Number.isFinite(hours); l++) {
+            const row = track.levels[l - 1];
+            if (row && row.tier <= cap) {
+                hours += row.hours[profile];
+                work += row.work[profile];
+                continue;
+            }
+            const best = bestXp(skill, l, profile, cap);
+            const h = best.xp > 0 ? (xpForLevel(l + 1) - xpForLevel(l)) / best.xp : Infinity;
+            hours += h;
+            work += h * (best.work ? Math.min(best.need, best.have) : 1);
+        }
+        return { hours, work };
+    }
+
+    /**
+     * Settling one place as the way out of stage `tier` at the curve's player: its level in each
+     * skill it asks (each by its own hero, with no work past the stage: {@link levelTimeTo}), then its
+     * price (`priceHours`: its coins, earned from then), the path (`pathHours`); and the guild's
+     * hero-hours for both (`heroHours`: each level's work and the price once), put in by the guild's
+     * heroes ({@link hoursForWork}). What else settling it needs (the place before, the ring's star)
+     * is left out: it has its own times.
+     */
+    function placeWayOut(key, tier) {
+        const at = reach.get(key);
+        const rule = at.rule;
+        let start = 0;
+        let complete = true;
+        let levelHeroHours = 0;
+        const asks = [];
+        for (const g of rule.gates) {
+            // Combat and a fighting style are trained by fights, which the calculator does not time: a floor.
+            if (g.skill === COMBAT || isCombatStyle(g.skill)) {
+                asks.push({ skill: g.skill, level: g.level, hours: null });
+                complete = false;
+                continue;
+            }
+            const { hours, work } = levelTimeTo(g.skill, g.level, TARGET, tier);
+            asks.push({ skill: g.skill, level: g.level, hours });
+            if (hours > start) start = hours;
+            levelHeroHours += work;
+        }
+        const give = rule.gives.find(x => x.key === key) || { key, chance: 1 };
+        const price = stepOf(rule, give, TARGET, at.tier, start);
+        const pathHours = start + price.hours;
+        const heroHours = levelHeroHours + stepWork(key, TARGET, new Map());
+        const workHours = Number.isFinite(heroHours) ? hoursForWork(heroHours) : Infinity;
+        const hours = Math.max(pathHours, workHours);
+        return {
+            place: key, name: nameOf(key), ring: rule.ring ?? null, asks, coins: rule.coins || 0,
+            levelHours: start, priceHours: price.hours, pathHours, levelHeroHours, heroHours, workHours, hours,
+            byWork: Number.isFinite(hours) && workHours > pathHours, complete: complete && Number.isFinite(hours)
+        };
+    }
+
+    const stageTiers = [...new Set(settings.stages.map(s => s.tier))].sort((a, b) => a - b);
+    const gateMemo = new Map();
+    /**
+     * The way out of a stage at the curve's player (BALANCE_RULES section 8, owner 2026-11-26:
+     * leaving a stage means settling the next place): the soonest of the next stage's places
+     * ({@link placeWayOut}), with the stage's heroes, a fully timed one before any floor.
+     * `{ tier, next, why, heroes, place, name, ring, asks: [{ skill, level, hours }], coins,
+     * levelHours, priceHours, pathHours, levelHeroHours, heroHours, workHours, hours, byWork, complete,
+     * needs: [{ key, name, hours }], places }`: `why` is null, `'last'` for the last stage, or
+     * `'none'` when no place is of the next stage's tier; `needs` what else settling the place needs,
+     * each at its arrival, as information; `places` how many it was the soonest of.
+     */
+    function gateOf(tier) {
+        if (gateMemo.has(tier)) return gateMemo.get(tier);
+        const next = stageTiers.find(t => t > tier) ?? null;
+        const base = { tier, next, heroes: heroesAt(settings, tier), place: null, hours: null, needs: [], places: 0 };
+        let out;
+        if (next === null) {
+            out = { ...base, why: 'last' };
+        } else {
+            const keys = placesByTier.get(next) || [];
+            // A place whose time is a floor (a fighting style's level) comes after every timed one.
+            const timed = keys.map(k => placeWayOut(k, tier))
+                .sort((a, b) => b.complete - a.complete || a.hours - b.hours || a.heroHours - b.heroHours || a.place.localeCompare(b.place));
+            if (!timed.length) {
+                out = { ...base, why: 'none' };
+            } else {
+                const best = timed[0];
+                const needs = reach.get(best.place).rule.needs.map(k => ({ key: k, name: nameOf(k), hours: arrivalOf(k, TARGET).hours }));
+                out = { ...base, ...best, why: null, needs, places: timed.length };
+            }
+        }
+        gateMemo.set(tier, out);
+        return out;
+    }
+
     const stageMemo = new Map();
     /**
-     * A stage at the curve's player ({@link TARGET}): when a new game first has everything planned for
-     * it, against its budget, with the reference guild's heroes. Each entry at its arrival
-     * ({@link arrivalOf}), and the stage no sooner than the guild's heroes can put in all the work of
+     * A stage at the curve's player ({@link TARGET}): its way out (`gate`, {@link gateOf}), which its
+     * budget times, and its full content, information only: when a new game first has everything
+     * planned for it, with the reference guild's heroes. Each entry at its arrival
+     * ({@link arrivalOf}), and the content no sooner than the guild's heroes can put in all the work of
      * every entry planned for it and the stages before (`heroHours`, each level and step once, at
      * `workHours`); `pathHours` is the slowest entry's path with every skill levelled side by side.
      */
@@ -1299,7 +1415,8 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             tier, profile: TARGET, entries: keys.length, budgetMinutes: stage?.budgetMinutes ?? null,
             hours, pathHours, heroHours, workHours, heroes: heroesAt(settings, tier), byWork: keys.length > 0 && workHours > pathHours,
             slowest, untimed, timed,
-            complete: timed.every(t => t.complete)
+            complete: timed.every(t => t.complete),
+            gate: gateOf(tier)
         };
         stageMemo.set(tier, out);
         return out;
@@ -1309,6 +1426,19 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     const nameOf = (key) => ledger.world.names.get(key) ?? parseKey(key).id;
     /** A count of heroes in words, to a tenth: "3.2 heroes". */
     const heroCount = (n) => PACE_TEXT.heroes(n >= 10 ? Math.round(n) : Math.round(n * 10) / 10);
+    /** What a way out asks, in words: "Mining 10 and 420 coins". */
+    const wayOutAsks = (g) => {
+        const parts = [...g.asks.map(a => `${PACE_TEXT.skill(a.skill)} ${a.level}`), ...(g.coins > 0 ? [PACE_TEXT.coins(g.coins)] : [])];
+        return parts.length > 1 ? `${parts.slice(0, -1).join(', ')} and ${parts[parts.length - 1]}` : parts[0] || 'nothing';
+    };
+    /** Why a way out is never had, in words. */
+    const wayOutNever = (g) => {
+        const level = g.asks.find(a => a.hours !== null && !Number.isFinite(a.hours));
+        if (level) return `no work of ${PACE_TEXT.skill(level.skill)} reaches ${level.level} by then`;
+        return Number.isFinite(g.priceHours) ? 'its time cannot be worked out' : PACE_TEXT.noCoins;
+    };
+    /** A stage's full content in words: "146 entries, had 7 h in". */
+    const contentWords = (s) => `${s.entries} entr${s.entries === 1 ? 'y' : 'ies'}, had ${PACE_TEXT.hours(s.hours)} in`;
     const workName = (work) => {
         if (!work) return '—';
         const t = work.target;
@@ -1407,8 +1537,9 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
 
         // A node whose camp makes much more of it in the dense layout than in the sparse one: the site's layout moves the pace.
         for (const row of layoutRows()) {
-            const n = settings.layouts;
-            add('layout', row.work.entry, `${workName(row.work)} at ${AT_TARGET}, worked from ${nameOf(tokenKey(row.camp))}: ${n.sparse} in reach make ${PACE_TEXT.rate(row.sparse)} an hour and ${n.dense} make ${PACE_TEXT.rate(row.dense)} (+${Math.round(row.off * 100)} %, over ±${settings.tolerancePct} %): one hero is not kept busy by ${n.sparse}, so how its site is laid out moves the pace (BALANCE_RULES section 2: a lone hero at one node is busy about half the time).`, {
+            const n = row.nodes;
+            const by = (layout) => (row.spawner ? ` (${PACE_TEXT.count(row.spawners[layout], nameOf(tokenKey(row.spawner)))})` : '');
+            add('layout', row.work.entry, `${workName(row.work)} at ${AT_TARGET}, worked from ${nameOf(tokenKey(row.camp))}: ${n.sparse} in reach${by('sparse')} make ${PACE_TEXT.rate(row.sparse)} an hour and ${n.dense}${by('dense')} make ${PACE_TEXT.rate(row.dense)} (+${Math.round(row.off * 100)} %, over ±${settings.tolerancePct} %): one hero is not kept busy by ${n.sparse}, so how its site is laid out moves the pace (BALANCE_RULES section 2: a lone hero at one node is busy about half the time).`, {
                 name: workName(row.work)
             });
         }
@@ -1430,20 +1561,33 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             add('unlock-wall', key, `Its own step (${stepWords(r)}) takes ${PACE_TEXT.hours(r.own)} at ${AT_TARGET} once it can start (${PACE_TEXT.hours(r.start)} in), ${PACE_TEXT.times(ratio)} the ${formatMinutes(expected)} the pace allows a wait there (a level at ${level} on the curve, at least a check-in).`);
         }
 
-        // Stage time against its budget.
+        // A stage's way out against its budget (owner, 2026-11-26: leaving a stage means settling the next place);
+        // its full content beside it, information only.
         for (const stage of settings.stages) {
             const s = stageOf(stage.tier);
-            if (!s.entries) continue;
-            const minutes = s.hours * 60;
-            const off = minutes / stage.budgetMinutes - 1;
+            const g = s.gate;
+            const label = tierLabel(stage.tier);
+            const content = s.entries ? ` Its full content (${contentWords(s)}) is information` : '';
+            if (!g.place) {
+                if (g.why === 'none' && s.entries) {
+                    add('stage-budget', `stage:${stage.tier}`, `${label} has no place of ${tierLabel(g.next)} to settle, so its way out is not timed against its budget of ${formatMinutes(stage.budgetMinutes)}.${content}.`, {
+                        name: label, severity: 'info'
+                    });
+                }
+                continue;
+            }
+            const off = g.hours * 60 / stage.budgetMinutes - 1;
             if (Math.abs(off) * 100 <= settings.tolerancePct) continue;
-            const slow = s.slowest.slice(0, 3).map(x => `${nameOf(x.key)} (${PACE_TEXT.hours(x.hours)})`).join(', ');
-            const untimed = s.untimed.length ? ` ${s.untimed.length} entr${s.untimed.length === 1 ? 'y has' : 'ies have'} no time` : '';
-            const steps = s.complete ? '' : `${untimed ? ' and' : ''} some steps are not timed`;
-            const floor = untimed || steps ? ` A floor:${untimed}${steps || ' '}`.trimEnd() + '.' : '';
-            const heroes = s.byWork ? ` Its ${PACE_TEXT.heroes(s.heroes)} set it: ${PACE_TEXT.hours(s.heroHours)} of the guild's work by then, where every skill levelled side by side would take ${PACE_TEXT.hours(s.pathHours)}.` : '';
-            add('stage-budget', `stage:${stage.tier}`, `${tierLabel(stage.tier)} is done ${PACE_TEXT.hours(s.hours)} into a new game at ${AT_TARGET}, ${off > 0 ? `${Math.round(off * 100)} % over` : `${Math.round(-off * 100)} % under`} its budget of ${formatMinutes(stage.budgetMinutes)} (±${settings.tolerancePct} %).${slow ? ` Slowest: ${slow}.` : ''}${heroes}${floor}`, {
-                name: tierLabel(stage.tier), related: s.slowest.map(x => x.key)
+            const settling = `${label}'s way out, settling ${g.name} (${wayOutAsks(g)})`;
+            const when = Number.isFinite(g.hours)
+                ? `is had ${PACE_TEXT.hours(g.hours)} into a new game at ${AT_TARGET}, ${off > 0 ? `${Math.round(off * 100)} % over` : `${Math.round(-off * 100)} % under`} its budget of ${formatMinutes(stage.budgetMinutes)} (±${settings.tolerancePct} %)`
+                : `is never had at ${AT_TARGET}: ${wayOutNever(g)}`;
+            const heroes = g.byWork ? ` Its ${PACE_TEXT.heroes(g.heroes)} set it: ${PACE_TEXT.hours(g.heroHours)} of the guild's work, where the levels side by side and the price take ${PACE_TEXT.hours(g.pathHours)}.` : '';
+            const floor = g.complete || !Number.isFinite(g.hours) ? '' : ' A floor: a level it asks is trained by fights, which are not timed.';
+            const later = g.needs.filter(n => n.hours > g.hours);
+            const needs = later.length ? ` Settling it also waits for ${later.map(n => `${n.name} (had ${PACE_TEXT.hours(n.hours)} in)`).join(' and ')}.` : '';
+            add('stage-budget', `stage:${stage.tier}`, `${settling}, ${when}.${heroes}${floor}${needs}${content ? `${content}, not held to the budget.` : ''}`, {
+                name: label, related: [g.place]
             });
         }
 
@@ -1504,26 +1648,37 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     }
 
     let layoutMemo = null;
+    /** The nodes a camp hands one hero at a work in a layout, and the spawners they stand for (a Forest's trees by its Forests). */
+    const layoutNodesOf = (work, layout) => profiles.campNodesOf(work.target, { nodes: settings.layouts[layout], spawners: settings.layoutSpawners[layout] });
+
     /**
      * The nodes whose camp makes them past the tolerance faster in the dense layout than in the sparse
      * one at the curve's player ({@link TARGET}), each at its own stage with the rest of its setup as
-     * chosen: `[{ work, camp, sparse, dense, off }]`, `sparse` and `dense` what it makes an hour.
+     * chosen: `[{ work, camp, sparse, dense, off, nodes, spawners, spawner }]`, `sparse` and `dense`
+     * what it makes an hour, `nodes` and `spawners` each layout's, `spawner` the one they stand for.
      */
     function layoutRows() {
         if (layoutMemo) return layoutMemo;
         const out = [];
-        const n = settings.layouts;
         const made = (r) => (r?.ok ? Object.values(r.items || {}).reduce((a, b) => a + b, 0) : 0);
         for (const work of works) {
             if (work.tier === null || !counted(work.entry)) continue;
             const { setup, rate } = profiles.profileOf(work.target, TARGET, work.tier);
-            if (!rate.ok || !isObject(setup.camp) || n.dense <= n.sparse) continue;
+            if (!rate.ok || !isObject(setup.camp)) continue;
+            const s = layoutNodesOf(work, 'sparse');
+            const d = layoutNodesOf(work, 'dense');
+            if (d.nodes <= s.nodes) continue;
             const at = (members) => made(rates.numbersOf(work.target, { ...setup, camp: { ...setup.camp, members } }));
-            const sparse = at(n.sparse);
-            const dense = at(n.dense);
+            const sparse = at(s.nodes);
+            const dense = at(d.nodes);
             if (!(sparse > 0)) continue;
             const off = dense / sparse - 1;
-            if (off * 100 > settings.tolerancePct) out.push({ work, camp: setup.camp.id, sparse, dense, off });
+            if (off * 100 > settings.tolerancePct) {
+                out.push({
+                    work, camp: setup.camp.id, sparse, dense, off, nodes: { sparse: s.nodes, dense: d.nodes },
+                    spawners: { sparse: s.spawners, dense: d.spawners }, spawner: s.spawners ? profiles.contextOf(work.target).family : null
+                });
+            }
         }
         layoutMemo = out;
         return out;
@@ -2364,6 +2519,8 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         skills: () => [...new Set([...askedAt.keys(), ...skillsOfWork.keys()])].sort(),
         pathOf: (key, profile) => ({ ...readyOf(key, profile), steps: criticalPath(key, profile) }),
         stageOf,
+        /** The way out of a stage: the soonest of the next stage's places, its levels and its price, with the stage's heroes (what its budget times). */
+        gateOf,
         ringOpensAt,
         hallPaybacks,
         hallName,

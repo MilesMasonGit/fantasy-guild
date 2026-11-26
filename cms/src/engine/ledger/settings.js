@@ -18,8 +18,9 @@ import { PLAN_TIER_LEVELS, tierOrNull, tierLevelsOf, tierLevelAt } from '../../.
  *       heroesByTier: [{ tier, heroes }],            // the reference guild's heroes from a stage on: one at copper to eight
  *       gatherersPerMaker: 2.2,                      // a full chain is one maker and this many gatherers: a chain's heroes at most
  *       layouts: { sparse: 2, dense: 4 },            // the nodes a camp works in each layout the pace can time
+ *       layoutSpawners: { sparse: 1, dense: 2 },     // the spawners a site worked from one stands, each with its whole allowance
  *       layout: 'sparse',                            // the layout the pace times (the other is reported beside it)
- *       sitePlaces: { buildings: 8, perKind: 4 },    // building places round a work, and at most this many boosting one kind
+ *       sitePlaces: { places: 12, buildings: 8, perKind: 4 }, // places round a node, at most this many for buildings, this many boosting one kind
  *       paybackHours: 2,                             // a sensible investor's boost pays for itself within this
  *       hallPaybackHours: 24,                        // and a Guild Hall rank within this
  *       steadyFindsPerDay: 1,                        // a rare find on repeatable work this often a day is a steady source
@@ -135,11 +136,19 @@ export const LAYOUTS = Object.freeze(['sparse', 'dense']);
 const DEFAULT_LAYOUTS = Object.freeze({ sparse: 2, dense: 4 });
 
 /**
- * A work site's building places (BALANCE_RULES section 5: Tokens 128 u apart within the
- * 240 u reach, twelve places round a node): about eight for buildings once the camp, the nodes and
- * a spawner stand, and about four of them max one kind of boost, so a site leans one or two ways.
+ * A site worked from a spawner (a Forest, an Orchard, a Quarry) counts the spawner's whole allowance
+ * as its nodes, since its nodes come only by the allowance (owner, 2026-11-26): one spawner in the
+ * sparse layout, two in the dense.
  */
-const DEFAULT_SITE_PLACES = Object.freeze({ buildings: 8, perKind: 4 });
+const DEFAULT_LAYOUT_SPAWNERS = Object.freeze({ sparse: 1, dense: 2 });
+
+/**
+ * A work site's places (BALANCE_RULES section 5: Tokens 128 u apart within the 240 u reach, twelve
+ * places round a node): its camp, its other nodes and its spawners stand in some, and the rest hold
+ * buildings, at most about eight; about four of them max one kind of boost, so a site leans one or
+ * two ways.
+ */
+const DEFAULT_SITE_PLACES = Object.freeze({ places: 12, buildings: 8, perKind: 4 });
 
 export const DEFAULT_LEDGER_SETTINGS = Object.freeze({
     paceRule: DEFAULT_PACE_RULE,
@@ -156,6 +165,7 @@ export const DEFAULT_LEDGER_SETTINGS = Object.freeze({
     // The reference guild (BALANCE_RULES section 8, owner 2026-11-25): a chain is one maker and about 2 gatherers at every tier, 2.2 at Typical.
     gatherersPerMaker: 2.2,
     layouts: DEFAULT_LAYOUTS,
+    layoutSpawners: DEFAULT_LAYOUT_SPAWNERS,
     layout: LAYOUTS[0],
     sitePlaces: DEFAULT_SITE_PLACES,
     paybackHours: 2,
@@ -216,6 +226,7 @@ export function settingsOf(raw) {
         heroesByTier: heroesByTierOf(src.heroesByTier),
         gatherersPerMaker: positive(src.gatherersPerMaker, d.gatherersPerMaker),
         layouts: layoutsOf(src.layouts),
+        layoutSpawners: layoutsOf(src.layoutSpawners, DEFAULT_LAYOUT_SPAWNERS),
         layout: LAYOUTS.includes(src.layout) ? src.layout : d.layout,
         sitePlaces: sitePlacesOf(src.sitePlaces),
         paybackHours: positive(src.paybackHours, d.paybackHours),
@@ -357,18 +368,23 @@ function heroesByTierOf(raw) {
     return byTier.size ? [...byTier.values()].sort((a, b) => a.tier - b.tier) : clone(DEFAULT_HEROES_BY_TIER);
 }
 
-/** The layouts' nodes a camp works, each whole from 1, dense never under sparse. */
-function layoutsOf(raw) {
+/** A count by layout (a camp's nodes, a site's spawners), each whole from 1, dense never under sparse. */
+function layoutsOf(raw, d = DEFAULT_LAYOUTS) {
     const src = isObject(raw) ? raw : {};
-    const sparse = Math.max(1, Math.floor(positive(src.sparse, DEFAULT_LAYOUTS.sparse)));
-    return { sparse, dense: Math.max(sparse, Math.floor(positive(src.dense, DEFAULT_LAYOUTS.dense))) };
+    const sparse = Math.max(1, Math.floor(positive(src.sparse, d.sparse)));
+    return { sparse, dense: Math.max(sparse, Math.floor(positive(src.dense, d.dense))) };
 }
 
-/** A site's building places and the most of one kind, each whole from 1, the kind's never past the places. */
+/** A site's places, its building places and the most of one kind, each whole from 1, the kind's never past the buildings'. */
 function sitePlacesOf(raw) {
     const src = isObject(raw) ? raw : {};
-    const buildings = Math.max(1, Math.floor(positive(src.buildings, DEFAULT_SITE_PLACES.buildings)));
-    return { buildings, perKind: Math.min(buildings, Math.max(1, Math.floor(positive(src.perKind, DEFAULT_SITE_PLACES.perKind)))) };
+    const d = DEFAULT_SITE_PLACES;
+    const buildings = Math.max(1, Math.floor(positive(src.buildings, d.buildings)));
+    return {
+        places: Math.max(1, Math.floor(positive(src.places, d.places))),
+        buildings,
+        perKind: Math.min(buildings, Math.max(1, Math.floor(positive(src.perKind, d.perKind)))),
+    };
 }
 
 /** The reference guild's heroes at a stage: the last point at or before it, else the first point's. */
