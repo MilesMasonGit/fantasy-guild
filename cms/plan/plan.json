@@ -2434,6 +2434,14 @@
       "token_chum_station": {
         "status": "live",
         "tier": 2
+      },
+      "token_hideout": {
+        "status": "live",
+        "tier": 0
+      },
+      "token_slime_puddle": {
+        "status": "live",
+        "tier": 1
       }
     },
     "recipes": {
@@ -3964,6 +3972,3730 @@
         },
         "autoSyncId": true,
         "id": "item_pearl"
+      },
+      "item_string": {
+        "name": "String",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 0,
+          "note": "Tailor 1 (material); made with Flax; used by Fishing Rod, Fine Fishing Rod, Oak Bow, Copper Crossbow, Fir Bow, Iron Crossbow, Maple Bow, Mythril Crossbow, Mahogany Bow, Adamantine Crossbow, Ebony Bow, Darkmetal Crossbow, Canvas, Sack, Sail, Drapes; also used by: Fletching: bows, crossbows. (content_tailor.md, The shape)",
+          "catalogueId": "string",
+          "skill": "tailor",
+          "level": 1,
+          "madeWith": [
+            "item_flax"
+          ],
+          "usedBy": [
+            "item_fishing_rod",
+            "item_fine_fishing_rod",
+            "item_oak_bow",
+            "item_copper_crossbow",
+            "item_fir_bow",
+            "item_iron_crossbow",
+            "item_maple_bow",
+            "item_mythril_crossbow",
+            "item_mahogany_bow",
+            "item_adamantine_crossbow",
+            "item_ebony_bow",
+            "item_darkmetal_crossbow",
+            "item_canvas",
+            "item_sack",
+            "item_sail",
+            "item_drapes"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_string"
+      },
+      "item_linen": {
+        "name": "Linen",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 0,
+          "note": "Tailor 2 (material); made with Flax; used by Linen Hat, Linen Hood, Linen Gloves, Linen Grips, Linen Slippers, Linen Soft Boots, Linen Robe, Linen Tunic, Linen Cape, Canvas, Sack; also used by: Tailor: tier 1; Canvas, Sack. (content_tailor.md, The shape)",
+          "catalogueId": "linen",
+          "skill": "tailor",
+          "level": 2,
+          "madeWith": [
+            "item_flax"
+          ],
+          "usedBy": [
+            "item_linen_hat",
+            "item_linen_hood",
+            "item_linen_gloves",
+            "item_linen_grips",
+            "item_linen_slippers",
+            "item_linen_soft_boots",
+            "item_linen_robe",
+            "item_linen_tunic",
+            "item_linen_cape",
+            "item_canvas",
+            "item_sack"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_linen"
+      },
+      "item_linen_hat": {
+        "name": "Linen Hat",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 0,
+          "note": "Tailor 3 (hat, Magic); made with Linen. (content_tailor.md, The shape)",
+          "catalogueId": "linen_hat",
+          "skill": "tailor",
+          "level": 3,
+          "madeWith": [
+            "item_linen"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_linen_hat"
+      },
+      "item_linen_hood": {
+        "name": "Linen Hood",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 0,
+          "note": "Tailor 4 (hat, Stealth); made with Linen. (content_tailor.md, The shape)",
+          "catalogueId": "linen_hood",
+          "skill": "tailor",
+          "level": 4,
+          "madeWith": [
+            "item_linen"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_linen_hood"
+      },
+      "item_linen_gloves": {
+        "name": "Linen Gloves",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 0,
+          "note": "Tailor 5 (gloves, Magic); made with Linen. (content_tailor.md, The shape)",
+          "catalogueId": "linen_gloves",
+          "skill": "tailor",
+          "level": 5,
+          "madeWith": [
+            "item_linen"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_linen_gloves"
+      },
+      "item_linen_grips": {
+        "name": "Linen Grips",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 2,
+          "note": "Tailor 6 (gloves, Stealth); made with Linen. (content_tailor.md, The shape)",
+          "catalogueId": "linen_grips",
+          "skill": "tailor",
+          "level": 6,
+          "madeWith": [
+            "item_linen"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_linen_grips"
+      },
+      "item_linen_slippers": {
+        "name": "Linen Slippers",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 2,
+          "note": "Tailor 7 (boots, Magic); made with Linen. (content_tailor.md, The shape)",
+          "catalogueId": "linen_slippers",
+          "skill": "tailor",
+          "level": 7,
+          "madeWith": [
+            "item_linen"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_linen_slippers"
+      },
+      "item_linen_soft_boots": {
+        "name": "Linen Soft Boots",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 2,
+          "note": "Tailor 8 (boots, Stealth); made with Linen. (content_tailor.md, The shape)",
+          "catalogueId": "linen_soft_boots",
+          "skill": "tailor",
+          "level": 8,
+          "madeWith": [
+            "item_linen"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_linen_soft_boots"
+      },
+      "item_linen_robe": {
+        "name": "Linen Robe",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 2,
+          "note": "Tailor 9 (chest, Magic); made with Linen. (content_tailor.md, The shape)",
+          "catalogueId": "linen_robe",
+          "skill": "tailor",
+          "level": 9,
+          "madeWith": [
+            "item_linen"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_linen_robe"
+      },
+      "item_linen_tunic": {
+        "name": "Linen Tunic",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 2,
+          "note": "Tailor 10 (chest, Stealth); made with Linen. (content_tailor.md, The shape)",
+          "catalogueId": "linen_tunic",
+          "skill": "tailor",
+          "level": 10,
+          "madeWith": [
+            "item_linen"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_linen_tunic"
+      },
+      "item_linen_cape": {
+        "name": "Linen Cape",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 2,
+          "note": "Tailor 11 (cape, any style); made with Linen. (content_tailor.md, The shape)",
+          "catalogueId": "linen_cape",
+          "skill": "tailor",
+          "level": 11,
+          "madeWith": [
+            "item_linen"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_linen_cape"
+      },
+      "item_canvas": {
+        "name": "Canvas",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 2,
+          "note": "Tailor 12 (material); made with Linen, String; also used by: Construction: camps. (content_tailor.md, The shape)",
+          "catalogueId": "canvas",
+          "skill": "tailor",
+          "level": 12,
+          "madeWith": [
+            "item_linen",
+            "item_string"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_canvas"
+      },
+      "item_sack": {
+        "name": "Sack",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 2,
+          "note": "Tailor 13 (material); made with Linen, String; also used by: Construction: buildings from level 20. (content_tailor.md, The shape)",
+          "catalogueId": "sack",
+          "skill": "tailor",
+          "level": 13,
+          "madeWith": [
+            "item_linen",
+            "item_string"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_sack"
+      },
+      "item_wool_cloth": {
+        "name": "Wool Cloth",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 20 (material); made with Wool; used by Wool Hat, Wool Hood, Wool Gloves, Wool Grips, Wool Slippers, Wool Soft Boots, Wool Robe, Wool Tunic, Wool Cape, Sail, Hunter's Cloak; also used by: Tailor: tier 2; Sail. (content_tailor.md, The shape)",
+          "catalogueId": "wool_cloth",
+          "skill": "tailor",
+          "level": 20,
+          "madeWith": [
+            "item_wool"
+          ],
+          "usedBy": [
+            "item_wool_hat",
+            "item_wool_hood",
+            "item_wool_gloves",
+            "item_wool_grips",
+            "item_wool_slippers",
+            "item_wool_soft_boots",
+            "item_wool_robe",
+            "item_wool_tunic",
+            "item_wool_cape",
+            "item_sail",
+            "item_hunters_cloak"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_wool_cloth"
+      },
+      "item_wool_hat": {
+        "name": "Wool Hat",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 23 (hat, Magic); made with Wool Cloth. (content_tailor.md, The shape)",
+          "catalogueId": "wool_hat",
+          "skill": "tailor",
+          "level": 23,
+          "madeWith": [
+            "item_wool_cloth"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_wool_hat"
+      },
+      "item_wool_hood": {
+        "name": "Wool Hood",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 24 (hat, Stealth); made with Wool Cloth. (content_tailor.md, The shape)",
+          "catalogueId": "wool_hood",
+          "skill": "tailor",
+          "level": 24,
+          "madeWith": [
+            "item_wool_cloth"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_wool_hood"
+      },
+      "item_wool_gloves": {
+        "name": "Wool Gloves",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 25 (gloves, Magic); made with Wool Cloth. (content_tailor.md, The shape)",
+          "catalogueId": "wool_gloves",
+          "skill": "tailor",
+          "level": 25,
+          "madeWith": [
+            "item_wool_cloth"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_wool_gloves"
+      },
+      "item_wool_grips": {
+        "name": "Wool Grips",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 26 (gloves, Stealth); made with Wool Cloth. (content_tailor.md, The shape)",
+          "catalogueId": "wool_grips",
+          "skill": "tailor",
+          "level": 26,
+          "madeWith": [
+            "item_wool_cloth"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_wool_grips"
+      },
+      "item_wool_slippers": {
+        "name": "Wool Slippers",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 27 (boots, Magic); made with Wool Cloth. (content_tailor.md, The shape)",
+          "catalogueId": "wool_slippers",
+          "skill": "tailor",
+          "level": 27,
+          "madeWith": [
+            "item_wool_cloth"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_wool_slippers"
+      },
+      "item_wool_soft_boots": {
+        "name": "Wool Soft Boots",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 28 (boots, Stealth); made with Wool Cloth. (content_tailor.md, The shape)",
+          "catalogueId": "wool_soft_boots",
+          "skill": "tailor",
+          "level": 28,
+          "madeWith": [
+            "item_wool_cloth"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_wool_soft_boots"
+      },
+      "item_wool_robe": {
+        "name": "Wool Robe",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 29 (chest, Magic); made with Wool Cloth. (content_tailor.md, The shape)",
+          "catalogueId": "wool_robe",
+          "skill": "tailor",
+          "level": 29,
+          "madeWith": [
+            "item_wool_cloth"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_wool_robe"
+      },
+      "item_wool_tunic": {
+        "name": "Wool Tunic",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 30 (chest, Stealth); made with Wool Cloth. (content_tailor.md, The shape)",
+          "catalogueId": "wool_tunic",
+          "skill": "tailor",
+          "level": 30,
+          "madeWith": [
+            "item_wool_cloth"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_wool_tunic"
+      },
+      "item_wool_cape": {
+        "name": "Wool Cape",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 31 (cape, any style); made with Wool Cloth. (content_tailor.md, The shape)",
+          "catalogueId": "wool_cape",
+          "skill": "tailor",
+          "level": 31,
+          "madeWith": [
+            "item_wool_cloth"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_wool_cape"
+      },
+      "item_sail": {
+        "name": "Sail",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 32 (material); made with Wool Cloth, String; also used by: Construction: buildings from level 40. (content_tailor.md, The shape)",
+          "catalogueId": "sail",
+          "skill": "tailor",
+          "level": 32,
+          "madeWith": [
+            "item_wool_cloth",
+            "item_string"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_sail"
+      },
+      "item_hunters_cloak": {
+        "name": "Hunter's Cloak",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 33 (cape, Ranged bonus); made with Wool Cloth, Leather. (content_tailor.md, The shape)",
+          "catalogueId": "hunter_s_cloak",
+          "skill": "tailor",
+          "level": 33,
+          "madeWith": [
+            "item_wool_cloth",
+            "item_leather"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_hunters_cloak"
+      },
+      "item_silk_cloth": {
+        "name": "Silk Cloth",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 40 (material); made with Silk; used by Silk Hat, Silk Hood, Silk Gloves, Silk Grips, Silk Slippers, Silk Soft Boots, Silk Robe, Silk Tunic, Silk Cape, Drapes, Shadow Cloak, Moon Hat, Moon Hood, Moon Gloves, Moon Grips, Moon Slippers, Moon Soft Boots, Moon Robe, Moon Tunic, Moon Cape, Mage's Mantle, Void Hat, Void Hood, Void Gloves, Void Grips, Void Slippers, Void Soft Boots, Void Robe, Void Tunic, Void Cape; also used by: Tailor: tiers 3 to 5; Drapes. (content_tailor.md, The shape)",
+          "catalogueId": "silk_cloth",
+          "skill": "tailor",
+          "level": 40,
+          "madeWith": [
+            "item_silk"
+          ],
+          "usedBy": [
+            "item_silk_hat",
+            "item_silk_hood",
+            "item_silk_gloves",
+            "item_silk_grips",
+            "item_silk_slippers",
+            "item_silk_soft_boots",
+            "item_silk_robe",
+            "item_silk_tunic",
+            "item_silk_cape",
+            "item_drapes",
+            "item_shadow_cloak",
+            "item_moon_hat",
+            "item_moon_hood",
+            "item_moon_gloves",
+            "item_moon_grips",
+            "item_moon_slippers",
+            "item_moon_soft_boots",
+            "item_moon_robe",
+            "item_moon_tunic",
+            "item_moon_cape",
+            "item_mages_mantle",
+            "item_void_hat",
+            "item_void_hood",
+            "item_void_gloves",
+            "item_void_grips",
+            "item_void_slippers",
+            "item_void_soft_boots",
+            "item_void_robe",
+            "item_void_tunic",
+            "item_void_cape"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_silk_cloth"
+      },
+      "item_silk_hat": {
+        "name": "Silk Hat",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 43 (hat, Magic); made with Silk Cloth. (content_tailor.md, The shape)",
+          "catalogueId": "silk_hat",
+          "skill": "tailor",
+          "level": 43,
+          "madeWith": [
+            "item_silk_cloth"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_silk_hat"
+      },
+      "item_silk_hood": {
+        "name": "Silk Hood",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 44 (hat, Stealth); made with Silk Cloth. (content_tailor.md, The shape)",
+          "catalogueId": "silk_hood",
+          "skill": "tailor",
+          "level": 44,
+          "madeWith": [
+            "item_silk_cloth"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_silk_hood"
+      },
+      "item_silk_gloves": {
+        "name": "Silk Gloves",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 45 (gloves, Magic); made with Silk Cloth. (content_tailor.md, The shape)",
+          "catalogueId": "silk_gloves",
+          "skill": "tailor",
+          "level": 45,
+          "madeWith": [
+            "item_silk_cloth"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_silk_gloves"
+      },
+      "item_silk_grips": {
+        "name": "Silk Grips",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 46 (gloves, Stealth); made with Silk Cloth. (content_tailor.md, The shape)",
+          "catalogueId": "silk_grips",
+          "skill": "tailor",
+          "level": 46,
+          "madeWith": [
+            "item_silk_cloth"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_silk_grips"
+      },
+      "item_silk_slippers": {
+        "name": "Silk Slippers",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 47 (boots, Magic); made with Silk Cloth. (content_tailor.md, The shape)",
+          "catalogueId": "silk_slippers",
+          "skill": "tailor",
+          "level": 47,
+          "madeWith": [
+            "item_silk_cloth"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_silk_slippers"
+      },
+      "item_silk_soft_boots": {
+        "name": "Silk Soft Boots",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 48 (boots, Stealth); made with Silk Cloth. (content_tailor.md, The shape)",
+          "catalogueId": "silk_soft_boots",
+          "skill": "tailor",
+          "level": 48,
+          "madeWith": [
+            "item_silk_cloth"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_silk_soft_boots"
+      },
+      "item_silk_robe": {
+        "name": "Silk Robe",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 49 (chest, Magic); made with Silk Cloth. (content_tailor.md, The shape)",
+          "catalogueId": "silk_robe",
+          "skill": "tailor",
+          "level": 49,
+          "madeWith": [
+            "item_silk_cloth"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_silk_robe"
+      },
+      "item_silk_tunic": {
+        "name": "Silk Tunic",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 50 (chest, Stealth); made with Silk Cloth. (content_tailor.md, The shape)",
+          "catalogueId": "silk_tunic",
+          "skill": "tailor",
+          "level": 50,
+          "madeWith": [
+            "item_silk_cloth"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_silk_tunic"
+      },
+      "item_silk_cape": {
+        "name": "Silk Cape",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 51 (cape, any style); made with Silk Cloth. (content_tailor.md, The shape)",
+          "catalogueId": "silk_cape",
+          "skill": "tailor",
+          "level": 51,
+          "madeWith": [
+            "item_silk_cloth"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_silk_cape"
+      },
+      "item_drapes": {
+        "name": "Drapes",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 52 (material); made with Silk Cloth, String; also used by: Construction: fine buildings. (content_tailor.md, The shape)",
+          "catalogueId": "drapes",
+          "skill": "tailor",
+          "level": 52,
+          "madeWith": [
+            "item_silk_cloth",
+            "item_string"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_drapes"
+      },
+      "item_shadow_cloak": {
+        "name": "Shadow Cloak",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 53 (cape, Stealth bonus); made with Silk Cloth, Dark Mote. (content_tailor.md, The shape)",
+          "catalogueId": "shadow_cloak",
+          "skill": "tailor",
+          "level": 53,
+          "madeWith": [
+            "item_silk_cloth",
+            "item_dark_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_shadow_cloak"
+      },
+      "item_moon_hat": {
+        "name": "Moon Hat",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 63 (hat, Magic); made with Silk Cloth, Water Mote. (content_tailor.md, The shape)",
+          "catalogueId": "moon_hat",
+          "skill": "tailor",
+          "level": 63,
+          "madeWith": [
+            "item_silk_cloth",
+            "item_water_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_moon_hat"
+      },
+      "item_moon_hood": {
+        "name": "Moon Hood",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 64 (hat, Stealth); made with Silk Cloth, Water Mote. (content_tailor.md, The shape)",
+          "catalogueId": "moon_hood",
+          "skill": "tailor",
+          "level": 64,
+          "madeWith": [
+            "item_silk_cloth",
+            "item_water_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_moon_hood"
+      },
+      "item_moon_gloves": {
+        "name": "Moon Gloves",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 65 (gloves, Magic); made with Silk Cloth, Water Mote. (content_tailor.md, The shape)",
+          "catalogueId": "moon_gloves",
+          "skill": "tailor",
+          "level": 65,
+          "madeWith": [
+            "item_silk_cloth",
+            "item_water_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_moon_gloves"
+      },
+      "item_moon_grips": {
+        "name": "Moon Grips",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 66 (gloves, Stealth); made with Silk Cloth, Water Mote. (content_tailor.md, The shape)",
+          "catalogueId": "moon_grips",
+          "skill": "tailor",
+          "level": 66,
+          "madeWith": [
+            "item_silk_cloth",
+            "item_water_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_moon_grips"
+      },
+      "item_moon_slippers": {
+        "name": "Moon Slippers",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 67 (boots, Magic); made with Silk Cloth, Water Mote. (content_tailor.md, The shape)",
+          "catalogueId": "moon_slippers",
+          "skill": "tailor",
+          "level": 67,
+          "madeWith": [
+            "item_silk_cloth",
+            "item_water_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_moon_slippers"
+      },
+      "item_moon_soft_boots": {
+        "name": "Moon Soft Boots",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 68 (boots, Stealth); made with Silk Cloth, Water Mote. (content_tailor.md, The shape)",
+          "catalogueId": "moon_soft_boots",
+          "skill": "tailor",
+          "level": 68,
+          "madeWith": [
+            "item_silk_cloth",
+            "item_water_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_moon_soft_boots"
+      },
+      "item_moon_robe": {
+        "name": "Moon Robe",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 69 (chest, Magic); made with Silk Cloth, Water Mote. (content_tailor.md, The shape)",
+          "catalogueId": "moon_robe",
+          "skill": "tailor",
+          "level": 69,
+          "madeWith": [
+            "item_silk_cloth",
+            "item_water_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_moon_robe"
+      },
+      "item_moon_tunic": {
+        "name": "Moon Tunic",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 70 (chest, Stealth); made with Silk Cloth, Water Mote. (content_tailor.md, The shape)",
+          "catalogueId": "moon_tunic",
+          "skill": "tailor",
+          "level": 70,
+          "madeWith": [
+            "item_silk_cloth",
+            "item_water_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_moon_tunic"
+      },
+      "item_moon_cape": {
+        "name": "Moon Cape",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 71 (cape, any style); made with Silk Cloth, Water Mote. (content_tailor.md, The shape)",
+          "catalogueId": "moon_cape",
+          "skill": "tailor",
+          "level": 71,
+          "madeWith": [
+            "item_silk_cloth",
+            "item_water_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_moon_cape"
+      },
+      "item_mages_mantle": {
+        "name": "Mage's Mantle",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 73 (cape, Magic bonus); made with Silk Cloth, Light Mote. (content_tailor.md, The shape)",
+          "catalogueId": "mage_s_mantle",
+          "skill": "tailor",
+          "level": 73,
+          "madeWith": [
+            "item_silk_cloth",
+            "item_light_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_mages_mantle"
+      },
+      "item_void_hat": {
+        "name": "Void Hat",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 83 (hat, Magic); made with Silk Cloth, Dark Mote. (content_tailor.md, The shape)",
+          "catalogueId": "void_hat",
+          "skill": "tailor",
+          "level": 83,
+          "madeWith": [
+            "item_silk_cloth",
+            "item_dark_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_void_hat"
+      },
+      "item_void_hood": {
+        "name": "Void Hood",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 84 (hat, Stealth); made with Silk Cloth, Dark Mote. (content_tailor.md, The shape)",
+          "catalogueId": "void_hood",
+          "skill": "tailor",
+          "level": 84,
+          "madeWith": [
+            "item_silk_cloth",
+            "item_dark_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_void_hood"
+      },
+      "item_void_gloves": {
+        "name": "Void Gloves",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 85 (gloves, Magic); made with Silk Cloth, Dark Mote. (content_tailor.md, The shape)",
+          "catalogueId": "void_gloves",
+          "skill": "tailor",
+          "level": 85,
+          "madeWith": [
+            "item_silk_cloth",
+            "item_dark_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_void_gloves"
+      },
+      "item_void_grips": {
+        "name": "Void Grips",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 86 (gloves, Stealth); made with Silk Cloth, Dark Mote. (content_tailor.md, The shape)",
+          "catalogueId": "void_grips",
+          "skill": "tailor",
+          "level": 86,
+          "madeWith": [
+            "item_silk_cloth",
+            "item_dark_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_void_grips"
+      },
+      "item_void_slippers": {
+        "name": "Void Slippers",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 87 (boots, Magic); made with Silk Cloth, Dark Mote. (content_tailor.md, The shape)",
+          "catalogueId": "void_slippers",
+          "skill": "tailor",
+          "level": 87,
+          "madeWith": [
+            "item_silk_cloth",
+            "item_dark_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_void_slippers"
+      },
+      "item_void_soft_boots": {
+        "name": "Void Soft Boots",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 88 (boots, Stealth); made with Silk Cloth, Dark Mote. (content_tailor.md, The shape)",
+          "catalogueId": "void_soft_boots",
+          "skill": "tailor",
+          "level": 88,
+          "madeWith": [
+            "item_silk_cloth",
+            "item_dark_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_void_soft_boots"
+      },
+      "item_void_robe": {
+        "name": "Void Robe",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 89 (chest, Magic); made with Silk Cloth, Dark Mote. (content_tailor.md, The shape)",
+          "catalogueId": "void_robe",
+          "skill": "tailor",
+          "level": 89,
+          "madeWith": [
+            "item_silk_cloth",
+            "item_dark_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_void_robe"
+      },
+      "item_void_tunic": {
+        "name": "Void Tunic",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 90 (chest, Stealth); made with Silk Cloth, Dark Mote. (content_tailor.md, The shape)",
+          "catalogueId": "void_tunic",
+          "skill": "tailor",
+          "level": 90,
+          "madeWith": [
+            "item_silk_cloth",
+            "item_dark_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_void_tunic"
+      },
+      "item_void_cape": {
+        "name": "Void Cape",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Tailor 91 (cape, any style); made with Silk Cloth, Dark Mote. (content_tailor.md, The shape)",
+          "catalogueId": "void_cape",
+          "skill": "tailor",
+          "level": 91,
+          "madeWith": [
+            "item_silk_cloth",
+            "item_dark_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_void_cape"
+      },
+      "item_flax": {
+        "name": "Flax",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 0,
+          "note": "Farming 3 (Material); from Flax Field; used by String, Linen.",
+          "catalogueId": "flax",
+          "skill": "farming",
+          "level": 3,
+          "usedBy": [
+            "item_string",
+            "item_linen"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_flax"
+      },
+      "item_silk": {
+        "name": "Silk",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "No skill, no level of its own (Material); from enemy drop (enemies session); used by Silk Cloth.",
+          "catalogueId": "silk",
+          "usedBy": [
+            "item_silk_cloth"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_silk"
+      },
+      "item_fire_mote": {
+        "name": "Fire Mote",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 0,
+          "note": "Enchanting, no level of its own (Mote); from Leylines: Starter Camp; hot places; used by Fireward, Novice Wand, Fire Tome, Novice Fire Staff, Adept Fire Staff, Enchanted Silver Ruby Ring, Expert Fire Staff, Enchanted Silver Ruby Amulet, Enchanted Gold Ruby Ring, Master Fire Staff, Enchanted Gold Ruby Amulet, Grandmaster Fire Staff; used for: First Wand, Fire Tome and Staffs, ruby jewellery. (content_enchanting.md, Leylines and Motes)",
+          "catalogueId": "fire_mote",
+          "skill": "enchanting",
+          "usedBy": [
+            "item_fireward",
+            "item_novice_wand",
+            "item_fire_tome",
+            "item_novice_fire_staff",
+            "item_adept_fire_staff",
+            "item_enchanted_silver_ruby_ring",
+            "item_expert_fire_staff",
+            "item_enchanted_silver_ruby_amulet",
+            "item_enchanted_gold_ruby_ring",
+            "item_master_fire_staff",
+            "item_enchanted_gold_ruby_amulet",
+            "item_grandmaster_fire_staff"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_fire_mote"
+      },
+      "item_water_mote": {
+        "name": "Water Mote",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 0,
+          "note": "Enchanting, no level of its own (Mote); from Leylines: ring 1; coasts, lakes; used by Frostward, Ice Tome, Novice Ice Staff, Adept Wand, Adept Ice Staff, Enchanted Silver Sapphire Ring, Expert Ice Staff, Enchanted Silver Sapphire Amulet, Enchanted Gold Sapphire Ring, Master Ice Staff, Enchanted Gold Sapphire Amulet, Grandmaster Ice Staff, Moon Hat, Moon Hood, Moon Gloves, Moon Grips, Moon Slippers, Moon Soft Boots, Moon Robe, Moon Tunic, Moon Cape; used for: Second Wand; with Wind, Ice Tome and Staffs; sapphire jewellery. (content_enchanting.md, Leylines and Motes)",
+          "catalogueId": "water_mote",
+          "skill": "enchanting",
+          "usedBy": [
+            "item_frostward",
+            "item_ice_tome",
+            "item_novice_ice_staff",
+            "item_adept_wand",
+            "item_adept_ice_staff",
+            "item_enchanted_silver_sapphire_ring",
+            "item_expert_ice_staff",
+            "item_enchanted_silver_sapphire_amulet",
+            "item_enchanted_gold_sapphire_ring",
+            "item_master_ice_staff",
+            "item_enchanted_gold_sapphire_amulet",
+            "item_grandmaster_ice_staff",
+            "item_moon_hat",
+            "item_moon_hood",
+            "item_moon_gloves",
+            "item_moon_grips",
+            "item_moon_slippers",
+            "item_moon_soft_boots",
+            "item_moon_robe",
+            "item_moon_tunic",
+            "item_moon_cape"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_water_mote"
+      },
+      "item_wind_mote": {
+        "name": "Wind Mote",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 0,
+          "note": "Enchanting, no level of its own (Mote); from Leylines: ring 1; high places; used by Stormward, Ice Tome, Electric Tome, Novice Ice Staff, Novice Electric Staff, Adept Ice Staff, Adept Electric Staff, Expert Wand, Expert Ice Staff, Expert Electric Staff, Enchanted Silver Topaz Ring, Enchanted Silver Topaz Amulet, Master Ice Staff, Master Electric Staff, Enchanted Gold Topaz Ring, Enchanted Gold Topaz Amulet, Grandmaster Ice Staff, Grandmaster Electric Staff; used for: Third Wand; Ice with Water; Electric with Light; topaz jewellery. (content_enchanting.md, Leylines and Motes)",
+          "catalogueId": "wind_mote",
+          "skill": "enchanting",
+          "usedBy": [
+            "item_stormward",
+            "item_ice_tome",
+            "item_electric_tome",
+            "item_novice_ice_staff",
+            "item_novice_electric_staff",
+            "item_adept_ice_staff",
+            "item_adept_electric_staff",
+            "item_expert_wand",
+            "item_expert_ice_staff",
+            "item_expert_electric_staff",
+            "item_enchanted_silver_topaz_ring",
+            "item_enchanted_silver_topaz_amulet",
+            "item_master_ice_staff",
+            "item_master_electric_staff",
+            "item_enchanted_gold_topaz_ring",
+            "item_enchanted_gold_topaz_amulet",
+            "item_grandmaster_ice_staff",
+            "item_grandmaster_electric_staff"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_wind_mote"
+      },
+      "item_nature_mote": {
+        "name": "Nature Mote",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 2,
+          "note": "Enchanting, no level of its own (Mote); from Leylines: ring 1; forests, meadows; used by Warded Copper Chestplate, Poison Tome, Warded Iron Chestplate, Enchanted Silver Emerald Ring, Warded Mythril Chestplate, Enchanted Silver Emerald Amulet, Enchanted Gold Emerald Ring, Enchanted Gold Emerald Amulet, Warded Adamantine Chestplate, Warded Darkmetal Chestplate; used for: Warded Chestplates; Poison with Dark; emerald jewellery. (content_enchanting.md, Leylines and Motes)",
+          "catalogueId": "nature_mote",
+          "skill": "enchanting",
+          "usedBy": [
+            "item_warded_copper_chestplate",
+            "item_poison_tome",
+            "item_warded_iron_chestplate",
+            "item_enchanted_silver_emerald_ring",
+            "item_warded_mythril_chestplate",
+            "item_enchanted_silver_emerald_amulet",
+            "item_enchanted_gold_emerald_ring",
+            "item_enchanted_gold_emerald_amulet",
+            "item_warded_adamantine_chestplate",
+            "item_warded_darkmetal_chestplate"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_nature_mote"
+      },
+      "item_light_mote": {
+        "name": "Light Mote",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 0,
+          "note": "Enchanting, no level of its own (Mote); from Leylines: ring 1; open places; used by Electric Tome, Novice Electric Staff, Adept Electric Staff, Expert Electric Staff, Enchanted Silver Diamond Ring, Enchanted Silver Diamond Amulet, Light Tome, Master Electric Staff, Enchanted Gold Diamond Ring, Enchanted Gold Diamond Amulet, Grandmaster Wand, Grandmaster Electric Staff, Mage's Mantle; used for: Fifth Wand; Light Tome; Electric with Wind; diamond jewellery. (content_enchanting.md, Leylines and Motes)",
+          "catalogueId": "light_mote",
+          "skill": "enchanting",
+          "usedBy": [
+            "item_electric_tome",
+            "item_novice_electric_staff",
+            "item_adept_electric_staff",
+            "item_expert_electric_staff",
+            "item_enchanted_silver_diamond_ring",
+            "item_enchanted_silver_diamond_amulet",
+            "item_light_tome",
+            "item_master_electric_staff",
+            "item_enchanted_gold_diamond_ring",
+            "item_enchanted_gold_diamond_amulet",
+            "item_grandmaster_wand",
+            "item_grandmaster_electric_staff",
+            "item_mages_mantle"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_light_mote"
+      },
+      "item_dark_mote": {
+        "name": "Dark Mote",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting, no level of its own (Mote); from Leylines: ring 2; bogs, ruins; used by Poison Tome, Dark Tome, Enchanted Silver Amethyst Ring, Enchanted Silver Amethyst Amulet, Master Wand, Enchanted Gold Amethyst Ring, Enchanted Gold Amethyst Amulet, Shadow Cloak, Void Hat, Void Hood, Void Gloves, Void Grips, Void Slippers, Void Soft Boots, Void Robe, Void Tunic, Void Cape; used for: Fourth Wand; Dark Tome; Poison with Nature; amethyst jewellery. (content_enchanting.md, Leylines and Motes)",
+          "catalogueId": "dark_mote",
+          "skill": "enchanting",
+          "usedBy": [
+            "item_poison_tome",
+            "item_dark_tome",
+            "item_enchanted_silver_amethyst_ring",
+            "item_enchanted_silver_amethyst_amulet",
+            "item_master_wand",
+            "item_enchanted_gold_amethyst_ring",
+            "item_enchanted_gold_amethyst_amulet",
+            "item_shadow_cloak",
+            "item_void_hat",
+            "item_void_hood",
+            "item_void_gloves",
+            "item_void_grips",
+            "item_void_slippers",
+            "item_void_soft_boots",
+            "item_void_robe",
+            "item_void_tunic",
+            "item_void_cape"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_dark_mote"
+      },
+      "item_novice_wand": {
+        "name": "Novice Wand",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 0,
+          "note": "Enchanting 1 (Magic weapon, no type of its own); made with Oak Wood, Fire Mote; Copper and Iron Wands retire for these. (content_enchanting.md, The recipes)",
+          "catalogueId": "novice_wand",
+          "skill": "enchanting",
+          "level": 1,
+          "madeWith": [
+            "item_oak_wood",
+            "item_fire_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_novice_wand"
+      },
+      "item_fire_tome": {
+        "name": "Fire Tome",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 0,
+          "note": "Enchanting 3 (off hand: turns a Wand's damage Fire); made with Fire Mote, Blank Book. (content_enchanting.md, The recipes)",
+          "catalogueId": "fire_tome",
+          "skill": "enchanting",
+          "level": 3,
+          "madeWith": [
+            "item_fire_mote",
+            "item_blank_book"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_fire_tome"
+      },
+      "item_ice_tome": {
+        "name": "Ice Tome",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 0,
+          "note": "Enchanting 4 (off hand: turns a Wand's damage Ice); made with Water Mote, Wind Mote, Blank Book. (content_enchanting.md, The recipes)",
+          "catalogueId": "ice_tome",
+          "skill": "enchanting",
+          "level": 4,
+          "madeWith": [
+            "item_water_mote",
+            "item_wind_mote",
+            "item_blank_book"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_ice_tome"
+      },
+      "item_electric_tome": {
+        "name": "Electric Tome",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 0,
+          "note": "Enchanting 5 (off hand: turns a Wand's damage Electric); made with Wind Mote, Light Mote, Blank Book. (content_enchanting.md, The recipes)",
+          "catalogueId": "electric_tome",
+          "skill": "enchanting",
+          "level": 5,
+          "madeWith": [
+            "item_wind_mote",
+            "item_light_mote",
+            "item_blank_book"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_electric_tome"
+      },
+      "item_novice_fire_staff": {
+        "name": "Novice Fire Staff",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 2,
+          "note": "Enchanting 7 (Magic weapon, Fire); made with Oak Wood, Fire Mote. (content_enchanting.md, The recipes)",
+          "catalogueId": "novice_fire_staff",
+          "skill": "enchanting",
+          "level": 7,
+          "madeWith": [
+            "item_oak_wood",
+            "item_fire_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_novice_fire_staff"
+      },
+      "item_novice_ice_staff": {
+        "name": "Novice Ice Staff",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 2,
+          "note": "Enchanting 9 (Magic weapon, Ice); made with Oak Wood, Water Mote, Wind Mote. (content_enchanting.md, The recipes)",
+          "catalogueId": "novice_ice_staff",
+          "skill": "enchanting",
+          "level": 9,
+          "madeWith": [
+            "item_oak_wood",
+            "item_water_mote",
+            "item_wind_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_novice_ice_staff"
+      },
+      "item_novice_electric_staff": {
+        "name": "Novice Electric Staff",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 2,
+          "note": "Enchanting 11 (Magic weapon, Electric); made with Oak Wood, Wind Mote, Light Mote. (content_enchanting.md, The recipes)",
+          "catalogueId": "novice_electric_staff",
+          "skill": "enchanting",
+          "level": 11,
+          "madeWith": [
+            "item_oak_wood",
+            "item_wind_mote",
+            "item_light_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_novice_electric_staff"
+      },
+      "item_warded_copper_chestplate": {
+        "name": "Warded Copper Chestplate",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 2,
+          "note": "Enchanting 14 (chest, with a defence bonus); made with Copper Chestplate, Nature Mote. (content_enchanting.md, The recipes)",
+          "catalogueId": "warded_copper_chestplate",
+          "skill": "enchanting",
+          "level": 14,
+          "madeWith": [
+            "item_copper_chestplate",
+            "item_nature_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_warded_copper_chestplate"
+      },
+      "item_adept_wand": {
+        "name": "Adept Wand",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 20 (Magic weapon, no type of its own); made with Fir Wood, Birch Wood, Water Mote; Copper and Iron Wands retire for these. (content_enchanting.md, The recipes)",
+          "catalogueId": "adept_wand",
+          "skill": "enchanting",
+          "level": 20,
+          "madeWith": [
+            "item_fir_wood",
+            "item_birch_wood",
+            "item_water_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_adept_wand"
+      },
+      "item_poison_tome": {
+        "name": "Poison Tome",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 22 (off hand: turns a Wand's damage Poison); made with Nature Mote, Dark Mote, Blank Book. (content_enchanting.md, The recipes)",
+          "catalogueId": "poison_tome",
+          "skill": "enchanting",
+          "level": 22,
+          "madeWith": [
+            "item_nature_mote",
+            "item_dark_mote",
+            "item_blank_book"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_poison_tome"
+      },
+      "item_adept_fire_staff": {
+        "name": "Adept Fire Staff",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 24 (Magic weapon, Fire); made with Fir Wood, Birch Wood, Fire Mote, Cut Ruby. (content_enchanting.md, The recipes)",
+          "catalogueId": "adept_fire_staff",
+          "skill": "enchanting",
+          "level": 24,
+          "madeWith": [
+            "item_fir_wood",
+            "item_birch_wood",
+            "item_fire_mote",
+            "item_cut_ruby"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_adept_fire_staff"
+      },
+      "item_adept_ice_staff": {
+        "name": "Adept Ice Staff",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 26 (Magic weapon, Ice); made with Fir Wood, Birch Wood, Water Mote, Wind Mote, Cut Sapphire. (content_enchanting.md, The recipes)",
+          "catalogueId": "adept_ice_staff",
+          "skill": "enchanting",
+          "level": 26,
+          "madeWith": [
+            "item_fir_wood",
+            "item_birch_wood",
+            "item_water_mote",
+            "item_wind_mote",
+            "item_cut_sapphire"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_adept_ice_staff"
+      },
+      "item_adept_electric_staff": {
+        "name": "Adept Electric Staff",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 28 (Magic weapon, Electric); made with Fir Wood, Birch Wood, Wind Mote, Light Mote, Cut Topaz. (content_enchanting.md, The recipes)",
+          "catalogueId": "adept_electric_staff",
+          "skill": "enchanting",
+          "level": 28,
+          "madeWith": [
+            "item_fir_wood",
+            "item_birch_wood",
+            "item_wind_mote",
+            "item_light_mote",
+            "item_cut_topaz"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_adept_electric_staff"
+      },
+      "item_warded_iron_chestplate": {
+        "name": "Warded Iron Chestplate",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 34 (chest, with a defence bonus); made with Iron Chestplate, Nature Mote. (content_enchanting.md, The recipes)",
+          "catalogueId": "warded_iron_chestplate",
+          "skill": "enchanting",
+          "level": 34,
+          "madeWith": [
+            "item_iron_chestplate",
+            "item_nature_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_warded_iron_chestplate"
+      },
+      "item_expert_wand": {
+        "name": "Expert Wand",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 40 (Magic weapon, no type of its own); made with Maple Wood, Birch Wood, Wind Mote. (content_enchanting.md, The recipes)",
+          "catalogueId": "expert_wand",
+          "skill": "enchanting",
+          "level": 40,
+          "madeWith": [
+            "item_maple_wood",
+            "item_birch_wood",
+            "item_wind_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_expert_wand"
+      },
+      "item_dark_tome": {
+        "name": "Dark Tome",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 42 (off hand: turns a Wand's damage Dark); made with Dark Mote, Blank Book. (content_enchanting.md, The recipes)",
+          "catalogueId": "dark_tome",
+          "skill": "enchanting",
+          "level": 42,
+          "madeWith": [
+            "item_dark_mote",
+            "item_blank_book"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_dark_tome"
+      },
+      "item_enchanted_silver_ruby_ring": {
+        "name": "Enchanted Silver Ruby Ring",
+        "type": "trinket",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 43 (trinket); made with Silver Ruby Ring, Fire Mote. (content_enchanting.md, The recipes)",
+          "catalogueId": "enchanted_silver_ruby_ring",
+          "skill": "enchanting",
+          "level": 43,
+          "madeWith": [
+            "item_silver_ruby_ring",
+            "item_fire_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_enchanted_silver_ruby_ring"
+      },
+      "item_expert_fire_staff": {
+        "name": "Expert Fire Staff",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 44 (Magic weapon, Fire); made with Maple Wood, Birch Wood, Fire Mote, Cut Ruby. (content_enchanting.md, The recipes)",
+          "catalogueId": "expert_fire_staff",
+          "skill": "enchanting",
+          "level": 44,
+          "madeWith": [
+            "item_maple_wood",
+            "item_birch_wood",
+            "item_fire_mote",
+            "item_cut_ruby"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_expert_fire_staff"
+      },
+      "item_enchanted_silver_sapphire_ring": {
+        "name": "Enchanted Silver Sapphire Ring",
+        "type": "trinket",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 45 (trinket); made with Silver Sapphire Ring, Water Mote. (content_enchanting.md, The recipes)",
+          "catalogueId": "enchanted_silver_sapphire_ring",
+          "skill": "enchanting",
+          "level": 45,
+          "madeWith": [
+            "item_silver_sapphire_ring",
+            "item_water_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_enchanted_silver_sapphire_ring"
+      },
+      "item_expert_ice_staff": {
+        "name": "Expert Ice Staff",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 46 (Magic weapon, Ice); made with Maple Wood, Birch Wood, Water Mote, Wind Mote, Cut Sapphire. (content_enchanting.md, The recipes)",
+          "catalogueId": "expert_ice_staff",
+          "skill": "enchanting",
+          "level": 46,
+          "madeWith": [
+            "item_maple_wood",
+            "item_birch_wood",
+            "item_water_mote",
+            "item_wind_mote",
+            "item_cut_sapphire"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_expert_ice_staff"
+      },
+      "item_enchanted_silver_emerald_ring": {
+        "name": "Enchanted Silver Emerald Ring",
+        "type": "trinket",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 47 (trinket); made with Silver Emerald Ring, Nature Mote. (content_enchanting.md, The recipes)",
+          "catalogueId": "enchanted_silver_emerald_ring",
+          "skill": "enchanting",
+          "level": 47,
+          "madeWith": [
+            "item_silver_emerald_ring",
+            "item_nature_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_enchanted_silver_emerald_ring"
+      },
+      "item_expert_electric_staff": {
+        "name": "Expert Electric Staff",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 48 (Magic weapon, Electric); made with Maple Wood, Birch Wood, Wind Mote, Light Mote, Cut Topaz. (content_enchanting.md, The recipes)",
+          "catalogueId": "expert_electric_staff",
+          "skill": "enchanting",
+          "level": 48,
+          "madeWith": [
+            "item_maple_wood",
+            "item_birch_wood",
+            "item_wind_mote",
+            "item_light_mote",
+            "item_cut_topaz"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_expert_electric_staff"
+      },
+      "item_enchanted_silver_topaz_ring": {
+        "name": "Enchanted Silver Topaz Ring",
+        "type": "trinket",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 49 (trinket); made with Silver Topaz Ring, Wind Mote. (content_enchanting.md, The recipes)",
+          "catalogueId": "enchanted_silver_topaz_ring",
+          "skill": "enchanting",
+          "level": 49,
+          "madeWith": [
+            "item_silver_topaz_ring",
+            "item_wind_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_enchanted_silver_topaz_ring"
+      },
+      "item_enchanted_silver_amethyst_ring": {
+        "name": "Enchanted Silver Amethyst Ring",
+        "type": "trinket",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 50 (trinket); made with Silver Amethyst Ring, Dark Mote. (content_enchanting.md, The recipes)",
+          "catalogueId": "enchanted_silver_amethyst_ring",
+          "skill": "enchanting",
+          "level": 50,
+          "madeWith": [
+            "item_silver_amethyst_ring",
+            "item_dark_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_enchanted_silver_amethyst_ring"
+      },
+      "item_enchanted_silver_diamond_ring": {
+        "name": "Enchanted Silver Diamond Ring",
+        "type": "trinket",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 51 (trinket); made with Silver Diamond Ring, Light Mote. (content_enchanting.md, The recipes)",
+          "catalogueId": "enchanted_silver_diamond_ring",
+          "skill": "enchanting",
+          "level": 51,
+          "madeWith": [
+            "item_silver_diamond_ring",
+            "item_light_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_enchanted_silver_diamond_ring"
+      },
+      "item_enchanted_silver_ruby_amulet": {
+        "name": "Enchanted Silver Ruby Amulet",
+        "type": "trinket",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 52 (trinket); made with Silver Ruby Amulet, Fire Mote. (content_enchanting.md, The recipes)",
+          "catalogueId": "enchanted_silver_ruby_amulet",
+          "skill": "enchanting",
+          "level": 52,
+          "madeWith": [
+            "item_silver_ruby_amulet",
+            "item_fire_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_enchanted_silver_ruby_amulet"
+      },
+      "item_enchanted_silver_sapphire_amulet": {
+        "name": "Enchanted Silver Sapphire Amulet",
+        "type": "trinket",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 53 (trinket); made with Silver Sapphire Amulet, Water Mote. (content_enchanting.md, The recipes)",
+          "catalogueId": "enchanted_silver_sapphire_amulet",
+          "skill": "enchanting",
+          "level": 53,
+          "madeWith": [
+            "item_silver_sapphire_amulet",
+            "item_water_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_enchanted_silver_sapphire_amulet"
+      },
+      "item_warded_mythril_chestplate": {
+        "name": "Warded Mythril Chestplate",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 54 (chest, with a defence bonus); made with Mythril Chestplate, Nature Mote. (content_enchanting.md, The recipes)",
+          "catalogueId": "warded_mythril_chestplate",
+          "skill": "enchanting",
+          "level": 54,
+          "madeWith": [
+            "item_mythril_chestplate",
+            "item_nature_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_warded_mythril_chestplate"
+      },
+      "item_enchanted_silver_emerald_amulet": {
+        "name": "Enchanted Silver Emerald Amulet",
+        "type": "trinket",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 55 (trinket); made with Silver Emerald Amulet, Nature Mote. (content_enchanting.md, The recipes)",
+          "catalogueId": "enchanted_silver_emerald_amulet",
+          "skill": "enchanting",
+          "level": 55,
+          "madeWith": [
+            "item_silver_emerald_amulet",
+            "item_nature_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_enchanted_silver_emerald_amulet"
+      },
+      "item_enchanted_silver_topaz_amulet": {
+        "name": "Enchanted Silver Topaz Amulet",
+        "type": "trinket",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 56 (trinket); made with Silver Topaz Amulet, Wind Mote. (content_enchanting.md, The recipes)",
+          "catalogueId": "enchanted_silver_topaz_amulet",
+          "skill": "enchanting",
+          "level": 56,
+          "madeWith": [
+            "item_silver_topaz_amulet",
+            "item_wind_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_enchanted_silver_topaz_amulet"
+      },
+      "item_enchanted_silver_amethyst_amulet": {
+        "name": "Enchanted Silver Amethyst Amulet",
+        "type": "trinket",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 57 (trinket); made with Silver Amethyst Amulet, Dark Mote. (content_enchanting.md, The recipes)",
+          "catalogueId": "enchanted_silver_amethyst_amulet",
+          "skill": "enchanting",
+          "level": 57,
+          "madeWith": [
+            "item_silver_amethyst_amulet",
+            "item_dark_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_enchanted_silver_amethyst_amulet"
+      },
+      "item_enchanted_silver_diamond_amulet": {
+        "name": "Enchanted Silver Diamond Amulet",
+        "type": "trinket",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 58 (trinket); made with Silver Diamond Amulet, Light Mote. (content_enchanting.md, The recipes)",
+          "catalogueId": "enchanted_silver_diamond_amulet",
+          "skill": "enchanting",
+          "level": 58,
+          "madeWith": [
+            "item_silver_diamond_amulet",
+            "item_light_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_enchanted_silver_diamond_amulet"
+      },
+      "item_master_wand": {
+        "name": "Master Wand",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 60 (Magic weapon, no type of its own); made with Mahogany Wood, Cedar Wood, Dark Mote. (content_enchanting.md, The recipes)",
+          "catalogueId": "master_wand",
+          "skill": "enchanting",
+          "level": 60,
+          "madeWith": [
+            "item_mahogany_wood",
+            "item_cedar_wood",
+            "item_dark_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_master_wand"
+      },
+      "item_light_tome": {
+        "name": "Light Tome",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 62 (off hand: turns a Wand's damage Light); made with Light Mote, Blank Book. (content_enchanting.md, The recipes)",
+          "catalogueId": "light_tome",
+          "skill": "enchanting",
+          "level": 62,
+          "madeWith": [
+            "item_light_mote",
+            "item_blank_book"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_light_tome"
+      },
+      "item_enchanted_gold_ruby_ring": {
+        "name": "Enchanted Gold Ruby Ring",
+        "type": "trinket",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 63 (trinket); made with Gold Ruby Ring, Fire Mote. (content_enchanting.md, The recipes)",
+          "catalogueId": "enchanted_gold_ruby_ring",
+          "skill": "enchanting",
+          "level": 63,
+          "madeWith": [
+            "item_gold_ruby_ring",
+            "item_fire_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_enchanted_gold_ruby_ring"
+      },
+      "item_master_fire_staff": {
+        "name": "Master Fire Staff",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 64 (Magic weapon, Fire); made with Mahogany Wood, Cedar Wood, Fire Mote, Cut Ruby. (content_enchanting.md, The recipes)",
+          "catalogueId": "master_fire_staff",
+          "skill": "enchanting",
+          "level": 64,
+          "madeWith": [
+            "item_mahogany_wood",
+            "item_cedar_wood",
+            "item_fire_mote",
+            "item_cut_ruby"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_master_fire_staff"
+      },
+      "item_enchanted_gold_sapphire_ring": {
+        "name": "Enchanted Gold Sapphire Ring",
+        "type": "trinket",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 65 (trinket); made with Gold Sapphire Ring, Water Mote. (content_enchanting.md, The recipes)",
+          "catalogueId": "enchanted_gold_sapphire_ring",
+          "skill": "enchanting",
+          "level": 65,
+          "madeWith": [
+            "item_gold_sapphire_ring",
+            "item_water_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_enchanted_gold_sapphire_ring"
+      },
+      "item_master_ice_staff": {
+        "name": "Master Ice Staff",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 66 (Magic weapon, Ice); made with Mahogany Wood, Cedar Wood, Water Mote, Wind Mote, Cut Sapphire. (content_enchanting.md, The recipes)",
+          "catalogueId": "master_ice_staff",
+          "skill": "enchanting",
+          "level": 66,
+          "madeWith": [
+            "item_mahogany_wood",
+            "item_cedar_wood",
+            "item_water_mote",
+            "item_wind_mote",
+            "item_cut_sapphire"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_master_ice_staff"
+      },
+      "item_enchanted_gold_emerald_ring": {
+        "name": "Enchanted Gold Emerald Ring",
+        "type": "trinket",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 67 (trinket); made with Gold Emerald Ring, Nature Mote. (content_enchanting.md, The recipes)",
+          "catalogueId": "enchanted_gold_emerald_ring",
+          "skill": "enchanting",
+          "level": 67,
+          "madeWith": [
+            "item_gold_emerald_ring",
+            "item_nature_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_enchanted_gold_emerald_ring"
+      },
+      "item_master_electric_staff": {
+        "name": "Master Electric Staff",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 68 (Magic weapon, Electric); made with Mahogany Wood, Cedar Wood, Wind Mote, Light Mote, Cut Topaz. (content_enchanting.md, The recipes)",
+          "catalogueId": "master_electric_staff",
+          "skill": "enchanting",
+          "level": 68,
+          "madeWith": [
+            "item_mahogany_wood",
+            "item_cedar_wood",
+            "item_wind_mote",
+            "item_light_mote",
+            "item_cut_topaz"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_master_electric_staff"
+      },
+      "item_enchanted_gold_topaz_ring": {
+        "name": "Enchanted Gold Topaz Ring",
+        "type": "trinket",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 69 (trinket); made with Gold Topaz Ring, Wind Mote. (content_enchanting.md, The recipes)",
+          "catalogueId": "enchanted_gold_topaz_ring",
+          "skill": "enchanting",
+          "level": 69,
+          "madeWith": [
+            "item_gold_topaz_ring",
+            "item_wind_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_enchanted_gold_topaz_ring"
+      },
+      "item_enchanted_gold_amethyst_ring": {
+        "name": "Enchanted Gold Amethyst Ring",
+        "type": "trinket",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 70 (trinket); made with Gold Amethyst Ring, Dark Mote. (content_enchanting.md, The recipes)",
+          "catalogueId": "enchanted_gold_amethyst_ring",
+          "skill": "enchanting",
+          "level": 70,
+          "madeWith": [
+            "item_gold_amethyst_ring",
+            "item_dark_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_enchanted_gold_amethyst_ring"
+      },
+      "item_enchanted_gold_diamond_ring": {
+        "name": "Enchanted Gold Diamond Ring",
+        "type": "trinket",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 71 (trinket); made with Gold Diamond Ring, Light Mote. (content_enchanting.md, The recipes)",
+          "catalogueId": "enchanted_gold_diamond_ring",
+          "skill": "enchanting",
+          "level": 71,
+          "madeWith": [
+            "item_gold_diamond_ring",
+            "item_light_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_enchanted_gold_diamond_ring"
+      },
+      "item_enchanted_gold_ruby_amulet": {
+        "name": "Enchanted Gold Ruby Amulet",
+        "type": "trinket",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 72 (trinket); made with Gold Ruby Amulet, Fire Mote. (content_enchanting.md, The recipes)",
+          "catalogueId": "enchanted_gold_ruby_amulet",
+          "skill": "enchanting",
+          "level": 72,
+          "madeWith": [
+            "item_gold_ruby_amulet",
+            "item_fire_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_enchanted_gold_ruby_amulet"
+      },
+      "item_enchanted_gold_sapphire_amulet": {
+        "name": "Enchanted Gold Sapphire Amulet",
+        "type": "trinket",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 73 (trinket); made with Gold Sapphire Amulet, Water Mote. (content_enchanting.md, The recipes)",
+          "catalogueId": "enchanted_gold_sapphire_amulet",
+          "skill": "enchanting",
+          "level": 73,
+          "madeWith": [
+            "item_gold_sapphire_amulet",
+            "item_water_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_enchanted_gold_sapphire_amulet"
+      },
+      "item_enchanted_gold_emerald_amulet": {
+        "name": "Enchanted Gold Emerald Amulet",
+        "type": "trinket",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 74 (trinket); made with Gold Emerald Amulet, Nature Mote. (content_enchanting.md, The recipes)",
+          "catalogueId": "enchanted_gold_emerald_amulet",
+          "skill": "enchanting",
+          "level": 74,
+          "madeWith": [
+            "item_gold_emerald_amulet",
+            "item_nature_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_enchanted_gold_emerald_amulet"
+      },
+      "item_enchanted_gold_topaz_amulet": {
+        "name": "Enchanted Gold Topaz Amulet",
+        "type": "trinket",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 75 (trinket); made with Gold Topaz Amulet, Wind Mote. (content_enchanting.md, The recipes)",
+          "catalogueId": "enchanted_gold_topaz_amulet",
+          "skill": "enchanting",
+          "level": 75,
+          "madeWith": [
+            "item_gold_topaz_amulet",
+            "item_wind_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_enchanted_gold_topaz_amulet"
+      },
+      "item_enchanted_gold_amethyst_amulet": {
+        "name": "Enchanted Gold Amethyst Amulet",
+        "type": "trinket",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 76 (trinket); made with Gold Amethyst Amulet, Dark Mote. (content_enchanting.md, The recipes)",
+          "catalogueId": "enchanted_gold_amethyst_amulet",
+          "skill": "enchanting",
+          "level": 76,
+          "madeWith": [
+            "item_gold_amethyst_amulet",
+            "item_dark_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_enchanted_gold_amethyst_amulet"
+      },
+      "item_enchanted_gold_diamond_amulet": {
+        "name": "Enchanted Gold Diamond Amulet",
+        "type": "trinket",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 77 (trinket); made with Gold Diamond Amulet, Light Mote. (content_enchanting.md, The recipes)",
+          "catalogueId": "enchanted_gold_diamond_amulet",
+          "skill": "enchanting",
+          "level": 77,
+          "madeWith": [
+            "item_gold_diamond_amulet",
+            "item_light_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_enchanted_gold_diamond_amulet"
+      },
+      "item_warded_adamantine_chestplate": {
+        "name": "Warded Adamantine Chestplate",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 78 (chest, with a defence bonus); made with Adamantine Chestplate, Nature Mote. (content_enchanting.md, The recipes)",
+          "catalogueId": "warded_adamantine_chestplate",
+          "skill": "enchanting",
+          "level": 78,
+          "madeWith": [
+            "item_adamantine_chestplate",
+            "item_nature_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_warded_adamantine_chestplate"
+      },
+      "item_grandmaster_wand": {
+        "name": "Grandmaster Wand",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 80 (Magic weapon, no type of its own); made with Ebony Wood, Cedar Wood, Light Mote. (content_enchanting.md, The recipes)",
+          "catalogueId": "grandmaster_wand",
+          "skill": "enchanting",
+          "level": 80,
+          "madeWith": [
+            "item_ebony_wood",
+            "item_cedar_wood",
+            "item_light_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_grandmaster_wand"
+      },
+      "item_grandmaster_fire_staff": {
+        "name": "Grandmaster Fire Staff",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 84 (Magic weapon, Fire); made with Ebony Wood, Cedar Wood, Fire Mote, Cut Ruby. (content_enchanting.md, The recipes)",
+          "catalogueId": "grandmaster_fire_staff",
+          "skill": "enchanting",
+          "level": 84,
+          "madeWith": [
+            "item_ebony_wood",
+            "item_cedar_wood",
+            "item_fire_mote",
+            "item_cut_ruby"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_grandmaster_fire_staff"
+      },
+      "item_grandmaster_ice_staff": {
+        "name": "Grandmaster Ice Staff",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 86 (Magic weapon, Ice); made with Ebony Wood, Cedar Wood, Water Mote, Wind Mote, Cut Sapphire. (content_enchanting.md, The recipes)",
+          "catalogueId": "grandmaster_ice_staff",
+          "skill": "enchanting",
+          "level": 86,
+          "madeWith": [
+            "item_ebony_wood",
+            "item_cedar_wood",
+            "item_water_mote",
+            "item_wind_mote",
+            "item_cut_sapphire"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_grandmaster_ice_staff"
+      },
+      "item_grandmaster_electric_staff": {
+        "name": "Grandmaster Electric Staff",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 88 (Magic weapon, Electric); made with Ebony Wood, Cedar Wood, Wind Mote, Light Mote, Cut Topaz. (content_enchanting.md, The recipes)",
+          "catalogueId": "grandmaster_electric_staff",
+          "skill": "enchanting",
+          "level": 88,
+          "madeWith": [
+            "item_ebony_wood",
+            "item_cedar_wood",
+            "item_wind_mote",
+            "item_light_mote",
+            "item_cut_topaz"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_grandmaster_electric_staff"
+      },
+      "item_warded_darkmetal_chestplate": {
+        "name": "Warded Darkmetal Chestplate",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Enchanting 94 (chest, with a defence bonus); made with Darkmetal Chestplate, Nature Mote. (content_enchanting.md, The recipes)",
+          "catalogueId": "warded_darkmetal_chestplate",
+          "skill": "enchanting",
+          "level": 94,
+          "madeWith": [
+            "item_darkmetal_chestplate",
+            "item_nature_mote"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_warded_darkmetal_chestplate"
+      },
+      "item_oak_bow": {
+        "name": "Oak Bow",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 0,
+          "note": "Fletching 1 (Ranged weapon); made with Oak Wood, String; Copper and Iron Bows retire for these. (content_fletching.md, The list)",
+          "catalogueId": "oak_bow",
+          "skill": "fletching",
+          "level": 1,
+          "madeWith": [
+            "item_oak_wood",
+            "item_string"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_oak_bow"
+      },
+      "item_copper_crossbow": {
+        "name": "Copper Crossbow",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 0,
+          "note": "Fletching 5 (Ranged weapon); made with Copper Ingot, Oak Wood, String. (content_fletching.md, The list)",
+          "catalogueId": "copper_crossbow",
+          "skill": "fletching",
+          "level": 5,
+          "madeWith": [
+            "item_copper_ingot",
+            "item_oak_wood",
+            "item_string"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_copper_crossbow"
+      },
+      "item_fir_bow": {
+        "name": "Fir Bow",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Fletching 20 (Ranged weapon); made with Fir Wood, String; Copper and Iron Bows retire for these. (content_fletching.md, The list)",
+          "catalogueId": "fir_bow",
+          "skill": "fletching",
+          "level": 20,
+          "madeWith": [
+            "item_fir_wood",
+            "item_string"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_fir_bow"
+      },
+      "item_iron_crossbow": {
+        "name": "Iron Crossbow",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Fletching 25 (Ranged weapon); made with Iron Ingot, Fir Wood, String. (content_fletching.md, The list)",
+          "catalogueId": "iron_crossbow",
+          "skill": "fletching",
+          "level": 25,
+          "madeWith": [
+            "item_iron_ingot",
+            "item_fir_wood",
+            "item_string"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_iron_crossbow"
+      },
+      "item_silver_arrow": {
+        "name": "Silver Arrow",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Fletching 31 (ammo, Stab); made with Fir Wood, Feather, Silver Arrowheads. (content_fletching.md, The list)",
+          "catalogueId": "silver_arrow",
+          "skill": "fletching",
+          "level": 31,
+          "madeWith": [
+            "item_fir_wood",
+            "item_feather",
+            "item_silver_arrowheads"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_silver_arrow"
+      },
+      "item_maple_bow": {
+        "name": "Maple Bow",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Fletching 40 (Ranged weapon); made with Maple Wood, String. (content_fletching.md, The list)",
+          "catalogueId": "maple_bow",
+          "skill": "fletching",
+          "level": 40,
+          "madeWith": [
+            "item_maple_wood",
+            "item_string"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_maple_bow"
+      },
+      "item_mythril_arrow": {
+        "name": "Mythril Arrow",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Fletching 41 (ammo, Stab); made with Maple Wood, Feather, Mythril Arrowheads. (content_fletching.md, The list)",
+          "catalogueId": "mythril_arrow",
+          "skill": "fletching",
+          "level": 41,
+          "madeWith": [
+            "item_maple_wood",
+            "item_feather",
+            "item_mythril_arrowheads"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_mythril_arrow"
+      },
+      "item_mythril_crossbow": {
+        "name": "Mythril Crossbow",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Fletching 45 (Ranged weapon); made with Mythril Ingot, Maple Wood, String. (content_fletching.md, The list)",
+          "catalogueId": "mythril_crossbow",
+          "skill": "fletching",
+          "level": 45,
+          "madeWith": [
+            "item_mythril_ingot",
+            "item_maple_wood",
+            "item_string"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_mythril_crossbow"
+      },
+      "item_mahogany_bow": {
+        "name": "Mahogany Bow",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Fletching 60 (Ranged weapon); made with Mahogany Wood, String, Silver Ingot. (content_fletching.md, The list)",
+          "catalogueId": "mahogany_bow",
+          "skill": "fletching",
+          "level": 60,
+          "madeWith": [
+            "item_mahogany_wood",
+            "item_string",
+            "item_silver_ingot"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_mahogany_bow"
+      },
+      "item_adamantine_arrow": {
+        "name": "Adamantine Arrow",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Fletching 61 (ammo, Stab); made with Mahogany Wood, Feather, Adamantine Arrowheads. (content_fletching.md, The list)",
+          "catalogueId": "adamantine_arrow",
+          "skill": "fletching",
+          "level": 61,
+          "madeWith": [
+            "item_mahogany_wood",
+            "item_feather",
+            "item_adamantine_arrowheads"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_adamantine_arrow"
+      },
+      "item_adamantine_crossbow": {
+        "name": "Adamantine Crossbow",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Fletching 65 (Ranged weapon); made with Adamantine Ingot, Mahogany Wood, String. (content_fletching.md, The list)",
+          "catalogueId": "adamantine_crossbow",
+          "skill": "fletching",
+          "level": 65,
+          "madeWith": [
+            "item_adamantine_ingot",
+            "item_mahogany_wood",
+            "item_string"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_adamantine_crossbow"
+      },
+      "item_ebony_bow": {
+        "name": "Ebony Bow",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Fletching 80 (Ranged weapon); made with Ebony Wood, String, Gold Ingot. (content_fletching.md, The list)",
+          "catalogueId": "ebony_bow",
+          "skill": "fletching",
+          "level": 80,
+          "madeWith": [
+            "item_ebony_wood",
+            "item_string",
+            "item_gold_ingot"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_ebony_bow"
+      },
+      "item_darkmetal_arrow": {
+        "name": "Darkmetal Arrow",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Fletching 81 (ammo, Stab); made with Ebony Wood, Feather, Darkmetal Arrowheads. (content_fletching.md, The list)",
+          "catalogueId": "darkmetal_arrow",
+          "skill": "fletching",
+          "level": 81,
+          "madeWith": [
+            "item_ebony_wood",
+            "item_feather",
+            "item_darkmetal_arrowheads"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_darkmetal_arrow"
+      },
+      "item_darkmetal_crossbow": {
+        "name": "Darkmetal Crossbow",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Fletching 85 (Ranged weapon); made with Darkmetal Ingot, Ebony Wood, String. (content_fletching.md, The list)",
+          "catalogueId": "darkmetal_crossbow",
+          "skill": "fletching",
+          "level": 85,
+          "madeWith": [
+            "item_darkmetal_ingot",
+            "item_ebony_wood",
+            "item_string"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_darkmetal_crossbow"
+      },
+      "item_copper_arrowheads": {
+        "name": "Copper Arrowheads",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 2,
+          "note": "Smithing 8 (material); made with Copper Ingot; used by Copper Arrow; also used by: Fletching: arrows. (content_smithing.md, Copper (levels 1 to 19))",
+          "catalogueId": "copper_arrowheads",
+          "skill": "smithing",
+          "level": 8,
+          "madeWith": [
+            "item_copper_ingot"
+          ],
+          "usedBy": [
+            "item_copper_arrow"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_copper_arrowheads"
+      },
+      "item_copper_plate_gloves": {
+        "name": "Copper Plate Gloves",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 2,
+          "note": "Smithing 9 (gloves (new slot)); made with Copper Ingot. (content_smithing.md, Copper (levels 1 to 19))",
+          "catalogueId": "copper_plate_gloves",
+          "skill": "smithing",
+          "level": 9,
+          "madeWith": [
+            "item_copper_ingot"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_copper_plate_gloves"
+      },
+      "item_copper_kunai": {
+        "name": "Copper Kunai",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 2,
+          "note": "Smithing 10 (Stealth ammo: thrown and used up); made with Copper Ingot. (content_smithing.md, Copper (levels 1 to 19))",
+          "catalogueId": "copper_kunai",
+          "skill": "smithing",
+          "level": 10,
+          "madeWith": [
+            "item_copper_ingot"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_copper_kunai"
+      },
+      "item_copper_plate_boots": {
+        "name": "Copper Plate Boots",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 2,
+          "note": "Smithing 11 (boots (new slot)); made with Copper Ingot. (content_smithing.md, Copper (levels 1 to 19))",
+          "catalogueId": "copper_plate_boots",
+          "skill": "smithing",
+          "level": 11,
+          "madeWith": [
+            "item_copper_ingot"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_copper_plate_boots"
+      },
+      "item_iron_kunai": {
+        "name": "Iron Kunai",
+        "type": "weapon",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Smithing 25 (Stealth ammo: thrown and used up); made with Iron Ingot. (content_smithing.md, Iron, with silver from 30 (levels 20 to 39))",
+          "catalogueId": "iron_kunai",
+          "skill": "smithing",
+          "level": 25,
+          "madeWith": [
+            "item_iron_ingot"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_iron_kunai"
+      },
+      "item_iron_arrowheads": {
+        "name": "Iron Arrowheads",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Smithing 28 (material); made with Iron Ingot; used by Iron Arrow; also used by: Fletching: arrows. (content_smithing.md, Iron, with silver from 30 (levels 20 to 39))",
+          "catalogueId": "iron_arrowheads",
+          "skill": "smithing",
+          "level": 28,
+          "madeWith": [
+            "item_iron_ingot"
+          ],
+          "usedBy": [
+            "item_iron_bodkin_arrow"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_iron_arrowheads"
+      },
+      "item_iron_plate_gloves": {
+        "name": "Iron Plate Gloves",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Smithing 29 (gloves (new slot)); made with Iron Ingot. (content_smithing.md, Iron, with silver from 30 (levels 20 to 39))",
+          "catalogueId": "iron_plate_gloves",
+          "skill": "smithing",
+          "level": 29,
+          "madeWith": [
+            "item_iron_ingot"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_iron_plate_gloves"
+      },
+      "item_iron_plate_boots": {
+        "name": "Iron Plate Boots",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Smithing 31 (boots (new slot)); made with Iron Ingot. (content_smithing.md, Iron, with silver from 30 (levels 20 to 39))",
+          "catalogueId": "iron_plate_boots",
+          "skill": "smithing",
+          "level": 31,
+          "madeWith": [
+            "item_iron_ingot"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_iron_plate_boots"
+      },
+      "item_silver_arrowheads": {
+        "name": "Silver Arrowheads",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Smithing 34 (material); made with Silver Ingot; used by Silver Arrow; also used by: Fletching: arrows. (content_smithing.md, Iron, with silver from 30 (levels 20 to 39))",
+          "catalogueId": "silver_arrowheads",
+          "skill": "smithing",
+          "level": 34,
+          "madeWith": [
+            "item_silver_ingot"
+          ],
+          "usedBy": [
+            "item_silver_arrow"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_silver_arrowheads"
+      },
+      "item_mythril_arrowheads": {
+        "name": "Mythril Arrowheads",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Smithing 48 (material); made with Mythril Ingot; used by Mythril Arrow; also used by: Fletching: arrows. (content_smithing.md, Mythril, with gold from 50 (levels 40 to 59))",
+          "catalogueId": "mythril_arrowheads",
+          "skill": "smithing",
+          "level": 48,
+          "madeWith": [
+            "item_mythril_ingot"
+          ],
+          "usedBy": [
+            "item_mythril_arrow"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_mythril_arrowheads"
+      },
+      "item_mythril_plate_gloves": {
+        "name": "Mythril Plate Gloves",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Smithing 49 (gloves (new slot)); made with Mythril Ingot. (content_smithing.md, Mythril, with gold from 50 (levels 40 to 59))",
+          "catalogueId": "mythril_plate_gloves",
+          "skill": "smithing",
+          "level": 49,
+          "madeWith": [
+            "item_mythril_ingot"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_mythril_plate_gloves"
+      },
+      "item_mythril_plate_boots": {
+        "name": "Mythril Plate Boots",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Smithing 51 (boots (new slot)); made with Mythril Ingot. (content_smithing.md, Mythril, with gold from 50 (levels 40 to 59))",
+          "catalogueId": "mythril_plate_boots",
+          "skill": "smithing",
+          "level": 51,
+          "madeWith": [
+            "item_mythril_ingot"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_mythril_plate_boots"
+      },
+      "item_adamantine_arrowheads": {
+        "name": "Adamantine Arrowheads",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Smithing 68 (material); made with Adamantine Ingot; used by Adamantine Arrow; also used by: Fletching: arrows. (content_smithing.md, Adamantine (levels 60 to 79))",
+          "catalogueId": "adamantine_arrowheads",
+          "skill": "smithing",
+          "level": 68,
+          "madeWith": [
+            "item_adamantine_ingot"
+          ],
+          "usedBy": [
+            "item_adamantine_arrow"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_adamantine_arrowheads"
+      },
+      "item_adamantine_plate_gloves": {
+        "name": "Adamantine Plate Gloves",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Smithing 69 (gloves (new slot)); made with Adamantine Ingot. (content_smithing.md, Adamantine (levels 60 to 79))",
+          "catalogueId": "adamantine_plate_gloves",
+          "skill": "smithing",
+          "level": 69,
+          "madeWith": [
+            "item_adamantine_ingot"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_adamantine_plate_gloves"
+      },
+      "item_adamantine_plate_boots": {
+        "name": "Adamantine Plate Boots",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Smithing 71 (boots (new slot)); made with Adamantine Ingot. (content_smithing.md, Adamantine (levels 60 to 79))",
+          "catalogueId": "adamantine_plate_boots",
+          "skill": "smithing",
+          "level": 71,
+          "madeWith": [
+            "item_adamantine_ingot"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_adamantine_plate_boots"
+      },
+      "item_darkmetal_arrowheads": {
+        "name": "Darkmetal Arrowheads",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Smithing 88 (material); made with Darkmetal Ingot; used by Darkmetal Arrow; also used by: Fletching: arrows. (content_smithing.md, Darkmetal (levels 80 to 99))",
+          "catalogueId": "darkmetal_arrowheads",
+          "skill": "smithing",
+          "level": 88,
+          "madeWith": [
+            "item_darkmetal_ingot"
+          ],
+          "usedBy": [
+            "item_darkmetal_arrow"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_darkmetal_arrowheads"
+      },
+      "item_darkmetal_plate_gloves": {
+        "name": "Darkmetal Plate Gloves",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Smithing 89 (gloves (new slot)); made with Darkmetal Ingot. (content_smithing.md, Darkmetal (levels 80 to 99))",
+          "catalogueId": "darkmetal_plate_gloves",
+          "skill": "smithing",
+          "level": 89,
+          "madeWith": [
+            "item_darkmetal_ingot"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_darkmetal_plate_gloves"
+      },
+      "item_darkmetal_plate_boots": {
+        "name": "Darkmetal Plate Boots",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Smithing 91 (boots (new slot)); made with Darkmetal Ingot. (content_smithing.md, Darkmetal (levels 80 to 99))",
+          "catalogueId": "darkmetal_plate_boots",
+          "skill": "smithing",
+          "level": 91,
+          "madeWith": [
+            "item_darkmetal_ingot"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_darkmetal_plate_boots"
+      },
+      "item_master_hammer": {
+        "name": "Master Hammer",
+        "type": "tool",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Smithing 98 (tool); made with Darkmetal Ingot, Ebony Wood; also used by: Smithing final challenge (later). (content_smithing.md, Darkmetal (levels 80 to 99))",
+          "catalogueId": "master_hammer",
+          "skill": "smithing",
+          "level": 98,
+          "madeWith": [
+            "item_darkmetal_ingot",
+            "item_ebony_wood"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_master_hammer"
+      },
+      "item_sage": {
+        "name": "Sage",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Alchemy 20 (Herb); used by Green Thumb, Swift Hands, Fireward, Frostward; feel: Warding. (content_alchemy.md, Herbs)",
+          "catalogueId": "sage",
+          "skill": "alchemy",
+          "level": 20,
+          "usedBy": [
+            "item_green_thumb",
+            "item_swift_hands",
+            "item_fireward",
+            "item_frostward"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_sage"
+      },
+      "item_nightshade": {
+        "name": "Nightshade",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Alchemy 35 (Herb); used by Weak Poison, Poison, Deadly Poison; feel: Poison. (content_alchemy.md, Herbs)",
+          "catalogueId": "nightshade",
+          "skill": "alchemy",
+          "level": 35,
+          "usedBy": [
+            "item_weak_poison",
+            "item_poison",
+            "item_deadly_poison"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_nightshade"
+      },
+      "item_anglers_luck": {
+        "name": "Angler's Luck",
+        "type": "potion",
+        "plan": {
+          "status": "planned",
+          "tier": 2,
+          "note": "Alchemy 15 (work: Fishing); made with Mint, Seaweed, Water; effect: Rarer catches. (content_alchemy.md, Potions)",
+          "catalogueId": "angler_s_luck",
+          "skill": "alchemy",
+          "level": 15,
+          "madeWith": [
+            "item_mint",
+            "item_seaweed",
+            "item_water"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_anglers_luck"
+      },
+      "item_green_thumb": {
+        "name": "Green Thumb",
+        "type": "potion",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Alchemy 20 (work: Farming); made with Sage, Seaweed, Water; effect: Bigger crop loads. (content_alchemy.md, Potions)",
+          "catalogueId": "green_thumb",
+          "skill": "alchemy",
+          "level": 20,
+          "madeWith": [
+            "item_sage",
+            "item_seaweed",
+            "item_water"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_green_thumb"
+      },
+      "item_swift_hands": {
+        "name": "Swift Hands",
+        "type": "potion",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Alchemy 23 (work: any); made with Mint, Sage, Feather, Apple Juice; effect: Faster work. (content_alchemy.md, Potions)",
+          "catalogueId": "swift_hands",
+          "skill": "alchemy",
+          "level": 23,
+          "madeWith": [
+            "item_mint",
+            "item_sage",
+            "item_feather",
+            "item_apple_juice"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_swift_hands"
+      },
+      "item_fireward": {
+        "name": "Fireward",
+        "type": "potion",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Alchemy 26 (elixir); made with Sage, Fire Mote, Water; effect: Resist Fire. (content_alchemy.md, Potions)",
+          "catalogueId": "fireward",
+          "skill": "alchemy",
+          "level": 26,
+          "madeWith": [
+            "item_sage",
+            "item_fire_mote",
+            "item_water"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_fireward"
+      },
+      "item_frostward": {
+        "name": "Frostward",
+        "type": "potion",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Alchemy 28 (elixir); made with Sage, Water Mote, Water; effect: Resist Ice. (content_alchemy.md, Potions)",
+          "catalogueId": "frostward",
+          "skill": "alchemy",
+          "level": 28,
+          "madeWith": [
+            "item_sage",
+            "item_water_mote",
+            "item_water"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_frostward"
+      },
+      "item_stormward": {
+        "name": "Stormward",
+        "type": "potion",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Alchemy 30 (elixir); made with Rose, Wind Mote, Water; effect: Resist Electric. (content_alchemy.md, Potions)",
+          "catalogueId": "stormward",
+          "skill": "alchemy",
+          "level": 30,
+          "madeWith": [
+            "item_rose",
+            "item_wind_mote",
+            "item_water"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_stormward"
+      },
+      "item_weak_poison": {
+        "name": "Weak Poison",
+        "type": "potion",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Alchemy 35 (poison); made with Nightshade, Mushroom, Water; effect: Poison damage. (content_alchemy.md, Potions)",
+          "catalogueId": "weak_poison",
+          "skill": "alchemy",
+          "level": 35,
+          "madeWith": [
+            "item_nightshade",
+            "item_mushroom",
+            "item_water"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_weak_poison"
+      },
+      "item_elixir_of_keen_eye": {
+        "name": "Elixir of Keen Eye",
+        "type": "potion",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Alchemy 40 (elixir); made with Mandrake, Pearl, Grape Juice; effect: More crit. (content_alchemy.md, Potions)",
+          "catalogueId": "elixir_of_keen_eye",
+          "skill": "alchemy",
+          "level": 40,
+          "madeWith": [
+            "item_mandrake",
+            "item_pearl",
+            "item_grape_juice"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_elixir_of_keen_eye"
+      },
+      "item_poison": {
+        "name": "Poison",
+        "type": "potion",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Alchemy 50 (poison); made with Nightshade, Mandrake, Grape Juice; effect: Stronger Poison; weird item: enemy drop. (content_alchemy.md, Potions)",
+          "catalogueId": "poison",
+          "skill": "alchemy",
+          "level": 50,
+          "madeWith": [
+            "item_nightshade",
+            "item_mandrake",
+            "item_grape_juice"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_poison"
+      },
+      "item_deadly_poison": {
+        "name": "Deadly Poison",
+        "type": "potion",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Alchemy 70 (poison); made with Nightshade, Moonpetal, Wine; effect: The strongest Poison; weird item: enemy drop. (content_alchemy.md, Potions)",
+          "catalogueId": "deadly_poison",
+          "skill": "alchemy",
+          "level": 70,
+          "madeWith": [
+            "item_nightshade",
+            "item_moonpetal",
+            "item_wine"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_deadly_poison"
+      },
+      "item_grand_scholars_tonic": {
+        "name": "Grand Scholar's Tonic",
+        "type": "potion",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Alchemy 75 (work: any); made with Moonpetal, Rose, Pearl, Wine; effect: Much more XP. (content_alchemy.md, Potions)",
+          "catalogueId": "grand_scholar_s_tonic",
+          "skill": "alchemy",
+          "level": 75,
+          "madeWith": [
+            "item_moonpetal",
+            "item_rose",
+            "item_pearl",
+            "item_wine"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_grand_scholars_tonic"
+      },
+      "item_parchment": {
+        "name": "Parchment",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 2,
+          "note": "Crafting 14 (material); made with Hide, Oak Wood; used by Blank Book; also used by: Blank Book; made with: Hide or Oak Wood (either one). (content_crafting.md, The shape)",
+          "catalogueId": "parchment",
+          "skill": "crafting",
+          "level": 14,
+          "madeWith": [
+            "item_hide",
+            "item_oak_wood"
+          ],
+          "usedBy": [
+            "item_blank_book"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_parchment"
+      },
+      "item_blank_book": {
+        "name": "Blank Book",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 2,
+          "note": "Crafting 15 (material); made with Parchment, Leather; used by Fire Tome, Ice Tome, Electric Tome, Poison Tome, Dark Tome, Light Tome; also used by: Enchanting: Tomes. (content_crafting.md, The shape)",
+          "catalogueId": "blank_book",
+          "skill": "crafting",
+          "level": 15,
+          "madeWith": [
+            "item_parchment",
+            "item_leather"
+          ],
+          "usedBy": [
+            "item_fire_tome",
+            "item_ice_tome",
+            "item_electric_tome",
+            "item_poison_tome",
+            "item_dark_tome",
+            "item_light_tome"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_blank_book"
+      },
+      "item_hard_gloves": {
+        "name": "Hard Gloves",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Crafting 23 (gloves, Ranged); made with Hard Leather. (content_crafting.md, The shape)",
+          "catalogueId": "hard_gloves",
+          "skill": "crafting",
+          "level": 23,
+          "madeWith": [
+            "item_hard_leather"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_hard_gloves"
+      },
+      "item_hard_boots": {
+        "name": "Hard Boots",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Crafting 24 (boots, Ranged); made with Hard Leather. (content_crafting.md, The shape)",
+          "catalogueId": "hard_boots",
+          "skill": "crafting",
+          "level": 24,
+          "madeWith": [
+            "item_hard_leather"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_hard_boots"
+      },
+      "item_studded_gloves": {
+        "name": "Studded Gloves",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Crafting 44 (gloves, Ranged); made with Studded Leather. (content_crafting.md, The shape)",
+          "catalogueId": "studded_gloves",
+          "skill": "crafting",
+          "level": 44,
+          "madeWith": [
+            "item_studded_leather"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_studded_gloves"
+      },
+      "item_studded_boots": {
+        "name": "Studded Boots",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Crafting 45 (boots, Ranged); made with Studded Leather. (content_crafting.md, The shape)",
+          "catalogueId": "studded_boots",
+          "skill": "crafting",
+          "level": 45,
+          "madeWith": [
+            "item_studded_leather"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_studded_boots"
+      },
+      "item_drake_leather": {
+        "name": "Drake Leather",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Crafting 61 (material); made with Blue Scale; used by Drake Hat, Drake Gloves, Drake Boots, Drake Shield, Drake Chest; also used by: Drake armour. (content_crafting.md, The shape)",
+          "catalogueId": "drake_leather",
+          "skill": "crafting",
+          "level": 61,
+          "madeWith": [
+            "item_blue_scale"
+          ],
+          "usedBy": [
+            "item_drake_hat",
+            "item_drake_gloves",
+            "item_drake_boots",
+            "item_drake_shield",
+            "item_drake_chest"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_drake_leather"
+      },
+      "item_drake_hat": {
+        "name": "Drake Hat",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Crafting 62 (hat, Ranged); made with Drake Leather. (content_crafting.md, The shape)",
+          "catalogueId": "drake_hat",
+          "skill": "crafting",
+          "level": 62,
+          "madeWith": [
+            "item_drake_leather"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_drake_hat"
+      },
+      "item_drake_gloves": {
+        "name": "Drake Gloves",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Crafting 63 (gloves, Ranged); made with Drake Leather. (content_crafting.md, The shape)",
+          "catalogueId": "drake_gloves",
+          "skill": "crafting",
+          "level": 63,
+          "madeWith": [
+            "item_drake_leather"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_drake_gloves"
+      },
+      "item_drake_boots": {
+        "name": "Drake Boots",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Crafting 64 (boots, Ranged); made with Drake Leather. (content_crafting.md, The shape)",
+          "catalogueId": "drake_boots",
+          "skill": "crafting",
+          "level": 64,
+          "madeWith": [
+            "item_drake_leather"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_drake_boots"
+      },
+      "item_drake_shield": {
+        "name": "Drake Shield",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Crafting 65 (off hand, Ranged); made with Drake Leather. (content_crafting.md, The shape)",
+          "catalogueId": "drake_shield",
+          "skill": "crafting",
+          "level": 65,
+          "madeWith": [
+            "item_drake_leather"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_drake_shield"
+      },
+      "item_drake_chest": {
+        "name": "Drake Chest",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Crafting 66 (chest, Ranged); made with Drake Leather. (content_crafting.md, The shape)",
+          "catalogueId": "drake_chest",
+          "skill": "crafting",
+          "level": 66,
+          "madeWith": [
+            "item_drake_leather"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_drake_chest"
+      },
+      "item_dragonscale_gloves": {
+        "name": "Dragonscale Gloves",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Crafting 83 (gloves, Ranged); made with Dragonscale. (content_crafting.md, The shape)",
+          "catalogueId": "dragonscale_gloves",
+          "skill": "crafting",
+          "level": 83,
+          "madeWith": [
+            "item_dragonscale"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_dragonscale_gloves"
+      },
+      "item_dragonscale_boots": {
+        "name": "Dragonscale Boots",
+        "type": "armor",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Crafting 84 (boots, Ranged); made with Dragonscale. (content_crafting.md, The shape)",
+          "catalogueId": "dragonscale_boots",
+          "skill": "crafting",
+          "level": 84,
+          "madeWith": [
+            "item_dragonscale"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_dragonscale_boots"
+      },
+      "item_blue_scale": {
+        "name": "Blue Scale",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "No skill, no level of its own (Material); from enemy drop (enemies session); used by Drake Leather.",
+          "catalogueId": "blue_scale",
+          "usedBy": [
+            "item_drake_leather"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_blue_scale"
+      },
+      "item_oyster_stew": {
+        "name": "Oyster Stew",
+        "type": "food",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Cooking 25 (food); made with Oyster, Water. (content_food_and_drink.md, Iron (levels 20 to 29))",
+          "catalogueId": "oyster_stew",
+          "skill": "cooking",
+          "level": 25,
+          "madeWith": [
+            "item_oyster",
+            "item_water"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_oyster_stew"
+      },
+      "item_raw_chicken": {
+        "name": "Raw Chicken",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Cooking, no level of its own (Ingredient); from Chickens, coop; used by Roast Chicken, Chicken Soup, Honey Chicken, Orange Chicken. (content_food_and_drink.md, Silver (levels 30 to 39))",
+          "catalogueId": "raw_chicken",
+          "skill": "cooking",
+          "usedBy": [
+            "item_roast_chicken",
+            "item_chicken_soup",
+            "item_honey_chicken",
+            "item_orange_chicken"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_raw_chicken"
+      },
+      "item_egg": {
+        "name": "Egg",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Cooking, no level of its own (Ingredient); from Chickens, coop; used by Boiled Egg, Omelette. (content_food_and_drink.md, Silver (levels 30 to 39))",
+          "catalogueId": "egg",
+          "skill": "cooking",
+          "usedBy": [
+            "item_boiled_egg",
+            "item_omelette"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_egg"
+      },
+      "item_roast_chicken": {
+        "name": "Roast Chicken",
+        "type": "food",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Cooking 39 (food); made with Raw Chicken; used by Royal Banquet. (content_food_and_drink.md, Silver (levels 30 to 39))",
+          "catalogueId": "roast_chicken",
+          "skill": "cooking",
+          "level": 39,
+          "madeWith": [
+            "item_raw_chicken"
+          ],
+          "usedBy": [
+            "item_royal_banquet"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_roast_chicken"
+      },
+      "item_boiled_egg": {
+        "name": "Boiled Egg",
+        "type": "food",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Cooking 41 (food); made with Egg. (content_food_and_drink.md, Mythril (levels 40 to 49))",
+          "catalogueId": "boiled_egg",
+          "skill": "cooking",
+          "level": 41,
+          "madeWith": [
+            "item_egg"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_boiled_egg"
+      },
+      "item_omelette": {
+        "name": "Omelette",
+        "type": "food",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Cooking 45 (food); made with Egg, Cheese, Onion. (content_food_and_drink.md, Mythril (levels 40 to 49))",
+          "catalogueId": "omelette",
+          "skill": "cooking",
+          "level": 45,
+          "madeWith": [
+            "item_egg",
+            "item_cheese",
+            "item_onion"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_omelette"
+      },
+      "item_chicken_soup": {
+        "name": "Chicken Soup",
+        "type": "food",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Cooking 48 (food); made with Raw Chicken, Mirepoix. (content_food_and_drink.md, Mythril (levels 40 to 49))",
+          "catalogueId": "chicken_soup",
+          "skill": "cooking",
+          "level": 48,
+          "madeWith": [
+            "item_raw_chicken",
+            "item_mirepoix"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_chicken_soup"
+      },
+      "item_honey_chicken": {
+        "name": "Honey Chicken",
+        "type": "food",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Cooking 55 (food); made with Raw Chicken, Honey. (content_food_and_drink.md, Gold (levels 50 to 59))",
+          "catalogueId": "honey_chicken",
+          "skill": "cooking",
+          "level": 55,
+          "madeWith": [
+            "item_raw_chicken",
+            "item_honey"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_honey_chicken"
+      },
+      "item_orange_chicken": {
+        "name": "Orange Chicken",
+        "type": "food",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Cooking 60 (food); made with Raw Chicken, Orange. (content_food_and_drink.md, Adamantine (levels 60 to 79))",
+          "catalogueId": "orange_chicken",
+          "skill": "cooking",
+          "level": 60,
+          "madeWith": [
+            "item_raw_chicken",
+            "item_orange"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_orange_chicken"
+      },
+      "item_ember_shark": {
+        "name": "Ember Shark",
+        "type": "food",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Cooking 89 (food); made with Shark, Emberroot. (content_food_and_drink.md, Darkmetal (levels 80 to 99))",
+          "catalogueId": "ember_shark",
+          "skill": "cooking",
+          "level": 89,
+          "madeWith": [
+            "item_shark",
+            "item_emberroot"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_ember_shark"
+      },
+      "item_shark_soup": {
+        "name": "Shark Soup",
+        "type": "food",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Cooking 92 (food); made with Shark, Sofrito. (content_food_and_drink.md, Darkmetal (levels 80 to 99))",
+          "catalogueId": "shark_soup",
+          "skill": "cooking",
+          "level": 92,
+          "madeWith": [
+            "item_shark",
+            "item_sofrito"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_shark_soup"
+      },
+      "item_seafood_platter": {
+        "name": "Seafood Platter",
+        "type": "food",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Cooking 96 (food); made with Lobster, Salmon, Shark. (content_food_and_drink.md, Darkmetal (levels 80 to 99))",
+          "catalogueId": "seafood_platter",
+          "skill": "cooking",
+          "level": 96,
+          "madeWith": [
+            "item_lobster",
+            "item_salmon",
+            "item_shark"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_seafood_platter"
+      },
+      "item_royal_banquet": {
+        "name": "Royal Banquet",
+        "type": "food",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Cooking 98 (food); made with Royal Beef Stew, Roast Chicken, Wine. (content_food_and_drink.md, Darkmetal (levels 80 to 99))",
+          "catalogueId": "royal_banquet",
+          "skill": "cooking",
+          "level": 98,
+          "madeWith": [
+            "item_royal_beef_stew",
+            "item_roast_chicken",
+            "item_wine"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_royal_banquet"
+      },
+      "item_guildmasters_feast": {
+        "name": "Guildmaster's Feast",
+        "type": "food",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Cooking 99 (food); made with Shark, Royal Beef Stew, Voidcap, Wine. (content_food_and_drink.md, Darkmetal (levels 80 to 99))",
+          "catalogueId": "guildmaster_s_feast",
+          "skill": "cooking",
+          "level": 99,
+          "madeWith": [
+            "item_shark",
+            "item_royal_beef_stew",
+            "item_voidcap",
+            "item_wine"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_guildmasters_feast"
+      },
+      "item_bamboo": {
+        "name": "Bamboo",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 0,
+          "note": "Forestry 5 (Material); from Bamboo Grove; used by Fine Fishing Rod.",
+          "catalogueId": "bamboo",
+          "skill": "forestry",
+          "level": 5,
+          "usedBy": [
+            "item_fine_fishing_rod"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_bamboo"
+      },
+      "item_feather": {
+        "name": "Feather",
+        "type": "material",
+        "plan": {
+          "status": "planned",
+          "tier": 2,
+          "note": "Forestry 10 (Material); from Hollow Tree; used by Swift Hands, Copper Arrow, Iron Arrow, Silver Arrow, Mythril Arrow, Adamantine Arrow, Darkmetal Arrow.",
+          "catalogueId": "feather",
+          "skill": "forestry",
+          "level": 10,
+          "usedBy": [
+            "item_swift_hands",
+            "item_copper_arrow",
+            "item_iron_bodkin_arrow",
+            "item_silver_arrow",
+            "item_mythril_arrow",
+            "item_adamantine_arrow",
+            "item_darkmetal_arrow"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "item_feather"
       }
     },
     "tokens": {
@@ -4086,8 +7818,316 @@
         },
         "autoSyncId": true,
         "id": "token_shipwreck"
+      },
+      "token_tailors_shop": {
+        "name": "Tailor's Shop",
+        "plan": {
+          "status": "planned",
+          "tier": 0,
+          "note": "Construction 1 (Skill building); for: Tailor; replaces today: new. (content_construction.md, Skill buildings)",
+          "catalogueId": "tailor_s_shop",
+          "skill": "construction",
+          "level": 1
+        },
+        "autoSyncId": true,
+        "id": "token_tailors_shop"
+      },
+      "token_fletchers_lodge": {
+        "name": "Fletcher's Lodge",
+        "plan": {
+          "status": "planned",
+          "tier": 0,
+          "note": "Construction 1 (Skill building); for: Fletching; replaces today: new. (content_construction.md, Skill buildings)",
+          "catalogueId": "fletcher_s_lodge",
+          "skill": "construction",
+          "level": 1
+        },
+        "autoSyncId": true,
+        "id": "token_fletchers_lodge"
+      },
+      "token_enchanters_tower": {
+        "name": "Enchanter's Tower",
+        "plan": {
+          "status": "planned",
+          "tier": 0,
+          "note": "Construction 1 (Skill building); for: Enchanting; replaces today: new. (content_construction.md, Skill buildings)",
+          "catalogueId": "enchanter_s_tower",
+          "skill": "construction",
+          "level": 1
+        },
+        "autoSyncId": true,
+        "id": "token_enchanters_tower"
+      },
+      "token_war_camp": {
+        "name": "War Camp",
+        "plan": {
+          "status": "planned",
+          "tier": 0,
+          "note": "Construction 1 (Skill building); for: Melee, Ranged, Magic, Stealth; replaces today: new: a hero there fights every enemy nearby, in their own style. (content_construction.md, Skill buildings)",
+          "catalogueId": "war_camp",
+          "skill": "construction",
+          "level": 1
+        },
+        "autoSyncId": true,
+        "id": "token_war_camp"
+      },
+      "token_guard_tower": {
+        "name": "Guard Tower",
+        "plan": {
+          "status": "planned",
+          "tier": 2,
+          "note": "Construction 15 (Building group); what: Temporary: stops enemy spawns nearby until it wears out; made with: Planks, Stone, Torches; level: 15. (content_construction.md, Other buildings)",
+          "catalogueId": "guard_tower",
+          "skill": "construction",
+          "level": 15
+        },
+        "autoSyncId": true,
+        "id": "token_guard_tower"
+      },
+      "token_fallen_star": {
+        "name": "Fallen Star",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Mining 70 (Token); gives Adamantine Ore, Darkmetal Ore; its job: A head start on the next metal; what's different: A rare find; one rich strike, then gone. (content_mining_forestry.md, Mining)",
+          "catalogueId": "fallen_star",
+          "skill": "mining",
+          "level": 70,
+          "gives": [
+            "item_adamantine_ore",
+            "item_darkmetal_ore"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_fallen_star"
+      },
+      "token_bamboo_grove": {
+        "name": "Bamboo Grove",
+        "plan": {
+          "status": "planned",
+          "tier": 0,
+          "note": "Forestry 5 (Token); gives Bamboo; its job: Crafting's Fine Rod; good early XP; what's different: Very fast, tiny yields. (content_mining_forestry.md, Forestry)",
+          "catalogueId": "bamboo_grove",
+          "skill": "forestry",
+          "level": 5,
+          "gives": [
+            "item_bamboo"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_bamboo_grove"
+      },
+      "token_hollow_tree": {
+        "name": "Hollow Tree",
+        "plan": {
+          "status": "planned",
+          "tier": 2,
+          "note": "Forestry 10 (Token); gives Feather, Bird Nest; its job: Fletching's Feathers; what's different: Never falls; pays in bursts as birds come and go. (content_mining_forestry.md, Forestry)",
+          "catalogueId": "hollow_tree",
+          "skill": "forestry",
+          "level": 10,
+          "gives": [
+            "item_feather",
+            "item_bird_nest"
+          ]
+        },
+        "autoSyncId": true,
+        "id": "token_hollow_tree"
+      },
+      "token_driftwood_logjam": {
+        "name": "Driftwood Logjam",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Forestry 25 (Token); its job: Wood at the water's edge; what's different: Stands on water; a few uses, drifts back later; gives: Mixed wood. (content_mining_forestry.md, Forestry)",
+          "catalogueId": "driftwood_logjam",
+          "skill": "forestry",
+          "level": 25
+        },
+        "autoSyncId": true,
+        "id": "token_driftwood_logjam"
+      },
+      "token_summoning_circle": {
+        "name": "Summoning Circle",
+        "plan": {
+          "status": "planned",
+          "tier": 0,
+          "note": "Summoning's building: charges the summons, spending what each copies plus a Mote; a placeholder building, variants later (more charges a cycle, wider reach). Planned until the Motes are in the game. (content_summoning.md)",
+          "skill": "construction",
+          "level": 1,
+          "gives": [
+            "token_summoned_small_slime",
+            "token_summoned_water_elemental",
+            "token_summoned_fire_elemental",
+            "token_summoned_thorn_elemental",
+            "token_summoned_greater_slime"
+          ],
+          "catalogueId": "summoning_circle"
+        },
+        "autoSyncId": true,
+        "id": "token_summoning_circle"
+      },
+      "token_summoned_small_slime": {
+        "name": "Summoned Small Slime",
+        "plan": {
+          "status": "planned",
+          "tier": 0,
+          "note": "Summoning 1: a Summoned Small Slime (a recolour of its enemy with a faint glow) works Farming 10; trait Preservation: a Field it harvests replants without spending a seed; the Summoning Circle spends Redberries, Nature Mote. Planned until the Motes are in the game (Enchanting's Leylines). (content_summoning.md, The list)",
+          "skill": "summoning",
+          "level": 1,
+          "works": {
+            "skill": "farming",
+            "level": 10
+          },
+          "madeWith": [
+            "item_redberry",
+            "item_nature_mote"
+          ],
+          "copies": "token_small_slime",
+          "catalogueId": "summoned_small_slime"
+        },
+        "autoSyncId": true,
+        "id": "token_summoned_small_slime"
+      },
+      "token_summoned_water_elemental": {
+        "name": "Summoned Water Elemental",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Summoning 20: a Summoned Water Elemental (a recolour of its enemy with a faint glow) works Fishing 30; trait Needs no Bait; the Summoning Circle spends Raw Shrimp, Water Mote. Planned until the Motes are in the game (Enchanting's Leylines). (content_summoning.md, The list)",
+          "skill": "summoning",
+          "level": 20,
+          "works": {
+            "skill": "fishing",
+            "level": 30
+          },
+          "madeWith": [
+            "item_raw_shrimp",
+            "item_water_mote"
+          ],
+          "copies": "token_water_elemental",
+          "catalogueId": "summoned_water_elemental"
+        },
+        "autoSyncId": true,
+        "id": "token_summoned_water_elemental"
+      },
+      "token_summoned_fire_elemental": {
+        "name": "Summoned Fire Elemental",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Summoning 40: a Summoned Fire Elemental (a recolour of its enemy with a faint glow) works Mining 50; trait Lucky: more rare finds from veins; the Summoning Circle spends Coal, Fire Mote. Planned until the Motes are in the game (Enchanting's Leylines). (content_summoning.md, The list)",
+          "skill": "summoning",
+          "level": 40,
+          "works": {
+            "skill": "mining",
+            "level": 50
+          },
+          "madeWith": [
+            "item_coal",
+            "item_fire_mote"
+          ],
+          "copies": "token_fire_elemental",
+          "catalogueId": "summoned_fire_elemental"
+        },
+        "autoSyncId": true,
+        "id": "token_summoned_fire_elemental"
+      },
+      "token_summoned_thorn_elemental": {
+        "name": "Summoned Thorn Elemental",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Summoning 60: a Summoned Thorn Elemental (a recolour of its enemy with a faint glow) works Forestry 70; trait Refresh: a tree it chops is less likely to fall; the Summoning Circle spends Blackberries, Nature Mote. Planned until the Motes are in the game (Enchanting's Leylines). (content_summoning.md, The list)",
+          "skill": "summoning",
+          "level": 60,
+          "works": {
+            "skill": "forestry",
+            "level": 70
+          },
+          "madeWith": [
+            "item_blackberry",
+            "item_nature_mote"
+          ],
+          "copies": "token_thorn_elemental",
+          "catalogueId": "summoned_thorn_elemental"
+        },
+        "autoSyncId": true,
+        "id": "token_summoned_thorn_elemental"
+      },
+      "token_summoned_greater_slime": {
+        "name": "Summoned Greater Slime",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Summoning 80: a Summoned Greater Slime (a recolour of its enemy with a faint glow) works Mining 90; trait Double Item: a chance of double ore; the Summoning Circle spends Wheat, Apples, Light Mote. Planned until the Motes are in the game (Enchanting's Leylines). (content_summoning.md, The list)",
+          "skill": "summoning",
+          "level": 80,
+          "works": {
+            "skill": "mining",
+            "level": 90
+          },
+          "madeWith": [
+            "item_wheat",
+            "item_apple",
+            "item_light_mote"
+          ],
+          "copies": "token_greater_slime",
+          "catalogueId": "summoned_greater_slime"
+        },
+        "autoSyncId": true,
+        "id": "token_summoned_greater_slime"
       }
     },
-    "recipes": []
+    "recipes": [
+      {
+        "id": "recipe_flax",
+        "name": "Flax",
+        "skill": "farming",
+        "plan": {
+          "status": "planned",
+          "tier": 0,
+          "note": "Farming 3 (Farm); gives Flax; first use: Tailor: String, Linen. (content_farming.md, Unlocks)",
+          "catalogueId": "flax_field",
+          "skill": "farming",
+          "level": 3,
+          "gives": [
+            "item_flax"
+          ]
+        }
+      },
+      {
+        "id": "recipe_sage",
+        "name": "Sage",
+        "skill": "farming",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Farming 20 (Farm); gives Sage; first use: Alchemy at the same level. (content_farming.md, Unlocks)",
+          "catalogueId": "sage_herb",
+          "skill": "farming",
+          "level": 20,
+          "gives": [
+            "item_sage"
+          ]
+        }
+      },
+      {
+        "id": "recipe_nightshade",
+        "name": "Nightshade",
+        "skill": "farming",
+        "plan": {
+          "status": "planned",
+          "tier": 3,
+          "note": "Farming 35 (Farm); gives Nightshade; first use: Alchemy at the same level. (content_farming.md, Unlocks)",
+          "catalogueId": "nightshade_herb",
+          "skill": "farming",
+          "level": 35,
+          "gives": [
+            "item_nightshade"
+          ]
+        }
+      }
+    ]
   }
 }

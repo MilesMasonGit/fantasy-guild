@@ -5850,5 +5850,26 @@
       }
     ],
     "autoSyncId": true
+  },
+  "effect_hideout_station": {
+    "id": "effect_hideout_station",
+    "name": "Hideout Station",
+    "statements": [
+      {
+        "id": "stm_hideout_station",
+        "keyword": "station",
+        "payload": {
+          "skill": "crime",
+          "stationKind": "hideout"
+        },
+        "chargeDelta": 0,
+        "to": null,
+        "reach": null,
+        "target": null,
+        "when": null,
+        "upkeep": null
+      }
+    ],
+    "autoSyncId": true
   }
 }

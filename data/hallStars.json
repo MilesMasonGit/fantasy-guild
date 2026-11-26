@@ -2893,8 +2893,8 @@
           "tier": 1,
           "price": [
             {
-              "itemId": "item_cherry",
-              "quantity": 1700
+              "itemId": "item_clay",
+              "quantity": 200
             }
           ],
           "rules": [],

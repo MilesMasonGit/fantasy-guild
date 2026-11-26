@@ -389,7 +389,8 @@
         "combat": 0.5
       },
       "camps": [
-        "token_thorn_thicket"
+        "token_thorn_thicket",
+        "token_slime_puddle"
       ],
       "bossCamps": [
         "token_slime_pit"
@@ -422,6 +423,12 @@
       "token_cow_pasture",
       "token_sheep_pasture",
       "token_thorn_thicket",
+      {
+        "id": "token_slime_puddle",
+        "kits": [
+          "wetland"
+        ]
+      },
       {
         "id": "token_alpha_den",
         "kits": [
