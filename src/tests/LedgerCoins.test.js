@@ -163,7 +163,7 @@ describe('⭐ coin costs on the timeline: a price that asks coins waits for them
         c.tokens.token_plot.shop.coins = 50;
         const r = buildRateBook(c).rateOf({ token: 'token_plot', recipe: 'recipe_build_hut' });
         expect(r).toMatchObject({ coinsPerCycle: -50, coins: expect.closeTo(-6000, 6) });
-        expect(r.unmodelled).toContainEqual(expect.objectContaining({ source: 'token_plot', what: 'coins' }));
+        expect(r.assumptions).toContainEqual(expect.objectContaining({ source: 'token_plot', what: 'coins' }));
         const pace = paceOf(c);
         // 10 Oak Wood (40 s of the oak) and 50 coins (125 s of the Still) at Bare.
         expect(pace.pathOf(tokenKey('token_plot'), PROFILE.BARE).own).toBeCloseTo(50 / 1440);
