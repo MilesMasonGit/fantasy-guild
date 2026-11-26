@@ -191,7 +191,7 @@ describe('Venom\'s ticks are Poison damage', () => {
     it('an enemy immune to Poison takes nothing from Venom on the effects clock', () => {
         const fight = engage();
         fight.enemy.resistances = { poison: 100 };
-        LiveEffects.applyTo(BoardCombat.enemyBearerOfToken(fight.instanceId), { effectId: VENOM_EFFECT_ID, durationMs: 60000 });
+        LiveEffects.applyTo(BoardCombat.enemyBearerOfToken(fight.instanceId), { effectId: VENOM_EFFECT_ID, forFight: true });
         const before = fight.combat.enemyHp.current;
         LiveEffects.tick(STATUS_TICK_INTERVAL_MS, TriggerSystem.fireLiveStatement);
         expect(fight.combat.enemyHp.current).toBe(before);

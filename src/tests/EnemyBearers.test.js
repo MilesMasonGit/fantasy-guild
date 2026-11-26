@@ -160,7 +160,7 @@ describe('a fight is a bearer', () => {
         // Registration is a module-load side effect; carrying something and
         // watching it tick is the only honest proof that it took.
         authored('effect_enemy_dot', overTime(3));
-        LiveEffects.applyTo(bearer(), { effectId: 'effect_enemy_dot', durationMs: 60000 });
+        LiveEffects.applyTo(bearer(), { effectId: 'effect_enemy_dot', forFight: true });
 
         const before = BoardCombat.getFight(idAt(MONSTER)).combat.enemyHp.current;
         LiveEffects.tick(STATUS_TICK_INTERVAL_MS, TriggerSystem.fireLiveStatement);
@@ -171,7 +171,7 @@ describe('a fight is a bearer', () => {
     it('has the lifetime of the fight - a monster walked away from is whole again', () => {
         engage();
         authored('effect_enemy_shield', lasting(EFFECT_TYPES.ARMOR, 5));
-        LiveEffects.applyTo(bearer(), { effectId: 'effect_enemy_shield', durationMs: 60000 });
+        LiveEffects.applyTo(bearer(), { effectId: 'effect_enemy_shield', forFight: true });
         expect(BoardCombat.getFight(idAt(MONSTER)).effects).toHaveLength(1);
 
         // The hero leaves; `tickTile` drops the fight. Nothing extra had to be
@@ -239,7 +239,7 @@ describe('an enemy has resistances, and they mean what a hero\'s mean', () => {
         authored('effect_monster_shield', lasting(EFFECT_TYPES.TYPE_RESIST, 50, 'stab'));
 
         expect(enemyTypeResistance(fight.enemy, 'stab')).toBe(0);
-        LiveEffects.applyTo(bearer(), { effectId: 'effect_monster_shield', durationMs: 60000 });
+        LiveEffects.applyTo(bearer(), { effectId: 'effect_monster_shield', forFight: true });
         expect(enemyTypeResistance(fight.enemy, 'stab')).toBe(50);
     });
 
@@ -247,7 +247,7 @@ describe('an enemy has resistances, and they mean what a hero\'s mean', () => {
         const fight = engage();
         authored('effect_temp_shield', lasting(EFFECT_TYPES.TYPE_RESIST, 50, 'stab'));
         const b = bearer();
-        LiveEffects.applyTo(b, { effectId: 'effect_temp_shield', durationMs: 60000 });
+        LiveEffects.applyTo(b, { effectId: 'effect_temp_shield', forFight: true });
 
         LiveEffects.removeFrom(b, 'effect_temp_shield');
 
@@ -259,7 +259,7 @@ describe('WARNING: "this entity" on a monster means the MONSTER', () => {
     it('damages the monster, not the hero standing on its tile', () => {
         const fight = engage();
         authored('effect_self_dot', overTime(5));
-        LiveEffects.applyTo(bearer(), { effectId: 'effect_self_dot', durationMs: 60000 });
+        LiveEffects.applyTo(bearer(), { effectId: 'effect_self_dot', forFight: true });
 
         const enemyBefore = fight.combat.enemyHp.current;
         const heroBefore = HeroManager.getHero('hero_1').hp.current;
@@ -300,7 +300,7 @@ describe('`Applies` reaches an enemy the same way a status does', () => {
             ...makeStatement(KEYWORD.APPLIES),
             when: { event: 'COMBAT_ENGAGED', scope: 'self' },
             target: { role: ROLE.OPPONENT },
-            payload: { effectId: 'effect_applied_dot', durationMs: 60000 }
+            payload: { effectId: 'effect_applied_dot', forFight: true }
         }, { self: idAt(MONSTER), selfHeroId: 'hero_1', actor: 'hero_1', source: null });
 
         expect(landed).toBe(1);
@@ -311,7 +311,7 @@ describe('`Applies` reaches an enemy the same way a status does', () => {
         engage();
         authored('effect_hero_first', lasting(EFFECT_TYPES.ARMOR, 2));
 
-        StatusApplication.applyAt(idAt(MONSTER), { effectId: 'effect_hero_first', durationMs: 60000 });
+        StatusApplication.applyAt(idAt(MONSTER), { effectId: 'effect_hero_first', forFight: true });
 
         expect(LiveEffects.carries(HeroManager.getHero('hero_1'), 'effect_hero_first')).toBe(true);
         expect(BoardCombat.getFight(idAt(MONSTER)).effects).toHaveLength(0);
@@ -321,7 +321,7 @@ describe('`Applies` reaches an enemy the same way a status does', () => {
         place(BUSH, 'fixture_producer');
         authored('effect_nobody', lasting(EFFECT_TYPES.ARMOR, 2));
         expect(StatusApplication.applyAt(idAt(BUSH), {
-            effectId: 'effect_nobody', durationMs: 60000
+            effectId: 'effect_nobody', forFight: true
         })).toBe(false);
     });
 });
@@ -330,7 +330,7 @@ describe('the hero path is untouched', () => {
     it('still carries, still contributes, still comes off again', () => {
         authored('effect_hero_shield', lasting(EFFECT_TYPES.ARMOR, 4));
         expect(LiveEffects.applyToHero('hero_1', {
-            effectId: 'effect_hero_shield', durationMs: 60000
+            effectId: 'effect_hero_shield', forFight: true
         })).toBe(true);
         expect(LiveEffects.heroCarries(HeroManager.getHero('hero_1'), 'effect_hero_shield')).toBe(true);
         expect(LiveEffects.removeFromHero('hero_1', 'effect_hero_shield')).toBe(1);

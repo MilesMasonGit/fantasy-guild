@@ -19,6 +19,7 @@ import { STANDS_ON_CHOICES, isStandsOnWord } from '../atlas/TerrainMap.js';
 import { listPooledSkillIds, runsNoRecipe } from '../../config/registries/recipePoolRegistry.js';
 import { SPRITE_MANIFEST } from '../../config/registries/sprite-manifest.js';
 import { currentSpriteName } from '../../utils/AssetManager.js';
+import { lengthText } from '../../utils/Formatters.js';
 import { warnMissingContent } from '../../utils/missingContent.js';
 import { isWorkedWithoutSkill, WORK_SKILL_WHY } from './workSkillRule.js';
 import { auditLifecycleBlocks } from './lifecycleAudit.js';
@@ -374,6 +375,7 @@ function auditEffects(out) {
         // Items carry their rules here, not inline, so the target-shape
         // tripwires have to read the library too.
         auditAppliesTargetShape(out, where, entry);
+        auditRetiredTime(out, where, entry);
 
         if (usedBy(effectId, TOKENS || {}, ITEMS || {}).length === 0 && !perkEffects.has(effectId) && !kindEffects.has(effectId) && !masteryEffects.has(effectId)) {
             out.push(finding(where, 'is not used by anything. Not a fault if you are still ' +
@@ -448,6 +450,25 @@ function auditAppliesTargetShape(out, where, def) {
                 `both, so the ${filtered && reached ? 'filter and reach are' : filtered ? 'filter is' : 'reach is'} ` +
                 `stored and read by nothing. Clear ${filtered && reached ? 'them' : 'it'}, or clear the role.`));
         }
+    }
+}
+
+/**
+ * ⚠️ **A time left on an `Applies` rule.** Timed effects are retired: what a rule applies lasts for
+ * the fight, the swing or the work cycle, and with none of them fires once as the rule runs. A time
+ * kept from before is read by nothing, so a buff meant to last a while is never carried. The blank 0
+ * every rule was once born with (still in shipped effects) means no time, so only a real time is
+ * named.
+ */
+function auditRetiredTime(out, where, def) {
+    for (const statement of statementsOf(def)) {
+        const ms = Number(statement?.payload?.durationMs);
+        if (statement?.keyword !== KEYWORD.APPLIES || !(ms > 0)) continue;
+        out.push(finding(where,
+            `one of its "Applies" rules still asks for its effect to last ${lengthText(ms)}, and timed effects ` +
+            `are retired: nothing reads that time, so the effect fires once as the rule runs and nobody ` +
+            `carries it. In the CMS, tick "for the fight" or "for the cycle" instead, and untick the ` +
+            `rule's old timer to clear it.`));
     }
 }
 

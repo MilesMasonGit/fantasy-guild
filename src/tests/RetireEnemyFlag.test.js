@@ -252,7 +252,7 @@ describe('4. the runtime ignores a stray flag', () => {
         registerEffects({ fixture_v10b_ward: { id: 'fixture_v10b_ward', name: 'Ward',
             statements: [{ ...makeStatement(KEYWORD.PROVIDES), id: 'stm_v10b_ward', payload: { type: 'ARMOR', bucket: 'flat', value: 1 } }] } });
 
-        StatusApplication.applyAt(idAt(MONSTER), { effectId: 'fixture_v10b_ward', durationMs: 60000, target: 'enemy' });
+        StatusApplication.applyAt(idAt(MONSTER), { effectId: 'fixture_v10b_ward', forFight: true, target: 'enemy' });
         expect(LiveEffects.carries(hero1(), 'fixture_v10b_ward')).toBe(true);
         expect(fight.effects).toHaveLength(0);
     });
@@ -260,7 +260,7 @@ describe('4. the runtime ignores a stray flag', () => {
 
 describe('5. ⭐ the misleading item sentence is fixed', () => {
     it('an item Applies once aimed at the enemy by the flag now reads "to the enemy"', () => {
-        const raw = flagged('enemy', { effectId: 'fixture_v10b_venom', durationMs: 30000, chance: 100 });
+        const raw = flagged('enemy', { effectId: 'fixture_v10b_venom', forFight: true, chance: 100 });
         const names = { effect: () => 'Venom' };
         // Before conversion the flag is not a word the sentence can say, so it
         // named the heroes on the tiles instead — the reported bug.
@@ -269,7 +269,7 @@ describe('5. ⭐ the misleading item sentence is fixed', () => {
         registerEffects({ fixture_v10b_venom_item: { id: 'fixture_v10b_venom_item', name: 'Venom Flask', statements: [raw] } });
         const loaded = getEffect('fixture_v10b_venom_item').statements[0];
         const text = renderStatement(loaded, names);
-        expect(text).toContain('applies Venom to the enemy for 30s');
+        expect(text).toContain('applies Venom to the enemy for the fight');
         expect(text).not.toMatch(/hero/);
     });
 

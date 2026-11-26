@@ -21,7 +21,7 @@ function setUp() {
     const hero = { id: 'eme_hero', name: 'Aela', hp: { current: 2, max: 100 }, skills: { melee: { level: 1, xp: 0 } }, effects: [] };
     const fight = {
         id: 'fight_eme', instanceId: 'eme', assignedHeroId: hero.id,
-        effects: [{ effectId: 'eme_flutter', scale: 1, expiresAt: Number.MAX_SAFE_INTEGER, forFight: true, forAttack: 1 }],
+        effects: [{ effectId: 'eme_flutter', scale: 1, forFight: true, forAttack: 1 }],
         combat: { enemyHp: { current: 50, max: 50 }, heroTickProcesses: { [hero.id]: 3000 }, enemyTickProgress: 0, state: { intermissionTimer: 0 } }
     };
     const enemy = { id: 'eme_enemy', level: 1, hp: 50, hit: 1, combatType: 'melee', traits: [], resistances: {} };

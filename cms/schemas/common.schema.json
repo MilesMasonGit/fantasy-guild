@@ -190,7 +190,7 @@
         "amount": { "type": "number" },
         "effectId": { "type": "string", "description": "applies: the library effect it lands." },
         "scale": { "type": "number" },
-        "durationMs": { "type": "number", "minimum": 0 },
+        "durationMs": { "type": "number", "minimum": 0, "description": "applies: retired (timed effects are gone), read by nothing. A 0 is the blank rules were once born with; a real time is named by the game's content check." },
         "forFight": { "type": "boolean" },
         "forCycle": { "type": "boolean" },
         "forSwing": { "type": "boolean" },

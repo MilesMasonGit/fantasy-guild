@@ -342,11 +342,11 @@ describe('a hero\'s gear counts only while they work the Token', () => {
             .toEqual([expect.objectContaining({ scope: 'hero', bucket: 'flat', value: 6 })]);
     });
 
-    it('what a hero carries for a while is its own kind of line', () => {
+    it('what a hero carries is its own kind of line', () => {
         hire({ equipment: [] });
         const vein = arrive(VEIN);
         Orders.orderAt(HERO, AT);
-        LiveEffects.applyToHero(HERO, { effectId: 'eb_draught', durationMs: 60000 });
+        LiveEffects.applyToHero(HERO, { effectId: 'eb_draught', forFight: true });
 
         const y = badge(effectBreakdown(vein.id), EFFECT_KEY.YIELD);
         expect(y.sources).toEqual([expect.objectContaining({ kind: SOURCE_KIND.CARRIED, name: 'Mira\'s Draught', effectId: 'eb_draught' })]);
@@ -560,7 +560,7 @@ describe('the badges are what the engine does', () => {
         arrive('eb_plus', NEAR2);
         getGlobalAggregator().addModifier({ source: 'guild:eb_test', type: EFFECT_TYPES.YIELD, bucket: 'multiplier', value: 0.5 });
         Orders.orderAt(HERO, AT);
-        LiveEffects.applyToHero(HERO, { effectId: 'eb_draught', durationMs: 60000 });
+        LiveEffects.applyToHero(HERO, { effectId: 'eb_draught', forFight: true });
 
         for (const base of [1, 3, 7.5]) {
             const { resolved, contributions } = TileModifiers.explainAxis(vein.id, EFFECT_TYPES.YIELD, base, 'mining');

@@ -385,7 +385,7 @@ describe('for the cycle', () => {
     it('never runs out by time; a cycle starting elsewhere ends what another Token\'s cycle left', () => {
         const bearer = LiveEffects.heroBearer(hero);
         LiveEffects.applyTo(bearer, { effectId: 's6b_fx_coffee', forCycle: 'tok_a' });
-        LiveEffects.tickBearer(bearer, () => {}, Number.MAX_SAFE_INTEGER - 1);
+        for (let i = 0; i < 1000; i++) LiveEffects.tickBearer(bearer, () => {});
         expect(hero.effects).toHaveLength(1);
         // Starting at the same Token keeps it; starting at another ends it.
         expect(LiveEffects.endOtherCycleEffects(bearer, 'tok_a')).toBe(0);

@@ -70,19 +70,18 @@ afterEach(() => {
 
 describe('⭐ an effect can stay on somebody and keep acting', () => {
     it('ticks its damage while it is carried', () => {
-        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', durationMs: 60000 });
+        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', forFight: true });
 
         ticks(3);
 
         expect(hp()).toBe(94);   // 2 damage, three times
     });
 
-    it('stops once it expires', () => {
-        vi.useFakeTimers();
-        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', durationMs: 1 });
+    it('stops once its fight is over', () => {
+        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', forFight: true });
 
-        vi.advanceTimersByTime(10);
-        ticks(1);                       // fires, then expires
+        ticks(1);                       // fires
+        LiveEffects.endHeroFightEffects('hero_1');
         const afterFirst = hp();
         ticks(3);                       // gone: nothing more
 
@@ -91,7 +90,7 @@ describe('⭐ an effect can stay on somebody and keep acting', () => {
     });
 
     it('scales its damage by the reference tier, like everything else', () => {
-        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', scale: 3, durationMs: 60000 });
+        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', scale: 3, forFight: true });
 
         ticks(1);
 
@@ -99,9 +98,8 @@ describe('⭐ an effect can stay on somebody and keep acting', () => {
     });
 
     it('is a reference into the same library, not a special kind of thing', () => {
-        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', durationMs: 60000 });
-        expect(carried()[0]).toMatchObject({ effectId: 'fixture_poison', scale: 1 });
-        expect(carried()[0].remainingMs).toBe(60000);
+        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', forFight: true });
+        expect(carried()[0]).toEqual({ effectId: 'fixture_poison', scale: 1, sourceId: null, forFight: true });
     });
 
     it('refuses an effect the library does not have', () => {
@@ -112,35 +110,24 @@ describe('⭐ an effect can stay on somebody and keep acting', () => {
 
 describe('⚠️ re-application REFRESHES, and never stacks (G-16)', () => {
     it('keeps one instance when the same effect lands twice', () => {
-        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', durationMs: 60000 });
-        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', durationMs: 60000 });
+        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', forFight: true });
+        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', forFight: true });
 
         expect(carried()).toHaveLength(1);
         ticks(1);
         expect(hp()).toBe(98);   // 2, not 4 — this is the 99-stack Poison, refused
     });
 
-    it('pushes the clock out rather than adding a second timer', () => {
-        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', durationMs: 6000 });
-        ticks(1);
-        const first = carried()[0].remainingMs;
-
-        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', durationMs: 6000 });
-
-        expect(carried()).toHaveLength(1);
-        expect(carried()[0].remainingMs).toBeGreaterThan(first);
-    });
-
     it('⚠️ lets a STRONGER application win, so better gear is not discarded', () => {
-        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', scale: 1, durationMs: 60000 });
-        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', scale: 3, durationMs: 60000 });
+        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', scale: 1, forFight: true });
+        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', scale: 3, forFight: true });
 
         expect(carried()[0].scale).toBe(3);
     });
 
     it('does not let a weaker one demote it', () => {
-        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', scale: 3, durationMs: 60000 });
-        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', scale: 1, durationMs: 60000 });
+        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', scale: 3, forFight: true });
+        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', scale: 1, forFight: true });
 
         expect(carried()[0].scale).toBe(3);
     });
@@ -149,15 +136,15 @@ describe('⚠️ re-application REFRESHES, and never stacks (G-16)', () => {
 describe('taking one off again', () => {
     it('removes one by name', () => {
         registerPoison('fixture_burning', 4);
-        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', durationMs: 60000 });
-        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_burning', durationMs: 60000 });
+        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', forFight: true });
+        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_burning', forFight: true });
 
         expect(LiveEffects.removeFromHero('hero_1', 'fixture_poison')).toBe(1);
         expect(carried().map(e => e.effectId)).toEqual(['fixture_burning']);
     });
 
     it('clears the lot when no name is given', () => {
-        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', durationMs: 60000 });
+        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', forFight: true });
         expect(LiveEffects.removeFromHero('hero_1')).toBe(1);
         expect(carried()).toEqual([]);
     });
@@ -165,7 +152,7 @@ describe('taking one off again', () => {
     it('answers whether a hero is carrying something', () => {
         const hero = HeroManager.getHero('hero_1');
         expect(LiveEffects.heroCarries(hero, 'fixture_poison')).toBe(false);
-        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', durationMs: 60000 });
+        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', forFight: true });
         expect(LiveEffects.heroCarries(HeroManager.getHero('hero_1'), 'fixture_poison')).toBe(true);
     });
 });
@@ -178,7 +165,7 @@ describe('⚠️ a lethal tick announces, and never resolves the death', () => {
         const un = EventBus.subscribe('hero_downed', p => downed.push(p));
 
         registerPoison('fixture_lethal', 500);
-        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_lethal', durationMs: 60000 });
+        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_lethal', forFight: true });
         ticks(1);
         un();
 
@@ -186,7 +173,7 @@ describe('⚠️ a lethal tick announces, and never resolves the death', () => {
     });
 
     it('leaves a wounded hero alone — they are off the board and already cleansed', () => {
-        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', durationMs: 60000 });
+        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', forFight: true });
         HeroManager.getHero('hero_1').status = 'wounded';
 
         ticks(3);
@@ -200,7 +187,7 @@ describe('the clock', () => {
         // Poison has always ticked at this rate. A different one would silently
         // re-balance every damage-over-time effect in the game when the seven
         // are re-authored.
-        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', durationMs: 60000 });
+        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_poison', forFight: true });
 
         LiveEffects.tick(STATUS_TICK_INTERVAL_MS - 1, TriggerSystem.fireLiveStatement);
         expect(hp()).toBe(100);                 // not yet

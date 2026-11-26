@@ -11,15 +11,15 @@ import * as HeroManager from '../hero/HeroManager.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 
 /**
- * Any entity may carry live effect instances: `hero.effects = [{ effectId, scale, remainingMs, sourceId }]`,
- * references into the effect library with a clock on them. Nothing here knows what Poison is.
+ * Any entity may carry live effect instances: `hero.effects = [{ effectId, scale, sourceId, forFight | forCycle }]`,
+ * references into the effect library with a lifetime on them. Nothing here knows what Poison is.
  *
- * ⚠️ A timed instance holds the game time it has left (`remainingMs`), spent by the effect clock
- * ({@link tick}), never a wall-clock end: a reload, "Load as I left it" or a paused game must not
- * spend it, and a catch-up spends it as it plays.
+ * ⚠️ A lifetime is a fight, a swing, an attack or a work cycle, never a stretch of time: an instance
+ * ends when its fight or cycle does, or when it is taken off. A landing with none of them fires its
+ * effect once, there and then, and nobody carries it.
  *
- * ⚠️ Re-application REFRESHES; it never stacks. One effect per entity: reapplying resets its
- * clock and keeps its strength, except that a stronger scale replaces a weaker one (otherwise
+ * ⚠️ Re-application REFRESHES; it never stacks. One effect per entity: reapplying keeps one
+ * instance and its strength, except that a stronger scale replaces a weaker one (otherwise
  * a better item would silently do nothing).
  *
  * ⚠️ Except a **status**: a library entry carrying a `status` block (`statusBlockOf`). Each landing
@@ -118,13 +118,6 @@ function allBearers() {
 }
 
 /**
- * The clock reading a "for the fight" or "for the cycle" instance carries: it never runs out by
- * time, only when its fight ends (`endFightEffects`) or its cycle does (`endCycleEffects`). A plain
- * number, so a save written mid-fight holds it as such.
- */
-const UNTIL_FIGHT_ENDS = Number.MAX_SAFE_INTEGER;
-
-/**
  * A landing's strength (Strong Drink): a factor of 0 or more, or null for none (1, absent, not a
  * number). An instance stores one only when it is not null, so a save without Strong Drink is as it was.
  */
@@ -143,9 +136,10 @@ function keepStronger(instance, boost) {
 }
 
 /**
- * Put a library effect on a bearer, for a while, for the fight (`spec.forFight`), for the swing
- * being made (`spec.forSwing`), until an attack on it is over (`spec.forAttack`) or for the work
- * cycle starting (`spec.forCycle`). A status ignores all of them: it has its own lifetime.
+ * Put a library effect on a bearer for the fight (`spec.forFight`), for the swing being made
+ * (`spec.forSwing`), until an attack on it is over (`spec.forAttack`) or for the work cycle
+ * starting (`spec.forCycle`). With none of them it fires once, now. A status ignores all of them:
+ * it has its own lifetime.
  *
  * `forAttack` is the number, in this fight, of the attack on the bearer it lasts through (an enemy
  * move's Flutter: the hero's next swing, hit or miss); {@link endAttackEffects} takes it off as that
@@ -163,7 +157,7 @@ function keepStronger(instance, boost) {
  * ({@link endPoisonEffects}).
  *
  * @param {object} bearer  a descriptor from `heroBearer` or a registered source
- * @param {{effectId: string, scale?: number, durationMs?: number, forFight?: boolean, forSwing?: boolean, forAttack?: number, forCycle?: string|boolean, boost?: number}} spec
+ * @param {{effectId: string, scale?: number, forFight?: boolean, forSwing?: boolean, forAttack?: number, forCycle?: string|boolean, boost?: number}} spec
  * @param {string|null} sourceId  what applied it, for the readout
  * @returns {boolean} whether anything is now carried
  */
@@ -182,8 +176,8 @@ export function applyTo(bearer, spec, sourceId = null, fire = null) {
     const forFight = !!spec.forFight || forSwing;
     const forCycle = spec.forCycle ? spec.forCycle : null;
 
-    // No duration means fire it once, NOW (chaining), not on the next tick.
-    if (!forFight && !forCycle && !Number(spec.durationMs)) {
+    // No lifetime means fire it once, NOW (chaining), not on the next tick.
+    if (!forFight && !forCycle) {
         if (!fire) return false;
         for (const statement of statementsFromEntry(EFFECTS[spec.effectId], { effectId: spec.effectId, scale })) {
             fire(boost === null ? statement : strengthenStatement(statement, boost), { ...bearer.roles });
@@ -193,36 +187,23 @@ export function applyTo(bearer, spec, sourceId = null, fire = null) {
 
     const list = listOf(target);
     const existing = list.find(e => e.effectId === spec.effectId);
-    const timed = !forFight && !forCycle;
-    const leftMs = timed ? timeLeftFor(spec.durationMs) : null;
 
     if (existing) {
-        // Refresh the clock, and let a stronger application win.
+        // Let a stronger application win.
         existing.scale = Math.max(existing.scale, scale);
         keepStronger(existing, boost);
         existing.sourceId = sourceId ?? existing.sourceId;
         // A landing for one swing never changes the lifetime of one already carried.
         if (!forSwing) {
-            // Carried for the fight and for a while, both lives stand: the fight's holds it to the
-            // fight's end, and what is left of the while carries on after (`endFightEffects`).
-            if (timed && existing.forFight) keepWhile(existing, leftMs);
-            if (forFight && !existing.forFight && !existing.forCycle) keepWhile(existing, existing.remainingMs);
-            if (timed && existing.remainingMs != null) {
-                existing.remainingMs = Math.max(existing.remainingMs, leftMs);
-            } else if (!timed && existing.remainingMs != null) {
-                delete existing.remainingMs;
-                existing.expiresAt = UNTIL_FIGHT_ENDS;
-            }
             if (forFight) existing.forFight = true;
             if (forCycle) existing.forCycle = forCycle;
-            if (spec.poison && existing.forFight && existing.poison == null && existing.remainingMs == null) existing.poison = spec.poison;
+            if (spec.poison && existing.forFight && existing.poison == null) existing.poison = spec.poison;
             delete existing.forSwing;
             delete existing.forAttack;
         }
     } else {
         list.push({
             effectId: spec.effectId, scale,
-            ...(timed ? { remainingMs: leftMs } : { expiresAt: UNTIL_FIGHT_ENDS }),
             sourceId,
             ...(boost !== null ? { boost } : {}),
             ...(forFight ? { forFight: true } : {}),
@@ -238,23 +219,8 @@ export function applyTo(bearer, spec, sourceId = null, fire = null) {
 }
 
 /**
- * The game time a landing lasts `durationMs` for, as an instance holds it. What the effect clock has
- * gathered towards its next tick is added, because that tick spends a whole interval: so it ends on
- * the first tick at least `durationMs` after it landed.
- */
-function timeLeftFor(durationMs) {
-    return Math.max(0, Number(durationMs) || 0) + clock;
-}
-
-/** Remember the while an instance also carries for the fight (`whileLeftMs`), the longer one. */
-function keepWhile(instance, leftMs) {
-    if (!(leftMs > 0)) return;
-    instance.whileLeftMs = Math.max(Number(instance.whileLeftMs) || 0, leftMs);
-}
-
-/**
  * Put a plain (not status) effect on a bearer until attack number `untilAttack` on it is over. One
- * already carried for the swing now lasts that long; one carried longer (the fight, a while) keeps its
+ * already carried for the swing now lasts that long; one carried longer (the fight, a cycle) keeps its
  * lifetime; one carried for an attack lasts to the later of the two.
  */
 function applyForAttack(bearer, effectId, scale, untilAttack, sourceId) {
@@ -271,7 +237,7 @@ function applyForAttack(bearer, effectId, scale, untilAttack, sourceId) {
             existing.forAttack = Math.max(existing.forAttack, untilAttack);
         }
     } else {
-        list.push({ effectId, scale, expiresAt: UNTIL_FIGHT_ENDS, sourceId, forFight: true, forAttack: untilAttack });
+        list.push({ effectId, scale, sourceId, forFight: true, forAttack: untilAttack });
     }
     syncAggregator(target);
     bearer.notify?.('live_effect_applied');
@@ -315,7 +281,7 @@ function applyStatus(bearer, spec, block, sourceId) {
             effectId, scale: normaliseScale(spec.scale), stacks: 1,
             ...(boost !== null ? { boost } : {}),
             ...(block.ticks ? { ticksLeft: block.ticks } : {}),
-            expiresAt: UNTIL_FIGHT_ENDS, forFight: true, sourceId
+            forFight: true, sourceId
         };
         list.push(instance);
     }
@@ -367,28 +333,13 @@ export function endFightEffects(bearer) {
     const target = bearer?.target;
     if (!target?.effects?.length) return 0;
     const before = target.effects.length;
-    target.effects = target.effects.filter(e => !e.forFight || outlivesFight(e));
+    target.effects = target.effects.filter(e => !e.forFight);
     const ended = before - target.effects.length;
     if (ended) {
         syncAggregator(target);
         bearer.notify?.('live_effect_expired');
     }
     return ended;
-}
-
-/**
- * Whether an instance carried for the fight also has a while left beyond it: then it stays, carried
- * for the rest of that while from here on.
- */
-function outlivesFight(instance) {
-    if (!(instance.whileLeftMs > 0)) return false;
-    instance.remainingMs = instance.whileLeftMs;
-    delete instance.whileLeftMs;
-    delete instance.expiresAt;
-    delete instance.forFight;
-    delete instance.forSwing;
-    delete instance.forAttack;
-    return true;
 }
 
 /**
@@ -471,11 +422,12 @@ export function removeFrom(bearer, effectId = null) {
 }
 
 /**
- * Run one bearer's clock: fire what recurs, spend `elapsedMs` of game time, then drop what has expired.
+ * One effect tick for one bearer: fire what recurs, then spend a tick of every status that counts
+ * them and drop those whose ticks ran out.
  *
  * @returns {number} how many instances expired
  */
-export function tickBearer(bearer, fire, elapsedMs = STATUS_TICK_INTERVAL_MS) {
+export function tickBearer(bearer, fire) {
     const target = bearer?.target;
     if (!target?.effects?.length) return 0;
     // A wounded hero is off the board and already cleansed.
@@ -504,15 +456,13 @@ export function tickBearer(bearer, fire, elapsedMs = STATUS_TICK_INTERVAL_MS) {
         if (downed) break ticking;
     }
 
-    // A status with a tick count spends one; the rest wait for their fight to end.
+    // A status with a tick count spends one; the rest wait for their fight or cycle to end.
     for (const instance of target.effects) {
         if (instance.ticksLeft != null) instance.ticksLeft -= 1;
-        if (instance.remainingMs != null) instance.remainingMs -= elapsedMs;
-        if (instance.whileLeftMs != null) instance.whileLeftMs = Math.max(0, instance.whileLeftMs - elapsedMs);
     }
 
     const before = target.effects.length;
-    target.effects = target.effects.filter(e => !(e.remainingMs <= 0) && !(e.ticksLeft != null && e.ticksLeft <= 0));
+    target.effects = target.effects.filter(e => !(e.ticksLeft != null && e.ticksLeft <= 0));
     const expired = before - target.effects.length;
     if (expired) {
         logger.debug('LiveEffects', `${bearer.name} lost ${expired} effect(s)`);
@@ -575,7 +525,7 @@ function instanceStatements(instance, entry) {
 }
 
 /**
- * What a carried effect contributes continuously: modifiers with a clock (Armor Shield, Well Fed).
+ * What a carried effect contributes continuously: modifiers with a lifetime (an elixir, a drink).
  *
  * ⚠️ The combat axes go on the aggregator; the board axes are read live by `resolveAxis`.
  * Live effects follow whichever road their axis already travels, so no reader had to learn
@@ -606,8 +556,9 @@ export function syncAggregator(hero) {
 }
 
 /**
- * The global clock: fire what recurs, drop what has expired. Every `STATUS_TICK_INTERVAL_MS`
- * (3 s), for every bearer at once: heroes in roster order, then each live fight's enemy.
+ * The effect tick: fire what recurs, and count down the statuses that last a number of ticks.
+ * Every `STATUS_TICK_INTERVAL_MS` (3 s), for every bearer at once: heroes in roster order, then
+ * each live fight's enemy.
  *
  * @param {number} delta ms since the last frame
  * @param {(statement: object, roles: object) => void} fire  how to run one
@@ -619,7 +570,7 @@ export function tick(delta, fire) {
     if (clock < STATUS_TICK_INTERVAL_MS) return;
     clock -= STATUS_TICK_INTERVAL_MS;
 
-    for (const bearer of allBearers()) tickBearer(bearer, fire, STATUS_TICK_INTERVAL_MS);
+    for (const bearer of allBearers()) tickBearer(bearer, fire);
 }
 
 /** Reset the clock. For tests, and for a fresh board. */

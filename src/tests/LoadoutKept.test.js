@@ -394,11 +394,11 @@ describe('mid-run: the work time follows the loadout at once', () => {
         expect(ids(HeroEffects.loadoutStatements(hero))).toEqual([]);
     });
 
-    it('a live effect still counts and ends on its own clock', () => {
+    it('a live effect still counts, and stops counting once taken off', () => {
         hero.skills.forestry = { level: 1, xp: 0 };
         const tree = placeTree();
         HeroEffects.loadoutStatements(hero);
-        expect(LiveEffects.applyToHero(hero.id, { effectId: 'lk_fx_quick', scale: 1, durationMs: 60000 })).toBeTruthy();
+        expect(LiveEffects.applyToHero(hero.id, { effectId: 'lk_fx_quick', scale: 1, forFight: true })).toBeTruthy();
         expect(workTime(tree)).toBe(BASE / 2);
         LiveEffects.removeFromHero(hero.id, 'lk_fx_quick');
         expect(workTime(tree)).toBe(BASE);

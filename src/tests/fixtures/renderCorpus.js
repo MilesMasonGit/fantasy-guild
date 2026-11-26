@@ -150,7 +150,7 @@ export function buildCorpus() {
         provides: () => S(KEYWORD.PROVIDES, { payload: { type: 'YIELD', bucket: 'percentage', value: 0.25 } }),
         providesReads: () => S(KEYWORD.PROVIDES, { payload: { type: 'WORK_TIME', bucket: 'percentage', value: -0.2 } }),
         grants: () => S(KEYWORD.GRANTS, { payload: { itemId: FIX.item, quantity: 2, chance: 40 } }),
-        appliesEffect: () => S(KEYWORD.APPLIES, { payload: { effectId: FIX.effect, durationMs: 30000, chance: 50 } }),
+        appliesEffect: () => S(KEYWORD.APPLIES, { payload: { effectId: FIX.effect, chance: 50 } }),
         converts: () => S(KEYWORD.CONVERTS, { payload: { consumes: [{ itemId: FIX.item, quantity: 2 }], produces: [{ itemId: FIX.item2, quantity: 1 }] } }),
         cannot: () => S(KEYWORD.CANNOT, { payload: { kind: RESTRICTION_KINDS[0]?.id, max: 2 } })
     };
@@ -194,7 +194,7 @@ export function buildCorpus() {
         addS(`role:removes-all:${role}`, S(KEYWORD.REMOVES, { payload: {}, target }));
         // V10a: `Applies` with an optional role target, on a moment that supplies the enemy.
         const fight = { event: 'COMBAT_ENGAGED', scope: 'nearby' };
-        addS(`role:applies:${role}`, S(KEYWORD.APPLIES, { payload: { effectId: FIX.effect, durationMs: 30000 }, target, when: fight }), { effect: () => 'Thorns' });
+        addS(`role:applies:${role}`, S(KEYWORD.APPLIES, { payload: { effectId: FIX.effect }, target, when: fight }), { effect: () => 'Thorns' });
         addS(`role:applies-status:${role}`, S(KEYWORD.APPLIES, { payload: { statusId: 'poison', stacks: 2 }, target, when: fight }));
     }
     for (const amount of [0, -2, 2.5, 'x', undefined]) {
@@ -240,13 +240,14 @@ export function buildCorpus() {
             }
         }
     }
+    // A time kept on a rule from before timed effects were retired is read by nothing, and not said.
     for (const durationMs of [0, 1500, 30000, undefined]) {
         for (const chance of [100, 40, undefined]) {
             addS(`applies:effect:${durationMs}:${chance}`, S(KEYWORD.APPLIES, { payload: { effectId: FIX.effect, scale: 2, durationMs, chance } }), { effect: () => 'Thorns' });
         }
     }
     addS('applies:effect:no-names', S(KEYWORD.APPLIES, { payload: { effectId: FIX.effect } }));
-    // "For the swing" outranks "for the fight", which outranks a duration.
+    // "For the swing" outranks "for the fight"; a time left from before timed effects were retired says nothing.
     for (const [life, extra] of [['swing', { forSwing: true }], ['swing+fight', { forSwing: true, forFight: true }],
         ['fight+duration', { forFight: true, durationMs: 3000 }], ['status', {}]]) {
         const effectId = life === 'status' ? VENOM : FIX.effect;

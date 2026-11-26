@@ -195,7 +195,7 @@ describe('lifting a fought enemy ends the fight', () => {
         expect(bear.fightHp).toBeTruthy();
 
         const fight = BoardCombat.getFight(bear.id);
-        hero.effects = [...(hero.effects || []), { effectId: 'fixture_venom', stacks: 2, scale: 1, expiresAt: Number.MAX_SAFE_INTEGER, forFight: true }];
+        hero.effects = [...(hero.effects || []), { effectId: 'fixture_venom', stacks: 2, scale: 1, forFight: true }];
         const uses = bear.usesRemaining;
 
         pickUp(bear);

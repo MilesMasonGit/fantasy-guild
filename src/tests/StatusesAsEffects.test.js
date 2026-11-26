@@ -93,8 +93,8 @@ const lasting = (type, value, bucket = 'flat') => ({
     payload: { type, bucket, value }
 });
 
-const carry = (effectId, ms = 60000) =>
-    LiveEffects.applyToHero('hero_1', { effectId, durationMs: ms });
+const carry = (effectId) =>
+    LiveEffects.applyToHero('hero_1', { effectId, forFight: true });
 
 beforeEach(() => {
     GameState.initNew();
@@ -187,20 +187,17 @@ describe('⭐ the four that linger — and the capability V7 had to build', () =
     });
 });
 
-describe('⚠️ a lingering modifier really does stop when it expires', () => {
-    it('takes the armour away again', () => {
-        vi.useFakeTimers();
+describe('⚠️ a lingering modifier really does stop when it ends', () => {
+    it('takes the armour away again when its fight is over', () => {
         authored('effect_short_shield', 'Short Shield', lasting(EFFECT_TYPES.TYPE_RESIST, 50));
 
-        carry('effect_short_shield', 1);
+        carry('effect_short_shield');
         expect(shield(hero())).toBe(50);
 
-        vi.advanceTimersByTime(10);
-        LiveEffects.tick(STATUS_TICK_INTERVAL_MS, TriggerSystem.fireLiveStatement);
+        LiveEffects.endHeroFightEffects('hero_1');
 
         expect(hero().effects).toEqual([]);
         expect(shield(hero()), 'the buff outlived the effect').toBe(0);
-        vi.useRealTimers();
     });
 
     it('and takes it away when it is removed by hand', () => {
@@ -226,7 +223,7 @@ describe('the tier scales a lingering effect too', () => {
     it('makes Armor Shield III three times the shield', () => {
         authored('effect_tiered_shield', 'Tiered Shield', lasting(EFFECT_TYPES.TYPE_RESIST, 10));
         LiveEffects.applyToHero('hero_1', {
-            effectId: 'effect_tiered_shield', scale: 3, durationMs: 60000
+            effectId: 'effect_tiered_shield', scale: 3, forFight: true
         });
 
         expect(shield(hero())).toBe(30);

@@ -74,7 +74,8 @@ describe('⚠️ every clickable word opens a slot that exists', () => {
             'amount', 'magnitude', 'stat', 'counted', 'forFight',
             'type', 'value', 'category', 'reach', 'filterMode', 'filterValue', 'filters',
             // `statusId` and `stacks` are gone: Applies offers library effects only (P4).
-            'typeId', 'placement', 'effectId', 'durationMs',
+            // `durationMs` is gone: timed effects are retired, and a time left on a rule is not said.
+            'typeId', 'placement', 'effectId',
             'kind', 'tag', 'payload',
             // P4: every decision the retired forms held now has a word.
             // `target` is gone: it was the retired enemy flag's word (V10b); the

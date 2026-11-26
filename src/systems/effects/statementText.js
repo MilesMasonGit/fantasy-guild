@@ -1032,15 +1032,15 @@ function bodySegments(statement, names) {
                 : onHero ? segs('the hero') : occupantSegments(statement, names));
 
             /**
-             * A library effect (a status included). With a duration it lingers, "for the fight" it
-             * lasts until its fight ends, "for the swing" until the swing being made is over, "for
-             * the cycle" until the work cycle starting is over, "for N attacks" (a poison's) that many
-             * of its hero's attacks; without any it fires immediately (chaining). A status's own
-             * lifetime is its effect's, and the editor offers none for one.
+             * A library effect (a status included). "For the fight" it lasts until its fight ends,
+             * "for the swing" until the swing being made is over, "for the cycle" until the work
+             * cycle starting is over, "for N attacks" (a poison's) that many of its hero's attacks;
+             * without any it fires immediately (chaining). A status's own lifetime is its effect's,
+             * and the editor offers none for one. ⚠️ A time left on a rule from before timed effects
+             * were retired is not said: nothing reads it (`ContentAudit` names it).
              */
             if (payload.effectId) {
                 const title = names.effect ? names.effect(payload.effectId) : payload.effectId;
-                const ms = Number(payload.durationMs) || 0;
                 const attacks = Math.floor(Number(payload.forAttacks)) || 0;
                 const lasting = payload.forSwing
                     ? segs(' ', d('for the swing', 'forSwing'))
@@ -1050,7 +1050,7 @@ function bodySegments(statement, names) {
                         ? segs(' ', d('for the fight', 'forFight'))
                         : payload.forCycle
                             ? segs(' ', d('for the cycle', 'forCycle'))
-                            : ms > 0 ? segs(' for ', lengthSegments(ms, 'durationMs')) : [];
+                            : [];
                 return segs(d('Applies', K), ' ', d(title || '…', 'effectId'), ' to ', who(), lasting, odds);
             }
 

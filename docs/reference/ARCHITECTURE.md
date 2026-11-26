@@ -134,7 +134,7 @@ Order is pinned by `src/tests/TickHandlerOrder.test.js`.
 | Pri | Handler | What it does |
 |---|---|---|
 | 10 | `time_tracking` | `gameTimeMs += delta`, `meta.totalPlaytime += delta`, and the active Region's `playtimeMs` (`Atlas.addPlaytime`), so the catch-up counts time away to the place the guild was on (`EngineBootstrap.js:166-174`). |
-| 20 | `live_effects` | `LiveEffects.tick`: accumulates delta and fires statuses for all bearers once every 3 s, spending 3 s of each timed effect's game time left (`remainingMs`; for-the-fight and for-the-cycle instances carry `expiresAt: MAX_SAFE_INTEGER` and end with their fight or cycle) (`src/systems/effects/LiveEffects.js:549-555`, `STATUS_TICK_INTERVAL_MS` at `src/config/FormulaRegistry.js:174`). |
+| 20 | `live_effects` | `LiveEffects.tick`: accumulates delta and fires statuses for all bearers once every 3 s, counting down a status's ticks; nothing ends by time (an instance lasts for its fight, swing, attack or work cycle, and ends with it; timed effects are retired) (`src/systems/effects/LiveEffects.js:568-574`, `STATUS_TICK_INTERVAL_MS` at `src/config/FormulaRegistry.js:182`). |
 | 30 | `regen_system` | Hero regeneration (`src/systems/hero/RegenSystem.js:23`). |
 | 40 | `board_runner` | `BoardRunner.tick` (`src/systems/board/BoardRunner.js:469`), below. |
 | 55 | `event_clock` | `EventClock.tick`: the event clock (held at zero while an event Token stands on the mat), and a landing when due. Does nothing while events are off (`EventClock.setEnabled`; off in the tests and the bench). |
