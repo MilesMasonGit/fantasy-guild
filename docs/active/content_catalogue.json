@@ -6566,7 +6566,8 @@
       "section": "Mining",
       "notes": {
         "its job": "A head start on the next metal",
-        "what's different": "A rare find; one rich strike, then gone"
+        "what's different": "A rare find; one rich strike, then gone",
+        "split": "timed on Adamantine Ore; Darkmetal Ore at a chance, about 1 in 4"
       }
     },
     {
@@ -6677,7 +6678,8 @@
       "section": "Forestry",
       "notes": {
         "its job": "Fletching's Feathers",
-        "what's different": "Never falls; pays in bursts as birds come and go"
+        "what's different": "Never falls; pays in bursts as birds come and go",
+        "split": "timed on the Feather; Bird Nest at a chance, about 1 in 5"
       }
     },
     {
@@ -6711,8 +6713,14 @@
       "notes": {
         "its job": "Wood at the water's edge",
         "what's different": "Stands on water; a few uses, drifts back later",
-        "gives": "Mixed wood"
-      }
+        "gives": "Mixed wood",
+        "split": "a third each"
+      },
+      "gives": [
+        "oak_wood",
+        "fir_wood",
+        "birch_wood"
+      ]
     },
     {
       "id": "birch_tree",
