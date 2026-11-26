@@ -321,10 +321,11 @@ function missingUpkeep(def) {
  * @param {object} instance the spawner on the mat
  * @param {object} def its type
  * @param {() => number} random for the weighted pick and the landing
- * @param {{overMs?: number, advance?: Function}} [ctx] from `TimedChanges.advance`:
- *        how long ago the attempt fell due, and the function that advances a
+ * @param {{overMs?: number, advance?: Function, arrived?: Function}} [ctx] from
+ *        `TimedChanges.advance`: how long ago the attempt fell due, the function that advances a
  *        Token's clocks — the new Token lives that leftover time, so a Token
- *        spawned part-way through a big tick grows as if the ticks had been small
+ *        spawned part-way through a big tick grows as if the ticks had been small — and the one
+ *        that says it came then, so it is worked only from then
  * @returns {object|null} the spawner itself after a spawn; null when blocked or there was no room
  */
 export function attemptSpawn(instance, def, random = Math.random, ctx = {}) {
@@ -392,6 +393,9 @@ function tryToSpawn(instance, def, random, ctx) {
     if (spawned && (countsOwn(instance.typeId) || isEnemyDef(getTokenType(spawned.typeId)))) {
         BoardState.setTether(spawned, instance.id);
     }
+    // It came `overMs` before the tick's end: worked only from then, and its clocks live the rest.
+    // Said first, so a change of its own within that time hands the moment on to what it became.
+    if (spawned && typeof ctx.arrived === 'function') ctx.arrived(spawned);
     if (spawned && ctx.overMs > 0 && typeof ctx.advance === 'function') ctx.advance(spawned, ctx.overMs, random);
 
     // "! Spawned Oak Tree", said from the spawner.

@@ -26,16 +26,14 @@ withoutShippedPerks();
 /**
  * Time away with a felled Oak beside its Forest (an older save's: it joins the Forest on the first
  * tick): a forester fells it, it becomes a Stump, the Stump grows into a Sapling for free, the
- * Sapling into an Oak, the forester fells it again, and the second Stump grows back too. The same in
+ * Sapling into an Oak, the forester fells it again, the second Stump grows back too, and the third
+ * Oak falls in turn. Each Oak a Sapling grows into is worked only from the moment it stands. The same in
  * 100 ms steps, in 1000 ms steps and through the game's own catch-up. The Oak is felled by chance,
  * so each run draws the same numbers from its start: the steps and the catch-up roll alike.
  */
 
 const NOW = 1_800_000_000_000;
-// ⚠️ Stops with the third Oak standing: a Stump born of a felling part-way through a tick starts its
-// growth up to a tick early in big steps, so from the second regrowth on the 1000 ms run is ahead
-// (as on the code before Forests owned their trees, with a seedling for each Stump).
-const AWAY_MS = 85_000;
+const AWAY_MS = 90_000;
 const SEEDLING = 'item_oak_seedling';
 
 class SilentAudio {
@@ -143,12 +141,14 @@ describe('⭐ a catch-up over a felled Oak in a Forest\'s reach', () => {
         rolls.mockRestore();
         expect(snapshot(w.stop())).toEqual(small);
 
-        // And what happened: felled, a Stump, a Sapling, an Oak, felled again, and round again,
-        // the seedling never spent.
-        expect(small.became).toEqual(['fcu_stump', 'fcu_sapling', 'fcu_oak', 'fcu_stump', 'fcu_sapling', 'fcu_oak']);
-        expect(small.regrown).toBe(2);
+        // And what happened: felled, a Stump, a Sapling, an Oak, felled again, round again, and
+        // felled a third time, the seedling never spent.
+        expect(small.became).toEqual(['fcu_stump', 'fcu_sapling', 'fcu_oak', 'fcu_stump', 'fcu_sapling', 'fcu_oak', 'fcu_stump']);
+        expect(small.regrown).toBe(3);
         expect(small.seedlings).toBe(1);
-        expect(small.at).toBe('fcu_oak');
+        expect(small.at).toBe('fcu_stump');
+        expect(small.clocks).toEqual({ growMs: 2000 });
         expect(small.alert).toBeNull();
+        expect(small.wood).toBe(6);
     }, 60_000);
 });

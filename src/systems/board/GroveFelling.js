@@ -83,12 +83,12 @@ function payOneCycle(workedId, felled, def, io, heroId, skill) {
 
 /**
  * Tree `instance` (type `def`, worked with `io`) has just fallen at the end of a cycle hero `heroId`
- * worked (`BoardRunner.completeCycle`): on a Grove Felling hit, the touching trees of its kind fall
- * too, each paid. Rolled once a fall.
+ * worked (`BoardRunner.completeCycle`), `overMs` before the tick's end: on a Grove Felling hit, the
+ * touching trees of its kind fall too, each paid, and rest from that same moment. Rolled once a fall.
  *
  * @returns {string[]} the instance ids felled with it
  */
-export function afterFall(instance, def, io, heroId, skill) {
+export function afterFall(instance, def, io, heroId, skill, overMs = 0) {
     if (!heroId || Respawn.respawnOf(def)?.mode !== 'regrow') return [];
     const chance = TileModifiers.resolveAxis(instance.id, EFFECT_TYPES.GROVE_FELLING, 0, skill, heroId);
     if (!(chance > 0)) return [];
@@ -97,7 +97,10 @@ export function afterFall(instance, def, io, heroId, skill) {
     const felled = [];
     for (const tree of kin) {
         payOneCycle(instance.id, tree, getTokenType(tree.typeId) || def, io, heroId, skill);
-        if (Charges.spendLife(tree, { heroId })) felled.push(tree.id);
+        if (Charges.spendLife(tree, { heroId })) {
+            Respawn.restBeganEarlier(tree, overMs);
+            felled.push(tree.id);
+        }
     }
     return felled;
 }
