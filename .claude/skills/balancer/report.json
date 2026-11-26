@@ -27,8 +27,9 @@
     "Cooking, Smithing and Enchanting: none."
   ],
   "waiting": [
+    "On the owner: the CMS Ledger's pace curve still holds the 6.5 % points (1 = 3 ... 99 = 1437). Set it to the 6.25 % points when convenient: 1 = 3, 10 = 5, 20 = 9, 30 = 17, 40 = 32, 50 = 59, 60 = 107, 70 = 197, 80 = 361, 90 = 661, 99 = 1141.",
     "On the director: the ledger read-out and the ledger's new tiers and boost budget (brief 880, L1 to L3). The ledger's pace curve should use the 6.25 % points in BALANCE_RULES section 1, not the 6.5 % ones. With the first number pack: the new XP table (9.4 million XP to 99) and the drink's 50-cycle dose.",
     "On the content session: the plan in the CMS as Planned entries, and the fifteen gaps. Also to look at: Arrowheads unlock later than the arrows that need them at every metal.",
-    "On the balancer: a work potion's dose and batch, and Construction once its repeatable work is planned."
+    "On the balancer: a work potion's dose and batch; Construction once its repeatable work is planned; and a rule for coins (the coin cost curve and what an item is worth), to propose to the owner before the coin pack."
   ]
 }

@@ -210,6 +210,7 @@ The review listed numbers no rule sets yet; each needs a rule when its chain is 
 
 - **Recipes with chance outputs**: how their XP is split (a craft that makes several of one thing pays by its time, section 3).
 - **A work potion's dose and batch**, with the Alchemy run.
+- **Coins**: the coin cost curve and what an item is worth ([concept_gold_coins.md](../active/concept_gold_coins.md); the ledger's coin curve setting defaults to 10 minutes). The balancer proposes the rule before the coin pack (T-703).
 - **Food's healing** against the time it takes to make, with combat.
 - **Station charges, Construction prices and tool prices**, against what they save.
 - **Combat XP**, with combat.
