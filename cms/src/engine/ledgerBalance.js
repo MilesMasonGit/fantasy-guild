@@ -5,7 +5,7 @@ import { adaptToken, adaptRecipe, isInert, isUntagged } from './sim/fieldAdapter
 
 /**
  * The Ledger's balancing preview over the CMS workspace (`ledger/balance.js`): the numbers the
- * content would need for the Typical player to follow the pace curve, each stage to meet its budget
+ * content would need for the Maxed player (the curve's) to follow the pace curve, each stage to meet its budget
  * and boosts their targets, and what numbers alone cannot fix. A preview: nothing here writes to the
  * workspace. Slow (the pace is worked out again after each pass), so the page runs it in the ledger's
  * Worker (`ledgerJobs.js`).
@@ -67,14 +67,14 @@ const skillWords = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 /** The preview in plain text, for the change pack tool: stages, walls, the largest moves, what numbers cannot fix. */
 export function balanceText(result, { moves = 15 } = {}) {
     const lines = [];
-    lines.push('Stages at Typical (before → after, against the budget):');
+    lines.push('Stages at Maxed (before → after, against the budget):');
     for (const a of result.after.stages) {
         const b = result.before.stages.find((s) => s.tier === a.tier) || a;
         const pct = (s) => (s.offPct === null ? '' : ` (${s.offPct >= 0 ? '+' : ''}${Math.round(s.offPct)} %)`);
         lines.push(`- ${a.label}: ${hoursWords(b.hours)}${pct(b)} → ${hoursWords(a.hours)}${pct(a)} against ${formatHours(a.budgetMinutes / 60)}${a.within ? ', within' : ', OUT'}`);
     }
     const wall = (w) => `${skillWords(w.skill)} ${w.from} → ${w.to} (${hoursWords(w.hours)} against ${hoursWords(w.curveHours)}, worst level ${Math.round(w.worst * 10) / 10}×)`;
-    lines.push(`Walls at Typical: ${result.before.walls.length} → ${result.after.walls.length}.`);
+    lines.push(`Walls at Maxed: ${result.before.walls.length} → ${result.after.walls.length}.`);
     for (const w of result.before.walls) lines.push(`- before: ${wall(w)}`);
     for (const w of result.after.walls) lines.push(`- after: ${wall(w)}`);
     lines.push(`Long waits for one unlock: ${result.before.unlockWalls.length} → ${result.after.unlockWalls.length}. Boosts over target (not the Guild Hall): ${result.before.boosts.filter((b) => b.kind !== 'hall').length} → ${result.after.boosts.filter((b) => b.kind !== 'hall').length}.`);
@@ -168,7 +168,7 @@ export function balancePack(state, result, { id = null, createdAt = new Date().t
     const day = createdAt.slice(0, 10);
     return {
         format: PACK_FORMAT, version: PACK_VERSION, id: id || `${day}-ledger-balancing-preview`, createdAt,
-        asked: 'The Ledger balancing preview (brief 290 L9): the numbers the Typical player needs to follow the pace curve, each stage its budget and boosts their targets. A preview to review, not to apply yet.',
+        asked: 'The Ledger balancing preview (brief 290 L9): the numbers the Maxed player, the curve player, needs to follow the pace curve, each stage its budget and boosts their targets. A preview to review, not to apply yet.',
         ...(stages.length ? { intent: { stages } } : {}),
         entries
     };

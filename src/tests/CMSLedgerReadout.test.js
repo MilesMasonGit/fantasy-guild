@@ -59,7 +59,8 @@ describe('npm run cms -- ledger', () => {
 
         const r = await cms(dir, 'ledger', `--json=${jsonFile}`);
         expect(r.code, r.err).toBe(0);
-        expect(r.out).toMatch(/opt is the ledger's Maxed player, typ its Typical/);
+        expect(r.out).toMatch(/opt is the ledger's Maxed player \(the curve's\), typ its Typical, bare its Bare/);
+        expect(r.out).toMatch(/days to 99 opt \(Maxed\) \| typ \(Typical\) \| bare \(Bare\)/);
         expect(r.out).toMatch(/^mining /m);
         expect(r.out).toMatch(/1 Planned, marked/);
 
@@ -70,19 +71,22 @@ describe('npm run cms -- ledger', () => {
         expect(fs.readdirSync(path.join(dir, 'workspace'))).toEqual(['workspace.json']);
 
         const out = JSON.parse(fs.readFileSync(jsonFile, 'utf8'));
-        expect(out).toMatchObject({ format: 'fantasy-guild-ledger-readout', version: 1, profiles: { opt: 'maxed', typ: 'typical' } });
+        expect(out).toMatchObject({ format: 'fantasy-guild-ledger-readout', version: 2, profiles: { opt: 'maxed', typ: 'typical', bare: 'bare' } });
         expect(out.workspace).toMatchObject({ revision: 1 });
-        for (const section of ['pace', 'rows', 'stages', 'checks', 'notes', 'units', 'counts']) expect(out, section).toHaveProperty(section);
+        for (const section of ['pace', 'rows', 'stages', 'boostBudget', 'checks', 'notes', 'units', 'counts']) expect(out, section).toHaveProperty(section);
 
-        // Each skill's pace: levels 1 to 98 (the time to the next), hero and guild time at both profiles.
+        // Each skill's pace: levels 1 to 98 (the time to the next), hero and guild time at all three profiles, and the gatherers a level's work needs.
         expect(Object.keys(out.pace)).toEqual(expect.arrayContaining(['mining', 'forestry', 'construction']));
+        const keys = ['opt', 'typ', 'bare', 'guild', 'guildTyp', 'guildBare'];
         for (const [skill, p] of Object.entries(out.pace)) {
             expect(p.levels.map((l) => l.L), skill).toEqual(Array.from({ length: 98 }, (_, i) => i + 1));
             for (const l of p.levels) {
-                for (const k of ['opt', 'typ', 'guild', 'guildTyp', 'curve']) expect(l, `${skill} ${l.L} ${k}`).toHaveProperty(k);
-                expect(l.reach).toEqual({ opt: expect.anything(), typ: expect.anything(), guild: expect.anything(), guildTyp: expect.anything() });
+                for (const k of [...keys, 'curve']) expect(l, `${skill} ${l.L} ${k}`).toHaveProperty(k);
+                expect(Object.keys(l.reach).sort(), `${skill} ${l.L} reach`).toEqual([...keys].sort());
+                expect(Object.keys(l.gatherers).sort(), `${skill} ${l.L} gatherers`).toEqual(['bare', 'opt', 'typ']);
+                expect(l.best).toHaveProperty('bare');
             }
-            for (const k of ['opt', 'typ', 'guild', 'guildTyp', 'curve']) expect(p.days, `${skill} days ${k}`).toHaveProperty(k);
+            for (const k of [...keys, 'curve']) expect(p.days, `${skill} days ${k}`).toHaveProperty(k);
         }
         const mining = out.pace.mining;
         expect(mining.levels[0].opt).toBeGreaterThan(0);
@@ -92,12 +96,21 @@ describe('npm run cms -- ledger', () => {
         expect(construction.levels[0].best.opt).toEqual(expect.any(String));
         expect(construction.levels[13].pastTop).toBeUndefined();
         expect(construction.levels[14]).toMatchObject({ pastTop: true, best: { opt: null, typ: null } });
-        // Maxed never levels slower than Typical, and guild time is never under hero time.
+        // Maxed never levels slower than Typical, Typical never slower than Bare, and guild time is never under hero time.
         for (const l of mining.levels) {
-            if (l.opt === null || l.typ === null) continue;
+            if (l.opt === null || l.typ === null || l.bare === null) continue;
             expect(l.opt).toBeLessThanOrEqual(l.typ + 1e-9);
+            expect(l.typ).toBeLessThanOrEqual(l.bare + 1e-9);
             expect(l.guild).toBeGreaterThanOrEqual(l.opt - 1e-9);
+            expect(l.guildBare).toBeGreaterThanOrEqual(l.bare - 1e-9);
         }
+        // ⭐ Guild time is the hours times the heroes the ledger counts for the level's work: a build fed by two foresters at Bare.
+        const build = construction.levels[0];
+        expect(build.best.bare).toBe('Build Hut at Plot');
+        expect(build.gatherers.bare).toBeCloseTo(2, 3);
+        expect(build.guildBare).toBeCloseTo(build.bare * 3, 2);
+        // The Bare column is the balance rules' divisor: a level's bare over its opt is the optimized boost factor there.
+        expect(mining.levels[0].bare / mining.levels[0].opt).toBeGreaterThan(1);
 
         // Each entry's numbers and arrival at both profiles.
         const vein = out.rows.find((x) => x.key === 'token:token_vein');
@@ -118,6 +131,17 @@ describe('npm run cms -- ledger', () => {
         expect(planned.map((x) => x.id)).toEqual([PLANNED_ID]);
         expect(planned[0]).toMatchObject({ status: 'planned', tier: 2, arriveOpt: null, arriveTyp: null, why: 'planned' });
         expect(out.counts.planned).toBe(1);
+
+        // ⭐ The boost budget, cell by tier, and every total over its cell; the check lists the same.
+        expect(out.boostBudget.tiers.map((t) => t.tier)).toEqual([0, 2, 3, 4, 5, 6, 7]);
+        expect(out.boostBudget.tiers[0]).toMatchObject({ label: 'Starter Camp', level: 1, xp: { typical: 5, maxed: 10 } });
+        expect(out.boostBudget.speedCapPct).toBe(65);
+        expect(out.boostBudget.over.length).toBeGreaterThan(0);
+        for (const o of out.boostBudget.over) expect(o.pct).toBeGreaterThan(o.budget);
+        const budgetChecks = out.checks.filter((c) => c.check === 'boost-budget');
+        expect(budgetChecks.length).toBeGreaterThan(0);
+        expect(new Set(out.boostBudget.over.map((o) => `${o.kind}|${o.profile}`)).size).toBe(budgetChecks.length);
+        expect(out.stages[0]).toMatchObject({ profile: 'maxed', endsAt: 10 });
 
         // The ledger's checks, each with its severity and words.
         expect(out.checks.length).toBeGreaterThan(0);

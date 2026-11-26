@@ -14,7 +14,7 @@ const LEVER_ORDER = [LEVER.XP, LEVER.GATE, LEVER.COST, LEVER.TIME, LEVER.BOOST];
 
 /**
  * The Ledger's Balancing page: on request, the numbers the content would need for the
- * Typical player to follow the pace curve, each stage to meet its budget and boosts their targets
+ * Maxed player (the curve's) to follow the pace curve, each stage to meet its budget and boosts their targets
  * (XP a cycle, level gates, costs and times, boost strengths), the stages and walls before and
  * after them, and what numbers alone cannot fix. A preview: nothing is applied, and Apply stays
  * locked until the owner has seen the calculator agree with real play.
@@ -46,7 +46,7 @@ export default function LedgerBalance({ onOpen }) {
           <div>
             <h3 className="text-sm font-bold text-white flex items-center gap-2"><Scale size={14} style={{ color: 'var(--color-accent)' }} /> Balancing preview</h3>
             <p className="text-[11px] text-gray-500 mt-1 max-w-3xl">
-              The numbers the content would need for the Typical player to follow the pace curve, each stage to meet its budget
+              The numbers the content would need for the Maxed player (the curve's) to follow the pace curve, each stage to meet its budget
               and each boost its target: XP a cycle, level gates, costs and times, and boost strengths, worked out with the
               Ledger&apos;s own rate calculator. A preview only: nothing in the workspace changes. Guild Hall prices and strengths
               wait for their own pass, and gates the world tables set are left alone. An XP number taken as a change pack is
@@ -102,7 +102,7 @@ const stageText = (s) => (s.hours === null ? 'nothing planned' : `${PACE_TEXT.ho
 function Stages({ result }) {
   return (
     <section className="rounded-xl border bg-[#1a1a1e] border-white/10 p-4 space-y-2" aria-label="Stages before and after">
-      <h3 className={sectionHead}>Stages at Typical, before and after</h3>
+      <h3 className={sectionHead}>Stages at Maxed, before and after</h3>
       <table className="w-full" style={{ borderCollapse: 'collapse' }}>
         <thead>
           <tr>

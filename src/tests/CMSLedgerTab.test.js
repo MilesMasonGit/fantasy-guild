@@ -18,7 +18,6 @@ import LedgerPanel from '../../cms/src/components/ledger/LedgerPanel.jsx';
 import {
     settingsOf, DEFAULT_LEDGER_SETTINGS, stageBudgetMs, minutesPerLevelAt, minutesToReach, formatMinutes,
 } from '../../cms/src/engine/ledger/settings.js';
-import { tierBudgetMs } from '../systems/progression/ledger/plan.js';
 
 /**
  * The Ledger tab: every entry with its status and tier, edited in place; Planned stubs added there;
@@ -183,10 +182,14 @@ describe('the tab', () => {
         fireEvent.change(tolerance, { target: { value: '30' } });
         fireEvent.blur(tolerance);
         expect(store().planSettings.tolerancePct).toBe(30);
-        const budget = view.getByLabelText('Budget for Plane 1');
-        fireEvent.change(budget, { target: { value: '120' } });
-        fireEvent.keyDown(budget, { key: 'Enter' });
-        expect(stageBudgetMs(store().planSettings, 1)).toBe(120 * 60000);
+        // A stage's budget is not typed: the pace rule's step moves it.
+        expect(view.queryByLabelText('Budget for Plane 1')).toBeNull();
+        const step = view.getByLabelText('Step in percent');
+        fireEvent.change(step, { target: { value: '6.5' } });
+        fireEvent.keyDown(step, { key: 'Enter' });
+        expect(store().planSettings.paceRule.stepPct).toBe(6.5);
+        expect(stageBudgetMs(store().planSettings, 1)).toBeCloseTo(minutesToReach(store().planSettings, 20) * 60000, 3);
+        expect(minutesPerLevelAt(store().planSettings, 2)).toBeCloseTo(3 * 1.065, 9);
         const bad = view.getByLabelText('Check-in from, minutes');
         fireEvent.change(bad, { target: { value: '' } });
         fireEvent.blur(bad);
@@ -200,35 +203,36 @@ describe('the tab', () => {
 });
 
 describe('the settings', () => {
-    it('start from the owner’s budgets, ±25 %, check-ins every 30 to 60 minutes and 8 hours overnight', () => {
+    it('start from the pace rule’s budgets, ±25 %, check-ins every 30 to 60 minutes and 8 hours overnight', () => {
         const d = settingsOf(null);
-        expect(d.stages.map((s) => stageBudgetMs(d, s.tier))).toEqual([0, 1, 2].map(tierBudgetMs));
+        expect(d.stages.map((s) => s.tier)).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
+        expect(stageBudgetMs(d, 0)).toBeCloseTo(minutesToReach(d, 10) * 60000, 3);
         expect(d.tolerancePct).toBe(25);
         expect(d.player).toEqual({ checkInMinMinutes: 30, checkInMaxMinutes: 60, overnightHours: 8 });
         expect(d.wallFactor).toBe(2);
         expect(settingsOf(undefined)).toEqual(settingsOf(DEFAULT_LEDGER_SETTINGS));
     });
 
-    it('default to the owner pace curve, and keep a saved curve as it was', () => {
+    it('default to the owner’s pace rule, 3 minutes and 6.25 % a level; saved curve points are no longer read', () => {
         const d = settingsOf(null);
-        expect(d.paceCurve.map((p) => [p.level, p.minutesPerLevel])).toEqual([[1, 3], [10, 8], [20, 30], [40, 180], [60, 1440], [99, 4320]]);
-        expect(minutesPerLevelAt(d, 30)).toBeCloseTo(Math.sqrt(30 * 180));
+        expect(d.paceRule).toEqual({ startMinutes: 3, stepPct: 6.25, minPct: 6, maxPct: 6.5 });
+        expect(minutesPerLevelAt(d, 30)).toBeCloseTo(3 * 1.0625 ** 29);
         const saved = [{ level: 1, minutesPerLevel: 1 }, { level: 99, minutesPerLevel: 99 }];
-        expect(settingsOf({ paceCurve: saved }).paceCurve).toEqual(saved);
+        expect(minutesPerLevelAt(settingsOf({ paceCurve: saved }), 99)).toBeCloseTo(minutesPerLevelAt(d, 99));
     });
 
     it('mend what cannot be read and keep fields they do not know', () => {
-        const s = settingsOf({ tolerancePct: 'x', stages: [{ tier: 1, budgetMinutes: 90 }, { tier: 0, budgetMinutes: 30 }, { tier: 'a' }], paceCurve: [{ level: 10, minutesPerLevel: 5 }, { level: 0, minutesPerLevel: 1 }], later: { x: 1 } });
+        const s = settingsOf({ tolerancePct: 'x', stages: [{ tier: 1, budgetMinutes: 90 }], paceRule: { startMinutes: -1, stepPct: 'x' }, later: { x: 1 } });
         expect(s.tolerancePct).toBe(25);
-        expect(s.stages.map((x) => x.tier)).toEqual([0, 1]);
-        expect(s.paceCurve).toEqual([{ level: 10, minutesPerLevel: 5 }]);
+        expect(s.stages).toEqual(settingsOf(null).stages);
+        expect(s.paceRule).toEqual(settingsOf(null).paceRule);
         expect(s.later).toEqual({ x: 1 });
     });
 
-    it('read the pace curve between its points, and the default puts level 10 inside the first hour', () => {
-        const s = settingsOf({ paceCurve: [{ level: 1, minutesPerLevel: 1 }, { level: 11, minutesPerLevel: 100 }] });
-        expect(minutesPerLevelAt(s, 6)).toBeCloseTo(10);
-        expect(minutesPerLevelAt(s, 50)).toBe(100);
+    it('read the pace rule at any level, and the default puts level 10 inside the first hour', () => {
+        const s = settingsOf({ paceRule: { startMinutes: 1, stepPct: 10, maxPct: 10 } });
+        expect(minutesPerLevelAt(s, 6)).toBeCloseTo(1.1 ** 5);
+        expect(minutesToReach(s, 3)).toBeCloseTo(1 + 1.1);
         expect(minutesToReach(settingsOf(null), 10)).toBeLessThan(60);
         expect([45, 90, 1500].map(formatMinutes)).toEqual(['45 min', '1 h 30 min', '1 d 1 h']);
     });

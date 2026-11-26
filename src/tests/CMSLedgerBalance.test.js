@@ -46,7 +46,8 @@ function balanceWorkspace() {
     for (const r of c.recipes) (recipePools[r.skill] ||= []).push(r);
     return {
         items: c.items, tokens: c.tokens, effects: c.effects, recipePools, starterCamp: c.starterCamp, skillPerks: null,
-        planSettings: { stages: [{ tier: 0, budgetMinutes: 30 }] }
+        // The camp is done when the pace rule reaches level 9, about 30 minutes in (brief 880 L3).
+        planSettings: { tierLevels: [{ tier: 0, level: 1 }, { tier: 1, level: 9 }] }
     };
 }
 
@@ -69,7 +70,7 @@ describe('the preview over a workspace', () => {
         expect(changeText({ from: 12, to: 8 })).toBe('12 → 8 (1.5× down)');
         expect(cantFixGroups(result.cantFix).map(g => g.cause)).toContain('content');
         const text = balanceText(result);
-        expect(text).toMatch(/Starter Camp: 4 h 38 min \(\+826 %\) → \d+ min .*within/);
+        expect(text).toMatch(/Starter Camp: 4 h 38 min \(\+827 %\) → \d+ min .*within/);
         expect(text).toMatch(/Numbers to change: \d+/);
     });
 });
@@ -139,7 +140,7 @@ describe('the Balancing page', { timeout: 30000 }, () => {
         const levers = [...view.container.querySelectorAll('[data-proposal]')].map(r => r.getAttribute('data-proposal'));
         expect(levers).toEqual(expect.arrayContaining([LEVER.XP, LEVER.GATE, LEVER.COST, LEVER.BOOST]));
         expect(view.getByText('Elixir')).toBeTruthy();
-        expect(view.container.querySelector('[data-cant-fix="content"]').textContent).toMatch(/Mining 7\d → 90/);
+        expect(view.container.querySelector('[data-cant-fix="content"]').textContent).toMatch(/Mining 30 → 90/);
         expect(view.getByTestId('balance-counts').textContent).toMatch(/Walls \(a run of levels over twice the curve\): 2 → 1/);
         expect(view.getByTestId('balance-apply').disabled).toBe(true);
 

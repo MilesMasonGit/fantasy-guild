@@ -116,7 +116,8 @@ describe('the tab', { timeout: 20000 }, () => {
         openRow(view, 'tokens:token_big_hut', 'Big Hut');
         const path = within(view.getByLabelText('Path time'));
         expect([...view.container.querySelectorAll('[data-path-profile]')].map((r) => r.getAttribute('data-path-profile'))).toEqual(['bare', 'typical', 'maxed']);
-        expect(view.container.querySelector('[data-path-profile="typical"] [data-path-hours]').textContent).toMatch(/^7 h/);
+        // Construction 15 at the build's full pace, fed by the foresters it needs (brief 880 L3; 7 h with one forester before).
+        expect(view.container.querySelector('[data-path-profile="typical"] [data-path-hours]').textContent).toMatch(/^3 h 41 min/);
         expect(path.getByText(/waits for Construction 15/)).toBeTruthy();
         // The Construction wall is filed under the skill; the page of what waits on it shows it too.
         expect(view.container.querySelector('[data-waits-on="wall"]').textContent).toMatch(/Construction 1 → 15/);
@@ -131,7 +132,7 @@ describe('the tab', { timeout: 20000 }, () => {
         fireEvent.click(view.getAllByText('Construction')[0]);
         expect(view.getByRole('tab', { name: 'Pace' }).getAttribute('aria-selected')).toBe('true');
         expect(view.container.querySelector('[data-breakdown="construction|0"]')).toBeTruthy();
-        expect(view.container.querySelector('[data-stage="0"] [data-stage-hours]').textContent).toMatch(/^7 h/);
+        expect(view.container.querySelector('[data-stage="0"] [data-stage-hours]').textContent).toMatch(/^3 h 41 min/);
         expect(view.container.querySelector('[data-hall="roster_size|2"]')).toBeTruthy();
     });
 

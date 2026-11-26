@@ -135,13 +135,14 @@ describe('the ring stars: a ring opens after the ring before\'s last tier', () =
         const ws = ladderWorkspace(6);
         for (const line of ['ores', 'trees', 'crops', 'herbs', 'waters', 'arcane']) ws.items[`item_${line}_3`].plan = { tier: 4 };
         const content = { ...contentOf(ws), worldTables: ladderTables() };
-        const settings = { stages: [{ tier: 0, budgetMinutes: 10 }, { tier: 1, budgetMinutes: 60 }, { tier: 2, budgetMinutes: 600 }, { tier: 3, budgetMinutes: 1200 }] };
-        const pace = buildPace(content, buildLedger(content), settings);
+        const pace = buildPace(content, buildLedger(content), null);
+        const budgetOf = (tier) => pace.settings.stages.find(s => s.tier === tier).budgetMinutes / 60;
         const three = pace.hallPaybacks().find(r => r.ring === 3);
-        expect(three.budgetHours).toBe(20);
-        expect(three.proposed.budgetHours).toBe(20);
+        expect(three.budgetHours).toBe(budgetOf(3));
+        expect(three.proposed.budgetHours).toBe(budgetOf(3));
+        expect(budgetOf(3)).toBeGreaterThan(budgetOf(2));
         // Ring 2 still opens after Plane 1.
-        expect(pace.hallPaybacks().find(r => r.ring === 2).budgetHours).toBe(1);
+        expect(pace.hallPaybacks().find(r => r.ring === 2).budgetHours).toBe(budgetOf(1));
         expect(pace.pathOf(starKey('star_ring_3'), PROFILE.TYPICAL).how).toBe(HOW.STAR);
     });
 });

@@ -35,10 +35,11 @@ export const USAGE = `Usage: npm run cms -- <command> [options]
   restore                         Rebuild the workspace from data/ and cms/plan/plan.json (Restore
                                   from Game); the old one is kept in Backups first.
   ledger [--json=<file>]          The ledger's read-out, for the balancer: each skill's pace (levels 1
-                                  to 99, hero and guild time) and each entry's numbers and arrival,
-                                  at Maxed (opt) and Typical (typ), Planned entries marked, and the
-                                  ledger's checks. Reads the workspace, never saves it. --json writes
-                                  the whole read-out; a summary prints either way.
+                                  to 99, hero and guild time) at Maxed (opt), Typical (typ) and Bare
+                                  (bare), each entry's numbers and arrival, Planned entries marked,
+                                  the boost budget and the ledger's checks. Reads the workspace,
+                                  never saves it. --json writes the whole read-out; a summary prints
+                                  either way.
 
 Options (every command):
   --workspace=<file>   the workspace (default cms/workspace/workspace.json)
@@ -319,7 +320,7 @@ async function cmdLedger(paths, options, load, out) {
     const workspace = { ...disk.workspace, ...seedStoredWorkspace(disk.workspace) };
     const readout = ledgerReadout(workspace);
     readout.workspace = { file: shortPath(paths.root, paths.workspaceFile), revision: disk.revision, savedAt: disk.savedAt ?? null };
-    out(`The ledger of ${shortPath(paths.root, paths.workspaceFile)} (revision ${disk.revision}), worked out in ${(readout.ms / 1000).toFixed(1)} s. opt is the ledger's Maxed player, typ its Typical.`);
+    out(`The ledger of ${shortPath(paths.root, paths.workspaceFile)} (revision ${disk.revision}), worked out in ${(readout.ms / 1000).toFixed(1)} s. opt is the ledger's Maxed player (the curve's), typ its Typical, bare its Bare.`);
     for (const line of readoutText(readout)) out(line);
     if (typeof options.json === 'string') {
         const file = path.resolve(options.json);

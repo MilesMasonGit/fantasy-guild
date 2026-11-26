@@ -13,7 +13,7 @@ import { paceContent, potionWebContent } from './fixtures/paceWorld.js';
 
 /**
  * The progression ledger's pace (brief 290 L5): every kind of work rated, the three profiles (Bare,
- * Typical by payback, Maxed), supply fed by one hero on each input, level tracks, path time and
+ * Typical by payback, Maxed), supply fed by the gatherers each input needs (brief 880 L3), level tracks, path time and
  * checks D, on a small world whose numbers read by hand (`fixtures/paceWorld.js`). The calculator
  * against the real engine is `npm run bench:calibrate`.
  */
@@ -158,18 +158,19 @@ describe('the profiles', () => {
 });
 
 describe('supply, level tracks and path time', () => {
-    it('a build is fed by one forester: its wood sets the pace of Construction', () => {
+    it('a build is fed by the foresters it needs: two at Bare, so Construction levels at the pace of the build itself', () => {
         const { pace } = world();
-        // The oak gives 900 wood an hour; a build wants 15 at 120 builds an hour: fed half the time.
+        // The oak gives 900 wood an hour; a build wants 15 at 120 builds an hour, 1800: two foresters (brief 880 L3; one, and half the pace, before).
         expect(pace.supplyOf('item_oak_wood', PROFILE.BARE).perHour).toBeCloseTo(900);
         const hut = pace.rateAt({ token: 'token_plot', recipe: 'recipe_build_hut' }, PROFILE.BARE);
-        expect(hut.scale).toBeCloseTo(0.5);
-        expect(hut.xp.construction).toBeCloseTo(300);
+        expect(hut.scale).toBeCloseTo(1);
+        expect(hut.gatherers.item_oak_wood.heroes).toBeCloseTo(2);
+        expect(hut.xp.construction).toBeCloseTo(600);
 
         const track = pace.trackOf('construction');
         expect(track.top).toBe(15);
-        // Every level at 300 XP an hour, Bare: XP to 15 over 300.
-        expect(track.levels[13].cumulative.bare).toBeCloseTo(xpForLevel(15) / 300);
+        // Every level at 600 XP an hour, Bare: XP to 15 over 600.
+        expect(track.levels[13].cumulative.bare).toBeCloseTo(xpForLevel(15) / 600);
         expect(track.levels[13].cumulative.typical).toBeLessThan(track.levels[13].cumulative.bare);
     });
 
@@ -198,23 +199,25 @@ describe('supply, level tracks and path time', () => {
 
 describe('a loop through the drinks', () => {
     // The Oak drinks Tea, brewed at the Still from Oak Wood: 1200 brews an hour want 1200 wood, which
-    // the Oak gives at Typical (1980 with its Sawmill and its Tea) but not at Bare (900). A cooking
-    // Elixir adds yield and is spent one a brew, but the Spring makes only 1000 an hour: it starves
-    // the brewing to 1000 / 1200 of its pace. A Stew asks Cooking 3, so Cooking has levels to time.
+    // the Oak gives at Typical (1980 with its Sawmill and its Tea) and Bare's 900 in two thirds of an
+    // hour more. A cooking Elixir adds yield and is spent one a brew, from a Spring making 1000 an hour:
+    // 1.2 Springs feed the brewing (the gatherers it needs). Slowed, the Elixir trades the brewer's XP
+    // for its Tea. A Stew asks Cooking 3, so Cooking has levels to time.
     const TEA = { token: 'token_still', recipe: 'recipe_tea' };
-    const content = (elixirYield) => {
+    const content = (elixirYield, elixirSlow = 0, springMs = 3600) => {
         const c = paceContent();
         const one = (itemId) => ({ itemId, chance: 100, minQty: 1, maxQty: 1 });
         const carried = (id, effectId, skill) => ({ id: `stm_${id}`, keyword: 'applies', to: { mode: 'all', value: '' }, target: { role: 'actor' }, when: { event: 'WORK_START', scope: 'self', skill }, payload: { effectId, scale: 1, durationMs: 0, forCycle: true, chance: 100 } });
         const yieldUp = (id, value) => ({ id: `stm_${id}`, keyword: 'provides', to: { mode: 'all', value: '' }, reach: 'nearby', payload: { type: 'YIELD', bucket: 'percentage', value } });
         c.effects.lp_fx_steady = { id: 'lp_fx_steady', name: 'Steady', statements: [yieldUp('lp_steady', 0.1)] };
         c.effects.lp_fx_tea = { id: 'lp_fx_tea', name: 'Tea drink', statements: [carried('lp_tea', 'lp_fx_steady', 'forestry')] };
-        c.effects.lp_fx_quick = { id: 'lp_fx_quick', name: 'Quick', statements: [yieldUp('lp_quick', elixirYield)] };
+        const slow = { id: 'stm_lp_slow', keyword: 'provides', to: { mode: 'all', value: '' }, reach: 'nearby', payload: { type: 'WORK_TIME', bucket: 'percentage', value: elixirSlow } };
+        c.effects.lp_fx_quick = { id: 'lp_fx_quick', name: 'Quick', statements: [yieldUp('lp_quick', elixirYield), ...(elixirSlow ? [slow] : [])] };
         c.effects.lp_fx_elixir = { id: 'lp_fx_elixir', name: 'Elixir potion', statements: [carried('lp_elixir', 'lp_fx_quick', 'cooking')] };
         c.items.item_tea = { id: 'item_tea', name: 'Tea', type: 'drink', equipSlot: 'drink', stackable: true, effects: [{ effectId: 'lp_fx_tea', scale: 1 }], plan: { tier: 0 } };
         c.items.item_elixir = { id: 'item_elixir', name: 'Elixir', type: 'potion', equipSlot: 'consumable', stackable: true, effects: [{ effectId: 'lp_fx_elixir', scale: 1 }], plan: { tier: 0 } };
         c.items.item_stew = { id: 'item_stew', name: 'Stew', type: 'food', plan: { tier: 0 } };
-        c.tokens.token_spring = { id: 'token_spring', name: 'Spring', uses: null, config: { skill: 'alchemy', skillRequired: 1, cycleTimeMs: 3600, xp: 1, inputs: [], outputs: [one('item_elixir')] } };
+        c.tokens.token_spring = { id: 'token_spring', name: 'Spring', uses: null, config: { skill: 'alchemy', skillRequired: 1, cycleTimeMs: springMs, xp: 1, inputs: [], outputs: [one('item_elixir')] } };
         c.tokens.token_sawmill = {
             id: 'token_sawmill', name: 'Sawmill', tokenType: 'buff', uses: null, requiresHero: false, config: null,
             statements: [{ id: 'stm_lp_sawmill', keyword: 'provides', to: { mode: 'id', value: 'token_oak' }, reach: 'nearby', payload: { type: 'DOUBLE_DROP', bucket: 'flat', value: 100, category: 'item_oak_wood' } }]
@@ -239,29 +242,30 @@ describe('a loop through the drinks', () => {
         const c = content(0.2);
         const teaFirst = paceAsked(c, TEA);
         // The Oak's choices weigh its Tea, so asking the Oak first asks Tea's choices inside the Oak's: a
-        // loop. Read at its own profile's supply, the loop stood the Oak in at Bare, Tea was short of wood
-        // either way, and the Elixir's own shortage hid behind it.
+        // loop. Read at its own profile's supply, the loop stood the Oak in at Bare.
         const oakFirst = paceAsked(c, { token: 'token_oak' });
         for (const profile of PROFILES) expect(setupOf(oakFirst.rateAt(TEA, profile))).toEqual(setupOf(teaFirst.rateAt(TEA, profile)));
 
         const typical = oakFirst.rateAt(TEA, PROFILE.TYPICAL);
         expect(oakFirst.supplyOf('item_oak_wood', PROFILE.TYPICAL).perHour).toBeCloseTo(1980);
         expect(typical.scale).toBeCloseTo(1);
+        // Fed by the Springs it needs, the Elixir starves nothing: Maxed takes it.
         const maxed = oakFirst.rateAt(TEA, PROFILE.MAXED);
-        expect(maxed.chosen.map(x => x.id)).not.toContain('item_elixir');
+        expect(maxed.chosen.map(x => x.id)).toContain('item_elixir');
         expect(maxed.scale).toBeCloseTo(1);
+        expect(maxed.gatherers.item_elixir.heroes).toBeCloseTo(1.2);
         expect(maxed.xp.cooking).toBeGreaterThanOrEqual(typical.xp.cooking);
     });
 
-    it('a level never takes longer at Maxed than at Typical, though Maxed takes a potion for its yield that starves the levelling', () => {
-        const c = content(0.5);
+    it('a level never takes longer at Maxed than at Typical, though Maxed takes a potion for its yield that slows the levelling', () => {
+        const c = content(2, 0.5, 36000);
         for (const first of [TEA, { token: 'token_oak' }]) {
             const pace = paceAsked(c, first);
-            // Half again as much Tea is worth the starving, so Maxed takes the Elixir: fewer brews, less XP.
+            // Three times the Tea a brew is worth brews half again as long, so Maxed takes the Elixir (fewer brews,
+            // less XP); from a slow Spring it costs Typical more than it gives.
             const typical = pace.rateAt(TEA, PROFILE.TYPICAL);
             const maxed = pace.rateAt(TEA, PROFILE.MAXED);
             expect(maxed.chosen.map(x => x.id)).toContain('item_elixir');
-            expect(maxed.short).toBe('item_elixir');
             expect(maxed.xp.cooking).toBeLessThan(typical.xp.cooking);
             // A hero levelling at Maxed may leave it off: it levels as Typical does.
             const track = pace.trackOf('cooking');
@@ -302,9 +306,9 @@ describe('a web of potions', () => {
         // 900 herbs an hour, 90 % more with nine potions; each potion brewed as fast as the Still can, 1200 an hour.
         expect(pace.supplyOf('item_herb_0', PROFILE.MAXED).perHour).toBeCloseTo(1710);
         expect(pace.supplyOf('item_potion_0', PROFILE.MAXED).perHour).toBeCloseTo(1200);
-        // Typical takes no potion (a potion costs more than its 10 % gives); Bare brews only as fast as one bush feeds it.
+        // Typical takes no potion (a potion costs more than its 10 % gives); Bare brews as fast as the Still can, fed by the bushes it needs.
         expect(pace.supplyOf('item_herb_0', PROFILE.TYPICAL).perHour).toBeCloseTo(900);
-        expect(pace.supplyOf('item_potion_0', PROFILE.BARE).perHour).toBeCloseTo(900);
+        expect(pace.supplyOf('item_potion_0', PROFILE.BARE).perHour).toBeCloseTo(1200);
         for (const row of pace.trackOf('construction').levels) {
             expect(row.hours.maxed).toBeLessThanOrEqual(row.hours.typical + 1e-9);
             expect(row.hours.typical).toBeLessThanOrEqual(row.hours.bare + 1e-9);
@@ -329,8 +333,10 @@ describe('checks D', () => {
 
     it('a stage over its budget, Bare out of its bounds, a long gather', () => {
         const f = findings();
-        expect(f.find(x => x.check === 'stage-budget' && x.key === 'stage:0').message).toMatch(/over its budget of 30 min/);
-        expect(f.filter(x => x.check === 'profile-bounds' && x.key === 'skill:construction')).toHaveLength(1);
+        // The Starter Camp is done when the curve reaches level 10, 35 minutes in, and timed at Maxed.
+        expect(f.find(x => x.check === 'stage-budget' && x.key === 'stage:0').message).toMatch(/at Maxed, \d+ % over its budget of 35 min/);
+        // Against the curve: Bare past its 3x and, the curve's player being Maxed, Typical past its 2x.
+        expect(f.filter(x => x.check === 'profile-bounds' && x.key === 'skill:construction').map(x => x.message.split(':')[0]).sort()).toEqual(['Bare', 'Typical']);
         expect(f.find(x => x.check === 'unlock-wall' && x.key === 'token:token_statue').message).toMatch(/gathering Oak Wood/);
     });
 

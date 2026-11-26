@@ -1,8 +1,8 @@
-// the progression ledger's balancing preview: numbers proposed so the Typical profile follows the pace
+// the progression ledger's balancing preview: numbers proposed so the curve's player (Maxed) follows the pace
 
 import { buildLedger, HOW, COMBAT, FIND, LEDGER_ENGINE_TEXT, findsPerDay, parseKey, itemKey, tokenKey, recipeKey } from '../../../../src/systems/progression/ledger/engine.js';
-import { buildPace, PACE_TEXT } from './pace.js';
-import { PROFILE, BOOST_KIND, BOOST_KIND_TEXT } from './profiles.js';
+import { buildPace, PACE_TEXT, TARGET } from './pace.js';
+import { PROFILE, PROFILE_TEXT, BOOST_KIND, BOOST_KIND_TEXT } from './profiles.js';
 import { LIFECYCLE } from './rates.js';
 import { settingsOf, formatMinutes } from './settings.js';
 import { tierLabel } from '../../../../src/systems/progression/ledger/plan.js';
@@ -11,18 +11,18 @@ import { SKILLS, SKILL_LAYERS } from '../../../../src/config/registries/skillReg
 
 /**
  * Automatic balancing as a preview: the numbers the content would need for the
- * Typical profile to follow the pace curve, each stage to meet its budget and boosts their strength
+ * curve's player ({@link TARGET}, Maxed: brief 880 L3) to follow the pace curve, each stage to meet its budget and boosts their strength
  * targets, worked out with the ledger's own pace (`pace.js`) and never applied. Four levers, each
  * pass re-reading the pace the one before left:
  *
  * - **Boost strengths**: a building's, drink's, tool's or gear's effect over its kind's target at
  *   Maxed is weakened (its library effect's value, or the bearer's own statement), never a Guild
  *   Hall star's: the Hall waits for its own balance pass.
- * - **XP a cycle**: for each skill, the levels where one source is the best at Typical are worked at
+ * - **XP a cycle**: for each skill, the levels where one source is the best at Maxed are worked at
  *   that source's XP; its XP is scaled so those levels take the curve's time. Where the curve and
  *   the XP a level needs part by more than the wall factor inside one source's levels, only the
  *   first stretch is followed and the rest is reported: one number cannot follow both.
- * - **Level gates**: a stage off its budget has its level gates moved along each skill's Typical
+ * - **Level gates**: a stage off its budget has its level gates moved along each skill's Maxed
  *   track: a slow stage's late unlocks are pulled in to land by its budget, a fast stage's unlocks
  *   spread over it from the stage before's end, in the same order. Gates the world tables set are
  *   not moved here.
@@ -93,6 +93,7 @@ const RATE_AXES = new Set([
 const isObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
 const list = (v) => (Array.isArray(v) ? v : []);
 const sum = (xs) => xs.reduce((a, b) => a + b, 0);
+const AT_TARGET = PROFILE_TEXT[TARGET];
 const isCombatStyle = (skill) => skill === COMBAT || SKILLS[skill]?.layer === SKILL_LAYERS.COMBAT;
 const HOUR_MS = 3_600_000;
 
@@ -158,7 +159,7 @@ function evaluate(content, settings) {
 
 /**
  * The parts of a pace the preview reports before and after: each stage against its budget, the
- * walls at Typical, the long waits for one unlock, and the boosts over their targets. Plain data.
+ * walls at Maxed, the long waits for one unlock, and the boosts over their targets. Plain data.
  */
 export function balanceSummary({ pace, ledger }) {
     const settings = pace.settings;
@@ -428,7 +429,7 @@ function xpFieldOf(content, work) {
 }
 
 /**
- * Each skill's levels grouped by the XP field of their best Typical source, in level order, with
+ * Each skill's levels grouped by the XP field of their best source at the curve's player, in level order, with
  * each level's time against the curve (`ratio`), and the first stretch whose ratios stay within the
  * wall factor of one another (`head`): the levels one number can follow.
  */
@@ -439,13 +440,13 @@ function xpBands(state) {
     for (const skill of pace.skills()) {
         if (isCombatStyle(skill)) continue;
         for (const row of pace.trackOf(skill).levels) {
-            const src = row.source.typical;
+            const src = row.source[TARGET];
             if (!src?.work || !(src.xp > 0)) continue;
             const field = xpFieldOf(state.content, src.work);
             if (!field) continue;
             const id = `${field.kind}:${field.id}|${field.field}`;
             if (!groups.has(id)) groups.set(id, { ...field, skill, rows: [], work: src.work });
-            groups.get(id).rows.push({ level: row.level, hours: row.hours.typical, curveMinutes: row.curveMinutes, ratio: row.hours.typical * 60 / row.curveMinutes });
+            groups.get(id).rows.push({ level: row.level, hours: row.hours[TARGET], curveMinutes: row.curveMinutes, ratio: row.hours[TARGET] * 60 / row.curveMinutes });
         }
     }
     for (const g of groups.values()) {
@@ -493,7 +494,7 @@ function xpPass(state) {
             state.capped.delete(fieldId);
         }
         if (to === g.value) continue;
-        const problem = `${PACE_TEXT.skill(g.skill)} ${first} → ${last}: its best Typical source, ${name}, takes ${PACE_TEXT.times(R)} the curve's time.`;
+        const problem = `${PACE_TEXT.skill(g.skill)} ${first} → ${last}: its best ${AT_TARGET} source, ${name}, takes ${PACE_TEXT.times(R)} the curve's time.`;
         const result = (s) => {
             const band = finalBands(s).find(b => `${b.kind}:${b.id}|${b.field}` === fieldId);
             if (!band) return 'Another source now carries those levels; at its authored number it would take them back.';
@@ -508,9 +509,9 @@ function xpPass(state) {
 
 // ── level gates ─────────────────────────────────────────────────────────────────────────────────
 
-/** The level gate an entry's time waits on at Typical: along its critical path, the first step that waited for a level. */
+/** The level gate an entry's time waits on at the curve's player: along its critical path, the first step that waited for a level. */
 function bindingGate(pace, key) {
-    const path = pace.pathOf(key, PROFILE.TYPICAL);
+    const path = pace.pathOf(key, TARGET);
     for (const step of path.steps) {
         if (step.waitsOn?.skill) return isCombatStyle(step.waitsOn.skill) ? null : { key: step.key, skill: step.waitsOn.skill, level: step.waitsOn.level, hours: step.start };
         if (!step.waitsOn?.need) return null;
@@ -571,8 +572,8 @@ function gatePass(state) {
         }
         // The words describe the content as authored: a field is proposed once, whichever round first moves it.
         const firstPace = state.first.pace;
-        const stageWords = `${tierLabel(s.tier)} is done ${PACE_TEXT.hours(firstPace.stageOf(s.tier).hours)} into a new game at Typical against its ${formatMinutes(s.budgetMinutes)}`;
-        const reached = (g) => `${PACE_TEXT.skill(g.skill)} ${g.level} is reached ${PACE_TEXT.hours(firstPace.hoursToLevel(g.skill, g.level, PROFILE.TYPICAL, s.tier))} in.`;
+        const stageWords = `${tierLabel(s.tier)} is done ${PACE_TEXT.hours(firstPace.stageOf(s.tier).hours)} into a new game at ${AT_TARGET} against its ${formatMinutes(s.budgetMinutes)}`;
+        const reached = (g) => `${PACE_TEXT.skill(g.skill)} ${g.level} is reached ${PACE_TEXT.hours(firstPace.hoursToLevel(g.skill, g.level, TARGET, s.tier))} in.`;
 
         if (off < 0) {
             // Too fast: its unlocks spread over the stage, from the stage before's end, in the same order.
@@ -580,7 +581,7 @@ function gatePass(state) {
             for (const g of gates.values()) {
                 if (!(g.hours > base)) continue;
                 const h = base + (g.hours - base) * (B - base) / (T - base);
-                const level = Math.max(g.level, pace.levelAtHours(g.skill, h, PROFILE.TYPICAL, s.tier));
+                const level = Math.max(g.level, pace.levelAtHours(g.skill, h, TARGET, s.tier));
                 if (level > g.level) addMove(moves, state, g, level, 'up', s.tier, `${stageWords}, so its unlocks spread over the stage: ${reached(g)}`);
             }
         } else {
@@ -596,14 +597,14 @@ function gatePass(state) {
             for (const g of late) {
                 const mapped = landing > C ? C + (g.hours - C) * (landing - C) / (top.hours - C) : C;
                 const h = Math.max(C, Math.min(mapped, g.hours - (g.entryHours - B)));
-                const level = Math.min(g.level, pace.levelAtHours(g.skill, h, PROFILE.TYPICAL, s.tier));
+                const level = Math.min(g.level, pace.levelAtHours(g.skill, h, TARGET, s.tier));
                 if (level < g.level) addMove(moves, state, g, Math.max(1, level), 'down', s.tier, `${stageWords}: ${reached(g)}`);
             }
         }
     }
     let changed = false;
     for (const m of moves.values()) {
-        const result = (st, p) => `${PACE_TEXT.skill(m.skill)} ${p.to} is reached about ${PACE_TEXT.hours(st.eval.pace.hoursToLevel(m.skill, p.to, PROFILE.TYPICAL, m.tier))} in.`;
+        const result = (st, p) => `${PACE_TEXT.skill(m.skill)} ${p.to} is reached about ${PACE_TEXT.hours(st.eval.pace.hoursToLevel(m.skill, p.to, TARGET, m.tier))} in.`;
         changed = propose(state, { kind: m.kind, id: m.id, field: m.field, to: m.to, lever: LEVER.GATE, problem: m.problem, result }) || changed;
     }
     return changed;
@@ -638,7 +639,7 @@ function shrinkStep(state, key, targetHours, problem) {
     let changed = false;
     const cap = Number.isInteger(at.tier) ? at.tier : pace.maxTier;
     const result = (st) => {
-        const own = st.eval.pace.pathOf(key, PROFILE.TYPICAL).own;
+        const own = st.eval.pace.pathOf(key, TARGET).own;
         return Number.isFinite(own) ? `Its own step now takes ${PACE_TEXT.hours(own)}.` : null;
     };
     const shrinkInputs = (kind, id, base, hours) => {
@@ -646,7 +647,7 @@ function shrinkStep(state, key, targetHours, problem) {
         list(getPath(record, base)).forEach((input, i) => {
             const q = Number(input?.quantity);
             if (!(q > 1) || typeof input.itemId !== 'string') return;
-            const s = pace.supplyOf(input.itemId, PROFILE.TYPICAL, cap).perHour;
+            const s = pace.supplyOf(input.itemId, TARGET, cap).perHour;
             if (!(s > 0) || !Number.isFinite(s) || q / s <= hours) return;
             const to = Math.max(1, Math.floor(hours * s));
             if (to < q) changed = propose(state, { kind, id, field: `${base}.${i}.quantity`, to, lever: LEVER.COST, problem, result }) || changed;
@@ -681,7 +682,7 @@ function costPass(state) {
     let changed = false;
     // A long wait for one unlock: its own step cut to the wait the pace allows there.
     for (const u of pace.unlockWalls()) {
-        const problem = `${state.eval.ledger.world.names.get(u.key) ?? u.key}: its own step takes ${PACE_TEXT.hours(u.r.own)} at Typical once it can start, ${PACE_TEXT.times(u.ratio)} the ${formatMinutes(u.expected)} the pace allows a wait there.`;
+        const problem = `${state.eval.ledger.world.names.get(u.key) ?? u.key}: its own step takes ${PACE_TEXT.hours(u.r.own)} at ${AT_TARGET} once it can start, ${PACE_TEXT.times(u.ratio)} the ${formatMinutes(u.expected)} the pace allows a wait there.`;
         changed = shrinkStep(state, u.key, u.expected / 60, problem) || changed;
     }
     // A stage still over its budget for a step no level holds: the step cut by the overrun.
@@ -691,13 +692,13 @@ function costPass(state) {
         const B = s.budgetMinutes / 60;
         if (!st.timed?.length || !(st.hours / B - 1 > tol)) continue;
         for (const e of st.timed.filter(x => x.hours > B)) {
-            const steps = pace.pathOf(e.key, PROFILE.TYPICAL).steps;
+            const steps = pace.pathOf(e.key, TARGET).steps;
             const longest = steps.filter(x => Number.isFinite(x.own) && x.own > 0).sort((a, b) => b.own - a.own)[0];
             if (!longest) continue;
             const target = longest.own - (e.hours - B);
             if (!(target > 0)) continue;
             const name = state.eval.ledger.world.names.get(e.key) ?? e.key;
-            const problem = `${tierLabel(s.tier)} is done ${PACE_TEXT.hours(st.hours)} in at Typical against its ${formatMinutes(s.budgetMinutes)}: ${name} (${PACE_TEXT.hours(e.hours)}) waits on ${e.key === longest.key ? 'its own step' : `${state.eval.ledger.world.names.get(longest.key) ?? longest.key}`}, ${PACE_TEXT.hours(longest.own)}.`;
+            const problem = `${tierLabel(s.tier)} is done ${PACE_TEXT.hours(st.hours)} in at ${AT_TARGET} against its ${formatMinutes(s.budgetMinutes)}: ${name} (${PACE_TEXT.hours(e.hours)}) waits on ${e.key === longest.key ? 'its own step' : `${state.eval.ledger.world.names.get(longest.key) ?? longest.key}`}, ${PACE_TEXT.hours(longest.own)}.`;
             changed = shrinkStep(state, longest.key, target, problem) || changed;
         }
     }
@@ -717,7 +718,7 @@ function explain(state, after) {
         const range = `${skill} ${w.from} → ${w.to}`;
         const base = { kind: 'wall', key: `skill:${w.skill}`, skill: w.skill, name: range };
         if (!w.source) {
-            out.push({ ...base, cause: CANT_FIX.CONTENT, message: `${range}: no work of the skill gives XP there at Typical; it needs a source.` });
+            out.push({ ...base, cause: CANT_FIX.CONTENT, message: `${range}: no work of the skill gives XP there at ${AT_TARGET}; it needs a source.` });
             continue;
         }
         const band = bands.find(b => b.skill === w.skill && b.rows.some(r => r.level === w.from));
@@ -731,7 +732,7 @@ function explain(state, after) {
             .map(x => ({ x, gate: pace.profiles.contextOf(x.target).gate ?? 1 }))
             .filter(o => o.gate > w.from - 1 && o.gate < w.to);
         const worn = opening.filter(o => {
-            const r = pace.rateAt(o.x.target, PROFILE.TYPICAL)?.rate;
+            const r = pace.rateAt(o.x.target, TARGET)?.rate;
             return !r?.ok || r.lifecycle?.kind === LIFECYCLE.ONE_OFF || !(r.cyclesPerHour > 0);
         });
         const first = band?.rows[0]?.level ?? 1;
@@ -749,7 +750,7 @@ function explain(state, after) {
         const slow = s.offPct > 0;
         const top = st.timed?.[0];
         const base = { kind: 'stage', key: `stage:${s.tier}`, name: s.label };
-        const words = `${s.label} is done ${PACE_TEXT.hours(s.hours)} in at Typical, ${Math.abs(Math.round(s.offPct))} % ${slow ? 'over' : 'under'} its ${formatMinutes(s.budgetMinutes)}`;
+        const words = `${s.label} is done ${PACE_TEXT.hours(s.hours)} in at ${AT_TARGET}, ${Math.abs(Math.round(s.offPct))} % ${slow ? 'over' : 'under'} its ${formatMinutes(s.budgetMinutes)}`;
         if (!slow) {
             const settles = settleLevels(state, s);
             const shown = settles.slice(0, 5).map(g => `${g.name}: ${PACE_TEXT.skill(g.skill)} ${g.level} → about ${g.to}`).join('; ');
@@ -769,7 +770,7 @@ function explain(state, after) {
 
     for (const u of after.unlockWalls) {
         const cause = stepCause(state, u.key, true);
-        out.push({ kind: 'unlock', key: u.key, name: u.name, cause: cause.cause, message: `${u.name}: its own step takes ${PACE_TEXT.hours(u.own)} at Typical, ${PACE_TEXT.times(u.ratio)} the ${formatMinutes(u.allowedMinutes)} the pace allows; ${cause.words}.` });
+        out.push({ kind: 'unlock', key: u.key, name: u.name, cause: cause.cause, message: `${u.name}: its own step takes ${PACE_TEXT.hours(u.own)} at ${AT_TARGET}, ${PACE_TEXT.times(u.ratio)} the ${formatMinutes(u.allowedMinutes)} the pace allows; ${cause.words}.` });
     }
 
     for (const b of after.boosts) {
@@ -807,7 +808,7 @@ function settleLevels(state, stage) {
         const id = `${g.key}|${g.skill}`;
         if (out.has(id)) continue;
         const h = g.hours > base && T > base ? base + (g.hours - base) * (B - base) / (T - base) : g.hours;
-        const to = Math.max(g.level, pace.levelAtHours(g.skill, h, PROFILE.TYPICAL, stage.tier));
+        const to = Math.max(g.level, pace.levelAtHours(g.skill, h, TARGET, stage.tier));
         out.set(id, { key: g.key, name: ledger.world.names.get(g.key) ?? g.key, skill: g.skill, level: g.level, to });
     }
     return [...out.values()].sort((a, b) => b.to - b.level - (a.to - a.level));
@@ -826,7 +827,7 @@ function floorBound(state, boost) {
 function stepCause(state, key, own = false) {
     const { pace, ledger } = state.eval;
     const name = (k) => ledger.world.names.get(k) ?? parseKey(k).id;
-    const path = pace.pathOf(key, PROFILE.TYPICAL);
+    const path = pace.pathOf(key, TARGET);
     const gate = own ? null : bindingGate(pace, key);
     if (gate) {
         const rule = ledger.reach.get(gate.key)?.rule;

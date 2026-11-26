@@ -106,7 +106,11 @@ describe('checks F: the ring stars', () => {
 });
 
 describe('the pace: the star\'s price is on the way to its ring', () => {
-    const settings = { stages: [{ tier: 0, budgetMinutes: 10 }, { tier: 1, budgetMinutes: 60 }, { tier: 2, budgetMinutes: 600 }] };
+    // The stages follow the pace rule to each tier's opening level (brief 880 L3): Plane 2 runs to level 60, about 28 h.
+    const settings = { tierLevels: [{ tier: 0, level: 1 }, { tier: 1, level: 10 }, { tier: 2, level: 20 }, { tier: 3, level: 60 }] };
+    /** The same stages, the last of them Plane 2, so a ring past ring 3 has no budget. */
+    const toPlane2 = { tierLevels: [{ tier: 0, level: 1 }, { tier: 1, level: 10 }, { tier: 2, level: 20 }] };
+    const budgetOf = (pace, tier) => pace.settings.stages.find(s => s.tier === tier).budgetMinutes / 60;
 
     it('⭐ a dear ring star moves its ring later by the hours its price takes to gather', () => {
         const cheap = paceOf(worldWorkspace(), settings);
@@ -128,7 +132,7 @@ describe('the pace: the star\'s price is on the way to its ring', () => {
         for (const row of rows.slice(0, 2)) {
             const p = row.proposed;
             expect(p.itemId, row.id).toBeTruthy();
-            const budget = settings.stages.find(s => s.tier === ringBudgetTier(row.ring)).budgetMinutes / 60;
+            const budget = budgetOf(pace, ringBudgetTier(row.ring));
             expect(p.budgetHours).toBe(budget);
             expect(p.litAt).toBeLessThanOrEqual(budget + 1e-9);
             expect(p.litAt).toBeGreaterThan(budget * 0.85);
@@ -143,7 +147,7 @@ describe('the pace: the star\'s price is on the way to its ring', () => {
     });
 
     it('a wild ring\'s star, with no budget for its stage, takes the tables\' wild price growth over the star before', () => {
-        const pace = paceOf(worldWorkspace(), settings);
+        const pace = paceOf(worldWorkspace(), toPlane2);
         const rows = pace.hallPaybacks().filter(r => r.ring);
         const [, three, four] = rows;
         expect(four.budgetHours).toBeNull();
@@ -152,7 +156,7 @@ describe('the pace: the star\'s price is on the way to its ring', () => {
         expect(four.proposed.priceHours).toBeLessThanOrEqual(hours + 1e-9);
         expect(four.proposed.priceHours).toBeGreaterThan(hours * 0.85);
         // A strict ring with no budget proposes nothing, and says why.
-        const bare = paceOf(worldWorkspace(), { stages: [{ tier: 0, budgetMinutes: 10 }] });
+        const bare = paceOf(worldWorkspace(), { tierLevels: [{ tier: 0, level: 1 }] });
         expect(bare.hallPaybacks().find(r => r.ring === 2).proposed.why).toMatch(/no budget/);
     });
 

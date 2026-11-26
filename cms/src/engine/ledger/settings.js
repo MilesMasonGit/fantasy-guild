@@ -1,19 +1,20 @@
-// the progression ledger's settings: stage budgets, the tolerance, the target player, the pace curve
+// the progression ledger's settings: the pace rule and the stage budgets it sets, the tolerance, the target player, the boost budget
 
-import { PLAN_TIERS, PLAN_TIER_LEVELS, tierBudgetMs, tierOrNull, tierLevelsOf } from '../../../../src/systems/progression/ledger/plan.js';
+import { PLAN_TIER_LEVELS, tierOrNull, tierLevelsOf, tierLevelAt } from '../../../../src/systems/progression/ledger/plan.js';
 
 /**
  * What the owner sets once for the whole ledger, kept with the plan in `cms/plan/plan.json`:
  *
  *     {
- *       stages: [{ tier, budgetMinutes }],          // time from a new game to the end of each stage
+ *       paceRule: { startMinutes, stepPct, minPct, maxPct }, // level 1's minutes, each level stepPct longer, within the range
  *       tierLevels: [{ tier, level }],               // the level each tier opens at (the ladder)
  *       tolerancePct: 25,                            // a stage is red beyond this, either way
  *       player: { checkInMinMinutes, checkInMaxMinutes, overnightHours },
- *       paceCurve: [{ level, minutesPerLevel }],     // the target time one level takes, at a few levels
  *       wallFactor: 2,                               // a wall is a wait over this many times the curve
- *       profileBounds: 3,                            // Bare and Maxed stay within this many times the curve
+ *       profileBounds: { typical, bare, maxed },     // Typical and Bare at most this many times slower than the curve, Maxed faster
  *       boostTargets: { support: [{ tier, pct }], … }, // how strong each kind of boost should be, by tier
+ *       boostBudget: [{ tier, speed, xp, yield, rare }], // what Typical and Maxed hold at each tier's opening, in percent
+ *       speedCapPct: 65,                             // no speed cut past this at Maxed
  *       campMembers: 3,                              // copies of a vein or Field a camp hands one hero
  *       paybackHours: 2,                             // a sensible investor's boost pays for itself within this
  *       hallPaybackHours: 24,                        // and a Guild Hall rank within this
@@ -23,7 +24,9 @@ import { PLAN_TIERS, PLAN_TIER_LEVELS, tierBudgetMs, tierOrNull, tierLevelsOf } 
  *     }
  *
  * Times are in minutes so the file reads plainly; later phases convert with the helpers below.
- * The ledger's pace (`pace.js`) reads these; nothing in the game does.
+ * The ledger's pace (`pace.js`) reads these; nothing in the game does. **The stages** (`stages:
+ * [{ tier, budgetMinutes, endsAt }]`) are not set by hand: each stage's budget is the pace rule's time
+ * from a new game to the level the next tier opens at, the last tier's to 99 (brief 880 L3).
  *
  * ⚠️ The CMS, its server and its Node tools import this file, so it stays free of game state.
  */
@@ -36,20 +39,46 @@ export const RULES_VERSIONS = Object.freeze([
     Object.freeze({ id: 'today', label: 'The game as it is today' }),
 ]);
 
-/** The owner's starting stages: the budgets in `plan.js`, as minutes. */
-const DEFAULT_STAGES = PLAN_TIERS
-    .filter((tier) => tierBudgetMs(tier) !== null)
-    .map((tier) => ({ tier, budgetMinutes: tierBudgetMs(tier) / MINUTE }));
+/** The level a stage of the last tier runs to. */
+const TOP_LEVEL = 99;
 
-/** The owner's points (2026-10-30): a few minutes a level at first, a day at 60, three days at 99. */
-const DEFAULT_PACE_CURVE = [
-    { level: 1, minutesPerLevel: 3 },
-    { level: 10, minutesPerLevel: 8 },
-    { level: 20, minutesPerLevel: 30 },
-    { level: 40, minutesPerLevel: 3 * 60 },
-    { level: 60, minutesPerLevel: 24 * 60 },
-    { level: 99, minutesPerLevel: 3 * 24 * 60 },
-];
+/**
+ * The owner's pace rule (BALANCE_RULES section 1, 2026-11-25): 3 minutes at level 1, each level
+ * 6.25 % longer, the step kept within the owner's range of 6 to 6.5 %.
+ */
+const DEFAULT_PACE_RULE = Object.freeze({ startMinutes: 3, stepPct: 6.25, minPct: 6, maxPct: 6.5 });
+
+/**
+ * The curve's player is Maxed (owner, 2026-11-07): a typical player lands about 1.5 to 2x slower
+ * than the curve and one with no boosts at most 3x; Maxed no more than 3x faster.
+ */
+const DEFAULT_PROFILE_BOUNDS = Object.freeze({ typical: 2, bare: 3, maxed: 3 });
+
+/** The kinds of boost the budget counts, with their words. */
+export const BOOST_BUDGET_KINDS = Object.freeze([
+    Object.freeze({ id: 'speed', label: 'Speed' }),
+    Object.freeze({ id: 'xp', label: 'XP' }),
+    Object.freeze({ id: 'yield', label: 'Yield' }),
+    Object.freeze({ id: 'rare', label: 'Rare finds' }),
+]);
+const BUDGET_KINDS = BOOST_BUDGET_KINDS.map((k) => k.id);
+
+/**
+ * The boost budget (BALANCE_RULES section 5, owner 2026-11-07): what Typical and Maxed hold at the
+ * opening of each tier, in percent, by kind: speed (the cut in work or growth time), XP, yield (more
+ * of the work's main output a cycle) and rare finds. Copper's row serves tiers 0 and 1.
+ */
+const DEFAULT_BOOST_BUDGET = Object.freeze([
+    [0, [10, 20], [5, 10], [2, 27], [0, 100]],
+    [2, [15, 30], [5, 10], [41, 77], [0, 100]],
+    [3, [18, 35], [8, 15], [68, 110], [0, 100]],
+    [4, [20, 40], [8, 15], [100, 150], [50, 150]],
+    [5, [22, 45], [10, 20], [138, 197], [50, 150]],
+    [6, [25, 50], [10, 20], [183, 254], [50, 250]],
+    [7, [30, 60], [10, 20], [300, 400], [50, 250]],
+].map(([tier, ...cells]) => Object.freeze({
+    tier, ...Object.fromEntries(BUDGET_KINDS.map((kind, i) => [kind, Object.freeze({ typical: cells[i][0], maxed: cells[i][1] })])),
+})));
 
 /** The kinds of boost a target can be set for, with their words. */
 export const BOOST_TARGET_KINDS = Object.freeze([
@@ -85,14 +114,16 @@ const DEFAULT_BOOST_TARGETS = {
 const DEFAULT_COIN_CURVE = [{ tier: 0, minutes: 10 }];
 
 export const DEFAULT_LEDGER_SETTINGS = Object.freeze({
-    stages: DEFAULT_STAGES,
+    paceRule: DEFAULT_PACE_RULE,
     tierLevels: PLAN_TIER_LEVELS,
     tolerancePct: 25,
     player: { checkInMinMinutes: 30, checkInMaxMinutes: 60, overnightHours: 8 },
-    paceCurve: DEFAULT_PACE_CURVE,
     wallFactor: 2,
-    profileBounds: 3,
+    profileBounds: DEFAULT_PROFILE_BOUNDS,
     boostTargets: DEFAULT_BOOST_TARGETS,
+    boostBudget: DEFAULT_BOOST_BUDGET,
+    // The owner (2026-11-07): at most a 65 % cut at Maxed, inside the game's 80 % cap.
+    speedCapPct: 65,
     campMembers: 3,
     paybackHours: 2,
     // The owner (2026-10-30): a Guild Hall rank may take about a day to pay for itself.
@@ -113,42 +144,28 @@ const clone = (v) => JSON.parse(JSON.stringify(v));
 
 /**
  * Settings with every field present and sane: anything missing or unreadable falls back to its
- * default, stages are one per tier in tier order, curve points one per level in level order.
- * Fields this file does not know are kept, for later phases.
+ * default, and the stages follow from the pace rule and the tier levels ({@link stagesOf}). Fields
+ * this file does not know are kept, for later phases; the hand budgets and curve points of before
+ * (`stages`, `paceCurve`) are dropped, as the rule now sets them.
  */
 export function settingsOf(raw) {
-    const src = isObject(raw) ? raw : {};
+    const src = { ...(isObject(raw) ? raw : {}) };
+    delete src.stages;
+    delete src.paceCurve;
     const d = DEFAULT_LEDGER_SETTINGS;
-
-    const stageByTier = new Map();
-    for (const s of Array.isArray(src.stages) ? src.stages : []) {
-        const tier = tierOrNull(s?.tier);
-        const budget = Number(s?.budgetMinutes);
-        if (tier !== null && Number.isFinite(budget) && budget > 0) stageByTier.set(tier, { ...s, tier, budgetMinutes: budget });
-    }
-    const stages = Array.isArray(src.stages)
-        ? [...stageByTier.values()].sort((a, b) => a.tier - b.tier)
-        : clone(d.stages);
-
-    const pointByLevel = new Map();
-    for (const p of Array.isArray(src.paceCurve) ? src.paceCurve : []) {
-        const level = Number(p?.level);
-        const minutes = Number(p?.minutesPerLevel);
-        if (Number.isInteger(level) && level >= 1 && Number.isFinite(minutes) && minutes > 0) pointByLevel.set(level, { ...p, level, minutesPerLevel: minutes });
-    }
-    const paceCurve = Array.isArray(src.paceCurve)
-        ? [...pointByLevel.values()].sort((a, b) => a.level - b.level)
-        : clone(d.paceCurve);
 
     const player = isObject(src.player) ? src.player : {};
     const checkInMin = positive(player.checkInMinMinutes, d.player.checkInMinMinutes);
     const checkInMax = Math.max(checkInMin, positive(player.checkInMaxMinutes, d.player.checkInMaxMinutes));
     const overnight = Number(player.overnightHours);
+    const paceRule = paceRuleOf(src.paceRule);
+    const tierLevels = tierLevelsOf(src.tierLevels);
 
     return {
         ...src,
-        stages,
-        tierLevels: tierLevelsOf(src.tierLevels),
+        paceRule,
+        tierLevels,
+        stages: stagesOf(paceRule, tierLevels),
         tolerancePct: Number.isFinite(Number(src.tolerancePct)) && Number(src.tolerancePct) >= 0 ? Number(src.tolerancePct) : d.tolerancePct,
         player: {
             ...player,
@@ -156,10 +173,11 @@ export function settingsOf(raw) {
             checkInMaxMinutes: checkInMax,
             overnightHours: Number.isFinite(overnight) && overnight >= 0 ? overnight : d.player.overnightHours,
         },
-        paceCurve,
         wallFactor: positive(src.wallFactor, d.wallFactor),
-        profileBounds: Math.max(1, positive(src.profileBounds, d.profileBounds)),
+        profileBounds: profileBoundsOf(src.profileBounds),
         boostTargets: boostTargetsOf(src.boostTargets),
+        boostBudget: boostBudgetOf(src.boostBudget),
+        speedCapPct: Math.min(100, positive(src.speedCapPct, d.speedCapPct)),
         campMembers: Math.max(1, Math.floor(positive(src.campMembers, d.campMembers))),
         paybackHours: positive(src.paybackHours, d.paybackHours),
         hallPaybackHours: positive(src.hallPaybackHours, d.hallPaybackHours),
@@ -167,6 +185,103 @@ export function settingsOf(raw) {
         coinCurve: Array.isArray(src.coinCurve) ? coinCurveOf(src.coinCurve) : clone(d.coinCurve),
         rulesVersion: RULES_VERSIONS.some((r) => r.id === src.rulesVersion) ? src.rulesVersion : d.rulesVersion,
     };
+}
+
+/** The pace rule with each number sane: the step within its range, the range never upside down. */
+function paceRuleOf(raw) {
+    const d = DEFAULT_PACE_RULE;
+    const src = isObject(raw) ? raw : {};
+    const low = Number(src.minPct);
+    const minPct = Number.isFinite(low) && low >= 0 ? low : d.minPct;
+    const maxPct = Math.max(minPct, positive(src.maxPct, d.maxPct));
+    const step = Number(src.stepPct);
+    return {
+        startMinutes: positive(src.startMinutes, d.startMinutes),
+        stepPct: Math.min(maxPct, Math.max(minPct, Number.isFinite(step) ? step : d.stepPct)),
+        minPct, maxPct,
+    };
+}
+
+/** Minutes the rule gives one level (`level` to the next). */
+const ruleMinutes = (rule, level) => rule.startMinutes * (1 + rule.stepPct / 100) ** (Math.max(1, level) - 1);
+/** Minutes the rule gives from level 1 to `level`: the sum of each step's, a geometric series. */
+const ruleReach = (rule, level) => {
+    if (!(level > 1)) return 0;
+    const g = rule.stepPct / 100;
+    return g > 0 ? rule.startMinutes * ((1 + g) ** (level - 1) - 1) / g : rule.startMinutes * (level - 1);
+};
+
+/**
+ * The stages the rule and the ladder set: one per tier the tier levels name, each done when the curve
+ * reaches the level the next higher tier opens at (`endsAt`, 99 for the last), its budget the curve's
+ * minutes from a new game to there.
+ */
+function stagesOf(rule, tierLevels) {
+    return tierLevels.map((p, i) => {
+        const next = tierLevels.slice(i + 1).find((q) => q.level > p.level);
+        const endsAt = next ? next.level : TOP_LEVEL;
+        return { tier: p.tier, budgetMinutes: ruleReach(rule, endsAt), endsAt };
+    });
+}
+
+/** The profile bounds; a single number, as saved before, bounds Bare and Maxed and leaves Typical its default. */
+function profileBoundsOf(raw) {
+    const d = DEFAULT_PROFILE_BOUNDS;
+    if (!isObject(raw)) {
+        const n = Number(raw);
+        return Number.isFinite(n) && n >= 1 ? { typical: d.typical, bare: n, maxed: n } : { ...d };
+    }
+    const at = (k) => Math.max(1, positive(raw[k], d[k]));
+    return { typical: at('typical'), bare: at('bare'), maxed: at('maxed') };
+}
+
+/**
+ * The boost budget: rows one per tier in tier order, each cell `{ typical, maxed }` percents from 0
+ * (Maxed never under Typical); the owner's table when none is readable.
+ */
+function boostBudgetOf(raw) {
+    const byTier = new Map();
+    for (const row of Array.isArray(raw) ? raw : []) {
+        const tier = tierOrNull(row?.tier);
+        if (tier === null) continue;
+        const out = { tier };
+        let ok = true;
+        for (const kind of BUDGET_KINDS) {
+            const typical = Number(row?.[kind]?.typical);
+            const maxed = Number(row?.[kind]?.maxed);
+            if (!(Number.isFinite(typical) && typical >= 0 && Number.isFinite(maxed) && maxed >= 0)) { ok = false; break; }
+            out[kind] = { typical, maxed: Math.max(typical, maxed) };
+        }
+        if (ok) byTier.set(tier, out);
+    }
+    return byTier.size ? [...byTier.values()].sort((a, b) => a.tier - b.tier) : clone(DEFAULT_BOOST_BUDGET);
+}
+
+/**
+ * The boost budget's cell for work at `level`: the row of the tier the level falls in (the tier
+ * levels'), speed and XP climbing level by level to the next row's at its tier's opening level, yield
+ * and rare finds stepping (owner, 2026-11-25). `{ speed, xp, yield, rare }`, each `{ typical, maxed }`.
+ */
+export function boostBudgetAt(settings, level) {
+    const s = settings?.boostBudget && settings?.tierLevels ? settings : settingsOf(settings);
+    const rows = s.boostBudget;
+    const levelOf = (tier) => tierLevelAt(s.tierLevels, tier);
+    let at = 0;
+    for (let i = 0; i < rows.length; i++) if (levelOf(rows[i].tier) <= level) at = i;
+    const row = rows[at];
+    const next = rows[at + 1];
+    const from = levelOf(row.tier);
+    const to = next ? levelOf(next.tier) : null;
+    const f = next && to > from ? Math.min(1, Math.max(0, (level - from) / (to - from))) : 0;
+    const out = {};
+    for (const kind of BUDGET_KINDS) {
+        const climbs = kind === 'speed' || kind === 'xp';
+        out[kind] = {
+            typical: row[kind].typical + (climbs && next ? (next[kind].typical - row[kind].typical) * f : 0),
+            maxed: row[kind].maxed + (climbs && next ? (next[kind].maxed - row[kind].maxed) * f : 0),
+        };
+    }
+    return out;
 }
 
 /**
@@ -218,28 +333,16 @@ export function stageBudgetMs(settings, tier) {
 }
 
 /**
- * The curve's target minutes for one level at `level`, between two points by a constant ratio
- * (time per level grows by a steady factor, as an XP curve does); flat beyond the ends. Null with
- * no points.
+ * The curve's target minutes for one level at `level` (the time from it to the next): the pace
+ * rule, level 1's minutes grown by the step each level after (BALANCE_RULES section 1).
  */
 export function minutesPerLevelAt(settings, level) {
-    const points = settingsOf(settings).paceCurve;
-    if (!points.length) return null;
-    if (level <= points[0].level) return points[0].minutesPerLevel;
-    const last = points[points.length - 1];
-    if (level >= last.level) return last.minutesPerLevel;
-    const at = points.findIndex((p) => p.level >= level);
-    const a = points[at - 1];
-    const b = points[at];
-    const f = (level - a.level) / (b.level - a.level);
-    return a.minutesPerLevel * (b.minutesPerLevel / a.minutesPerLevel) ** f;
+    return ruleMinutes(paceRuleOf(settings?.paceRule), level);
 }
 
 /** The curve's target minutes from level 1 to `level`: the sum of each step's time. */
 export function minutesToReach(settings, level) {
-    let total = 0;
-    for (let l = 1; l < level; l++) total += minutesPerLevelAt(settings, l) ?? 0;
-    return total;
+    return ruleReach(paceRuleOf(settings?.paceRule), level);
 }
 
 /** The level the curve has a player at after `minutes` of play: the highest it reaches by then. */

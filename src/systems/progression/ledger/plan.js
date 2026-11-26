@@ -40,9 +40,6 @@ export const PLAN_STATUSES = Object.freeze([PLAN_STATUS.PLANNED, PLAN_STATUS.DRA
 /** What a record with no plan status is. */
 export const DEFAULT_PLAN_STATUS = PLAN_STATUS.LIVE;
 
-/** The stage time budgets the owner set (about 30 minutes, 1.5 hours, a day); later tiers have none yet. */
-const TIER_BUDGET_MS = Object.freeze({ 0: 30 * 60 * 1000, 1: 90 * 60 * 1000, 2: 24 * 60 * 60 * 1000 });
-
 /**
  * The tiers the CMS offers: the ladder's seven rungs, copper in two (the Starter Camp, then ring 1),
  * iron, silver, mythril, gold, adamantine and darkmetal. A record may hold a later one; {@link tierLabel} names any.
@@ -135,12 +132,6 @@ export function tierLabel(tier) {
     const t = tierOrNull(tier);
     if (t === null) return PLAN_TEXT.noTier;
     return t === 0 ? PLAN_TEXT.starterCamp : PLAN_TEXT.plane(t);
-}
-
-/** A stage's time budget in milliseconds, or null where the owner has set none. */
-export function tierBudgetMs(tier) {
-    const t = tierOrNull(tier);
-    return t === null ? null : (TIER_BUDGET_MS[t] ?? null);
 }
 
 /** A status the ledger knows, case and spaces forgiven ("Planned" is planned), else null. */

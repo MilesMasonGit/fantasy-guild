@@ -34,7 +34,7 @@ const TRACK = '#e5e7eb';
 const CURVE = '#60a5fa';
 
 /**
- * The Ledger's timeline: a lane per skill, time from a new game across (a log scale, at the Typical
+ * The Ledger's timeline: a lane per skill, time from a new game across (a log scale, at the Maxed
  * player's rates), the level the skill has reached drawn as a line with the pace curve dashed beside
  * it; every item and Token a dot at its first reach (at the level its own step asks), coloured by
  * tier; walls hatched red and labelled with what holds them up; crowded spots glowing, empty
@@ -71,7 +71,7 @@ export default function LedgerTimeline({ report, onRefresh, onOpen, onOpenSkill 
     <div className="space-y-5">
       <div className="flex items-center justify-between gap-3">
         <p className="text-[11px] text-gray-500">
-          When a new game first has each item and Token at the Typical player's rates, by the skill whose level its own step asks.
+          When a new game first has each item and Token at the Maxed player's rates (the curve's player), by the skill whose level its own step asks.
           {timeline.unreached > 0 && ` ${timeline.unreached} never reached (Planned, or no way in) are not drawn.`}
         </p>
         <button
@@ -86,7 +86,7 @@ export default function LedgerTimeline({ report, onRefresh, onOpen, onOpenSkill 
 
       <section className="rounded-xl border bg-[#1a1a1e] border-white/10 p-4 space-y-2" aria-label="Timeline">
         <div className="flex items-center justify-between gap-3">
-          <h3 className={sectionHead}>Timeline at Typical</h3>
+          <h3 className={sectionHead}>Timeline at Maxed</h3>
           <CompareBar compare={compare} setCompare={setCompare} />
         </div>
         <Legend ghosts={!!diff} />
@@ -192,7 +192,7 @@ function Legend({ ghosts = false }) {
   );
   return (
     <p className="text-[10px] text-gray-500">
-      {item(<svg width={18} height={8}><line x1={0} y1={4} x2={18} y2={4} stroke={TRACK} strokeWidth={1.5} /></svg>, 'level at Typical')}
+      {item(<svg width={18} height={8}><line x1={0} y1={4} x2={18} y2={4} stroke={TRACK} strokeWidth={1.5} /></svg>, 'level at Maxed')}
       {item(<svg width={18} height={8}><line x1={0} y1={4} x2={18} y2={4} stroke={CURVE} strokeWidth={1.5} strokeDasharray="4 3" /></svg>, 'pace curve')}
       {item(<svg width={10} height={10}><circle cx={5} cy={5} r={3.5} fill="#4ade80" /></svg>, 'first reach (colour: tier)')}
       {item(<svg width={10} height={10}><circle cx={5} cy={5} r={3.5} fill="#4ade80" stroke={WALL} strokeWidth={1.5} /></svg>, 'a long wait for that one unlock')}
@@ -260,7 +260,7 @@ function TimelineChart({ timeline, onOpen, onOpenSkill, diff = null }) {
             <line x1={x(s.hours)} x2={x(s.hours)} y1={AXIS - 6} y2={height - 22} stroke={s.color} strokeOpacity={0.8} strokeWidth={1.25} />
           )}
           <text x={Number.isFinite(s.hours) ? x(s.hours) + 3 : x1} y={12 + s.row * 13} fontSize={9} fill={s.color} textAnchor={Number.isFinite(s.hours) && x(s.hours) > x1 - 220 ? 'end' : 'start'}>
-            <title>{`${s.label}: everything planned for it is first had ${hoursText(s.hours)} into a new game at Typical; its budget is ${hoursText(s.budgetHours)} (the dotted line).`}</title>
+            <title>{`${s.label}: everything planned for it is first had ${hoursText(s.hours)} into a new game at Maxed; its budget is ${hoursText(s.budgetHours)} (the dotted line).`}</title>
             {`${s.label} done ${hoursText(s.hours)}${s.complete ? '' : '*'} · budget ${hoursText(s.budgetHours)}`}
           </text>
         </g>
