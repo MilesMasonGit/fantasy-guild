@@ -927,7 +927,8 @@
       "page": "content_crafting.md",
       "section": "The shape",
       "notes": {
-        "also used by": "Fishing"
+        "also used by": "Fishing",
+        "in the game today": "a stand-in recipe (Oak Wood, Copper Nails, Beeswax Comb / Oak Wood, Copper Nails) until String and Bamboo exist; the plan above replaces it"
       }
     },
     {
@@ -1106,7 +1107,8 @@
       "page": "content_crafting.md",
       "section": "The shape",
       "notes": {
-        "also used by": "Fishing"
+        "also used by": "Fishing",
+        "in the game today": "a stand-in recipe (Oak Wood, Copper Nails, Beeswax Comb / Oak Wood, Copper Nails) until String and Bamboo exist; the plan above replaces it"
       }
     },
     {
@@ -5361,8 +5363,7 @@
       "skill": "Cooking",
       "level": 42,
       "madeWith": [
-        "lemon",
-        "water"
+        "lemon"
       ],
       "art": "H",
       "page": "content_food_and_drink.md",
@@ -5581,8 +5582,7 @@
       "skill": "Cooking",
       "level": 54,
       "madeWith": [
-        "lime",
-        "water"
+        "lime"
       ],
       "art": "H",
       "page": "content_food_and_drink.md",
@@ -6901,7 +6901,8 @@
       "skill": "Smithing",
       "level": 5,
       "madeWith": [
-        "copper_ingot"
+        "copper_ingot",
+        "coal"
       ],
       "art": "H",
       "page": "content_smithing.md",
@@ -10350,6 +10351,107 @@
       "section": "Other buildings",
       "notes": {
         "its job": "Coin Find +10 % in reach: more coins from enemies and Hideouts (concept_gold_coins.md point 12)"
+      }
+    },
+    {
+      "id": "lavender_incense",
+      "name": "Lavender Incense",
+      "category": "item",
+      "type": "Faith offering",
+      "skill": "Crafting",
+      "level": 7,
+      "madeWith": [
+        "lavender"
+      ],
+      "art": "H",
+      "page": "content_faith.md",
+      "section": "The offerings' recipes (Crafting)",
+      "notes": {
+        "in the game": "live before the catalogue; listed 2026-11-26 so the number writer can map it"
+      }
+    },
+    {
+      "id": "field",
+      "name": "Field",
+      "category": "token",
+      "type": "Farm",
+      "skill": "Farming",
+      "level": 1,
+      "art": "H",
+      "page": "content_farming.md",
+      "section": "Unlocks",
+      "notes": {
+        "in the game": "live before the catalogue; listed 2026-11-26 so the number writer can map it"
+      }
+    },
+    {
+      "id": "windmill",
+      "name": "Windmill",
+      "category": "building",
+      "type": "Support",
+      "skill": "Construction",
+      "level": null,
+      "art": "H",
+      "page": "content_construction.md",
+      "section": "Other buildings",
+      "notes": {
+        "in the game": "live before the catalogue; listed 2026-11-26 so the number writer can map it"
+      }
+    },
+    {
+      "id": "herb_garden",
+      "name": "Herb Garden",
+      "category": "token",
+      "type": "Farm",
+      "skill": "Farming",
+      "level": null,
+      "art": "H",
+      "page": "content_farming.md",
+      "section": "Unlocks",
+      "notes": {
+        "in the game": "live before the catalogue; listed 2026-11-26 so the number writer can map it"
+      }
+    },
+    {
+      "id": "wild_wheat_patch",
+      "name": "Wild Wheat Patch",
+      "category": "token",
+      "type": "Token",
+      "skill": "Farming",
+      "level": 1,
+      "art": "H",
+      "page": "content_farming.md",
+      "section": "Unlocks",
+      "notes": {
+        "in the game": "live before the catalogue; listed 2026-11-26 so the number writer can map it"
+      }
+    },
+    {
+      "id": "beehive",
+      "name": "Beehive",
+      "category": "building",
+      "type": "Support",
+      "skill": "Construction",
+      "level": null,
+      "art": "H",
+      "page": "content_construction.md",
+      "section": "Other buildings",
+      "notes": {
+        "in the game": "live before the catalogue; listed 2026-11-26 so the number writer can map it"
+      }
+    },
+    {
+      "id": "scrap_heap",
+      "name": "Scrap Heap",
+      "category": "token",
+      "type": "Token",
+      "skill": "Mining",
+      "level": 1,
+      "art": "H",
+      "page": "content_mining_forestry.md",
+      "section": "Mining",
+      "notes": {
+        "in the game": "live before the catalogue; listed 2026-11-26 so the number writer can map it"
       }
     }
   ]
