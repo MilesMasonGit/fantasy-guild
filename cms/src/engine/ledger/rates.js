@@ -274,6 +274,7 @@ export function buildRateBook(content = {}) {
         // of setups one boost apart.
         // ⚠️ A setup is read as it stands when rated: make a new one rather than change one in place.
         parts: { hero: keeper(PARTS_KEPT), tile: keeper(PARTS_KEPT), guild: keeper(PARTS_KEPT), guildByHall: new WeakMap() },
+        expanded: { [STACKED]: new Map(), [PERK]: new Map(), [LENT]: new Map() },
         tokenIds: () => Object.keys(rawTokens),
         token: tokenDef,
         rateOf: (target, setup) => rateOf(book, target, setup),
@@ -518,8 +519,8 @@ function heroRules(book, skill, setup, gates, notes) {
         const entry = library[effectId];
         if (!entry) continue;
         const allWorn = w.itemIds.length === itemIds.length;
-        const wornOnes = !allWorn && w.itemIds.length ? statementsFromStack(entry, { effectId, scale: w.scale }) : null;
-        statementsFromStack(entry, { effectId, scale }).forEach((statement, i) => {
+        const wornOnes = !allWorn && w.itemIds.length ? expandedOf(book, STACKED, effectId, w.scale) : null;
+        expandedOf(book, STACKED, effectId, scale).forEach((statement, i) => {
             const factorId = factorOfItems(itemIds, items);
             if (!isAlwaysOn(statement) || allWorn) statements.push({ statement, factorId, itemIds });
             else if (wornOnes) statements.push({ statement: wornOnes[i], factorId: factorOfItems(w.itemIds, items), itemIds: w.itemIds });
@@ -543,9 +544,7 @@ function heroRules(book, skill, setup, gates, notes) {
         for (const [effectId, { scale, factorId }] of perkRefs) {
             const entry = library[effectId];
             if (!entry) continue;
-            for (const statement of statementsFromStack(entry, { effectId, scale })) {
-                statements.push({ statement: { ...statement, chargeDelta: 0 }, factorId, itemIds: [] });
-            }
+            for (const statement of expandedOf(book, PERK, effectId, scale)) statements.push({ statement, factorId, itemIds: [] });
         }
     }
 
@@ -562,7 +561,7 @@ function heroRules(book, skill, setup, gates, notes) {
             notes.unmodelled.push({ source: factorId, what: 'applies', why: 'an effect that lasts a time rather than a cycle', statementId: statement.id ?? null });
         }
         carries.add(payload.effectId);
-        for (const s of statementsFromEntry(entry, { effectId: payload.effectId, scale: Number(payload.scale) || 1 })) {
+        for (const s of expandedOf(book, LENT, payload.effectId, Number(payload.scale) || 1)) {
             live.push({ statement: s, factorId, weight: chance });
         }
         for (const itemId of itemIds) {
@@ -578,6 +577,30 @@ function heroRules(book, skill, setup, gates, notes) {
     return { statements, live, carries, costs, factors };
 }
 
+/** How an effect is expanded for a hero: a loadout's stack, a perk's (it never spends a charge), one lent for the cycle. */
+const STACKED = 'stacked';
+const PERK = 'perk';
+const LENT = 'lent';
+
+/**
+ * An effect of the library at a scale as a hero holds it (`statementsFromStack`, `statementsFromEntry`),
+ * worked out once per rate book and shared by every hero that holds it. Never changed once made.
+ */
+function expandedOf(book, how, effectId, scale) {
+    let byScale = book.expanded[how].get(effectId);
+    if (!byScale) book.expanded[how].set(effectId, (byScale = new Map()));
+    const key = Object.is(scale, -0) ? '-0' : scale;
+    let out = byScale.get(key);
+    if (!out) {
+        const entry = book.library[effectId];
+        out = how === LENT ? statementsFromEntry(entry, { effectId, scale })
+            : how === PERK ? statementsFromStack(entry, { effectId, scale }).map(s => ({ ...s, chargeDelta: 0 }))
+                : statementsFromStack(entry, { effectId, scale });
+        byScale.set(key, out);
+    }
+    return out;
+}
+
 function factorOfItems(itemIds, items) {
     const first = itemIds[0];
     const def = items[first];
@@ -590,35 +613,27 @@ function factorOfItems(itemIds, items) {
  * `Provides` of the axis, narrowed by an exact category match when it names one; a rule applied for
  * the cycle on only some cycles counts at its share.
  */
-function heroBuckets(contributing, effectType, category) {
+function heroBuckets(hero, effectType, category) {
     let flat = 0;
     const multipliers = [];
     const percentages = [];
     const used = new Set();
-    for (const { statement, weight, factorId } of contributing) {
-        if (statement.keyword !== KEYWORD.PROVIDES) continue;
+    const add = (statement, weight, factorId) => {
+        if (statement.keyword !== KEYWORD.PROVIDES) return;
         const payload = statement.payload || {};
-        if (payload.type !== effectType) continue;
-        if (payload.category && payload.category !== category) continue;
+        if (payload.type !== effectType) return;
+        if (payload.category && payload.category !== category) return;
         const value = Number(payload.value) * weight;
-        if (!Number.isFinite(value)) continue;
+        if (!Number.isFinite(value)) return;
         used.add(factorId);
         if (payload.bucket === 'flat') flat += value;
         else if (payload.bucket === 'multiplier') multipliers.push(value);
         else percentages.push(value);
-    }
+    };
+    // The always-on rules at their full weight, then those lent for the cycle at theirs.
+    for (const { statement, factorId } of hero.statements) add(statement, 1, factorId);
+    for (const { statement, weight, factorId } of hero.live) add(statement, weight, factorId);
     return { flat, multipliers, percentages, used };
-}
-
-/** The hero's rules as `heroBuckets` reads them, every one at its weight: the always-on at 1, then those lent for the cycle. */
-const contributions = new WeakMap();
-function contributingOf(hero) {
-    let out = contributions.get(hero);
-    if (!out) {
-        out = [...hero.statements.map(s => ({ ...s, weight: 1 })), ...hero.live];
-        contributions.set(hero, out);
-    }
-    return out;
 }
 
 /** {@link heroRules}, once per what it reads: the skill, the tool, the level and the setup's gear, drinks, perks, levels and switches. */
@@ -765,11 +780,11 @@ function scopeShare(byAxis, scope, effectType, category) {
     }
     return out;
 }
-function heroShare(byAxis, contributing, effectType, category) {
+function heroShare(byAxis, hero, effectType, category) {
     const kept = axisShares(byAxis, effectType, category);
     let out = kept?.get(category);
     if (!out) {
-        out = heroBuckets(contributing, effectType, category);
+        out = heroBuckets(hero, effectType, category);
         kept?.set(category, out);
     }
     return out;
@@ -781,12 +796,11 @@ const NO_SHARE = Object.freeze({ flat: 0, multipliers: Object.freeze([]), percen
  * the Token's tile, the guild-wide rules and the hero's own. `used` names the factors that moved it.
  */
 function makeResolver(tile, guild, hero) {
-    const contributing = contributingOf(hero);
     const heroShares = sharesOf(hero);
     const tileShares = sharesOf(tile);
     const guildShares = sharesOf(guild);
     return (effectType, base, category = TARGET_CATEGORIES.ALL, { withHero = true } = {}) => {
-        const h = withHero ? heroShare(heroShares, contributing, effectType, category) : NO_SHARE;
+        const h = withHero ? heroShare(heroShares, hero, effectType, category) : NO_SHARE;
         const t = scopeShare(tileShares, tile, effectType, category);
         const g = scopeShare(guildShares, guild, effectType, category);
         const value = applyThreeBucket(base, {
