@@ -74,6 +74,10 @@ describe('the summon audit', () => {
             expect.stringContaining('works Smithing, a making skill'),
             expect.stringContaining('Mining level is not a whole number from 1 to 99, so it does not hold the skill')
         ]));
+        // A skill with no trade (Crime, Faith, Science, Summoning) is no making skill: said as not gathering.
+        const crime = findings({ tokens: { kc_summon: summon({ ...good, skills: { crime: 5 } }) } });
+        expect(crime).toEqual(expect.arrayContaining([expect.stringContaining('works Crime, which is not a gathering skill')]));
+        expect(crime.join(' ')).not.toContain('making skill');
     });
 
     it('names a missing trait or trait effect, and a copied enemy that is missing or no enemy', () => {

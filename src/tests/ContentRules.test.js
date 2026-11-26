@@ -164,6 +164,15 @@ describe('⚠️ Rule 1 — every material a tool is made from has a source that
             expect(gapsIn({ tokens: { ...TOKENS_FX, fx_goblin: goblin }, items: ITEMS, routesOf })).toEqual([]);
         });
 
+        it('a steal table on an enemy is a source that needs no tool, a rare find too; on a Planned enemy it is not', () => {
+            const robbed = (extra = {}) => ({ id: 'fx_bandit', tokenType: 'enemy', enemy: { level: 5 }, config: work([]), steal: { outputs: [line('fx_ore')] }, ...extra });
+            expect(gapsIn({ tokens: { ...TOKENS_FX, fx_bandit: robbed() }, items: ITEMS, routesOf })).toEqual([]);
+            const rare = robbed({ steal: { outputs: [], rareTable: { entries: [{ itemId: 'fx_ore', chance: 1 }] } } });
+            expect(gapsIn({ tokens: { ...TOKENS_FX, fx_bandit: rare }, items: ITEMS, routesOf })).toEqual([]);
+            const planned = robbed({ plan: { status: 'planned' } });
+            expect(gapsIn({ tokens: { ...TOKENS_FX, fx_bandit: planned }, items: ITEMS, routesOf })).toEqual(['fx_ore: only from fx_vein (needs a tool)']);
+        });
+
         it('a recipe asking for a tool nearby needs a tool too', () => {
             const tokens = { ...TOKENS_FX, fx_tree: { id: 'fx_tree', recipes: [{ id: 'r_wood', inputs: [], outputs: [line('fx_wood')], ctx: ['axe'] }] } };
             const withContext = (def) => routesOf(def).map(r => ({ ...r, requiresContext: def.recipes?.find(x => x.id === r.id)?.ctx || [] }));

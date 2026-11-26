@@ -199,6 +199,18 @@ describe('"While you were away"', () => {
         expect(headings).toEqual(['Defeats', 'Events', 'Bank full: waiting on the mat', 'New recipes', 'First finds', 'Level-ups', 'Tokens used up', 'Fights']);
     });
 
+    it('mastery ranks reached while away follow the level-ups: the kind, its rank and its buff', () => {
+        start();
+        const result = fullResult();
+        result.summary.news.mastery = [{ kind: 'fixture_cu_rock', kindName: 'Fixture Rock', rank: 2, ranks: 3, effectId: null, scale: 1 }];
+        finish(result);
+        expect(sectionsIn('news')).toEqual(['knockouts', 'bankFull', 'recipes', 'finds', 'levels', 'mastery', 'depleted', 'kills']);
+        const row = q('[data-summary-section="mastery"] [data-mastery-kind="fixture_cu_rock"]');
+        expect(row).not.toBeNull();
+        expect(text('[data-summary-section="mastery"] [data-summary-heading]')).toBe('Mastery');
+        expect(row.textContent).toContain('Fixture Rock mastery II');
+    });
+
     it('the heading is centred: While you were away, then how long', () => {
         start();
         finish(fullResult());

@@ -38,7 +38,9 @@ export const calloutText = {
     statusLands: (statusId) => t('fight.float.lands', { status: EFFECTS[statusId]?.name || statusId }),
     // A Hideout's theft, over it: "Stole 2 Wheat, 1 Milk from Cow Pasture", or the catch.
     stole: (items, camp) => (items.length ? t('crime.stole', { items: items.join(', '), camp }) : t('crime.stoleNothing', { camp })),
-    caught: (camp) => t('crime.caught', { camp })
+    caught: (camp) => t('crime.caught', { camp }),
+    // A Summoned worker gone at no charges, said where it stood: "Summoned Small Slime is spent".
+    summonSpent: (name) => t('messages.summonSpent', { name })
 };
 
 /** Whether a fired effect's title names a status: in a fight its landing is said over whoever it lands on instead. */

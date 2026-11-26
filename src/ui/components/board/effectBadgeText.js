@@ -24,7 +24,11 @@ export const EFFECT_GLYPH = Object.freeze({
     [EFFECT_KEY.REFRESH]: 'regrow',
     [EFFECT_KEY.LUCKY]: 'sparkle',
     [EFFECT_KEY.EFFICIENCY]: 'less',
-    [EFFECT_KEY.ABUNDANCE]: 'charges'
+    [EFFECT_KEY.ABUNDANCE]: 'charges',
+    [EFFECT_KEY.NEVER_RUNS_OUT]: 'lock',
+    [EFFECT_KEY.FREE_REPLANT]: 'grow',
+    [EFFECT_KEY.GROVE_FELLING]: 'x2',
+    [EFFECT_KEY.BETTER_CATCH]: 'plus'
 });
 
 /**

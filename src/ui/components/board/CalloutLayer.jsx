@@ -63,7 +63,8 @@ const NO_SUBSCRIPTION = () => () => {};
  * over the Token it fired on, "Needs Pickaxe" over a Token a hero passed over for want of the tool, "Needs Oak Seedling" over a Stump as it stops
  * for want of one, "Copper Vein exhausted" over a Token run dry and resting, a Token's new name
  * ("Oak Tree", "Sawmill built") over it as it becomes it,
- * "Demolished Oak Tree" where a demolished Token stood, and the reason
+ * "Demolished Oak Tree" where a demolished Token stood, "Summoned Small Slime is spent" where a
+ * Summoned worker out of charges stood, and the reason
  * for a refused action (a drop, a shrink that left a Token crowded) over the spot or
  * Token involved. Refusals are never notifications.
  * They appear, hold for a moment and fade (`callout-pop` in `components.css`); nothing to click,
@@ -179,6 +180,11 @@ export const CalloutLayer = memo(function CalloutLayer() {
             EventBus.subscribe(BOARD_EVENTS.TOKEN_DEPLETED, (p) => {
                 if (!p?.typeId || isEnemyDef(getTokenType(p.typeId))) return;
                 say({ x: p.x, y: p.y, typeId: p.typeId, text: calloutText.usedUp(tokenName(p.typeId)) });
+            }, UI_LISTENER),
+            // A Summoned worker out of charges is gone by now: said where it stood.
+            EventBus.subscribe(BOARD_EVENTS.SUMMON_CHANGED, (p) => {
+                if (p?.change !== 'left' || p.reason !== 'spent' || !p.name) return;
+                say({ x: p.x, y: p.y, typeId: p.typeId, text: calloutText.summonSpent(p.name) });
             }, UI_LISTENER),
             // A Foundation handed back to the Shop is gone too: what came back, said where it stood.
             EventBus.subscribe(ENGINE_EVENTS.TOKEN_REFUNDED, (p) => {

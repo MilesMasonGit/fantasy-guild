@@ -749,7 +749,7 @@ function auditSpots(out) {
 }
 
 /**
- * Summoned workers: a summon that can work nothing, names what the game lacks, works a making skill
+ * Summoned workers: a summon that can work nothing, names what the game lacks, works a skill that is not gathering
  * or is never called, and a recipe calling one wrongly. The rule lives in `summonRule.js`, shared
  * with the CMS Economy Audit.
  */

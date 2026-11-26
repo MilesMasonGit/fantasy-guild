@@ -170,13 +170,13 @@ describe('⭐ the Offering row on a recipe a shrine burns', () => {
 });
 
 describe('Can\'t Run Out is authored as a chance', () => {
-    it('its rule offers an amount and what it reaches; picking it starts at no chance, as Echo does', () => {
+    it('its rule offers an amount and what it reaches; picking it starts at 100, never running out, while Echo starts at no chance', () => {
         const ids = slotsOf(nature, { onToken: true }).map((s) => s.id);
         expect(ids).toContain('value');
         expect(ids).toContain('category');
         const echo = { ...nature, payload: { type: EFFECT_TYPES.ECHO, bucket: 'flat', value: 10 } };
         const typeSlot = slotsOf(echo, { onToken: true }).find((s) => s.id === 'type');
-        expect(typeSlot.patch(EFFECT_TYPES.NEVER_RUNS_OUT)).toEqual({ payload: { type: EFFECT_TYPES.NEVER_RUNS_OUT, bucket: 'flat', value: 0 } });
+        expect(typeSlot.patch(EFFECT_TYPES.NEVER_RUNS_OUT)).toEqual({ payload: { type: EFFECT_TYPES.NEVER_RUNS_OUT, bucket: 'flat', value: 100 } });
         expect(typeSlot.patch(EFFECT_TYPES.ECHO)).toEqual({ payload: { type: EFFECT_TYPES.ECHO, bucket: 'flat', value: 0 } });
     });
 });

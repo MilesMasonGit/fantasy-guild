@@ -255,7 +255,7 @@ export function auditConnectivity(entities, solverRefusals = []) {
     });
   }
 
-  // Summoned workers: a summon that can work nothing, names what the game lacks, works a making skill or is never called, a recipe calling one wrongly (`summonRule.js`, as the boot audit says it). Expanded Tokens, so a Circle's Works as is seen.
+  // Summoned workers: a summon that can work nothing, names what the game lacks, works a skill that is not gathering or is never called, a recipe calling one wrongly (`summonRule.js`, as the boot audit says it). Expanded Tokens, so a Circle's Works as is seen.
   for (const f of summonFindings({ tokens: expandedTokens, recipes, effects })) {
     issues.push({
       entityId: f.entityId,
@@ -423,7 +423,6 @@ export function auditConnectivity(entities, solverRefusals = []) {
     if (skillTokens.length === 0) continue;
 
     const levels = skillTokens.map((t) => tokenLevel(t)).sort((a, b) => a - b);
-    const maxLevel = Math.max(...levels);
 
     let prev = 1;
     for (const level of levels) {

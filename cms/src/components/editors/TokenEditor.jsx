@@ -980,7 +980,8 @@ function EnemyCoinDrop({ enemy, onChange }) {
   const write = (text) => {
     setDraft(text);
     const n = Number(text);
-    const { coinDrop: _drop, ...rest } = enemy || {};
+    const rest = { ...(enemy || {}) };
+    delete rest.coinDrop;
     onChange(text.trim() !== '' && Number.isInteger(n) && n > 0 ? { ...rest, coinDrop: n } : rest);
   };
   const coins = enemyCoinDropOf({ enemy });

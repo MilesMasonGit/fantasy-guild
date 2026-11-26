@@ -104,7 +104,11 @@ export const EFFECT_KEY = Object.freeze({
     REFRESH: 'refresh',
     LUCKY: 'lucky',
     EFFICIENCY: 'efficiency',
-    ABUNDANCE: 'abundance'
+    ABUNDANCE: 'abundance',
+    NEVER_RUNS_OUT: 'neverRunsOut',
+    FREE_REPLANT: 'freeReplant',
+    GROVE_FELLING: 'groveFelling',
+    BETTER_CATCH: 'betterCatch'
 });
 
 /** What a badge's numbers are in: percent of the base, chance points, or whole things (harvests). */
@@ -166,7 +170,14 @@ const ROWS = [
     chanceRow(EFFECT_KEY.REFRESH, 'REFRESH', (ctx) => ctx.works
         && (ctx.instance.usesRemaining != null || Fields.isField(ctx.def))),
     { key: EFFECT_KEY.LUCKY, typeKey: 'LUCKY', unit: UNIT.PERCENT, sign: 1, measure: measureLucky },
-    { key: EFFECT_KEY.ABUNDANCE, typeKey: 'CROP_LOAD', unit: UNIT.COUNT, sign: 1, measure: measureAbundance }
+    { key: EFFECT_KEY.ABUNDANCE, typeKey: 'CROP_LOAD', unit: UNIT.COUNT, sign: 1, measure: measureAbundance },
+    // The four gathering perks, each where the engine asks it: a cycle that spends (Can't Run Out),
+    // a Field's last harvest (Free Replant), a tree's fall (Grove Felling), a water's bite (Better Catch).
+    chanceRow(EFFECT_KEY.NEVER_RUNS_OUT, 'NEVER_RUNS_OUT', (ctx) => ctx.works
+        && (ctx.instance.usesRemaining != null || Fields.isField(ctx.def))),
+    chanceRow(EFFECT_KEY.FREE_REPLANT, 'FREE_REPLANT', (ctx) => ctx.works && Fields.isField(ctx.def)),
+    chanceRow(EFFECT_KEY.GROVE_FELLING, 'GROVE_FELLING', (ctx) => ctx.works && Respawn.respawnOf(ctx.def)?.mode === 'regrow'),
+    chanceRow(EFFECT_KEY.BETTER_CATCH, 'BETTER_CATCH', (ctx) => ctx.works && Fishing.isWater(ctx.def))
 ];
 
 /** The item rows: Double Item on each made or dropped item, Efficiency on each need. */

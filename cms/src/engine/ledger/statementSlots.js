@@ -126,10 +126,12 @@ function payloadForAxis(type) {
     const entry = getPaletteEntry(type);
     // An on-or-off effect (a palette entry marked `flag`) is born on: it has no number to type.
     if (entry?.flag) return { type, bucket: 'flat', value: 1 };
-    if (entry?.shape === 'proc') return { type, bucket: 'flat', value: 0 };
+    // A palette entry may name the number a new rule starts at (`startsAt`); else 0.
+    const value = Number.isFinite(entry?.startsAt) ? entry.startsAt : 0;
+    if (entry?.shape === 'proc') return { type, bucket: 'flat', value };
     // ⚠️ An axis that allows only some buckets starts in the first of them: a combat axis is read as
     // a flat sum, and a rule born in the percentage bucket there would do nothing.
-    return { type, bucket: entry?.buckets?.[0] || 'percentage', value: 0 };
+    return { type, bucket: entry?.buckets?.[0] || 'percentage', value };
 }
 
 /**

@@ -95,6 +95,10 @@ the CMS, the Encyclopedia, Limes's lines and the docs. A source's own name
 | **Giant Harvest** | A chance a gathering cycle's drops come in at ten times (brief 620) | `GIANT_HARVEST` | none: a mat celebration says it (owner, 2026-11-12) |
 | **Efficiency** | A recipe needs fewer of an input | `INPUT_COST` (a cost: negative is cheaper) | the recipe's input |
 | **Abundance** | A Token kind holds more charges before it rests | `CROP_LOAD` | the Token |
+| **Can't Run Out** | A chance a cycle spends none of the Token's charges, failed or not (a shrine's blessing, the Motherlode perk); at 100 its Ends cell reads Never | `NEVER_RUNS_OUT` | the Token |
+| **Free Replant** | A chance a Field's last harvest sows again with no seed (Farming perk) | `FREE_REPLANT` | the Token (a Field) |
+| **Grove Felling** | A chance a falling tree fells the touching trees of its kind (Forestry perk) | `GROVE_FELLING` | the Token (a tree) |
+| **Better Catch** | A chance a bite lands the next fish up (Fishing perk) | `BETTER_CATCH` | the Token (a water) |
 | **Recovery** | A defeated hero recovers sooner (owner, 2026-11-20) | `WOUND_TIME` (a time: negative is faster) | none: a Guild Hall star's rule |
 | **Lap Speed** | The Guild Hall's lap comes round sooner (owner, 2026-11-20) | `PASSIVE_LAP` (a time: negative is faster) | none: a Guild Hall star's rule |
 | **Attack Speed** | Each attack comes sooner (owner, 2026-11-20, audit A31) | `SWING_TIME` (a time: negative is faster) | none: an elixir's or an enemy's lingering effect |

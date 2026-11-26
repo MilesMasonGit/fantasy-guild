@@ -145,12 +145,7 @@ export const ROUTES = [
     {
         // A rank of Science mastery: every Token of the kind has its buff from now on.
         event: ENGINE_EVENTS.MASTERY_RANK_UP, to: 'banner:mastery',
-        handle: ({ kind, kindName, rank, effectId, scale } = {}) => Banners.push({
-            kind: 'mastery',
-            groupKey: `mastery:${kind}`,
-            parts: { kind: kindName || kind || '', rank, buff: effectId ? effectTitle(effectName(effectId), scale ?? 1) : '' },
-            sprite: kind && getTokenType(kind) ? { kind: 'token', id: kind } : null
-        })
+        handle: (payload) => pushMastery(payload)
     },
     {
         event: BOARD_EVENTS.HERO_DEFEATED, to: 'banner:knockout',
@@ -377,7 +372,7 @@ export const MAX_FIND_STUBS = 6;
 
 /**
  * Hand the news of a catch-up that showed no summary (`summary.news`) to the banners and stubs,
- * merged as live play merges them: one banner each for its recipes, its knock-outs and the Bank
+ * merged as live play merges them: one banner each for its recipes, its knock-outs, its mastery ranks and the Bank
  * refusing items, and a gold "New!" stub for each first find (at most {@link MAX_FIND_STUBS}).
  * Milestones go first, so the problems drop in on top; a refusal already fixed is not raised.
  */
@@ -404,10 +399,21 @@ export function deliverCatchUpNews(news) {
             subjects: row.heroId ? [{ type: 'hero', id: row.heroId }] : []
         });
     }
+    for (const row of news.mastery || []) pushMastery(row);
     for (const itemId of news.bankFull || []) pushRefused(itemId, 'bankFull');
     for (const itemId of news.stackFull || []) pushRefused(itemId, 'stackFull');
     settleProblemBanners();
     markFinds(news.finds);
+}
+
+/** The Mastery banner for a rank reached: `{ kind, kindName, rank, effectId, scale }`. */
+function pushMastery({ kind, kindName, rank, effectId, scale } = {}) {
+    Banners.push({
+        kind: 'mastery',
+        groupKey: `mastery:${kind}`,
+        parts: { kind: kindName || kind || '', rank, buff: effectId ? effectTitle(effectName(effectId), scale ?? 1) : '' },
+        sprite: kind && getTokenType(kind) ? { kind: 'token', id: kind } : null
+    });
 }
 
 /** A gold "New!" stub for each first find, at most {@link MAX_FIND_STUBS}. */

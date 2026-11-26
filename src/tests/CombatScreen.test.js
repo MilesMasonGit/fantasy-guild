@@ -636,13 +636,20 @@ describe('nothing covers a fighter\'s health number (owner, 2026-10-25: everythi
     });
 });
 
-describe('⭐ a fight\'s health bars draw over the loot (owner, 2026-10-25: drops never cover a number)', () => {
+describe('⭐ a fight\'s health bars draw over the loot (owner, 2026-10-25: drops never cover a number)', { timeout: 30000 }, () => {
+    // ⚠️ The mat's first import costs seconds, more while other suites run: it loads once here,
+    // outside the tests' clocks, and each test still has room for a full mount under load.
+    let DndContext;
+    let MatBoard;
+    beforeAll(async () => {
+        ({ DndContext } = await import('@dnd-kit/core'));
+        ({ MatBoard } = await import('../ui/components/board/MatBoard.jsx'));
+    }, 60000);
+
     /** The mat with a fight on it, its loot layer and the fight layer's bar host. */
     async function matInFight() {
         const { heroId, enemyId } = buildFight();
         runUntil(() => !!BoardCombat.getFight(enemyId), 10);
-        const { DndContext } = await import('@dnd-kit/core');
-        const { MatBoard } = await import('../ui/components/board/MatBoard.jsx');
         const view = render(React.createElement(DndContext, null, React.createElement(MatBoard)));
         await act(async () => {});
         return { heroId, enemyId, container: view.container };

@@ -672,6 +672,7 @@
             "recipes": "New recipes",
             "finds": "First finds",
             "levelUps": "Level-ups",
+            "mastery": "Mastery",
             "depleted": "Tokens used up",
             "events": "Events",
             "leavesIn": "Leaves in {time}",
@@ -725,6 +726,7 @@
         "recovered": "Recovered, ready to work!",
         "needs": "Needs {item}",
         "needsLevel": "Needs {skill} {level}",
+        "summonSpent": "{name} is spent",
         "noFishHere": "No {fish} here"
     },
     "orders": {
@@ -908,7 +910,11 @@
             "refresh": "Refresh",
             "lucky": "Lucky",
             "efficiency": "Efficiency",
-            "abundance": "Abundance"
+            "abundance": "Abundance",
+            "neverRunsOut": "Can't Run Out",
+            "freeReplant": "Free Replant",
+            "groveFelling": "Grove Felling",
+            "betterCatch": "Better Catch"
         },
         "float": {
             "giantHarvest": "Giant!",

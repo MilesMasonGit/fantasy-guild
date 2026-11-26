@@ -101,7 +101,7 @@ export function SummonedWorkerSection({ token, tokens = {}, effects = {}, onChan
                   className="flex-1"
                 >
                   {[SKILLS.find((s) => s.id === skillId) || { id: skillId, name: skillId }, ...unused].map((s) => (
-                    <option key={s.id} value={s.id}>{s.name}{isGatheringSkill(s.id) ? '' : ' (a making skill)'}</option>
+                    <option key={s.id} value={s.id}>{s.name}{isGatheringSkill(s.id) ? '' : ' (not gathering)'}</option>
                   ))}
                 </select>
                 <input

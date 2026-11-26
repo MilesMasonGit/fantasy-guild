@@ -23,6 +23,10 @@ import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { registerEffects } from '../config/registries/effectRegistry.js';
 import { registerSkillPerks } from '../config/registries/perkRegistry.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
+import { tokenCardModel, CARD_BLOCK, endsCellOf } from '../ui/components/board/tokenCard.js';
+import { effectBreakdown, EFFECT_KEY } from '../systems/board/EffectBreakdown.js';
+import { EFFECT_GLYPH } from '../ui/components/board/effectBadgeText.js';
+import { t } from '../i18n/index.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -220,5 +224,71 @@ describe('on the mat', () => {
         expect(rested).not.toContain(mastered.id);
         expect(Respawn.isResting(mastered)).toBe(false);
         expect(rested.filter(id => id === other.id).length).toBeGreaterThan(0);
+    });
+});
+
+describe('the card says a kept vein will not run out', () => {
+    function workedBy(heroId) {
+        const vein = placeAt('ml_vein', AT.x, AT.y);
+        TileModifiers.rebuildAround([AT]);
+        Orders.orderAt(heroId, AT);
+        for (let t = 0; t < 5000 && BoardState.workerOf(vein.id) !== heroId; t += 100) BoardRunner.tick(100);
+        expect(BoardState.workerOf(vein.id)).toBe(heroId);
+        return vein;
+    }
+    const cycleOf = (vein) => tokenCardModel('ml_vein', vein.id).blocks.find(b => b.id === CARD_BLOCK.CYCLE);
+
+    it('a Motherlode hero on it: the Ends cell says Never, while it is worked with Can\'t Run Out', () => {
+        const block = cycleOf(workedBy('master'));
+        expect(block).toMatchObject({ endChance: 20, keeps: 100 });
+        const cell = endsCellOf(block);
+        expect(cell.text).toBe('Never');
+        expect(cell.tip).toMatch(/won.t run out while it is worked/i);
+        expect(cell.tip).toContain('Can\'t Run Out');
+    });
+
+    it('a hero without it: 1 in 5, as before', () => {
+        const block = cycleOf(workedBy('novice'));
+        expect(block).toMatchObject({ endChance: 20, keeps: 0 });
+        expect(endsCellOf(block)).toEqual({ text: '1 in 5', tip: 'Each round of work has a 1 in 5 chance to be its last' });
+    });
+
+    it('a part chance shortens the odds by what it keeps: 1 in 5 kept half the time is 1 in 10', () => {
+        expect(endsCellOf({ endChance: 20, keeps: 50 })).toEqual({
+            text: '1 in 10', tip: 'Each round of work has a 1 in 10 chance to be its last (Can\'t Run Out keeps 50% of rounds)'
+        });
+    });
+});
+
+describe('the card badges the gathering perks', () => {
+    function workedBy(typeId, heroId) {
+        const token = placeAt(typeId, AT.x, AT.y);
+        TileModifiers.rebuildAround([AT]);
+        Orders.orderAt(heroId, AT);
+        for (let t = 0; t < 5000 && BoardState.workerOf(token.id) !== heroId; t += 100) BoardRunner.tick(100);
+        expect(BoardState.workerOf(token.id)).toBe(heroId);
+        return token;
+    }
+    const badge = (token, key) => effectBreakdown(token.id).effects.find(b => b.key === key);
+
+    it('Can\'t Run Out on a vein its Motherlode hero works, named by the perk; none with a hero without it', () => {
+        const kept = badge(workedBy('ml_vein', 'master'), EFFECT_KEY.NEVER_RUNS_OUT);
+        expect(kept).toMatchObject({ key: EFFECT_KEY.NEVER_RUNS_OUT, name: 'Can\'t Run Out', final: 100 });
+        expect(EFFECT_GLYPH[EFFECT_KEY.NEVER_RUNS_OUT]).toBeTruthy();
+    });
+
+    it('a hero without it: no Can\'t Run Out badge', () => {
+        expect(badge(workedBy('ml_vein', 'novice'), EFFECT_KEY.NEVER_RUNS_OUT)).toBeUndefined();
+    });
+
+    it('the four perks each have a badge key, a name and a glyph', () => {
+        for (const [key, name] of [
+            [EFFECT_KEY.NEVER_RUNS_OUT, 'Can\'t Run Out'], [EFFECT_KEY.FREE_REPLANT, 'Free Replant'],
+            [EFFECT_KEY.GROVE_FELLING, 'Grove Felling'], [EFFECT_KEY.BETTER_CATCH, 'Better Catch']
+        ]) {
+            expect(key, name).toBeTruthy();
+            expect(EFFECT_GLYPH[key], name).toBeTruthy();
+            expect(t(`effectBadges.effect.${key}`)).toBe(name);
+        }
     });
 });

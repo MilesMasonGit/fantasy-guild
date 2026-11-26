@@ -11,6 +11,8 @@ import { breakChanceProblem } from '../../config/registries/itemBreak.js';
 import { gearRequirements } from '../../config/registries/weaponStyles.js';
 import { getSkill } from '../../config/registries/skillRegistry.js';
 import { effectRefsOf } from '../effects/effectLibrary.js';
+import { isEnemyDef } from '../../config/registries/enemyProfile.js';
+import { isPlanned } from '../progression/ledger/plan.js';
 
 /**
  * Tools are items a hero holds in one hand; a gathering Token names the kind and tier it needs.
@@ -188,8 +190,9 @@ function catchFindings(token, tokenId, items, best, say) {
  * **The tool rebuild rule**: the materials a tool is made from that no source gives without a tool.
  * A hero who loses or breaks a tool must be able to make it again without one, so every material
  * a tool's recipe needs, and every material those are made from through a source that needs no
- * tool, must have at least one such source: an enemy's drop, a Token worked barehanded, a Token's
- * trickle. A source needs a tool when its Token's work needs one in hand (`neededToolOf`), when
+ * tool, must have at least one such source: an enemy's drop, a theft from an enemy's camp (its
+ * steal table, rare finds included; a Planned enemy's never counts), a Token worked barehanded, a
+ * Token's trickle. A source needs a tool when its Token's work needs one in hand (`neededToolOf`), when
  * its recipe asks for a tool nearby (a context tag in `toolTags`), and always for a catch.
  * Materials no tool is made from (fish, food) are outside the rule.
  *
@@ -219,6 +222,11 @@ export function toolMaterialGaps({ tokens = {}, items = {}, routesOf = () => [],
         }
         for (const t of def.trickle || []) {
             if (t?.itemId) sources.push({ by: `${id} (trickle)`, inputs: [], outputs: [t.itemId], needsTool: false });
+        }
+        const steal = def.steal;
+        if (steal && typeof steal === 'object' && !Array.isArray(steal) && isEnemyDef(def) && !isPlanned(def)) {
+            const taken = [...ids(Array.isArray(steal.outputs) ? steal.outputs : []), ...ids(steal.rareTable?.entries)];
+            if (taken.length) sources.push({ by: `${id} (theft)`, inputs: [], outputs: taken, needsTool: false });
         }
         for (const pool of catchPoolsOf(def)) {
             sources.push({ by: `${id} (catch)`, inputs: pool.bait ? [pool.bait] : [], outputs: ids(pool.catches), needsTool: true });
