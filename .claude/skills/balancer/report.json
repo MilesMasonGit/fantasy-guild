@@ -10,6 +10,7 @@
     "Not checked yet: the ledger's own timing. The ledger read-out isn't built and the plan isn't in the CMS, so these are the page's numbers only."
   ],
   "moved": [
+    "Approved by the owner, 2026-11-25, the coin rule: an item's worth is the time in it; an everyday purchase's coins cost one level's time of one hero's selling (5 minutes at copper, 6 hours at darkmetal) and a big one (a new place, a Hall star) half its item price's work (30 minutes at copper, 12 hours at darkmetal); a fighter earns about half a worker's coins; the coin building adds at most 10 %.",
     "Approved by the owner, 2026-11-25: the pace step's range is 6 % to 6.5 % a level, to tighten the late game; the page uses 6.25 %, the middle, until the boosts are balanced. Level 98 takes 18 hours instead of 22.5, levels 81 to 98 take 8.4 days optimized and 16 typical (were 10 and 20), and levels 1 to 60 barely change.",
     "Approved by the owner, 2026-11-25: a gap for content is a stretch of more than a day of typical play with nothing new.",
     "Approved by the owner, 2026-11-25: the optimized player's boosts climb level by level between tiers, so a new tier's first recipes never pay less than the old tier's last.",
@@ -28,8 +29,9 @@
   ],
   "waiting": [
     "On the owner: the CMS Ledger's pace curve still holds the 6.5 % points (1 = 3 ... 99 = 1437). Set it to the 6.25 % points when convenient: 1 = 3, 10 = 5, 20 = 9, 30 = 17, 40 = 32, 50 = 59, 60 = 107, 70 = 197, 80 = 361, 90 = 661, 99 = 1141.",
+    "On the director: the ledger prices every coin cost from one curve; the rule needs an everyday curve and a big-purchase curve (a new ticket, T-713).",
     "On the director: the ledger read-out and the ledger's new tiers and boost budget (brief 880, L1 to L3). The ledger's pace curve should use the 6.25 % points in BALANCE_RULES section 1, not the 6.5 % ones. With the first number pack: the new XP table (9.4 million XP to 99) and the drink's 50-cycle dose.",
     "On the content session: the plan in the CMS as Planned entries, and the fifteen gaps. Also to look at: Arrowheads unlock later than the arrows that need them at every metal.",
-    "On the balancer: a work potion's dose and batch; Construction once its repeatable work is planned; and a rule for coins (the coin cost curve and what an item is worth), to propose to the owner before the coin pack."
+    "On the balancer: a work potion's dose and batch; Construction once its repeatable work is planned; checking coin prices against the engine once the ledger read-out exists."
   ]
 }

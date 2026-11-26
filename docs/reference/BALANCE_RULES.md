@@ -8,7 +8,7 @@ Status: approved 2026-11-07, amended the same day after a critical review and th
 
 **Everything follows the level a thing unlocks at** (written L). Tiers start at copper 1, iron 20, silver 30, mythril 40, gold 50, adamantine 60 and darkmetal 80, so "one tier later" means about 20 levels on.
 
-**Six rules, one per kind of number:**
+**Seven rules, one per kind of number:**
 
 | Number | Rule | In one line |
 |---|---|---|
@@ -18,6 +18,7 @@ Status: approved 2026-11-07, amended the same day after a critical review and th
 | Drops and finds | **Set as finds a day** for one hero | Basic drops every kill; bonus finds 20 a day; rare gear drops 1 a day |
 | Upgrade prices | **Payback from 1 hour to 1 day**, by tier | Always worth buying, late ones are goals |
 | Gates | **No gate holds an optimized player past about two levels' time**; places priced on the same 1 hour to 1 day curve | A steady climb, every gate visible |
+| Coins | **Worth is the time in an item; an everyday coin cost is one level's time of selling, a big one half its item price's work** | A second gate: does the guild make more than it uses |
 
 **The curve describes a well-optimized player** (owner, 2026-11-07): one who holds the boosts a good player would at that point. A typical player is slower than the curve, about 1.5 to 2x, and a player with no boosts at most 3x.
 
@@ -175,6 +176,30 @@ The base times (6, 8 and 12 seconds) are starting values (agent's call). Builds,
 
 **A gate is balanced when the optimized player's path through it stays on the curve**, and the typical and no-boost players stay inside their bounds (section 5).
 
+## 7. Coins
+
+*Owner interview with the balancer, 2026-11-25, on top of [concept_gold_coins.md](../active/concept_gold_coins.md): coins are a second cost beside items, the measure of whether a guild makes more than it uses.*
+
+**An item's worth is the time in it** (owner): every step counts, so a Copper Dagger is worth its ore, its smelting and its forging together. An hour of work earns about the same coins whatever the guild sells; no item is a trap or a jackpot. A worth set by hand is an exception with its reason.
+
+**A coin cost is one hero's selling for a set time at the price's stage**, by kind of purchase:
+
+| Purchase | The coin part asks | At copper | Mythril | Darkmetal |
+|---|---|---|---|---|
+| **Everyday** (a Shop Token, a Foundation) | **One level's time** at that stage, on the pace curve | 5 min | 32 min | 6 h |
+| **Big** (settling a place, a Guild Hall star) | **Half the item price's work**, on the payback curve (section 5) | 30 min | 2.5 h | 12 h |
+
+- The everyday points for the ledger's coin curve, in minutes: copper 5, iron 9, silver 17, mythril 32, gold 59, adamantine 107, darkmetal 361 (each tier's opening level's time at the 6.25 % pace; copper takes level 10's, since few purchases come in the first minutes). They move with the pace step.
+- The big points are half of 1 hour × 24^(L / 80): 30 min, 66 min, 99 min, 2.5 h, 3.6 h, 5.4 h, 12 h.
+- **A Hall star's coins follow its item price at each rank**, with no extra multiplier for rank (balancer's call). Distance is the stage: a far place sits at a later stage, so it costs more.
+- One level's time is half the gate rule's limit of two levels (section 6), so coins and items together stay inside it.
+
+**Enemy coins: a fighter earns about half a worker's coins** (owner): fighting already pays in drops and combat XP. A Hideout's stolen coins are priced the same way (balancer's call).
+
+**The coin building adds at most 10 %** to enemy and Hideout coins in its reach (owner: "Probably only a 10% increase at most. Remember, the player may have multiple buildings affecting the same token."). Several buildings can reach one Token and their boosts add up, so a building's own number stays small.
+
+**No coin stars, no coin costs on recipes** (the concept's rulings).
+
 ## Worked examples
 
 **Ingots, copper to darkmetal** (Smithing; prepare):
@@ -210,7 +235,6 @@ The review listed numbers no rule sets yet; each needs a rule when its chain is 
 
 - **Recipes with chance outputs**: how their XP is split (a craft that makes several of one thing pays by its time, section 3).
 - **A work potion's dose and batch**, with the Alchemy run.
-- **Coins**: the coin cost curve and what an item is worth ([concept_gold_coins.md](../active/concept_gold_coins.md); the ledger's coin curve setting defaults to 10 minutes). The balancer proposes the rule before the coin pack (T-703).
 - **Food's healing** against the time it takes to make, with combat.
 - **Station charges, Construction prices and tool prices**, against what they save.
 - **Combat XP**, with combat.

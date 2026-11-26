@@ -26,7 +26,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-713**
+**Next free number: T-714**
 
 ---
 
@@ -182,7 +182,7 @@ here.
 | T-700 | P2 | open | *Brief 870 C1. For: director.* **Coins and selling**: a coin count in the top bar, an item's coin worth from the CMS, Sell replaces Discard (always confirms), Sell selected in the Bank's select mode ([concept_gold_coins.md](../active/concept_gold_coins.md)). | owner 2026-11-25 |
 | T-701 | P2 | open | *Brief 870 C2. For: director.* **Coins as a cost**: coin prices beside items on Shop Tokens, Foundations, Hall stars and settling; enemy coin drops; all 0 until the pack. | owner 2026-11-25 |
 | T-702 | P2 | open | *Brief 870 C3. For: director.* **The ledger prices coins**: item worth, enemy drops, coin costs rising with rank and distance, coins in the pace checks. | owner 2026-11-25 |
-| T-703 | P2 | open | *For: content agent, after 870 C3.* **The coin pack**: the cost curve, item worth overrides, enemy coin drops, which prices ask coins, and the coin building (more coins from enemies and Hideouts in reach); coins in camps' steal tables once 810 K4 lands. | owner 2026-11-25 |
+| T-703 | P2 | open | *For: content agent, after 870 C3; the numbers by [BALANCE_RULES.md](BALANCE_RULES.md) section 7 (the balancer's rule, owner 2026-11-25: the coin building adds at most 10 %, a fighter earns half a worker's coins).* **The coin pack**: the cost curve, item worth overrides, enemy coin drops, which prices ask coins, and the coin building (more coins from enemies and Hideouts in reach); coins in camps' steal tables once 810 K4 lands. | owner 2026-11-25 |
 | T-704 | P3 | open | *Brief 810 K4. For: director.* **A Quiet effect for the Hideout**: a CMS effect that lowers a thief's caught odds, for the Hideout's Quiet variant ([content_crime.md](../active/content_crime.md)). Build with K4. | owner 2026-11-25 |
 | T-705 | P2 | open | *Brief 810 K3. For: director.* **Faith's five blessing effects**, as CMS effects a shrine carries on Tokens and heroes in its reach while lit: nodes can't run out; a sure rare find every so many cycles (replaces the next-tier gift, owner 2026-11-25); never Defeated (flee at 0 HP, keep everything, still wounded, Fled in the log); shared XP among heroes working or fighting in reach, same skill, never re-shared; a chance a finished cycle repeats for free. Blessings add up ([content_faith.md](../active/content_faith.md)). | owner 2026-11-25 |
 | T-706 | P2 | open | *For: content agent.* **The enemy roster pack**: the 25 enemies of [content_enemies.md](../active/content_enemies.md) as Planned entries with camps, biomes, fight drops and steal tables; match each new material to a job (Alchemy's late potions first) or cut it. | owner 2026-11-25 |
@@ -191,6 +191,7 @@ here.
 | T-709 | P4 | open | *For: director.* **Small cleanups**: the summon audit calls Crime a making skill (Crime, Faith, Science, Summoning have no trade); CMS lint errors `maxLevel` in connectivityAuditor and `_drop` in TokenEditor's EnemyCoinDrop; the Can't Run Out field starts at 0% in the CMS (an author must type 100); the generic flag effect code now has no user. | join engineers 2026-11-25 |
 | T-710 | P3 | open | *For: director.* **Retire the game-time effect clock (`durationMs`)**: no content uses it; touches LiveEffects timed instances, SaveMigration, the sentence writer, the CMS slot and about 15 test files (740 C5 leftover). | C5 builder 2026-11-25 |
 | T-711 | P4 | open | *For: director.* **A vein's card still says 1 in 5 to run out while a Motherlode hero works it**, and the Token card's effect badges don't list the four gathering perks (800 P1/P2). | P1/P2 builder 2026-11-25 |
+| T-713 | P3 | open | *For: director.* **The ledger's coin curve by kind of purchase** ([BALANCE_RULES.md](BALANCE_RULES.md) section 7, owner 2026-11-25): today one curve prices every coin cost, a flat 10 minutes by default, times the rank for a Guild Hall star (`cms/src/engine/ledger/settings.js` `coinCurve`, `coins.js`, `pace.coinPrices`). The rule has two: an everyday curve (Shop Tokens, Foundations: one level's time, points in section 7) and a big curve (settling a place, a Hall star: half the payback curve), with no multiplier for a star's rank. Also set the default curve to the everyday points. | balancer 2026-11-25 |
 
 ### Code review round 4 (triaged 2026-11-07)
 
