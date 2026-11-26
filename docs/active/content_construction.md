@@ -1,4 +1,4 @@
-Status: approved 2026-11-04 (a CMS pack of Planned entries still to come)
+Status: approved 2026-11-04 (Planned entries staged 2026-11-26 in the `2026-11-26-planned-*` packs, T-305; the owner reviews and Syncs)
 
 # Content roadmap: Construction
 
