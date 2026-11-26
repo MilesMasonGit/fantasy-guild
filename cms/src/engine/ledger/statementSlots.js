@@ -208,8 +208,8 @@ function appliesSlots(statement, ctx) {
 }
 
 /**
- * How long an applied effect lasts: for the swing (on a fight moment), for the fight, for the cycle
- * (on a work moment), or a number of seconds; none of them fires it once, now (chaining).
+ * How long an applied effect lasts: for the swing (on a fight moment), for the fight, or for the
+ * cycle (on a work moment); none of them fires it once, now (chaining).
  */
 function lifetimeSlots(payload, onFightMoment, onWorkMoment = false, onFightStart = false) {
     return [
@@ -261,15 +261,19 @@ function lifetimeSlots(payload, onFightMoment, onWorkMoment = false, onFightStar
                 return { payload: v ? { ...rest, forCycle: true } : rest };
             }
         }] : []),
-        {
-            // Zero means fire it once, now (how chaining works).
-            id: 'durationMs', kind: SLOT_KIND.NUMBER, label: 'for (ms)', min: 0, optional: true,
-            value: payload.durationMs ?? 0,
-            note: !payload.durationMs
-                ? 'Zero means it fires once, immediately — that is how one effect sets off another.'
-                : null,
-            patch: v => ({ payload: { ...payload, durationMs: Math.max(0, Number(v) || 0) } })
-        }
+        // A time kept from before timed effects were retired: read by nothing, and offered only so
+        // it can be cleared (ContentAudit names it).
+        ...(Number(payload.durationMs) > 0 ? [{
+            id: 'durationMs', kind: SLOT_KIND.FLAG, label: 'old timer (retired)',
+            value: true,
+            hint: 'Timed effects are retired: this rule\'s time does nothing, and with no other lifetime the effect fires once as the rule runs. Untick to clear it, and tick for the fight or for the cycle instead.',
+            patch: v => {
+                if (v) return { payload };
+                const { durationMs, ...rest } = payload;
+                void durationMs;
+                return { payload: rest };
+            }
+        }] : [])
     ];
 }
 

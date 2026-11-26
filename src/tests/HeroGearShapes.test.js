@@ -259,8 +259,8 @@ describe('a status the gear moves the stack limit of', () => {
         // "Venom stacks at most 1 lower"
         hero.aggregator.addModifier({ type: EFFECT_TYPES.STATUS_MAX_STACKS, bucket: 'flat', value: -1, target: { category: 'fx_hg_venom' }, source: 'test' });
         hero.effects.push(
-            { effectId: 'fx_hg_venom', scale: 1, stacks: 2, expiresAt: Infinity, forFight: true },
-            { effectId: 'fx_hg_swarm', scale: 1, stacks: 5, expiresAt: Infinity, forFight: true }
+            { effectId: 'fx_hg_venom', scale: 1, stacks: 2, forFight: true },
+            { effectId: 'fx_hg_swarm', scale: 1, stacks: 5, forFight: true }
         );
         const caps = Object.fromEntries(statusesView(hero).map(v => [v.id, v.maxStacks]));
         expect(caps).toEqual({ fx_hg_venom: 2, fx_hg_swarm: 5 });

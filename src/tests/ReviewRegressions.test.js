@@ -176,7 +176,7 @@ describe('⭐ a Token-borne Applies reaches somebody', () => {
                 statements: [{
                     ...makeStatement(KEYWORD.APPLIES), id: 'stm_curse_ground',
                     when: null,
-                    payload: { effectId: 'fixture_lingering', scale: 1, durationMs: 60000, chance: 100 }
+                    payload: { effectId: 'fixture_lingering', scale: 1, forFight: true, chance: 100 }
                 }]
             }
         });
@@ -197,7 +197,7 @@ describe('⭐ a Token-borne Applies reaches somebody', () => {
                 statements: [{
                     ...makeStatement(KEYWORD.APPLIES), id: 'stm_curse_trap',
                     when: { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 0 },
-                    payload: { effectId: 'fixture_lingering', scale: 1, durationMs: 60000, chance: 100 }
+                    payload: { effectId: 'fixture_lingering', scale: 1, forFight: true, chance: 100 }
                 }]
             }
         });

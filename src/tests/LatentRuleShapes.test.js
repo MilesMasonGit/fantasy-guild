@@ -27,7 +27,6 @@ import * as WorkCheck from '../systems/board/WorkCheck.js';
 import { workConfigOf } from '../systems/board/StationRecipe.js';
 import { registerEffects } from '../config/registries/effectRegistry.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
-import * as GameClock from '../systems/core/GameClock.js';
 import { processCombat } from '../systems/combat/CombatProcessor.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 
@@ -363,7 +362,7 @@ describe('a buff whose filter reads live state follows it', () => {
         expect(BoardState.workerOf(node.id)).toBe('miner');
         expect(yieldAt(node)).toBe(10);
 
-        LiveEffects.applyToHero('miner', { effectId: 'fixture_rs_mark', durationMs: 60000 });
+        LiveEffects.applyToHero('miner', { effectId: 'fixture_rs_mark', forFight: true });
         run(100);
         expect(yieldAt(node)).toBe(20);
 
@@ -475,58 +474,18 @@ describe('a rule that puts a Token in another’s place', () => {
     });
 });
 
-describe('an effect carried both for the fight and for a while', () => {
-    const carried = () => HeroManager.getHero('miner').effects.map(e => e.effectId);
-    const hero = () => LiveEffects.heroBearer(HeroManager.getHero('miner'));
-
-    afterEach(() => GameClock.end());
-
-    it('keeps the rest of its while when the fight ends', () => {
-        LiveEffects.resetClock();
-        LiveEffects.applyToHero('miner', { effectId: 'fixture_rs_mark', durationMs: 60000 });
-        LiveEffects.applyToHero('miner', { effectId: 'fixture_rs_mark', forFight: true });
-        for (let i = 0; i < 3; i++) LiveEffects.tick(3000);     // 9 s of the fight
-        LiveEffects.endFightEffects(hero());
-        expect(carried()).toEqual(['fixture_rs_mark']);
-
-        // It then runs out when its while does.
-        for (let i = 0; i < 16; i++) LiveEffects.tick(3000);    // 57 s
-        expect(carried()).toEqual(['fixture_rs_mark']);
-        LiveEffects.tick(3000);                                 // 60 s
-        expect(carried()).toEqual([]);
-    });
-
-    it('keeps a while that lands during the fight', () => {
-        GameClock.begin(1_000_000);
-        LiveEffects.applyToHero('miner', { effectId: 'fixture_rs_mark', forFight: true });
-        LiveEffects.applyToHero('miner', { effectId: 'fixture_rs_mark', durationMs: 60000 });
-        LiveEffects.endFightEffects(hero());
-        expect(carried()).toEqual(['fixture_rs_mark']);
-    });
-
-    it('ends with the fight when its while is already over', () => {
-        GameClock.begin(1_000_000);
-        LiveEffects.resetClock();
-        LiveEffects.applyToHero('miner', { effectId: 'fixture_rs_mark', durationMs: 5000 });
-        LiveEffects.applyToHero('miner', { effectId: 'fixture_rs_mark', forFight: true });
-        for (let i = 0; i < 3; i++) LiveEffects.tick(3000);     // 9 s of the fight
-        LiveEffects.endFightEffects(hero());
-        expect(carried()).toEqual([]);
-    });
-});
-
 describe('a hero who carries Efficiency', () => {
     it('is judged able to afford a station by their own cost cut', () => {
         InventoryManager.addItem(COAL, 5);
         const forge = place(0, 'fixture_rs_coal_forge');
-        LiveEffects.applyToHero('miner', { effectId: 'fixture_rs_thrift', durationMs: 600000 });
+        LiveEffects.applyToHero('miner', { effectId: 'fixture_rs_thrift', forFight: true });
         const config = workConfigOf(getTokenType(forge.typeId), forge);
         expect(WorkCheck.whyCannotRun(forge.id, forge, 'miner', config)).toBeNull();
     });
 
     it('takes the station and works it', () => {
         InventoryManager.addItem(COAL, 5);
-        LiveEffects.applyToHero('miner', { effectId: 'fixture_rs_thrift', durationMs: 600000 });
+        LiveEffects.applyToHero('miner', { effectId: 'fixture_rs_thrift', forFight: true });
         const forge = place(0, 'fixture_rs_coal_forge', 'miner');
         run(1500);
         expect(BoardState.workerOf(forge.id)).toBe('miner');

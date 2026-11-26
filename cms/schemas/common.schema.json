@@ -190,7 +190,6 @@
         "amount": { "type": "number" },
         "effectId": { "type": "string", "description": "applies: the library effect it lands." },
         "scale": { "type": "number" },
-        "durationMs": { "type": "number", "minimum": 0 },
         "forFight": { "type": "boolean" },
         "forCycle": { "type": "boolean" },
         "forSwing": { "type": "boolean" },

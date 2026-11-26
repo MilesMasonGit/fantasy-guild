@@ -61,7 +61,7 @@ registerEffects({
 const AMBIENT = {
     id: 'stm_cookout',
     keyword: KEYWORD.APPLIES,
-    payload: { effectId: 'fx_cookout', durationMs: 30000, chance: 100 },
+    payload: { effectId: 'fx_cookout', forFight: true, chance: 100 },
     to: { mode: 'tag', value: 'Coast' },
     when: null,
     upkeep: null
@@ -90,7 +90,7 @@ registerTokenTypes({
         statements: [{
             id: 'stm_bell',
             keyword: KEYWORD.APPLIES,
-            payload: { effectId: 'fx_well_fed', durationMs: 30000, chance: 100 },
+            payload: { effectId: 'fx_well_fed', forFight: true, chance: 100 },
             to: { mode: 'tag', value: 'Coast' },
             when: { event: 'CYCLE_COMPLETE', scope: 'nearby', cooldownMs: 0 },
             upkeep: null
@@ -238,8 +238,8 @@ describe('The chance roll', () => {
         const StatusApplication = await import('../systems/board/StatusApplication.js');
         place(9, 'fixture_shrimp_bed', 'hero_1');
 
-        expect(StatusApplication.applyAt(idAt(9), { effectId: 'fx_cookout', durationMs: 30000, chance: 100 })).toBe(true);
-        expect(StatusApplication.applyAt(idAt(9), { effectId: 'fx_well_fed', durationMs: 30000, chance: 0 })).toBe(false);
+        expect(StatusApplication.applyAt(idAt(9), { effectId: 'fx_cookout', forFight: true, chance: 100 })).toBe(true);
+        expect(StatusApplication.applyAt(idAt(9), { effectId: 'fx_well_fed', forFight: true, chance: 0 })).toBe(false);
         expect(carried('hero_1')).toEqual(['fx_cookout']);
     });
 
@@ -247,7 +247,7 @@ describe('The chance roll', () => {
         const StatusApplication = await import('../systems/board/StatusApplication.js');
         place(9, 'fixture_shrimp_bed', 'hero_1');
 
-        expect(StatusApplication.applyAt(idAt(9), { effectId: 'blessed_by_the_moon', durationMs: 30000 })).toBe(false);
+        expect(StatusApplication.applyAt(idAt(9), { effectId: 'blessed_by_the_moon', forFight: true })).toBe(false);
         expect(StatusApplication.applyAt(idAt(9), { statusId: 'cookout', stacks: 1 })).toBe(false);
         expect(carried('hero_1')).toEqual([]);
     });
@@ -258,7 +258,7 @@ describe('The sentence is literally true', () => {
 
     it('names the heroes, not the Tokens, because that is where the effect lands', () => {
         expect(renderStatement(AMBIENT, names))
-            .toBe('Applies Cookout to heroes on nearby Coast Tokens for 30s.');
+            .toBe('Applies Cookout to heroes on nearby Coast Tokens for the fight.');
     });
 
     it('a retired status id reads as an effect still to pick', () => {

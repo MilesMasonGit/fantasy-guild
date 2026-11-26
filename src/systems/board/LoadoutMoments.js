@@ -70,8 +70,8 @@ function dosedStatements(itemId, dose) {
         if (s.keyword !== KEYWORD.APPLIES || !s.payload?.effectId) return { ...s, dosed: true };
         let payload = strength !== 1 ? { ...s.payload, boost: strength } : s.payload;
         if (dose === DOSE.POISON && Number(payload.forAttacks) > 0) {
-            const { forAttacks, durationMs, ...rest } = payload;
-            void forAttacks; void durationMs;
+            const { forAttacks, ...rest } = payload;
+            void forAttacks;
             payload = { ...rest, forFight: true, poison: itemId };
         }
         return payload === s.payload ? { ...s, dosed: true } : { ...s, dosed: true, payload };

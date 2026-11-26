@@ -40,7 +40,7 @@ registerEffects({
 });
 
 const hero = () => HeroManager.getHero(GameState.state.heroes[0].id);
-const carried = () => hero().effects.map(e => e.effectId);
+const carried = () => (hero().effects || []).map(e => e.effectId);
 const dodge = () => hero().aggregator.query(EFFECT_TYPES.DODGE);
 const ticks = (n) => {
     for (let i = 0; i < n; i++) LiveEffects.tick(STATUS_TICK_INTERVAL_MS, TriggerSystem.fireLiveStatement);

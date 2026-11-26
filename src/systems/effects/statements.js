@@ -412,9 +412,9 @@ export function blankPayload(keywordId) {
         case KEYWORD.DEALS:
             return { amount: 1 };
         case KEYWORD.APPLIES:
-            // `effectId` attaches a library effect for a while. A `durationMs` of 0 means fire
-            // it once, now (how chaining works).
-            return { effectId: '', scale: 1, durationMs: 0, chance: 100, target: 'hero' };
+            // `effectId` attaches a library effect for the fight or the cycle; with neither it fires
+            // once, now (how chaining works).
+            return { effectId: '', scale: 1, chance: 100, target: 'hero' };
         case KEYWORD.STATION:
             return { skill: '' };
         case KEYWORD.PROMOTES:

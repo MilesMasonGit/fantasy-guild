@@ -181,8 +181,8 @@ describe('⭐ Removes — the first caller a cleanse has ever had', () => {
     });
 
     it('takes one named effect off, and leaves the rest', () => {
-        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_curse', durationMs: 60000 });
-        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_blessing', durationMs: 60000 });
+        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_curse', forFight: true });
+        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_blessing', forFight: true });
 
         actingProducer('fixture_shrine', KEYWORD.REMOVES, { effectId: 'fixture_curse' });
         place(A, 'fixture_shrine', 'hero_1');
@@ -194,8 +194,8 @@ describe('⭐ Removes — the first caller a cleanse has ever had', () => {
     });
 
     it('clears everything when it names nothing — the cure-all', () => {
-        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_curse', durationMs: 60000 });
-        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_blessing', durationMs: 60000 });
+        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_curse', forFight: true });
+        LiveEffects.applyToHero('hero_1', { effectId: 'fixture_blessing', forFight: true });
 
         actingProducer('fixture_font', KEYWORD.REMOVES, { effectId: '' });
         place(A, 'fixture_font', 'hero_1');

@@ -234,7 +234,7 @@ describe('⭐ one panel, on the left, following the author (E-5)', () => {
     });
 
     it('says "Pick …" and invites a search when the word is a blank', () => {
-        const { word, panel } = mount([{ ...makeStatement(KEYWORD.APPLIES), payload: { effectId: '', durationMs: 1000 } }]);
+        const { word, panel } = mount([{ ...makeStatement(KEYWORD.APPLIES), payload: { effectId: '' } }]);
         fireEvent.click(word('effectId'));
         expect(panel().querySelector('p').textContent).toBe('Pick effect');
         expect(panel().textContent).toContain('Start typing to search');
@@ -244,7 +244,7 @@ describe('⭐ one panel, on the left, following the author (E-5)', () => {
         // Found in the browser: picking "Poison" from a blank committed the
         // right effect and then printed "Applies effect_1", because the list's
         // name lookup knew Tokens and items but not effects.
-        const { word, type, press, line, latest } = mount([{ ...makeStatement(KEYWORD.APPLIES), payload: { effectId: '', durationMs: 1000 } }]);
+        const { word, type, press, line, latest } = mount([{ ...makeStatement(KEYWORD.APPLIES), payload: { effectId: '' } }]);
         fireEvent.click(word('effectId'));
         type('Effect 12');
         press('Enter');
@@ -254,7 +254,7 @@ describe('⭐ one panel, on the left, following the author (E-5)', () => {
     });
 
     it('lists a long vocabulary a screenful at a time, with a count', () => {
-        const { word, panel, type } = mount([{ ...makeStatement(KEYWORD.APPLIES), payload: { effectId: '', durationMs: 1000 } }]);
+        const { word, panel, type } = mount([{ ...makeStatement(KEYWORD.APPLIES), payload: { effectId: '' } }]);
         fireEvent.click(word('effectId'));
         expect(panel().querySelectorAll('[data-option]')).toHaveLength(LIST_CAP);
         expect(panel().querySelector('[data-list-count]').textContent).toContain(`${LIST_CAP} of 50`);
@@ -444,7 +444,7 @@ describe('⭐ what the forms held, edited in the line (P4)', () => {
     });
 
     it('Applies: offers library effects only, never a status (owner ruling)', () => {
-        const { word, panel } = mount([{ ...makeStatement(KEYWORD.APPLIES), payload: { effectId: '', durationMs: 1000 } }]);
+        const { word, panel } = mount([{ ...makeStatement(KEYWORD.APPLIES), payload: { effectId: '' } }]);
         fireEvent.click(word('effectId'));
         const ids = [...panel().querySelectorAll('[data-option]')].map(o => o.getAttribute('data-option'));
         expect(ids.length).toBeGreaterThan(0);
