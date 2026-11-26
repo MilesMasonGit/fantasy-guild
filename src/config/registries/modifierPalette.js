@@ -116,7 +116,8 @@ export const MODIFIER_BUCKETS = ['flat', 'multiplier', 'percentage'];
  * picker on Yield and a status picker on Immunity without knowing either list.
  *
  * * `'combatStyle'` — `CombatFormulas` passes the style the hero fights in (the weapon's; Melee
- *   barehanded) when it reads Damage, Swing Time and Accuracy, which is how a Hall star names the
+ *   barehanded) when it reads Damage, Swing Time, Accuracy and the combat tricks (Heal on Kill,
+ *   Last Stand, Twin Strike, Crit After Dodge), which is how a Hall star or a perk names the
  *   fighters it helps.
  *
  * A row without `categories` offers no narrowing at all, which is right for the
@@ -805,6 +806,98 @@ export const MODIFIER_PALETTE = [
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
         hint: 'How fast a hero heals out of a fight (1 health every 10 s). +50% heals half again as much. On gear, a perk or a Guild Hall star, never a building.'
+    },
+
+    // The combat tricks (Second Wind, Unbreakable, Twin Shot and Double Cast, Shadowstep): each read
+    // off the hero for the style they fight in, from their gear, perks, a lingering effect and the
+    // guild's stars, all added. Three are chances (100 sure, drawing nothing); Heal on Kill is health.
+    {
+        /**
+         * Read by `CombatTricks.healOnKill` once per kill (`CombatResolutionProcessor.handleVictory`),
+         * before the kill's loot: whole health, never past the hero's most. Draws nothing.
+         */
+        type: EFFECT_TYPES.KILL_HEAL,
+        reads: { up: (n) => `heal ${n} health on each kill`, down: (n) => `heal ${n} less health on each kill` },
+        label: 'Heal on Kill',
+        explains: 'The hero heals a little on each kill',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat'],
+        categories: 'combatStyle',
+        heroOnly: true,
+        fromGuild: true,
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Combat',
+        hint: 'Health the hero heals on each kill, never past their most; a fraction is dropped (2.5 heals 2). Every source adds. Narrow it to a style to heal only that style\'s fighters (Second Wind: Melee).'
+    },
+    {
+        /**
+         * Read by `CombatTricks.holdsOn` when an enemy's landed blow would take the hero to 0 or
+         * below, if the hero has not held on yet this fight: on a hit the blow leaves them at 1. The
+         * mark is saved on the hero (`fightTricks`) until the fight ends, so a load mid-fight keeps it.
+         */
+        type: EFFECT_TYPES.LAST_STAND,
+        reads: {
+            up: (n) => `have a ${n} chance, once a fight, to hold on at 1 health`,
+            down: (n) => `have ${n} less chance, once a fight, to hold on at 1 health`
+        },
+        label: 'Last Stand',
+        explains: 'Once a fight, a blow that would defeat the hero leaves them at 1 health',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat'],
+        categories: 'combatStyle',
+        heroOnly: true,
+        fromGuild: true,
+        shape: MODIFIER_SHAPES.PROC,
+        group: 'Combat',
+        hint: 'A chance that an enemy\'s blow which would defeat the hero leaves them at 1 health instead, once a fight: the next defeating blow defeats them. In percent; at 100% it always holds (Unbreakable). Only an enemy\'s blow, not a status ticking or a rule\'s damage. Narrow it to a style.'
+    },
+    {
+        /**
+         * Read by `CombatAttackProcessor.handleHeroAttack` after each attack the hero makes, once its
+         * own rules have run and both still stand: on a hit the same attack strikes again at once,
+         * with its own miss, crit and On Hit rules, spending no more ammo and no second On Attack.
+         */
+        type: EFFECT_TYPES.TWIN_STRIKE,
+        reads: {
+            up: (n) => `have a ${n} chance an attack strikes twice`,
+            down: (n) => `have ${n} less chance an attack strikes twice`
+        },
+        label: 'Twin Strike',
+        explains: 'A chance an attack strikes twice, its arrow or Mote spent once',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat'],
+        categories: 'combatStyle',
+        heroOnly: true,
+        fromGuild: true,
+        shape: MODIFIER_SHAPES.PROC,
+        group: 'Combat',
+        hint: 'A chance a hero\'s attack strikes again at once: the second rolls its own miss and crit and lands the same damage, spending no second arrow, Mote or Kunai, and a poison counts the attack once. In percent. Narrow it to a style (Twin Shot: Ranged; Double Cast: Magic).'
+    },
+    {
+        /**
+         * Read by `CombatTricks.noteDodge` when an enemy's attack at the hero misses: on a hit the
+         * hero's next landed hit in the fight is a sure crit, above the crit cap (one crit doubles,
+         * as any crit). Saved on the hero with the fight (`fightTricks`).
+         */
+        type: EFFECT_TYPES.DODGE_CRIT,
+        reads: {
+            up: (n) => `have a ${n} chance a dodge makes their next hit a sure crit`,
+            down: (n) => `have ${n} less chance a dodge makes their next hit a sure crit`
+        },
+        label: 'Crit After Dodge',
+        explains: 'After the hero dodges, their next hit is a sure crit',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat'],
+        categories: 'combatStyle',
+        heroOnly: true,
+        fromGuild: true,
+        shape: MODIFIER_SHAPES.PROC,
+        group: 'Combat',
+        hint: 'A chance that an enemy\'s attack missing the hero makes the hero\'s next hit that lands a sure crit (double, as every crit), whatever the crit cap. In percent; at 100% every dodge does (Shadowstep). A miss of the hero\'s own keeps it for the next. Narrow it to a style.'
     },
 
     // --- Protection ---------------------------------------------------------

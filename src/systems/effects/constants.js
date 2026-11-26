@@ -46,6 +46,18 @@ export const EFFECT_TYPES = {
     SWING_TIME: 'SWING_TIME',
     // How much a meal heals the bearer, as a percentage (Burn: -50%); drinks never heal — ConsumptionSystem.
     FOOD_HEALING: 'FOOD_HEALING',
+    // The combat tricks, read off a hero for the style they fight in — CombatTricks.js.
+    // Heal on Kill: whole health a hero heals on each kill (Second Wind).
+    KILL_HEAL: 'KILL_HEAL',
+    // Last Stand: a chance, once a fight, that an enemy's blow which would defeat the hero leaves
+    // them at 1 health instead (Unbreakable).
+    LAST_STAND: 'LAST_STAND',
+    // Twin Strike: a chance a hero's attack strikes again at once, its ammo spent once (Twin Shot,
+    // Double Cast).
+    TWIN_STRIKE: 'TWIN_STRIKE',
+    // Crit After Dodge: a chance an enemy's attack missing the hero makes their next landed hit a
+    // sure crit (Shadowstep).
+    DODGE_CRIT: 'DODGE_CRIT',
     FAIL_CHANCE: 'FAIL_CHANCE', // Chance for failure/debuff
     // Regen: how fast a hero heals out of a fight, as a percentage on 1 HP every 10 s. From what the
     // hero carries and the guild, never a Token — hero/regen.js.

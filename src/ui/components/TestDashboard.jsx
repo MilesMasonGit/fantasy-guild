@@ -9,6 +9,7 @@ import { PerfDevSection } from '../dev/perf/PerfDevSection.jsx';
 import { EventsDevSection } from '../dev/EventsDevSection.jsx';
 import { FaithDevSection } from '../dev/FaithDevSection.jsx';
 import { CombatStylesDevSection } from '../dev/CombatStylesDevSection.jsx';
+import { CombatTricksDevSection } from '../dev/CombatTricksDevSection.jsx';
 import { saveLiveMatToCms, DEFAULT_CMS_URL } from '../dev/starterCampDev.js';
 import {
     PICKER_ROWS, itemChoices, tokenChoices, filterByName, giveAndSay, dropAndSay, devBankEveryKind, devFillBank,
@@ -257,6 +258,8 @@ export const TestDashboard = /* @__PURE__ */ React.memo(() => {
                         <FaithDevSection />
 
                         <CombatStylesDevSection />
+
+                        <CombatTricksDevSection />
 
                         <div className="space-y-1" data-testid="qa-tools" data-qa-group>
                             <div className={labelClass}>Tools</div>

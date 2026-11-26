@@ -6,6 +6,7 @@ import { ENGINE_EVENTS } from '../core/engineEvents.js';
 import { noteEnemyBeaten } from '../progression/collectionLog.js';
 import * as TileModifiers from '../board/TileModifiers.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
+import * as CombatTricks from './CombatTricks.js';
 
 export function handleHeroWounded(fight, heroId) {
     HeroManager.setHeroStatus(heroId, 'wounded');
@@ -49,6 +50,12 @@ export function handleVictory(fight, hero, enemy, heroId, assignedHeroIds) {
 
     // A kill's loot is the enemy Token's outputs, read and rolled by `LootSystem` off the
     // `combat_victory` event below.
+
+    // Heal on Kill, before the kill's loot and end are said.
+    assignedHeroIds.forEach(id => {
+        const h = HeroManager.getHero(id);
+        if (h && h.status !== 'wounded') CombatTricks.healOnKill(fight, h);
+    });
 
     fight.status = 'victory';
     assignedHeroIds.forEach(id => HeroManager.setHeroStatus(id, 'idle'));

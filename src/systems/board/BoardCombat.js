@@ -8,6 +8,7 @@ import { registerKinds } from '../effects/enemyKindEffects.js';
 import * as LiveEffects from '../effects/LiveEffects.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { processCombat } from '../combat/CombatProcessor.js';
+import * as CombatTricks from '../combat/CombatTricks.js';
 import { applyDefeatPenalties } from '../combat/DefeatPenalties.js';
 import * as Breakage from '../equipment/Breakage.js';
 import * as HeroManager from '../hero/HeroManager.js';
@@ -348,6 +349,7 @@ export function endFight(instanceId) {
     clearEnemyCombatModifiers(instanceId);
     const heroId = fights.get(instanceId)?.assignedHeroId;
     LiveEffects.endHeroFightEffects(heroId);
+    if (heroId) CombatTricks.forgetFight(heroId);
     fights.delete(instanceId);
     standDown(heroId);
 }
@@ -605,6 +607,7 @@ function resolveVictory(instance, fight, enemy, heroId) {
  */
 function resolveDefeat(instance, heroId) {
     endFight(instance?.id);
+    CombatTricks.forgetFight(heroId);
 
     const hero = HeroManager.getHero(heroId);
     if (hero && hero.status !== 'wounded') HeroManager.setHeroStatus(heroId, 'wounded');
@@ -696,6 +699,9 @@ export function init() {
         for (const hero of HeroManager.getAllHeroes() || []) LiveEffects.endFightEffects(LiveEffects.heroBearer(hero));
     });
     EventBus.subscribe(ENGINE_EVENTS.BOARD_SWAPPED, ({ fromRegionId } = {}) => {
+        // Every fight ends with the board, and what it noted on its hero with it. A load keeps them
+        // (`GAME_LOADED` above): the fight it saved goes on.
+        for (const hero of HeroManager.getAllHeroes() || []) CombatTricks.forgetFight(hero);
         clearAll();
         leaveRegion(fromRegionId);
         catchUpRegion();

@@ -10,6 +10,12 @@ import { getEnemyProfile } from '../../../config/registries/enemyProfile.js';
 import { isSpecialMove } from '../../../config/registries/enemyMoves.js';
 import { t } from '../../../i18n/index.js';
 import { namesStatus } from '../board/callouts.js';
+import { TRICK } from '../../../systems/combat/CombatTricks.js';
+import { getHeroCombatStyle } from '../../../systems/combat/CombatFormulas.js';
+import { loadoutStatements } from '../../../systems/hero/HeroEffects.js';
+import { KEYWORD } from '../../../systems/effects/statements.js';
+import { EFFECT_TYPES, TARGET_CATEGORIES } from '../../../systems/effects/constants.js';
+import { getPaletteEntry } from '../../../config/registries/modifierPalette.js';
 
 /**
  * What the combat screen knows about each fight, read from the engine's events: who swung, what
@@ -17,7 +23,8 @@ import { namesStatus } from '../board/callouts.js';
  * fight, kept per hero: the fight they are in now and the one before it ("This fight" / "Last
  * fight" in the panel's log), in memory only and never saved. The same reading feeds the mat's
  * floating numbers as "moments" (`subscribeMoments`). An enemy's swing names its move when it has
- * moves (the log line, the float and the record's `lastMove`, which the panel marks).
+ * moves (the log line, the float and the record's `lastMove`, which the panel marks). A hero's combat
+ * trick (`CombatTricks`) is a line of its own, by the name of the effect it came in (a perk's).
  * ⚠️ Every listener is a UI listener: a catch-up (a quiet bus) records and draws nothing. A fight
  * that was already running when the watch started, or that a catch-up started, is picked up at
  * its next event (`joinedLate`).
@@ -290,6 +297,62 @@ function onAte(p) {
     changed(record.heroId);
 }
 
+/** The effect each trick reads (`CombatTricks.TRICK`). */
+const TRICK_EFFECT = Object.freeze({
+    [TRICK.KILL_HEAL]: EFFECT_TYPES.KILL_HEAL,
+    [TRICK.LAST_STAND]: EFFECT_TYPES.LAST_STAND,
+    [TRICK.TWIN_STRIKE]: EFFECT_TYPES.TWIN_STRIKE,
+    [TRICK.DODGE_CRIT]: EFFECT_TYPES.DODGE_CRIT
+});
+const TRICK_LINE = Object.freeze({
+    [TRICK.KILL_HEAL]: 'trickKillHeal',
+    [TRICK.LAST_STAND]: 'trickLastStand',
+    [TRICK.TWIN_STRIKE]: 'trickTwinStrike',
+    [TRICK.DODGE_CRIT]: 'trickDodgeCrit'
+});
+
+/** Whether a rule narrowed to `category` helps a fighter in `style`: none, every style, or that one. */
+function forStyle(category, style) {
+    if (!category || category === TARGET_CATEGORIES.ALL) return true;
+    const id = String(category).toLowerCase();
+    return id === TARGET_CATEGORIES.COMBAT || id === style;
+}
+
+/**
+ * What the log calls a trick: the name of the effect the hero carries it in (a perk's "Second
+ * Wind", gear's), the first that helps the style they fight in; else the effect's own label (a Hall
+ * star's, an elixir's).
+ */
+function trickName(heroId, trick) {
+    const type = TRICK_EFFECT[trick];
+    const hero = HeroManager.getHero(heroId);
+    const style = hero ? getHeroCombatStyle(hero) : null;
+    for (const statement of hero ? loadoutStatements(hero) : []) {
+        if (statement?.keyword !== KEYWORD.PROVIDES || statement.payload?.type !== type) continue;
+        if (!(Number(statement.payload.value) > 0) || !forStyle(statement.payload.category, style)) continue;
+        if (statement.effectTitle) return statement.effectTitle;
+    }
+    return getPaletteEntry(type)?.label || trick;
+}
+
+function onTrick(p) {
+    const key = TRICK_LINE[p?.trick];
+    const instanceId = p?.instanceId ?? BoardCombat.fightOfHero(p?.heroId)?.instanceId;
+    const record = key ? ensure(p?.heroId, instanceId) : null;
+    if (!record) return;
+    const healed = p.trick === TRICK.KILL_HEAL ? Math.round(Number(p.amount) || 0) : 0;
+    say(record, {
+        icon: healed ? 'heart' : 'star', tone: healed ? TONE.HEAL : TONE.NOTE, key,
+        vars: { trick: trickName(record.heroId, p.trick), hero: record.heroName }, amount: healed > 0 ? `+${healed}` : null
+    });
+    if (healed > 0) {
+        const hero = HeroManager.getHero(record.heroId);
+        if (hero?.hp) record.hp.hero = { cur: hero.hp.current, max: hero.hp.max };
+        moment({ heroId: record.heroId, instanceId: record.instanceId, by: 'hero', on: 'hero', kind: MOMENT.HEAL, amount: healed });
+    }
+    changed(record.heroId);
+}
+
 function onConsumed(p) {
     if (!(p?.elixir || p?.poison) || !p.heroId) return;
     const line = { icon: 'potion', tone: TONE.NOTE, key: p.poison ? 'poisons' : 'drinks', vars: { hero: heroName(p.heroId), item: itemName(p.itemId) }, itemId: p.itemId };
@@ -464,6 +527,7 @@ export function startFightWatch() {
             EventBus.subscribe(ENGINE_EVENTS.COMBAT_HERO_ATTACK, onHeroSwing, UI_LISTENER),
             EventBus.subscribe(ENGINE_EVENTS.COMBAT_ENEMY_ATTACK, onEnemySwing, UI_LISTENER),
             EventBus.subscribe(ENGINE_EVENTS.COMBAT_HERO_ATE, onAte, UI_LISTENER),
+            EventBus.subscribe(ENGINE_EVENTS.COMBAT_TRICK, onTrick, UI_LISTENER),
             EventBus.subscribe(ENGINE_EVENTS.HERO_CONSUMED, onConsumed, UI_LISTENER),
             EventBus.subscribe(ENGINE_EVENTS.STATUS_APPLIED, onStatusApplied, UI_LISTENER),
             EventBus.subscribe(ENGINE_EVENTS.STATUS_BLOCKED, onStatusBlocked, UI_LISTENER),

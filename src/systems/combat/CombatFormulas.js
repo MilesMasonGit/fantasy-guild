@@ -184,6 +184,31 @@ export function heroCritChance(hero) {
     return cappedCritChance(BASE_CRIT_CHANCE + heroGuildAxis(hero, EFFECT_TYPES.CRIT_CHANCE));
 }
 
+// --- The combat tricks: each read for the style the hero fights in, theirs and the guild's added --
+
+/** Whole health the hero heals on each kill (Heal on Kill): every source added, a fraction dropped, never below 0. */
+export function heroKillHeal(hero) {
+    return Math.max(0, Math.floor(heroStyleAxis(hero, EFFECT_TYPES.KILL_HEAL)));
+}
+
+/** The percent chance, once a fight, that a defeating blow leaves the hero at 1 health (Last Stand). */
+export function heroLastStandChance(hero) {
+    return heroStyleAxis(hero, EFFECT_TYPES.LAST_STAND);
+}
+
+/** The percent chance a hero's attack strikes again at once (Twin Strike). */
+export function heroTwinStrikeChance(hero) {
+    return heroStyleAxis(hero, EFFECT_TYPES.TWIN_STRIKE);
+}
+
+/** The percent chance a dodge makes the hero's next landed hit a sure crit (Crit After Dodge). */
+export function heroDodgeCritChance(hero) {
+    return heroStyleAxis(hero, EFFECT_TYPES.DODGE_CRIT);
+}
+
+/** A sure crit's chance in percent: above the cap, so the roll always crits. */
+export const SURE_CRIT_CHANCE = 100;
+
 /**
  * The most stacks of status `statusId` (a status effect's id) that can build up on this fighter:
  * the status's own cap moved by what they carry for it (a Status Stack Limit of −1 on Venom: one

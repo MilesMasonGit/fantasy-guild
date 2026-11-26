@@ -261,7 +261,8 @@ describe('crits double before the type factor; no flat armour, no floor', () => 
 
     it('a crit is double for everyone, and there is no Crit Damage effect', () => {
         expect(CRIT_MULTIPLIER).toBe(2);
-        expect(Object.keys(EFFECT_TYPES).filter(k => /CRIT/.test(k))).toEqual(['CRIT_CHANCE']);
+        // Crit After Dodge (Shadowstep) makes a hit a crit, which doubles as every crit does.
+        expect(Object.keys(EFFECT_TYPES).filter(k => /CRIT/.test(k))).toEqual(['CRIT_CHANCE', 'DODGE_CRIT']);
         const h = hero({ skill: 'stealth', level: 1, weapon: 'rules_copper_sword' });
         give(h, EFFECT_TYPES.CRIT_CHANCE, 200);
         expect(CF.heroHitDamage(h, enemy(1), { crit: true })).toBe(2 * CF.heroHitDamage(h, enemy(1)));
