@@ -66,11 +66,15 @@ export const REFUSAL_CATALOGUE = Object.freeze({
     // The one refusal aimed at the developer's dials: it says the dial set itself has broken the progression guard, so every remedy names a dial.
     'progression-guard': {
         severity: SEVERITY.CRITICAL,
-        remedies: () => [
+        remedies: ({ rulebook = false } = {}) => (rulebook ? [
+            'Narrow the band widths — a wide band is how much slack the sim is allowed, and this much slack swallows a tier of levelling.',
+            'Nothing about the earn curve: it is the balance rules\' (section 7), and a tier of it doubles what work earns.',
+            'Nothing about the content — no Token caused this, and re-tagging one will not clear it.',
+        ] : [
             'Narrow the band widths — a wide band is how much slack the sim is allowed, and this much slack swallows a decade of levelling.',
             'Steepen the earn curve pins, so ten levels of progress is worth more than one level\'s spread.',
             'Nothing about the content — no Token caused this, and re-tagging one will not clear it.',
-        ],
+        ]),
     },
 
     'orphan-item': {

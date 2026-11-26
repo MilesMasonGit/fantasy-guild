@@ -6,6 +6,7 @@
  */
 
 import { gphAt, toleranceFor, DEFAULT_DIALS } from './dials.js';
+import { LEVELS_TO_DOUBLE } from '../balanceRules.js';
 import { isInert } from './fieldAdapter.js';
 import { cyclesPerHour } from './tuningPass.js';
 import { makeRow, SEVERITY } from './rows.js';
@@ -13,6 +14,14 @@ import { makeRefusal } from './refusals.js';
 
 /** The stride criterion 4 is stated over: ten levels of progress. */
 export const GUARD_STRIDE = 10;
+
+/**
+ * The stride the guard walks: ten levels, or one tier (20 levels, where the balance rules' worth curve doubles) with the rulebook on.
+ * ⚠️ Ten levels of the rules' curve are only x1.41, inside level 1's ±25 % band, so a ten-level stride would refuse the owner's own curve.
+ */
+export function guardStride(dials = DEFAULT_DIALS) {
+    return dials?.rulebook === true ? LEVELS_TO_DOUBLE : GUARD_STRIDE;
+}
 
 /** The top of the skill range the guard walks. */
 export const GUARD_MAX_LEVEL = 99;
@@ -39,8 +48,9 @@ export const SHORT_LIFETIME_HOURS = 10 / 60;
  */
 export function progressionGuardFindings(dials = DEFAULT_DIALS) {
     const violations = [];
-    for (let level = 1; level + GUARD_STRIDE <= GUARD_MAX_LEVEL; level++) {
-        const upper = level + GUARD_STRIDE;
+    const stride = guardStride(dials);
+    for (let level = 1; level + stride <= GUARD_MAX_LEVEL; level++) {
+        const upper = level + stride;
         // Anchor bands only: `toleranceFor` defaults to the anchor band, and the doubled non-anchor band is the accepted seam overlap.
         const ceiling = gphAt(level, dials) * (1 + toleranceFor(level, dials));
         const floor = gphAt(upper, dials) * (1 - toleranceFor(upper, dials));
@@ -65,8 +75,9 @@ export function progressionGuardRows(dials = DEFAULT_DIALS) {
         const worst = [...refusable].sort((a, b) => (b.ceiling - b.floor) - (a.ceiling - a.floor))[0];
         rows.push(makeRefusal('progression-guard', {
             what: `A level ${worst.level} source may earn up to ${g(worst.ceiling)}g/h, and a level ${worst.upper} source may earn as little as ${g(worst.floor)}g/h.`,
-            why: `Ten levels of progress is supposed to be worth more than the spread inside one level, and at these dials it is not — ${refusable.length === 1 ? 'one pair of levels overlaps' : `${refusable.length} pairs of levels overlap`}, so a player levelling up can end up earning less than they did before.`,
+            why: `${dials?.rulebook === true ? `A tier of progress (${guardStride(dials)} levels)` : 'Ten levels of progress'} is supposed to be worth more than the spread inside one level, and at these dials it is not — ${refusable.length === 1 ? 'one pair of levels overlaps' : `${refusable.length} pairs of levels overlap`}, so a player levelling up can end up earning less than they did before.`,
         }, {
+            rulebook: dials?.rulebook === true,
             detail: {
                 pairs: refusable.length,
                 worst: { level: worst.level, upper: worst.upper, ceiling: worst.ceiling, floor: worst.floor },

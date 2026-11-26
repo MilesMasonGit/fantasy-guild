@@ -93,7 +93,8 @@ export function recalculateWorkspace(workspace, dials = {}, { previousChurn = nu
             tokens: migrated.tokens,
             recipes: flatten(migrated.recipePools),
         },
-        dials || {}
+        // With the rulebook on, XP a cycle is divided by the optimized boost factor, read from the plan's own boost budget.
+        dials?.rulebook === true && state.planSettings ? { ...dials, ledgerSettings: state.planSettings } : (dials || {})
     );
 
     // Sale prices follow the values once the content uses coins (`ledger/coins.js`).

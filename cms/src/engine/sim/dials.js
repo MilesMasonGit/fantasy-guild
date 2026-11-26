@@ -1,7 +1,13 @@
 /**
  * Economic simulator: the dials the passes read. Every pass stays a pure function: dials arrive as a plain argument and the defaults below are the whole list. Nothing here touches a store or a file: `useGlobalStore` holds the developer's turned copy under `simDials` and `recalculateEconomy` hands it in.
  * ⚠️ The one dial no pass reads is `skillMasteryHours`: it is an expectation, not an input, so turning it does not move the curve (see `PaceDials`).
+ * ⚠️ `rulebook` switches the earn curves and the purpose factors from the pins below to the balance rules (`../balanceRules.js`, which the ledger reads too): XP an hour and worth an hour doubling every 20 levels, the moderate purpose tilt, XP over the optimized boost factor, the guard over a tier. Off by default; with it on, a stored dial set's pins and factors are dropped.
  */
+
+import { worthAnHourAt, goodsTilt } from '../balanceRules.js';
+
+/** The dials the rulebook owns: with `rulebook` on, `normaliseDials` drops them, so a dial set stored before cannot bring the old curves back. */
+export const RULEBOOK_CURVE_DIALS = Object.freeze(['gphPins', 'xphPins', 'purposeGoldFactors', 'purposeXpFactors']);
 
 /** Gold per hour, as pinned points: the developer edits ten pins, not 99 cells. A flat 7.5%/level compounding to level 70, then 2%/level to 99. It is what a worker earns on content at its required level; a skill level adds no work speed. */
 export const GPH_PINS = Object.freeze({
@@ -57,6 +63,8 @@ export const PURPOSE_XP_FACTORS = Object.freeze({
 });
 
 export const DEFAULT_DIALS = Object.freeze({
+    /** Read the earn curves, the purpose tilt and the boost factor from the balance rules rather than the pins and factors here. */
+    rulebook: false,
     gphPins: GPH_PINS,
     xphPins: XPH_PINS,
     /**
@@ -95,10 +103,12 @@ export function normaliseDials(overrides = {}) {
     // set written before a dial existed carries the key absent, but a partial
     // object built by hand can carry it explicitly undefined — and spreading
     // that over the defaults would blank a required number and throw below.
+    const rulebook = overrides?.rulebook === true;
     const supplied = Object.fromEntries(
-        Object.entries(overrides || {}).filter(([, value]) => value !== undefined)
+        Object.entries(overrides || {}).filter(([key, value]) => value !== undefined && !(rulebook && RULEBOOK_CURVE_DIALS.includes(key)))
     );
     const dials = { ...DEFAULT_DIALS, ...supplied };
+    if (rulebook) for (const key of RULEBOOK_CURVE_DIALS) delete dials[key];
     const ratio = dials.downcycleRecoveryRatio;
     if (!Number.isFinite(ratio) || ratio <= 0 || ratio >= 1) {
         throw new Error(
@@ -114,6 +124,7 @@ export function normaliseDials(overrides = {}) {
 
 /** Gold per hour at `level`, linearly interpolated between the pins: between two neighbouring pins the value moves by an equal number of gold per level, so moving one pin moves only the two segments touching it. Flat below the first pin and above the last. */
 export function gphAt(level, dials = DEFAULT_DIALS) {
+    if (dials?.rulebook === true) return worthAnHourAt(level);
     const pins = dials.gphPins || GPH_PINS;
     const levels = Object.keys(pins).map(Number).sort((a, b) => a - b);
     const L = Number.isFinite(level) ? level : 1;
@@ -131,6 +142,7 @@ export function gphAt(level, dials = DEFAULT_DIALS) {
 }
 
 export function purposeGoldFactor(purpose, dials = DEFAULT_DIALS) {
+    if (dials?.rulebook === true) return goodsTilt(purpose);
     const factors = dials.purposeGoldFactors || PURPOSE_GOLD_FACTORS;
     return factors[purpose] ?? 0;
 }

@@ -10,6 +10,7 @@
 
 import { xpForLevel } from '../../../../src/utils/XPCurve.js';
 import { DEFAULT_DIALS, PURPOSE_XP_FACTORS, XPH_PINS, gphAt } from './dials.js';
+import { xpAnHourAt, xpTilt, optimizedBoostFactor } from '../balanceRules.js';
 import { makeRow, SEVERITY } from './rows.js';
 
 export const PRINTED_XPH_PINS = Object.freeze({
@@ -24,6 +25,7 @@ const WOBBLE_FACTOR = 1.5;
  * ⚠️ Deliberately identical in shape to `gphAt` (straight lines between pins, flat below the first and above the last), so one growth number governing both curves does not read differently on each.
  */
 export function xphAt(level, dials = DEFAULT_DIALS) {
+    if (dials?.rulebook === true) return xpAnHourAt(level);
     const pins = dials.xphPins || XPH_PINS;
     const levels = Object.keys(pins).map(Number).sort((a, b) => a - b);
     if (levels.length === 0) return 0;
@@ -43,6 +45,7 @@ export function xphAt(level, dials = DEFAULT_DIALS) {
 
 /** The Purpose tag's XP factor. An unknown or missing tag reads as 0 (it teaches nothing), and `xpPerCycle` turns that into no XP at all rather than the minimum of 1: the min-1 floor is a rounding rule for work that does teach and must never manufacture XP for work that does not. */
 export function purposeXpFactor(purpose, dials = DEFAULT_DIALS) {
+    if (dials?.rulebook === true) return xpTilt(purpose);
     const factors = dials.purposeXpFactors || PURPOSE_XP_FACTORS;
     return factors[purpose] ?? 0;
 }
@@ -58,9 +61,19 @@ export function xpPerCycle(level, purpose, cycleTimeMs, dials = DEFAULT_DIALS) {
     if (!Number.isFinite(factor) || factor <= 0) return null;
     const xph = xphAt(level, dials);
     if (!Number.isFinite(xph) || xph <= 0) return null;
-    const raw = xph * factor * (cycleTimeMs / 3600000);
+    const raw = xph * factor * (cycleTimeMs / 3600000) / boostFactorOf(level, dials);
     if (!Number.isFinite(raw) || raw <= 0) return null;
     return Math.max(1, Math.round(raw));
+}
+
+/**
+ * What XP a cycle is divided by: with the rulebook on, the optimized boost factor at `level` (BALANCE_RULES section 1: the curve is the boosted player's), from the plan's Ledger settings that Recalculate hands in as `ledgerSettings`; 1 with it off.
+ * ⚠️ The rulebook pays the plain rate at the required level otherwise: no midpoint to the skill's next unlock, no trimming of the cycle to whole XP (the balancer's solver does those, and a balancing pack pins its numbers).
+ */
+export function boostFactorOf(level, dials = DEFAULT_DIALS) {
+    if (dials?.rulebook !== true) return 1;
+    const factor = optimizedBoostFactor(level, dials.ledgerSettings || undefined);
+    return Number.isFinite(factor) && factor > 0 ? factor : 1;
 }
 
 /** How long one focused skill takes to climb 1 → 99, in board-hours. The XPH curve is integrated against the game's own threshold curve, imported from `src/utils/XPCurve.js` rather than reimplemented, so the two cannot drift apart unnoticed. */
@@ -170,7 +183,7 @@ export function runXpPass(entities = [], {
         // Delivered XP/hour against the target the curve set. Cycles per hour here is the plain cycle rate, matching the formula's own reading.
         const cyclesPerHour = 3600000 / cycleTimeMs;
         const delivered = awarded * cyclesPerHour;
-        const target = xphAt(entity.level, dials) * purposeXpFactor(entity.purpose, dials);
+        const target = xphAt(entity.level, dials) * purposeXpFactor(entity.purpose, dials) / boostFactorOf(entity.level, dials);
         if (target > 0 && delivered > target * WOBBLE_FACTOR) {
             rows.push(makeRow(
                 SEVERITY.INFO,
