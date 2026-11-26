@@ -31,7 +31,7 @@ import { GameState } from '../../../state/GameState.js';
 import { effectiveIO } from '../../../systems/board/RecipeResolver.js';
 import { availableOf } from '../../../systems/board/InputAllocator.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
-import { chanceFigure, oneInText } from '../../../utils/Formatters.js';
+import { chanceFigure, chanceText, oneInText } from '../../../utils/Formatters.js';
 import { landmarkLines } from '../drawer/landmarkLines.js';
 import * as SupportLinks from '../../../systems/board/supportLinks.js';
 import { reachRadius } from '../../../systems/board/nearby.js';
@@ -166,6 +166,8 @@ export function liveCardSources() {
         poolFor: StationRecipe.poolFor,
         fieldCrop: Fields.cropOf,
         endChance: Charges.endChanceOf,
+        // Can't Run Out at the Token for its work's skill: a shrine in reach, the guild's stars, the hero on it.
+        keepChance: (instanceId, skill) => resolveAxis(instanceId, EFFECT_TYPES.NEVER_RUNS_OUT, 0, skill),
         recipeOf: getRecipe,
         fightOf: BoardCombat.getFight,
         fought: hasFought,
@@ -501,6 +503,19 @@ function spawnCardLine(def, status, src) {
  * After them, `more`: what the card's layout has no block for yet (a landmark's challenge, a
  * buff, the stations a tool Token drives).
  */
+/**
+ * The Ends cell of a Token that runs out by chance: the odds while they fit (`1 in 5`), else the
+ * chance (`0.1%`), shortened by the rounds Can't Run Out keeps (`keeps`, percent); at 100 it never
+ * runs out while it is so worked.
+ */
+export function endsCellOf({ endChance, keeps = 0 }) {
+    if (keeps >= 100) return { text: 'Never', tip: "Won't run out while it is worked with Can't Run Out: no round of work spends it" };
+    const chance = endChance * (1 - Math.max(0, keeps) / 100);
+    const odds = oneInText(chance);
+    const kept = keeps > 0 ? ` (Can't Run Out keeps ${chanceText(keeps)} of rounds)` : '';
+    return { text: 100 / chance < 99.5 ? odds : chanceText(chance), tip: `Each round of work has a ${odds} chance to be its last${kept}` };
+}
+
 export function tokenCardModel(typeId, instanceId = null, src = liveCardSources()) {
     const def = src.typeOf(typeId);
     if (!def) return null;
@@ -569,8 +584,12 @@ export function tokenCardModel(typeId, instanceId = null, src = liveCardSources(
     // A Token that runs out by chance shows its chance, never a count.
     const endChance = instance ? (src.endChance?.(instance) ?? null) : typeEndChance(def);
     const uses = endChance != null ? null : instance ? (instance.usesRemaining ?? null) : (def.uses ?? null);
+    // The share of its rounds Can't Run Out keeps from spending, so from their end roll too.
+    const keeps = endChance != null && instance && src.keepChance
+        ? Math.min(100, Math.max(0, Number(src.keepChance(instance.id, skillId)) || 0))
+        : 0;
     // A station with nothing chosen keeps its Charges cell: only the time goes.
-    if (cycleMs > 0 || uses != null || endChance != null || unchosen) blocks.push({ id: CARD_BLOCK.CYCLE, cycleMs, baseMs, uses, endChance });
+    if (cycleMs > 0 || uses != null || endChance != null || unchosen) blocks.push({ id: CARD_BLOCK.CYCLE, cycleMs, baseMs, uses, endChance, keeps });
 
     if (!marked) {
         // A crop's inputs are its seed, paid once per sowing (its lifecycle line says so), not per harvest.

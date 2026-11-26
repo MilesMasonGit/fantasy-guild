@@ -910,7 +910,11 @@
             "refresh": "Refresh",
             "lucky": "Lucky",
             "efficiency": "Efficiency",
-            "abundance": "Abundance"
+            "abundance": "Abundance",
+            "neverRunsOut": "Can't Run Out",
+            "freeReplant": "Free Replant",
+            "groveFelling": "Grove Felling",
+            "betterCatch": "Better Catch"
         },
         "float": {
             "giantHarvest": "Giant!",
