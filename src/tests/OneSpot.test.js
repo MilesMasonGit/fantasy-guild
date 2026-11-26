@@ -201,7 +201,8 @@ describe('⭐ a Foundation finishes in place', () => {
 
     it('a Foundation that builds only ordinary Tokens keeps its ordinary room', () => {
         const foundation = arrive(SHED_FOUNDATION, 800, 500);
-        const res = drop(FURNACE, { x: 890, y: 500 });
+        // Just past edges touching (128 u), well inside a 2×2's room (208 u).
+        const res = drop(FURNACE, { x: 930, y: 500 });
         expect(res.success).toBe(true);
         expect(res.nudged).toBe(false);
         expect(gapTo(res, foundation)).toBeLessThan(MatPlacement.minGap(FURNACE, BIG_HALL));

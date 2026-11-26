@@ -33,12 +33,12 @@ const STEP_U = 160;
 const ASPECT = 13 / 24;
 
 /**
- * A small Token's art radius, repeated here for the same reason — this file
+ * A 1×1 Token's art radius, repeated here for the same reason — this file
  * imports nothing, so the hints below can quote real numbers without dragging
  * `matGeometry` (and the Token registry behind it) into the config layer.
  * Kept in step with `ART_RADIUS_BY_SIZE[1]` in `matGeometry.js`.
  */
-const SMALL_ART_R = 64;
+const ONE_ART_R = 64;
 
 /** The one standard reach, repeated here for the same reason. Kept in step with `STANDARD_REACH_U` in `reachRegistry.js` (`ShippedBuild.test.js`). */
 const REACH = 240;
@@ -50,7 +50,7 @@ export const MAT_TUNABLES = Object.freeze([
         key: 'reach',
         group: 'Reach',
         label: 'Reach',
-        hint: `Dev override of the one standard reach (STANDARD_REACH_U, the game value: ${REACH} u): how far a "nearby" rule carries, a camp hands out work and a Forest plants, centre to centre. 240 takes in a small Token's eight neighbours one step away (diagonals 226 u); 164 was the old Near radius. A shipped build always uses the game value.`,
+        hint: `Dev override of the one standard reach (STANDARD_REACH_U, the game value: ${REACH} u): how far a "nearby" rule carries, a camp hands out work and a Forest plants, centre to centre. Against the closest spacing (128 u, edges touching) 240 holds twelve Tokens round one in a tight honeycomb; 164 was the old Near radius. A shipped build always uses the game value.`,
         min: 100, max: 600, step: 1, def: REACH,
         format: (v) => `${Math.round(v)} u · ${(v / STEP_U).toFixed(2)} steps`
     },
@@ -82,17 +82,17 @@ export const MAT_TUNABLES = Object.freeze([
         key: 'hitboxPct',
         group: 'Crowding',
         label: 'Token hitbox',
-        hint: 'How much of a Token’s art actually collides, as a percentage of its radius. Never drawn — a Token at rest is just its art. 90% makes a small Token’s hitbox 58 u of its 64 u art (80%, 51 u, was the old default).',
-        min: 40, max: 100, step: 1, def: 90,
-        format: (v) => `${Math.round(v)}% · small ${Math.round(SMALL_ART_R * v / 100)} u`
+        hint: 'How much of a Token’s art actually collides, as a percentage of its radius. Never drawn — a Token at rest is just its art. 100% makes a 1×1 Token’s hitbox its whole 64 u art (90%, 58 u, was the old default).',
+        min: 40, max: 100, step: 1, def: 100,
+        format: (v) => `${Math.round(v)}% · 1×1 ${Math.round(ONE_ART_R * v / 100)} u`
     },
     {
         key: 'overlapPct',
         group: 'Crowding',
         label: 'Overlap allowed',
-        hint: 'How far two hitboxes may overlap before a drop is refused: lower spaces Tokens further apart. At 90% hitbox, 30% overlap lets two small Tokens sit 81 u apart centre to centre (40%, 70 u, was the old default). ⚠️ It applies to the next drop or spawn: Tokens already down stay put, and a new place is laid out at the shipped default, never this slider.',
-        min: 0, max: 80, step: 1, def: 30,
-        format: (v) => `${Math.round(v)}% · two small ${Math.round(2 * Math.round(SMALL_ART_R * matTuning('hitboxPct') / 100) * (1 - v / 100))} u apart`
+        hint: 'How far two hitboxes may overlap before a drop is refused: lower spaces Tokens further apart. At 100% hitbox, 0% overlap stands two 1×1 Tokens edges touching, 128 u apart centre to centre (30% at a 90% hitbox, 81 u, was the old default). ⚠️ It applies to the next drop or spawn: Tokens already down stay put, and a new place is laid out at the shipped default, never this slider.',
+        min: 0, max: 80, step: 1, def: 0,
+        format: (v) => `${Math.round(v)}% · two 1×1 ${Math.round(2 * Math.round(ONE_ART_R * matTuning('hitboxPct') / 100) * (1 - v / 100))} u apart`
     },
     {
         key: 'hoverLift',
@@ -151,8 +151,8 @@ const STORAGE_KEY = 'tabletop_guild_mat_tuning';
  * Add a row's old default here whenever its `def` changes.
  */
 const RETIRED_DEFAULTS = Object.freeze({
-    hitboxPct: [80],
-    overlapPct: [40],
+    hitboxPct: [80, 90],
+    overlapPct: [40, 30],
     matSteps: [11]
 });
 

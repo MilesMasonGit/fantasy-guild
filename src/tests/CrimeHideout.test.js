@@ -555,7 +555,9 @@ describe('a caught thief goes for the guard, then back to stealing (owner 2026-1
 
     it('under Valiant the beaten thief flees, losing nothing, and does not come back either', () => {
         const { goblins, heroId } = build({ typeId: ALWAYS_CAUGHT, campType: BRUTE_CAMP, melee: 1 });
-        const shrine = fixtures.placeAt(VALIANT_SHRINE, CAMP_AT.x + 160, CAMP_AT.y);
+        // Below the Hideout, in reach of the guard that comes for the thief: a camp's spawns stand
+        // edges touching it, so the guard is a Token's width out from the camp.
+        const shrine = fixtures.placeAt(VALIANT_SHRINE, HIDEOUT_AT.x, HIDEOUT_AT.y + 200);
         shrine.shrine = { litMs: 600_000 };
         TileModifiers.rebuildAll();
         const defeats = [];

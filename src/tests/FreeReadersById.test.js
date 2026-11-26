@@ -175,17 +175,18 @@ describe('⭐ spawns land by point (slices 1.6b and 1.8)', () => {
     });
 
     it('a crowded spawn pushes its neighbours aside, never its bearer (FP-17, slice 1.8)', () => {
-        // ⚠️ Packed at exactly the minimum gap, which leaves NO legal point
-        // inside the block: the hole between any four is only 57 u across. So
-        // `findSpot` finds nothing and the spawn has to push.
-        const P = (c, r) => ({ x: 600 + c * 81.2, y: 300 + r * 81.2 });
-        for (let r = 0; r < 9; r++) {
-            for (let c = 0; c < 9; c++) {
-                if (c === 4 && r === 4) continue;
+        // ⚠️ Packed at exactly the minimum gap (edges touching), which leaves NO
+        // legal point inside the block: the middle of any four is only 91 u from
+        // each. So `findSpot` finds nothing and the spawn has to push.
+        const g = MatPlacement.minGap('fixture_passive', 'fixture_passive');
+        const P = (c, r) => ({ x: 600 + c * g, y: 100 + r * g });
+        for (let r = 0; r < 7; r++) {
+            for (let c = 0; c < 7; c++) {
+                if (c === 3 && r === 3) continue;
                 placeAt('fixture_passive', P(c, r).x, P(c, r).y);
             }
         }
-        const bearer = placeAt('fixture_producer', P(4, 4).x, P(4, 4).y);
+        const bearer = placeAt('fixture_producer', P(3, 3).x, P(3, 3).y);
         const before = BoardState.tokens().length;
 
         const result = EffectActions.spawn(spawnOf(PLACEMENT.NEAREST_FREE), { self: bearer.id });

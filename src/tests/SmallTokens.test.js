@@ -116,35 +116,35 @@ describe('hit area: the smaller circle', () => {
         expect(Flags.tokenAtPoint({ x: 440, y: 400 })?.id).toBe(standard.id);
     });
 
-    it('the hitbox is 90% of the halved radius, rounded (29 u)', () => {
-        expect(MatPlacement.hitRadiusOf('b8_small')).toBe(29);
-        expect(MatPlacement.hitRadiusOf('b8_standard')).toBe(58);
+    it('the hitbox is the whole halved radius (32 u)', () => {
+        expect(MatPlacement.hitRadiusOf('b8_small')).toBe(32);
+        expect(MatPlacement.hitRadiusOf('b8_standard')).toBe(64);
     });
 });
 
 describe('spacing: small Tokens pack closer, never overlap', () => {
-    it('gaps: small–small 40.6 u, small–standard 60.9 u, standard–standard 81.2 u', () => {
-        expect(MatPlacement.minGap('b8_small', 'b8_small')).toBeCloseTo(40.6, 6);
-        expect(MatPlacement.minGap('b8_small', 'b8_standard')).toBeCloseTo(60.9, 6);
-        expect(MatPlacement.minGap('b8_standard', 'b8_standard')).toBeCloseTo(81.2, 6);
+    it('gaps: small–small 64 u, small–standard 96 u, standard–standard 128 u (edges touching)', () => {
+        expect(MatPlacement.minGap('b8_small', 'b8_small')).toBe(64);
+        expect(MatPlacement.minGap('b8_small', 'b8_standard')).toBe(96);
+        expect(MatPlacement.minGap('b8_standard', 'b8_standard')).toBe(128);
     });
 
-    it('two small Tokens: just outside 40.6 u is legal, just inside is refused', () => {
+    it('two small Tokens: 64 u is legal, just inside is refused', () => {
         placeAt('b8_small', 800, 600);
-        expect(MatPlacement.isLegal('b8_small', { x: 800 + 40.8, y: 600 })).toBe(true);
-        expect(MatPlacement.isLegal('b8_small', { x: 800 + 40.4, y: 600 })).toBe(false);
+        expect(MatPlacement.isLegal('b8_small', { x: 800 + 64, y: 600 })).toBe(true);
+        expect(MatPlacement.isLegal('b8_small', { x: 800 + 63.6, y: 600 })).toBe(false);
         // A standard one needs the bigger gap from the same small Token.
-        expect(MatPlacement.isLegal('b8_standard', { x: 800 + 40.8, y: 600 })).toBe(false);
+        expect(MatPlacement.isLegal('b8_standard', { x: 800 + 64, y: 600 })).toBe(false);
     });
 
-    it('⭐ a small Token beside a standard one keeps the 60.9 u gap, both ways round', () => {
+    it('⭐ a small Token beside a standard one keeps the 96 u gap, both ways round', () => {
         placeAt('b8_standard', 800, 600);
-        expect(MatPlacement.isLegal('b8_small', { x: 800 + 61.1, y: 600 })).toBe(true);
-        expect(MatPlacement.isLegal('b8_small', { x: 800 + 60.7, y: 600 })).toBe(false);
+        expect(MatPlacement.isLegal('b8_small', { x: 800 + 96, y: 600 })).toBe(true);
+        expect(MatPlacement.isLegal('b8_small', { x: 800 + 95.6, y: 600 })).toBe(false);
         clearMat();
         placeAt('b8_small', 800, 600);
-        expect(MatPlacement.isLegal('b8_standard', { x: 800 + 61.1, y: 600 })).toBe(true);
-        expect(MatPlacement.isLegal('b8_standard', { x: 800 + 60.7, y: 600 })).toBe(false);
+        expect(MatPlacement.isLegal('b8_standard', { x: 800 + 96, y: 600 })).toBe(true);
+        expect(MatPlacement.isLegal('b8_standard', { x: 800 + 95.6, y: 600 })).toBe(false);
     });
 
     it('⭐ findSpot nudges a small drop off a small Token to closer than a standard pair could sit', () => {
@@ -152,11 +152,11 @@ describe('spacing: small Tokens pack closer, never overlap', () => {
         const spot = MatPlacement.findSpot('b8_small', { x: 800, y: 600 });
         expect(spot).not.toBeNull();
         const d = Math.hypot(spot.x - 800, spot.y - 600);
-        expect(d).toBeGreaterThanOrEqual(40.6 - 1e-6);
-        expect(d).toBeLessThan(81.2);
+        expect(d).toBeGreaterThanOrEqual(64 - 1e-6);
+        expect(d).toBeLessThan(128);
     });
 
-    it('a row of small drops lands with every pair clear of 34.8 u', () => {
+    it('a row of small drops lands with every pair clear of 64 u', () => {
         for (let i = 0; i < 8; i++) {
             const instance = BoardState.createTokenInstance('b8_small', tokenStartingUses('b8_small'));
             const result = Placement.placeTokenAt(instance, { x: 800, y: 600 });
@@ -167,7 +167,7 @@ describe('spacing: small Tokens pack closer, never overlap', () => {
         for (let i = 0; i < all.length; i++) {
             for (let j = i + 1; j < all.length; j++) {
                 const d = Math.hypot(all[i].x - all[j].x, all[i].y - all[j].y);
-                expect(d).toBeGreaterThanOrEqual(34.8 - 1e-6);
+                expect(d).toBeGreaterThanOrEqual(64 - 1e-6);
             }
         }
     });

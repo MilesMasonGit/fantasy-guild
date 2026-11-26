@@ -89,12 +89,14 @@ function hero(id, forestry) {
     return { id, name: id, status: 'idle', level: 10, hp: { current: 100, max: 100 }, skills: { forestry: { level: forestry, xp: 0 } } };
 }
 
-// A standard Token's art radius is 64: two trees touch at 128 apart or less.
+// A standard Token's art radius is 64: two trees touch at 128 apart or less, and no two Tokens
+// may stand closer than that, so the touching trees stand exactly edges touching.
 const AT = { x: 800, y: 500 };
-const TOUCHING = { x: AT.x + 110, y: AT.y };
-const DIAGONAL = { x: AT.x - 80, y: AT.y + 80 };
+const TOUCHING = { x: AT.x + 128, y: AT.y };
+const OTHER_SIDE = { x: AT.x - 128, y: AT.y };
+const BIRCH = { x: AT.x, y: AT.y + 128 };
 const IN_REACH = { x: AT.x, y: AT.y - 200 };
-const BEYOND_TOUCHING = { x: AT.x + 230, y: AT.y };
+const BEYOND_TOUCHING = { x: TOUCHING.x + 128, y: AT.y };
 
 const typeAt = (point) => BoardState.tokens().find(t => t.x === point.x && t.y === point.y)?.typeId;
 const wood = () => InventoryManager.getItemCount('fixture_oak_wood') + SpriteLayer.countOnBoard('fixture_oak_wood');
@@ -160,9 +162,9 @@ describe('a falling tree fells the touching trees of its kind', () => {
     function grove() {
         placeAt('gf_oak', AT.x, AT.y);
         placeAt('gf_oak', TOUCHING.x, TOUCHING.y);
-        placeAt('gf_oak', DIAGONAL.x, DIAGONAL.y);
+        placeAt('gf_oak', OTHER_SIDE.x, OTHER_SIDE.y);
         placeAt('gf_oak', IN_REACH.x, IN_REACH.y);
-        placeAt('gf_birch', AT.x, AT.y + 120);
+        placeAt('gf_birch', BIRCH.x, BIRCH.y);
         TileModifiers.rebuildAll();
     }
 
@@ -172,9 +174,9 @@ describe('a falling tree fells the touching trees of its kind', () => {
         becomeStumps();
         expect(typeAt(AT)).toBe('gf_oak_stump');
         expect(typeAt(TOUCHING)).toBe('gf_oak_stump');
-        expect(typeAt(DIAGONAL)).toBe('gf_oak_stump');
+        expect(typeAt(OTHER_SIDE)).toBe('gf_oak_stump');
         expect(typeAt(IN_REACH)).toBe('gf_oak');
-        expect(typeAt({ x: AT.x, y: AT.y + 120 })).toBe('gf_birch');
+        expect(typeAt(BIRCH)).toBe('gf_birch');
     });
 
     it('each felled tree pays one cycle\'s output and XP: its logs, its rare find, its 3 XP', () => {
@@ -206,7 +208,7 @@ describe('a falling tree fells the touching trees of its kind', () => {
 
     it('an Echo of the felling cycle repeats the worked tree\'s cycle, never the felling', () => {
         grove();
-        const shrine = placeAt('gf_echo_shrine', AT.x - 160, AT.y - 120);
+        const shrine = placeAt('gf_echo_shrine', AT.x - 160, AT.y - 160);
         shrine.shrine = { litMs: 600_000 };
         TileModifiers.rebuildAll();
         Orders.orderAt('master', AT);
@@ -223,7 +225,7 @@ describe('a falling tree fells the touching trees of its kind', () => {
         expect(xpOf('master') - before.xp).toBe(3 * 2 + 3 * 2);
         becomeStumps();
         expect(typeAt(TOUCHING)).toBe('gf_oak_stump');
-        expect(typeAt(DIAGONAL)).toBe('gf_oak_stump');
+        expect(typeAt(OTHER_SIDE)).toBe('gf_oak_stump');
         expect(typeAt(IN_REACH)).toBe('gf_oak');
     });
 
@@ -247,7 +249,7 @@ describe('a falling tree fells the touching trees of its kind', () => {
         becomeStumps();
         expect(typeAt(AT)).toBe('gf_oak_stump');
         expect(typeAt(TOUCHING)).toBe('gf_oak');
-        expect(typeAt(DIAGONAL)).toBe('gf_oak');
+        expect(typeAt(OTHER_SIDE)).toBe('gf_oak');
     });
 
     it('a felled tree fells nothing more: an Oak touching only the felled one stands', () => {

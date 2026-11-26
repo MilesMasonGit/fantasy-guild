@@ -66,6 +66,8 @@ const SlotStat = ({ icon: Icon, label, children, stat }) => (
  * The title screen with the three save slots: load, a new game, delete with its confirm, and the
  * last message (a slot deleted, a save refused). It blocks the game until a slot is picked. An
  * empty slot's New Game opens the new-game screen first; its Begin starts the slot with the choices.
+ * A save of another version says it cannot be opened and offers only Delete: loading it would be
+ * refused, and nothing here writes over it.
  */
 export const SlotSelectionModal = ({ isOpen, onSelect }) => {
     const [slots, setSlots] = useState([]);
@@ -111,7 +113,7 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
         );
     }
 
-    const slotButtons = (index, isPendingDelete) => (
+    const slotButtons = (index, isPendingDelete, { load = true } = {}) => (
         <div className="flex items-center gap-2 ml-auto shrink-0">
             {isPendingDelete ? (
                 <>
@@ -127,9 +129,11 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
                 </>
             ) : (
                 <>
-                    <KitButton onClick={() => handleSelect(index)} buttonClassName="gap-2 py-1.5 px-6 tracking-widest uppercase text-xs">
-                        <Play size={14} /> {t('titleScreen.load')}
-                    </KitButton>
+                    {load && (
+                        <KitButton onClick={() => handleSelect(index)} buttonClassName="gap-2 py-1.5 px-6 tracking-widest uppercase text-xs">
+                            <Play size={14} /> {t('titleScreen.load')}
+                        </KitButton>
+                    )}
                     <button
                         data-slot-delete
                         onClick={() => setDeleteAttemptIndex(index)}
@@ -172,6 +176,22 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
                         <span className="ui-text-body text-gray-500">{t('titleScreen.damagedHint')}</span>
                     </div>
                     {slotButtons(index, isPendingDelete)}
+                </div>
+            );
+        }
+
+        if (slotInfo.outdated) {
+            return (
+                <div key={index} data-save-slot={slotNumber} data-slot-state="outdated" className={cn(ROW, 'gap-4', rowLook)}>
+                    <div className="flex flex-col min-w-0">
+                        <span className="text-red-400 font-bold uppercase tracking-widest text-sm whitespace-nowrap">{t('titleScreen.slotOutdated', { n: slotNumber })}</span>
+                        <span className="ui-text-body text-gray-400">
+                            {slotInfo.guildName && <span data-slot-guild-name className="mr-2">{slotInfo.guildName}</span>}
+                            <span className="uppercase tracking-tighter text-gray-500">{t('titleScreen.version', { version: slotInfo.version })}</span>
+                        </span>
+                        <span data-slot-refusal className="ui-text-body text-gray-500">{t('titleScreen.outdatedHint')}</span>
+                    </div>
+                    {slotButtons(index, isPendingDelete, { load: false })}
                 </div>
             );
         }

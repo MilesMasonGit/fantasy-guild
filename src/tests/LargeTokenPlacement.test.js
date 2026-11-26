@@ -1,9 +1,11 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as Orders from '../systems/board/Orders.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
+import { setMatTuning, resetMatTuning } from '../config/matTuning.js';
+import * as MatPlacement from '../systems/board/MatPlacement.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -22,6 +24,8 @@ const C = (i) => ({ x: 400 + (i % 6) * 160, y: 200 + Math.floor(i / 6) * 160 });
 const big = (i) => ({ x: C(i).x + 80, y: C(i).y + 80 });
 
 describe('2×2 Large Token Mechanics', () => {
+    afterEach(() => resetMatTuning());
+
     beforeEach(() => {
         GameState.state = {
             board: {
@@ -77,6 +81,9 @@ describe('2×2 Large Token Mechanics', () => {
          * arrangement the player built is never rearranged behind their back.
          */
         it('⭐ never displaces the small Tokens it is dropped over — it moves itself', () => {
+            // ⚠️ A 2×2 dropped square on a 1×1 has to move 208 u to stand edges touching, further
+            // than the shipped nudge reach (160 u), so at that reach the drop flies back instead.
+            setMatTuning('nudgeReach', 240);
             const s1 = BoardState.createTokenInstance('fixture_small_mine', 10);
             const s2 = BoardState.createTokenInstance('fixture_small_mine', 10);
             Placement.placeTokenAt(s1, C(0));
@@ -91,10 +98,21 @@ describe('2×2 Large Token Mechanics', () => {
             expect(BoardState.getTokenById(s1.id)).not.toBeNull();
             expect({ x: s1.x, y: s1.y }).toEqual(C(0));
             expect({ x: s2.x, y: s2.y }).toEqual(C(7));
-            // The large Token stands clear of both — small-to-large is 99.6 u.
+            // The large Token stands clear of both — 1×1 to 2×2 is 208 u, edges touching.
             const placed = BoardState.getTokenById(large.id);
-            expect(Math.hypot(placed.x - s1.x, placed.y - s1.y)).toBeGreaterThanOrEqual(99.6 - 1e-6);
-            expect(Math.hypot(placed.x - s2.x, placed.y - s2.y)).toBeGreaterThanOrEqual(99.6 - 1e-6);
+            const gap = MatPlacement.minGap('fixture_small_mine', 'fixture_large_fortress');
+            expect(gap).toBe(208);
+            expect(Math.hypot(placed.x - s1.x, placed.y - s1.y)).toBeGreaterThanOrEqual(gap - 1e-6);
+            expect(Math.hypot(placed.x - s2.x, placed.y - s2.y)).toBeGreaterThanOrEqual(gap - 1e-6);
+        });
+
+        it('at the shipped nudge reach, a 2×2 dropped square on a 1×1 flies back, and the 1×1 stays', () => {
+            const s1 = BoardState.createTokenInstance('fixture_small_mine', 10);
+            Placement.placeTokenAt(s1, C(0));
+            const large = BoardState.createTokenInstance('fixture_large_fortress', 50);
+            const res = Placement.placeTokenAt(large, C(0));
+            expect(res.success).toBe(false);
+            expect({ x: s1.x, y: s1.y }).toEqual(C(0));
         });
     });
 

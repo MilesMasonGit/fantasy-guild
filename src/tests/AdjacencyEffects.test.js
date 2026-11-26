@@ -91,6 +91,9 @@ const P = (row, col) => ({ x: 400 + col * 160, y: 300 + row * 160 });
 // sit fully inside it, so nothing may stand below y = 1062.
 const A = P(2, 3);
 const NEIGHBOUR = P(2, 4);
+// A second neighbour of `A`, 160 u above it: Tokens stand edges touching at the closest (128 u),
+// so a second Token dropped on `NEIGHBOUR` would be nudged out of `A`'s reach.
+const NEIGHBOUR_2 = P(1, 3);
 const FAR = P(4, 3);            // 320 u from A — outside the 272 u Near below
 const SECOND_FAR = P(4, 2);     // beside FAR
 
@@ -141,7 +144,7 @@ describe('Stacking is uncapped, because effects are SMALL (D-23, D-120)', () => 
     it('two Sawmills give twice one Sawmill, never the square of it', () => {
         place(A, 'fixture_producer', 'hero_1');
         place(NEIGHBOUR, 'fixture_buff_yield');
-        place(NEIGHBOUR, 'fixture_buff_yield');
+        place(NEIGHBOUR_2, 'fixture_buff_yield');
         TileModifiers.rebuildToken(idAt(A));
 
         // +5% and +5% = +10%. Compounding would give 1.1025 — the bug the
@@ -167,7 +170,7 @@ describe('Stacking is uncapped, because effects are SMALL (D-23, D-120)', () => 
     it('honours a "does not stack with duplicates" flag (D-82)', () => {
         place(A, 'fixture_producer', 'hero_1');
         place(NEIGHBOUR, 'fixture_buff_unique');
-        place(NEIGHBOUR, 'fixture_buff_unique');
+        place(NEIGHBOUR_2, 'fixture_buff_unique');
         TileModifiers.rebuildToken(idAt(A));
 
         // Two Shrines, one effect — the Token opted out of repetition.
@@ -245,7 +248,7 @@ describe('Context crafting — adjacency GATES what a station makes (rework §2)
         InventoryManager.addItem('fixture_oak_wood', 10);
         const forge = place(A, 'fixture_station', 'hero_1');
         place(NEIGHBOUR, 'fixture_context_a');
-        place(NEIGHBOUR, 'fixture_context_b');
+        place(NEIGHBOUR_2, 'fixture_context_b');
 
         run(20000);
 
@@ -386,7 +389,7 @@ describe('BONUS_DROP — granting what the Token does not make (CMS-27, CMS-72)'
     it('grants nothing on a FAILED cycle', () => {
         place(A, 'fixture_producer', 'hero_1');
         place(NEIGHBOUR, 'fixture_bonus_drop');
-        place(NEIGHBOUR, 'fixture_buff_always_fails');
+        place(NEIGHBOUR_2, 'fixture_buff_always_fails');
 
         run(13000);
 
@@ -683,7 +686,7 @@ describe('⚠️ Context COMBINATIONS gate a recipe (CMS-6, CMS-7)', () => {
         const kitchen = place(A, 'fixture_kitchen', 'hero_1');
         StationRecipe.setSelectedRecipe(kitchen, 'pooled_pie');
         place(NEIGHBOUR, 'fixture_pie_tin');
-        place(NEIGHBOUR, 'fixture_cookbook');
+        place(NEIGHBOUR_2, 'fixture_cookbook');
 
         run(21000);
 
@@ -698,7 +701,7 @@ describe('⚠️ Context COMBINATIONS gate a recipe (CMS-6, CMS-7)', () => {
         // One of the two: still gated.
         expect(RecipeResolver.resolveRecipe(idAt(A), kitchen).status).toBe(RECIPE.NONE);
 
-        place(NEIGHBOUR, 'fixture_cookbook');
+        place(NEIGHBOUR_2, 'fixture_cookbook');
         const resolved = RecipeResolver.resolveRecipe(idAt(A), kitchen);
         expect(resolved.status).toBe(RECIPE.OK);
         expect(resolved.recipe.id).toBe('pooled_pie');

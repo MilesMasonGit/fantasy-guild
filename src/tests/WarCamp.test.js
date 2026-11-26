@@ -300,7 +300,8 @@ describe('⭐ a War Camp hero fights every enemy in its reach, one at a time', (
         expect(runUntil(() => !BoardState.getTokenById(later.id))).toBeGreaterThan(0);
 
         // An enemy camp in the War Camp's reach: its spawn lands in reach and is taken too.
-        const den = fixtures.placeAt('wc_den', CAMP.x + 100, CAMP.y - 100);
+        // A spawn lands edges touching its camp, the first free place round it: on this side it is in reach.
+        const den = fixtures.placeAt('wc_den', CAMP.x - 100, CAMP.y - 100);
         SpawnerSystem.attemptSpawn(den, getTokenType('wc_den'));
         const spawned = BoardState.tokens().find(t => t.tether === den.id);
         expect(spawned).toBeTruthy();

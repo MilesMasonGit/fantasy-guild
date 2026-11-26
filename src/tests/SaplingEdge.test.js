@@ -90,11 +90,13 @@ const pointOf = (t) => ({ x: t.x, y: t.y });
 const inReach = (a, b) => (a.x - b.x) ** 2 + (a.y - b.y) ** 2 <= reachRadius() ** 2;
 
 describe('⭐ a Forest plants a Sapling only where it counts as inside its reach', () => {
-    // The Forest's own room keeps a Sapling 131.6 u off, so with a 132 u reach the only free ring
-    // within reach is the reach itself. The Forest stands by the mat's right edge, so the search
-    // passes the exact ring points straight out and reaches ones that measure a hair over.
-    const REACH = 132;
+    // The Forest's own room keeps a Sapling 205.92 u off (edges touching, 208 u, less a 1 %
+    // overlap, so the gap falls between two of the search's 4 u rings), so with a 208 u reach the
+    // only free ring within reach is the reach itself. The Forest stands by the mat's right edge, so
+    // the search passes the exact ring points straight out and reaches ones that measure a hair over.
+    const REACH = 208;
     const forestAt = () => ({ x: matW() - 150.3, y: 400.7 });
+    beforeEach(() => setMatTuning('overlapPct', 1));
 
     it('the case: the only room within reach is on the reach itself, and a spot found there reads as outside', () => {
         setMatTuning('reach', REACH);

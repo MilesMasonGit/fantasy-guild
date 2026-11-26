@@ -97,6 +97,8 @@
         "slotDamaged": "Slot {n} — damaged",
         "noSave": "No save data",
         "damagedHint": "This save can't be read",
+        "slotOutdated": "Slot {n} — older version",
+        "outdatedHint": "Saved by an older version of the game, so it can’t be opened. Start a new guild in an empty slot, or delete this save to free its slot.",
         "version": "ver {version}",
         "newGame": "New game",
         "load": "Load",

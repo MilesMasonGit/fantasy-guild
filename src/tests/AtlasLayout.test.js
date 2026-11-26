@@ -337,11 +337,11 @@ describe('the game\'s side of the layout (layoutInputs)', () => {
 
     it('lays out on the shipped mat, whatever this device\'s Mat Tuner says', () => {
         expect(shippedMat()).toEqual({ w: 1920, h: 1040 });
-        expect(shippedCrowding()).toEqual({ hitboxPct: 90, overlapPct: 30 });
+        expect(shippedCrowding()).toEqual({ hitboxPct: 100, overlapPct: 0 });
         setMatTuning('matSteps', 7);
         setMatTuning('hitboxPct', 60);
         expect(shippedMat()).toEqual({ w: 1920, h: 1040 });
-        expect(shippedCrowding()).toEqual({ hitboxPct: 90, overlapPct: 30 });
+        expect(shippedCrowding()).toEqual({ hitboxPct: 100, overlapPct: 0 });
     });
 
     it('asks about Cannot rules only when a Token in the budget has one', () => {
@@ -350,7 +350,8 @@ describe('the game\'s side of the layout (layoutInputs)', () => {
     });
 
     for (const cap of [128, 256]) {
-        it(`every generated Token passes the game's own placement check (cap ${cap})`, () => {
+        // ⚠️ At 256 most of a whole-mat scan runs for every node left out: some 2 s a seed.
+        it(`every generated Token passes the game's own placement check (cap ${cap})`, { timeout: 60_000 }, () => {
             const summary = budget([
                 base('mixed', 1000, [
                     { typeId: 'atlas_t_oak', weight: 6 }, { typeId: 'atlas_t_fir', weight: 4 },
@@ -364,7 +365,15 @@ describe('the game\'s side of the layout (layoutInputs)', () => {
             for (const seed of SEEDS.slice(0, 4)) {
                 clearMat();
                 const result = layout(summary, layoutOptions(summary, seed));
-                expect(result.unplaced).toEqual([]);
+                if (cap <= 128) {
+                    expect(result.unplaced).toEqual([]);
+                } else {
+                    // ⚠️ Edges touching (128 u apart), the shipped mat holds about 90 Tokens laid
+                    // at random, so a 256 cap's 128 nodes do not all fit: the layout places what
+                    // fits and leaves the rest out, as a full mat refuses a drop.
+                    expect(result.unplaced.length).toBeGreaterThan(0);
+                    expect(result.nodes.length + result.unplaced.length).toBe(summary.entries.reduce((n, e) => n + e.count, 0));
+                }
 
                 placeAt(result.hall.typeId, result.hall.x, result.hall.y);
                 const placed = result.nodes.map(n => ({ node: n, instance: placeAt(n.typeId, n.x, n.y) }));
@@ -383,9 +392,14 @@ describe('the game\'s side of the layout (layoutInputs)', () => {
                 { typeId: 'atlas_t_oak', weight: 4 }, { typeId: 'atlas_t_boat', weight: 1 }, { typeId: 'atlas_t_dock', weight: 1 }
             ], camps: [{ typeId: 'atlas_t_camp', count: 2 }] }
         ], { cap: 128 });
+        let docks = 0;
         for (const seed of SEEDS.slice(0, 4)) {
             clearMat();
             const result = layout(summary, layoutOptions(summary, seed));
+            // ⚠️ Edges touching (128 u apart) the shore band holds few Tokens once the boats are on
+            // the water beside it: what runs out of room is only ever a dock (0 to 3 of 6 land a seed).
+            expect(result.unplaced.every(u => u.typeId === 'atlas_t_dock')).toBe(true);
+            docks += result.nodes.filter(n => n.typeId === 'atlas_t_dock').length;
 
             // The guild is in the Region this layout wrote.
             const region = createRegionRecord('region_9');
@@ -400,11 +414,11 @@ describe('the game\'s side of the layout (layoutInputs)', () => {
                 expect(wet, node.typeId).toBe(node.typeId === 'atlas_t_boat');
             }
             expect(result.nodes.filter(n => n.typeId === 'atlas_t_boat').length).toBeGreaterThan(0);
-            expect(result.nodes.filter(n => n.typeId === 'atlas_t_dock').length).toBeGreaterThan(0);
             // A boat moved a little stays on the water; a plain node may not follow it there.
             const boat = placed.find(p => p.node.typeId === 'atlas_t_boat');
             expect(MatPlacement.isLegal('atlas_t_oak', boat.node, { excludeId: boat.instance.id })).toBe(false);
         }
+        expect(docks).toBeGreaterThan(0);
     });
 });
 

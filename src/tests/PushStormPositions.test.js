@@ -75,25 +75,28 @@ describe('⭐ the S4 push storm lands every Token on the same point (CR3-003, CR
 
     it('does the same work as the bench baseline: every count and the measured rim', () => {
         const id = seen.identity;
-        expect(seen.tokens).toBe(135);
+        // Edges touching (128 u apart), the packed cluster holds fewer: 13 of the 50 arrivals find
+        // no push that works and no free place, and 5 of the landing drops fly back.
+        expect(seen.tokens).toBe(122);
         expect(id.clustered).toBe(24);
-        expect(id.arrivalsLanded).toBe(50);
+        expect(id.arrivalsLanded).toBe(37);
         expect(id.refusedDropsLanded).toBe(0);
-        expect([id.landingPlaced, id.landingNudged, id.landingRefused, id.landingRestocked]).toEqual([1, 49, 0, 0]);
-        expect(id.rimRadius).toBe(444.892526019081);
+        expect([id.landingPlaced, id.landingNudged, id.landingRefused, id.landingRestocked]).toEqual([0, 45, 5, 0]);
+        expect(id.rimRadius).toBe(757.9836214639093);
     });
 
     // Literals taken on from main (cbaa58f) plus this branch's test-only
-    // commits, and taken again when the shipped Token hitbox grew from 80% to 90%.
+    // commits, and taken again when the shipped Token hitbox grew from 80% to 90%,
+    // and when Tokens came to stand edges touching (hitbox 100%, no overlap).
     it('after the 50 arrivals (the push solver, CR3-003)', () => {
-        expect(seen.identity.positionsAfterArrivals).toBe('5cfc8b3b');
+        expect(seen.identity.positionsAfterArrivals).toBe('5dd17ffc');
     });
 
     it('after the 50 landing drops (the nudge search, CR3-150)', () => {
-        expect(seen.identity.positionsAfterDrops).toBe('80394955');
+        expect(seen.identity.positionsAfterDrops).toBe('4ce02d4f');
     });
 
     it('after the shrink from 20 steps to 6', () => {
-        expect(seen.identity.positionsAfterShrink).toBe('b6edeb44');
+        expect(seen.identity.positionsAfterShrink).toBe('eacd5b69');
     });
 });

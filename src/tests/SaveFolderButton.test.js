@@ -11,11 +11,12 @@ import { SaveManager } from '../systems/core/SaveManager.js';
 import * as SaveFiles from '../systems/core/SaveFiles.js';
 import { SettingsManager } from '../systems/core/SettingsManager.js';
 import { fakeSaveDisk } from './fixtures/fakeSaveDisk.js';
+import { GAME_VERSION } from '../state/StateSchema.js';
 
 const h = React.createElement;
 const folderButton = () => document.querySelector('[data-save-folder]');
 const row = (n) => document.querySelector(`[data-save-slot="${n}"]`);
-const save = JSON.stringify({ version: '0.8.1', savedAt: 1, state: { heroes: [], meta: { totalPlaytime: 0 } } });
+const save = JSON.stringify({ version: GAME_VERSION, savedAt: 1, state: { heroes: [], meta: { totalPlaytime: 0 } } });
 
 beforeEach(() => {
     vi.stubGlobal('__APP_VERSION__', '0.0.0-test');

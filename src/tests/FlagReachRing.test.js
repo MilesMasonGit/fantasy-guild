@@ -3,9 +3,9 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import { pixelRingCells, pixelRingPath } from '../ui/components/board/pixelRing.js';
 
 /**
- * A reach ring is drawn in whole art pixels (`pixelRing.js`). A device whose Mat Tuner stored the
- * old untouched hitbox default (80%) gets the new one; any other stored number is still a choice
- * and is kept. The retired flag radius is no row at all.
+ * A reach ring is drawn in whole art pixels (`pixelRing.js`). A device whose Mat Tuner stored an
+ * old untouched hitbox or overlap default gets the new one; any other stored number is still a
+ * choice and is kept. The retired flag radius is no row at all.
  */
 
 describe('the pixel ring', () => {
@@ -72,9 +72,10 @@ describe('the hitbox ships at its new default', () => {
         vi.resetModules();
     });
 
-    it('90% hitbox by default', async () => {
+    it('100% hitbox and 0% overlap by default', async () => {
         const tuning = await loadWith({});
-        expect(tuning.matTuningDefault('hitboxPct')).toBe(90);
+        expect(tuning.matTuningDefault('hitboxPct')).toBe(100);
+        expect(tuning.matTuningDefault('overlapPct')).toBe(0);
     });
 
     it('the retired flag radius is no longer a tuner row: a stored one is ignored', async () => {
@@ -84,10 +85,13 @@ describe('the hitbox ships at its new default', () => {
         expect(tuning.isMatTuned()).toBe(false);
     });
 
-    it('a stored old default (80%) gives way to the new one', async () => {
-        const tuning = await loadWith({ hitboxPct: 80 });
-        expect(tuning.matTuning('hitboxPct')).toBe(90);
-        expect(tuning.isMatTuned()).toBe(false);
+    it('⭐ a stored old default (90% and 30%, or the older 80% and 40%) gives way to the new one', async () => {
+        for (const stored of [{ hitboxPct: 90, overlapPct: 30 }, { hitboxPct: 80, overlapPct: 40 }]) {
+            const tuning = await loadWith(stored);
+            expect(tuning.matTuning('hitboxPct')).toBe(100);
+            expect(tuning.matTuning('overlapPct')).toBe(0);
+            expect(tuning.isMatTuned()).toBe(false);
+        }
     });
 
     it('the retired Near radius row is ignored: a stored 164 never stands in for the standard reach', async () => {
@@ -99,7 +103,8 @@ describe('the hitbox ships at its new default', () => {
     });
 
     it('any other stored number is a choice, and stays', async () => {
-        const tuning = await loadWith({ hitboxPct: 70 });
+        const tuning = await loadWith({ hitboxPct: 70, overlapPct: 10 });
         expect(tuning.matTuning('hitboxPct')).toBe(70);
+        expect(tuning.matTuning('overlapPct')).toBe(10);
     });
 });

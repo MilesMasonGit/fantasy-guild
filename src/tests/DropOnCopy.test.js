@@ -40,7 +40,8 @@ describe('a Token dropped on a copy of itself lands beside it: Tokens never merg
         expect(BoardState.getTokenById(onBoard.id)).toMatchObject({ ...C(7), usesRemaining: 40 });
         const beside = BoardState.getTokenById(incoming.id);
         expect(beside.usesRemaining).toBe(50);
-        expect(Math.hypot(beside.x - onBoard.x, beside.y - onBoard.y)).toBeLessThan(120);
+        // Beside: edges touching (128 u), give or take the nudge search's ring step.
+        expect(Math.hypot(beside.x - onBoard.x, beside.y - onBoard.y)).toBeLessThan(136);
     });
 
     it('with no room beside it the drop flies back whole, and the copy keeps what it had', () => {
