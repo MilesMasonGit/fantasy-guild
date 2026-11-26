@@ -464,6 +464,25 @@ function Summary({ result, asking, restoring, undoFailed, onClose, onAsk, onCanc
                             }))}
                         </Section>
                     )}
+                    {view.mastery.length > 0 && (
+                        <Section id="mastery" title={t('catchUp.news.mastery')} enter={enter}>
+                            {view.mastery.map(m => {
+                                const e = enter();
+                                return (
+                                    <EntityRibbon
+                                        key={m.kind}
+                                        data-mastery-kind={m.kind}
+                                        id={m.spriteId}
+                                        name={m.name}
+                                        subtitle={m.buff}
+                                        size="sm"
+                                        className={e.className}
+                                        style={e.style}
+                                    />
+                                );
+                            })}
+                        </Section>
+                    )}
                     {view.depleted.length > 0 && (
                         <Section id="depleted" title={t('catchUp.news.depleted')} enter={enter}>
                             <CountBars rows={view.depleted} idKey="typeId" idAttr="data-type-id" kind="token" sign="×" enter={enter} />

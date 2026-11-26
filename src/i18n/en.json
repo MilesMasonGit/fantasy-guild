@@ -672,6 +672,7 @@
             "recipes": "New recipes",
             "finds": "First finds",
             "levelUps": "Level-ups",
+            "mastery": "Mastery",
             "depleted": "Tokens used up",
             "events": "Events",
             "leavesIn": "Leaves in {time}",

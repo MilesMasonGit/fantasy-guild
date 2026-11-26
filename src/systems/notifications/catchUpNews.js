@@ -8,7 +8,7 @@ import { guildHeroes } from '../hero/summoned.js';
 
 /**
  * The news a catch-up's quiet bus keeps from the banners and the item stubs (every route is a
- * `UI_LISTENER`): recipes unlocked, first finds, items a full Bank refused, heroes knocked out.
+ * `UI_LISTENER`): recipes unlocked, first finds, items a full Bank refused, heroes knocked out, mastery ranks reached.
  * Heard as plain engine listeners while it plays, handed over afterwards (`routing.js`).
  *
  * ⚠️ Only reads. Nothing here may change the game or draw a random number: a catch-up must play
@@ -24,7 +24,8 @@ import { guildHeroes } from '../hero/summoned.js';
  *   finds: {itemId: string, count: number}[],
  *   bankFull: string[],
  *   stackFull: string[],
- *   knockouts: {heroId: string, heroName: string, times: number, fled: number, lost: string[]}[]
+ *   knockouts: {heroId: string, heroName: string, times: number, fled: number, lost: string[]}[],
+ *   mastery: {kind: string, kindName: string, rank: number, ranks: number, effectId: string|null, scale: number}[]
  * } }}
  */
 export function startNewsCollector() {
@@ -35,6 +36,8 @@ export function startNewsCollector() {
     const stackFull = [];
     /** heroId → row. */
     const knockouts = new Map();
+    /** kind → its highest rank reached, in the order first heard. */
+    const mastery = new Map();
 
     const offs = [
         EventBus.subscribe(ENGINE_EVENTS.HERO_LEVELED, ({ heroId, heroName, skillId, oldLevel, newLevel } = {}) => {
@@ -70,6 +73,11 @@ export function startNewsCollector() {
             row.times++;
             if (fled) row.fled++;
             for (const what of Array.isArray(lost) ? lost : []) if (!row.lost.includes(what)) row.lost.push(what);
+        }),
+        EventBus.subscribe(ENGINE_EVENTS.MASTERY_RANK_UP, ({ kind, kindName, rank, ranks, effectId, scale } = {}) => {
+            if (!kind || !(rank > 0)) return;
+            if ((mastery.get(kind)?.rank || 0) >= rank) return;
+            mastery.set(kind, { kind, kindName: kindName || kind, rank, ranks: ranks || rank, effectId: effectId || null, scale: scale ?? 1 });
         })
     ];
 
@@ -81,7 +89,8 @@ export function startNewsCollector() {
                 finds: finds.map(itemId => ({ itemId, count: Math.max(1, gained[itemId] || 0, net[itemId] || 0) })),
                 bankFull,
                 stackFull,
-                knockouts: [...knockouts.values()]
+                knockouts: [...knockouts.values()],
+                mastery: [...mastery.values()]
             };
         }
     };
@@ -90,5 +99,6 @@ export function startNewsCollector() {
 /** Whether a catch-up's news has anything to say. */
 export function hasNews(news) {
     return !!news && (news.recipes?.length > 0 || news.finds?.length > 0
-        || news.bankFull?.length > 0 || news.stackFull?.length > 0 || news.knockouts?.length > 0);
+        || news.bankFull?.length > 0 || news.stackFull?.length > 0 || news.knockouts?.length > 0
+        || news.mastery?.length > 0);
 }

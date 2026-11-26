@@ -2052,7 +2052,8 @@ drawers**. The menu can be flipped to the right.
   its hover saying how many. **Right, the news**, in this order: **defeats**
   (with the gear lost; T-560), events (each that landed or left, and how),
   tools and weapons that broke (each with the hero who stopped, §5), the Bank
-  or a stack refusing items, new recipes, first finds, level-ups, Tokens used
+  or a stack refusing items, new recipes, first finds, level-ups, Science
+  mastery ranks reached (each kind once, at its highest rank), Tokens used
   up (never enemies), the fights (each enemy and its kill count: **a kill
   counts once**, T-619). An
   empty column says so in one muted line. **Both buttons ask first**: Return

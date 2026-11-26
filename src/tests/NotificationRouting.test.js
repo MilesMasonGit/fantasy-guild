@@ -235,6 +235,18 @@ describe('milestones and problems are banners', () => {
         expect(kinds).toContainEqual(['knockout', 'Bram was carried home, injured. Lost: Iron Sword.']);
     });
 
+    it('time away with no summary: a mastery rank reached is told by its banner, the highest rank of a kind once', () => {
+        const collector = startNewsCollector();
+        EventBus.publish(ENGINE_EVENTS.MASTERY_RANK_UP, { kind: 'k_vein', kindName: 'Copper Vein', rank: 1, ranks: 3, effectId: null, scale: 1 });
+        EventBus.publish(ENGINE_EVENTS.MASTERY_RANK_UP, { kind: 'k_vein', kindName: 'Copper Vein', rank: 2, ranks: 3, effectId: null, scale: 1 });
+        const news = collector.stop();
+        expect(news.mastery).toEqual([{ kind: 'k_vein', kindName: 'Copper Vein', rank: 2, ranks: 3, effectId: null, scale: 1 }]);
+        Banners.reset();
+        deliverCatchUpNews(news);
+        const all = Banners.getAll().map(b => [b.kind, b.line]);
+        expect(all).toEqual([['mastery', 'Copper Vein mastery II']]);
+    });
+
     it('a banner coming on screen plays a chime, or a warning tone for a problem', () => {
         const clips = [];
         const off = EventBus.subscribe(ENGINE_EVENTS.AUDIO_PLAY, (p) => clips.push(p.clip));

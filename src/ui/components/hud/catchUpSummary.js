@@ -1,9 +1,12 @@
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
+import { getRecipe } from '../../../config/registries/recipePoolRegistry.js';
+import { effectName } from '../../../config/registries/effectRegistry.js';
+import { effectTitle } from '../../../systems/effects/effectLibrary.js';
 import { CATCH_UP } from '../../../config/loopConstants.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as EventTokens from '../../../systems/board/EventTokens.js';
-import { countdownText, elapsedText, lengthText } from '../../../utils/Formatters.js';
+import { countdownText, elapsedText, lengthText, toRoman } from '../../../utils/Formatters.js';
 import { t } from '../../../i18n/index.js';
 
 const MINUTE = 60 * 1000;
@@ -16,6 +19,16 @@ function fallbackName(id) {
 
 const itemName = (id) => getItem(id)?.name || fallbackName(id);
 const tokenName = (id) => getTokenType(id)?.name || fallbackName(id);
+
+/** A mastery rank's row: the kind's picture is its Token's, or for a crop its first output's. */
+function masteryRow({ kind, kindName, rank, effectId, scale }) {
+    return {
+        kind,
+        spriteId: getTokenType(kind) ? kind : (getRecipe(kind)?.outputs?.[0]?.itemId || kind),
+        name: t('science.rankUpPlain', { kind: kindName || kind, rank: toRoman(Math.max(1, Math.floor(rank) || 1)) }),
+        buff: effectId ? effectTitle(effectName(effectId), scale ?? 1) : null
+    };
+}
 
 /** `{ id: n }` → rows biggest first, then by name; zero and negative amounts are left out. */
 function rows(amounts, nameOf, key) {
@@ -141,10 +154,10 @@ function eventRows(summaryEvents, live) {
 /**
  * The "While you were away" panel's content, from a catch-up's result (`CatchUp.run`), in two
  * columns. `items` is the left one (`itemChanges`). The right one is the news, in this order:
- * `knockouts` (the defeats), `events`, `broken`, `bankFull`, `stackFull`, `recipes`, `finds`, `levelUps`, `depleted`, `kills`. Every list is
+ * `knockouts` (the defeats), `events`, `broken`, `bankFull`, `stackFull`, `recipes`, `finds`, `levelUps`, `mastery`, `depleted`, `kills`. Every list is
  * empty when there is nothing to say, so the panel can leave that section out; `hasNews` says
  * whether the right column has anything at all. The news the banners and stubs also get once it
- * closes (`summary.news`) are the knock-outs, `bankFull`, `stackFull`, `recipes` and `finds`.
+ * closes (`summary.news`) are the knock-outs, `bankFull`, `stackFull`, `recipes`, `finds` and `mastery`.
  */
 export function summaryView(result, live = LIVE_EVENTS) {
     const summary = result?.summary || {};
@@ -182,13 +195,15 @@ export function summaryView(result, live = LIVE_EVENTS) {
         /** Items found for the first time, in the order found, with how many came in. */
         finds: (news.finds || []).map(f => ({ itemId: f.itemId, name: itemName(f.itemId), count: f.count })),
         levelUps: [...levelUps.values()],
+        /** Science mastery ranks reached, one row a kind at its highest: `{ kind, spriteId, name, buff }`. */
+        mastery: (news.mastery || []).map(masteryRow),
         depleted: rows(summary.depleted?.byType, tokenName, 'typeId'),
         /** The fights: each enemy beaten, with how many times. */
         kills: rows(summary.fightsWon?.byEnemy, tokenName, 'enemyId'),
         /** Events that landed or left while away, and those still on the mat, one row per kind (`eventRows`). */
         events: eventRows(summary.events || [], live)
     };
-    view.hasNews = ['knockouts', 'events', 'broken', 'bankFull', 'stackFull', 'recipes', 'finds', 'levelUps', 'depleted', 'kills'].some(k => view[k].length > 0);
+    view.hasNews = ['knockouts', 'events', 'broken', 'bankFull', 'stackFull', 'recipes', 'finds', 'levelUps', 'mastery', 'depleted', 'kills'].some(k => view[k].length > 0);
     return view;
 }
 

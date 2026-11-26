@@ -32,6 +32,7 @@ import {
 } from '../config/registries/mastery.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import * as fixtures from '../../bench/fixtures.mjs';
+import { summaryView } from '../ui/components/hud/catchUpSummary.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -571,6 +572,20 @@ describe('mastery through a save and time away', () => {
         const caught = { points: Mastery.pointsOf(LASTING_VEIN), xp: science() };
         expect(caught).toEqual(live);
         expect(caught.points).toBeGreaterThanOrEqual(25);
+    });
+
+    it('time away: a mastery rank reached while away is in the away summary, its kind once at its highest rank', async () => {
+        const AWAY = 60_000;
+        build();
+        const NOW = 1_800_000_000_000;
+        const result = await CatchUp.run({ save: false, yieldFn: () => Promise.resolve(), savedAt: NOW - AWAY, now: NOW });
+        const rank = Mastery.rankOf(LASTING_VEIN);
+        expect(rank).toBeGreaterThanOrEqual(2);
+        expect(result.summary.news.mastery).toEqual([expect.objectContaining({ kind: LASTING_VEIN, kindName: 'Fixture Lasting Vein', rank, ranks: 3 })]);
+        const view = summaryView(result);
+        expect(view.hasNews).toBe(true);
+        expect(view.mastery).toEqual([expect.objectContaining({ kind: LASTING_VEIN, spriteId: LASTING_VEIN, name: `Fixture Lasting Vein mastery ${'I'.repeat(rank)}` })]);
+        expect(view.mastery[0].buff).toBeTruthy();
     });
 
     it('time away: a studied node that ends by chance rests, and the study waits for its refill', async () => {
