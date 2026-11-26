@@ -7,7 +7,8 @@
     "Empty stretches: 33 flagged. 15 last more than a day of typical play and are on the gaps list; 2 in Construction wait on its repeatable work; the rest last minutes or hours and are left alone.",
     "Fishing: most of its old stretches were the page's mistake. It didn't count a catch with its own level (Salmon at 40, Lobster at 50, Swordfish at 63) as something new. Fishing now has 17 unlocks, not 8, and Cooked Salmon no longer shows as arriving at the start of the game.",
     "Cooking and Smithing (first run, same day): on the curve, no empty stretches, every new recipe pays more than the one before.",
-    "Not checked yet: the ledger's own timing. The ledger read-out isn't built and the plan isn't in the CMS, so these are the page's numbers only."
+    "The ledger read-out now runs (the director built it tonight), on the live game, not the plan: the plan isn't in the CMS and no number pack has gone in. Before the pack, the live game is far off the curve: Cooking reaches 99 in 3.8 days for a maxed player and Farming and Forestry in under 7 (the curve says 15.3 at the ledger's old 6.5 % setting), Fishing takes 19.6, Smithing 11.6. Live recipes pay about 1.5 to 3.5 times the XP a second the rules give, on the old XP table. This is what the first number pack is for.",
+    "The page and the ledger can't be compared on the plan yet. What the ledger shows so far about the page's assumptions: in the gathering skills a typical player is as fast as a maxed one from mid-game on, because the boosts the budget counts on mostly aren't built for them yet; in Smithing and Crafting the gap late is 1.8 to 2.3 times, close to the page's 1.9."
   ],
   "moved": [
     "Approved by the owner, 2026-11-25, the coin rule: an item's worth is the time in it; an everyday purchase's coins cost one level's time of one hero's selling (5 minutes at copper, 6 hours at darkmetal) and a big one (a new place, a Hall star) half its item price's work (30 minutes at copper, 12 hours at darkmetal); a fighter earns about half a worker's coins; the coin building adds at most 10 %.",
@@ -30,7 +31,7 @@
   "waiting": [
     "On the owner: the CMS Ledger's pace curve still holds the 6.5 % points (1 = 3 ... 99 = 1437). Set it to the 6.25 % points when convenient: 1 = 3, 10 = 5, 20 = 9, 30 = 17, 40 = 32, 50 = 59, 60 = 107, 70 = 197, 80 = 361, 90 = 661, 99 = 1141.",
     "On the director: the ledger prices every coin cost from one curve; the rule needs an everyday curve and a big-purchase curve (a new ticket, T-713).",
-    "On the director: the ledger read-out and the ledger's new tiers and boost budget (brief 880, L1 to L3). The ledger's pace curve should use the 6.25 % points in BALANCE_RULES section 1, not the 6.5 % ones. With the first number pack: the new XP table (9.4 million XP to 99) and the drink's 50-cycle dose.",
+    "On the director: the ledger's new tiers, gatherers per crafter and boost budget (brief 880, L2 and L3), and a no-boosts column in the read-out so the page's boost factor (1.4x at copper to 3x at darkmetal) can be checked. The ledger's pace curve should use the 6.25 % points. With the first number pack: the new XP table (9.4 million XP to 99) and the drink's 50-cycle dose.",
     "On the content session: the plan in the CMS as Planned entries, and the fifteen gaps. Also to look at: Arrowheads unlock later than the arrows that need them at every metal.",
     "On the balancer: a work potion's dose and batch; Construction once its repeatable work is planned; checking coin prices against the engine once the ledger read-out exists."
   ]

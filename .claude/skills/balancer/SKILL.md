@@ -41,7 +41,10 @@ director, through tickets); combat numbers (a later pass); `data/` (the owner's 
 1. **Run the solver** over the chains in hand: `node .claude/skills/balancer/balance_solver.cjs`
    (with a dials file to try settings). Once brief 880 L1 is on `main` and the plan is in the CMS,
    also **read the ledger**: `npm run cms -- ledger --json=<scratchpad>/ledger.json`, from the main
-   checkout (the workspace lives there), read-only.
+   checkout (the workspace lives there), read-only. (Built 2026-11-25: `npm --prefix <main folder> run cms -- ledger --json=<file>`,
+   about 40 s. It gives `pace` per skill and level (curve, opt = Maxed, typ = Typical, guild, best work),
+   `rows` per entry at Bare, `stages` and `checks`; Planned entries are untimed, and `curve` is the CMS
+   setting, not the solver's.)
 2. **Compare the page and the ledger.** Where they disagree, **the ledger wins**: fix the solver's
    rule, and say in the report what it learned.
 3. **Adjust on your own, inside the limits** (concept_balancing_view, "The system's limits"): XP per
