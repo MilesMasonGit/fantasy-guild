@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { makeTokenConfig, makeInputEntry, makeOutputEntry, makeCurrencyOutputEntry } from '../../stores/useEntityStore';
 import SupplyChainColumn from './SupplyChainColumn';
+import OutputsPin from '../shared/OutputsPin';
 import { derivedTokenType, expandBearer } from '../../utils/constants';
 
 /** The 3-column shape: origins on the left, the editor in the middle, products on the right. Tokens get editable Inputs and Outputs; Items and maps get a read-only dependency view of which Tokens produce (drop) or consume them. */
@@ -35,6 +36,7 @@ export default function SupplyChainLayout({ children }) {
       rightEntries: config?.outputs || [],
       leftHint: isEnemy ? 'Enemies usually consume nothing.' : 'No inputs.',
       rightHint: isEnemy ? 'No drops yet.' : 'No outputs yet.',
+      isEnemy,
     };
   }, [token]);
 
@@ -94,6 +96,9 @@ export default function SupplyChainLayout({ children }) {
             editList('outputs', (list) => list.map((e, idx) => (idx === i ? { ...e, ...patch } : e)))
           }
           onRemove={(i) => editList('outputs', (list) => list.filter((_, idx) => idx !== i))}
+          footer={tokenSidebars.isEnemy ? null : (
+            <OutputsPin sim={token.sim} onChange={(patch) => updateToken(activeId, { sim: { ...(token.sim || {}), ...patch } })} />
+          )}
         />
       </div>
     );

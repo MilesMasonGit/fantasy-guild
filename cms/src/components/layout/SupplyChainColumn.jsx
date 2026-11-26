@@ -5,6 +5,7 @@ import IOEntryList from '../shared/IOEntryList';
 /**
  * One side column: what feeds the selected entity, or what it feeds. Reference mode (Items and maps) is a read-only, clickable list of the Tokens on either side of the item; editable mode (Tokens and Recipes) is `IOEntryList` inside this column chrome.
  * ⚠️ `onAddToken` is forwarded because only a recipe can output a Token and only a Token can pay out currency; each caller passes the one that applies.
+ * `footer` is drawn under the list (the Outputs pin).
  */
 const TYPE_META = {
   item: { icon: Package, collection: 'items', color: 'var(--color-item)' },
@@ -24,6 +25,7 @@ export default function SupplyChainColumn({
   onUpdate,
   onRemove,
   emptyHint,
+  footer = null,
 }) {
   const setActiveEntity = useEntityStore((s) => s.setActiveEntity);
   const items = useEntityStore((s) => s.items);
@@ -87,6 +89,7 @@ export default function SupplyChainColumn({
             onRemove={onRemove}
           />
         )}
+        {footer}
       </div>
     </div>
   );

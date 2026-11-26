@@ -18,6 +18,7 @@ import SimIntentControls from '../shared/SimIntentControls';
 import SimAnswer from '../shared/SimAnswer';
 import XpPin from '../shared/XpPin';
 import TimePin from '../shared/TimePin';
+import OutputsPin from '../shared/OutputsPin';
 import PlanFields from '../shared/PlanFields';
 
 /** Pooled recipes: authoring and review on one screen. A recipe is owned by its skill, not by any Token, so this is a top-level screen. It has a stable global `id`, minted on create and never edited here. */
@@ -252,6 +253,7 @@ export default function RecipeEditor() {
           onAddToken={(tokenId) => editSide('outputs', (list) => [...list, makeTokenOutputEntry(tokenId)])}
           onUpdate={(i, p) => editSide('outputs', (list) => list.map((e, n) => (n === i ? { ...e, ...p } : e)))}
           onRemove={(i) => editSide('outputs', (list) => list.filter((_, n) => n !== i))}
+          footer={<OutputsPin sim={activeRecipe.sim} onChange={(patch) => updateRecipe(activeSkill, idx, { sim: { ...(activeRecipe.sim || {}), ...patch } })} />}
         />
       )}
     </div>

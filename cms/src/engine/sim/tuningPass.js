@@ -1,6 +1,7 @@
 /**
  * Economic simulator, pass 4 of 5: TUNE, the lever policy. A source that inherits a value it did not set is nudged into its earnings band by ONE legible lever, or refused.
  * ⚠️ The band judges a source's total profit per hour, never one output at a time: a level-40 Token whose main output carries its earnings is in band even though the cheap material it also drops would look absurd judged alone. Levers run in order, one at a time: the band forgives it (a non-anchor gets twice the anchor band), quantity range, chance, cycle time, then refuse.
+ * ⚠️ A pin takes its lever away: `sim.outputsPinned` the quantity and the chance, `sim.timePinned` the cycle. With both, nothing is left to move, and the source is left as written rather than refused.
  */
 
 import { bandFor } from '../ledger/tempoBands.js';
@@ -185,6 +186,8 @@ export function runTuningPass(entities, {
         const t = timing.get(entity.id);
         if (!t) continue;
 
+        if (entity.outputsPinned) rows.push(outputsPinnedRow(entity));
+
         const tuning = judge(entity, {
             cycleTimeMs: t.cycleTimeMs,
             anchoredItemIds: anchoredBy.get(entity.id) ?? [],
@@ -287,6 +290,7 @@ function judge(entity, { cycleTimeMs, anchoredItemIds, values, details, dials, r
     if (inBand(baseEarnings.profitPerHour, targetPerHour, band)) {
         return { ...record, after: { ...before, ...baseEarnings }, inBand: true };
     }
+    if (entity.outputsPinned && entity.timePinned) return { ...record, skippedReason: 'pinned' };
 
     const cph = baseEarnings.cyclesPerHour;
     let dominant = -1;
@@ -328,7 +332,7 @@ function judge(entity, { cycleTimeMs, anchoredItemIds, values, details, dials, r
 
     const overCap = ratio > CORRECTION_CAP || ratio < 1 / CORRECTION_CAP;
     // Volume is an IPH Token's character, so its quantity range may travel as far as it needs; chance and cycle stay capped even here.
-    const quantityExempt = overCap && entity.purpose === 'iph';
+    const quantityExempt = overCap && entity.purpose === 'iph' && !entity.outputsPinned;
 
     if (overCap && !quantityExempt) {
         rows.push(makeRefusal('correction-too-large', {
@@ -338,7 +342,8 @@ function judge(entity, { cycleTimeMs, anchoredItemIds, values, details, dials, r
         return { ...record, refusalCode: 'correction-too-large' };
     }
 
-    for (const candidate of quantityCandidates(output, ratio)) {
+    // A pinned output is not a lever: moving it would undo the pin on the way out.
+    for (const candidate of entity.outputsPinned ? [] : quantityCandidates(output, ratio)) {
         const state = withOutput(before, dominant, candidate);
         const earned = earningsPerHour(entity, state, values);
         if (!inBand(earned.profitPerHour, targetPerHour, band)) continue;
@@ -374,7 +379,7 @@ function judge(entity, { cycleTimeMs, anchoredItemIds, values, details, dials, r
 
     // Step 2: chance, only where the author made this output variable.
     // ⚠️ A 100%-chance output is never made random: the `variable` intent flag says the author meant this to be a dial, and a chance under 100% says the dial already exists. Both are required.
-    if (output.variable && output.chancePercent < 100) {
+    if (output.variable && output.chancePercent < 100 && !entity.outputsPinned) {
         for (const rung of snapChanceLadder(output.chancePercent * ratio)) {
             if (rung === output.chancePercent) continue;
             const state = withOutput(before, dominant, { chancePercent: rung });
@@ -419,6 +424,21 @@ function judge(entity, { cycleTimeMs, anchoredItemIds, values, details, dials, r
     }));
 
     return { ...record, refusalCode: 'levers-exhausted' };
+}
+
+/** The Info row for a pinned source's outputs, beside the time pin's own row. */
+function outputsPinnedRow(entity) {
+    return makeRow(
+        SEVERITY.INFO,
+        'outputs-pinned',
+        `${entity.name}'s outputs are pinned: Recalculate keeps every count and chance written on it.`,
+        {
+            entityId: entity.id,
+            what: `${entity.name} keeps its output counts and chances as written, whatever its earnings band would ask.`,
+            why: 'Recalculate and Sync leave pinned outputs alone: the quantity and chance levers do not move them. A number pack pins the outputs it writes, so they survive.',
+            remedies: ['Untick the pin under its outputs in the editor to let Recalculate tune them again.'],
+        }
+    );
 }
 
 /** The standing Purpose-mismatch row. Two sources of one item with different Purpose tags aim at targets about 3× apart before any yield difference, the commonest reason tuning strains. The simulator does not forbid it; it names it once per item so the cause is already written down when a refusal shows up nearby. */
