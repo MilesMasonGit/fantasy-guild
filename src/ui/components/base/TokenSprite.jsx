@@ -1,6 +1,6 @@
 import { useLayoutEffect, useRef } from 'react';
 import { cn } from '../../utils/cn.js';
-import { ART_PX, tokenBodyScale } from '../../../config/matGeometry.js';
+import { ART_PX } from '../../../config/matGeometry.js';
 import { tokenName, tokenSpritePath, getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { preloadAlphaMask } from '../../utils/alphaHitTest.js';
@@ -93,19 +93,10 @@ export const tokenSizeFor = (surface, typeIdOrSize = 1, scale = TOKEN_SCALE[surf
     if (typeof typeIdOrSize === 'number') {
         sizeMultiplier = typeIdOrSize;
     } else if (typeof typeIdOrSize === 'string') {
-        sizeMultiplier = (getTokenType(typeIdOrSize)?.size || 1) *
-            (ON_MAT_SURFACES.has(surface) ? tokenBodyScale(typeIdOrSize) : 1);
+        sizeMultiplier = getTokenType(typeIdOrSize)?.size || 1;
     }
     return ART_PX * sizeMultiplier * scale;
 };
-
-/**
- * The surfaces where a small Token is drawn at half size: the mat itself, the hand carrying a
- * Token onto it (the ghost is the size of the hole it is going into) and the floor. Listings
- * keep the full icon: they are about which Token, not how big it stands. Only a type id gets
- * the halving; a bare number is a footprint and means what it always did.
- */
-const ON_MAT_SURFACES = new Set([TOKEN_SURFACE.BOARD, TOKEN_SURFACE.CARRY, TOKEN_SURFACE.FLOOR]);
 
 /**
  * Hard pixel shadows and outlines, as pictures.

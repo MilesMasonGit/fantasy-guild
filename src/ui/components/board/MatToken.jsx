@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '../../utils/cn.js';
-import { artRadiusOf, isSmallToken } from '../../../config/matGeometry.js';
+import { artRadiusOf } from '../../../config/matGeometry.js';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
 import { useDraggable } from '@dnd-kit/core';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
@@ -160,10 +160,9 @@ export const MatToken = React.memo(function MatToken({
     // Perf draw switches: each only stops DRAWING (see drawSwitches.js).
     const bubblesDrawn = useDrawn('bubbles');
     const walkDrawn = useDrawn('walkDraw');
-    // The radius and the art both come from the type (footprint and `artSize` alike), so a
-    // small Token is half size here exactly as it is to the engine (`artRadiusOf`).
+    // The radius and the art both come from the type's footprint, as they do to the engine
+    // (`artRadiusOf`).
     const r = artRadiusOf(typeId);
-    const small = isSmallToken(typeId);
 
     /**
      * How big this Token's art is drawn, in mat units. The mat's zoom turns `artPx` mat
@@ -483,7 +482,6 @@ export const MatToken = React.memo(function MatToken({
                 data-token-id={id}
                 data-token-art="true"
                 data-token-type={typeId}
-                data-token-small={small ? 'true' : undefined}
                 data-guild-hall={isHall ? 'true' : undefined}
                 data-tile-alert={alert || undefined}
                 data-tile-staffed={staffed ? 'true' : undefined}

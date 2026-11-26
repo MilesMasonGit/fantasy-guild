@@ -361,10 +361,12 @@ The mat is a **free playmat**: Tokens stand at points in mat units, no grid, no 
 must call `matW()`/`matH()` rather than cache them (`matGeometry.js:16-30`).
 
 A Token has two sizes. Its **drawn body** (`artRadiusOf`) is what is drawn, clicked and stood
-beside. Its **room** (`MatPlacement.roomRadiusOf`) is the largest body of its cycle: what it grows
-into, regrows as, or (a Foundation) can build. Every spacing gap, the mat-edge test, every search
-and every push read the room, so a small Stump keeps its Tree's spot and a transform finds its
-own point free.
+beside: its footprint's alone (1×1 or 2×2; every Token is one size, a leftover `artSize` is read
+as standard and named by the boot audit). Its **room** (`MatPlacement.roomRadiusOf`) is the largest
+body of its cycle: what it grows into, regrows as, or (a Foundation) can build. Every spacing gap,
+the mat-edge test, every search and every push read the room, so a Foundation keeps room for its
+largest build and a transform finds its own point free. Two rooms may meet edge to edge, never
+overlap (`matTuning.js`: hitbox 100 %, overlap 0 %).
 
 The mat is fitted to the window by **CSS `zoom`** (`Board.jsx` `matZoomStyle`, the fit from
 `useBoardScale`), not a transform: Chrome lays it out at screen size, so every sprite, sized in

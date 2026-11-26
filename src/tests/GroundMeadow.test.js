@@ -194,15 +194,16 @@ function dryRegion() {
 /**
  * Recorded on `main` at fe151c8e, before the ground rule existed, with this script unchanged, and
  * again when the shipped Token hitbox grew from 80% to 90%, when the Near radius (164 u) became
- * the one standard reach, and when Tokens came to stand edges touching (hitbox 100%, no overlap).
- * Only a deliberate change to how a meadow places Tokens may change it.
+ * the one standard reach, when Tokens came to stand edges touching (hitbox 100%, no overlap), and
+ * when every Token became one size (the script's small Token is now standard). Only a deliberate
+ * change to how a meadow places Tokens may change it.
  *
  * ⚠️ The script's rocks keep apart by a `Cannot` rule, which counts what stands within the standard
  * reach (`STANDARD_REACH_U`), so a new reach changes where they may go and this fingerprint with
  * it, though the ground has no say. The engine bench's boards carry no `Cannot` rule and do not
  * see such a change.
  */
-const MEADOW_FINGERPRINT = '314cc780';
+const MEADOW_FINGERPRINT = '4c3b9106';
 
 describe('⭐ a meadow Region places exactly as before (decision 15)', () => {
     // On the 11-step, 0.64 mat the script was recorded on: what it guards is how a meadow places
@@ -231,8 +232,8 @@ describe('⭐ a meadow Region places exactly as before (decision 15)', () => {
             expect(log.some(e => e[0] === 'drop' && e[4] === false)).toBe(true);
             expect(log.some(e => e[0] === 'push' && Array.isArray(e[6]) && e[6].length > 0)).toBe(true);
             expect(log.some(e => e[0] === 'spawn' && e[3] !== null)).toBe(true);
-            // A full mat: about 95 Tokens stand edges touching (128 u apart) on this one.
-            expect(board.length).toBeGreaterThan(90);
+            // A full mat: about 90 Tokens stand edges touching (128 u apart) on this one.
+            expect(board.length).toBeGreaterThan(85);
             const print = fnv(JSON.stringify({ log, board }));
             if (MEADOW_FINGERPRINT === 'RECORD_ME') console.log(`MEADOW_FINGERPRINT ${label}: ${print}`);
             expect(print).toBe(MEADOW_FINGERPRINT);
@@ -251,9 +252,10 @@ describe('⭐ a meadow Region places exactly as before (decision 15)', () => {
  * new Regions place that way, stored ones keep their layout. Recorded again when the shipped Token
  * hitbox grew from 80% to 90%: a layout keeps the placement rule's own gaps. Recorded again when the
  * shipped mat became 1920 × 1040 (12 by 6.5 steps): new Regions are laid out on it. Recorded again
- * when Tokens came to stand edges touching (hitbox 100%, no overlap).
+ * when Tokens came to stand edges touching (hitbox 100%, no overlap), and when every Token became
+ * one size (the small bush is now standard).
  */
-const LAYOUT_FINGERPRINT = 'c078138b';
+const LAYOUT_FINGERPRINT = '458dc412';
 
 registerTokenTypes({
     gm_oak: { id: 'gm_oak', name: 'GM Oak', tokenType: 'resource', size: 1, uses: 5, requiresHero: true, config: { skill: 'logging', skillRequired: 1, cycleTimeMs: 3000, inputs: [], outputs: [] } },

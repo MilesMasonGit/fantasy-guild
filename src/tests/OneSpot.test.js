@@ -88,8 +88,8 @@ const arrive = (typeId, x, y) => {
 };
 
 describe('⭐ the room a Token takes is the largest body of its whole cycle', () => {
-    it('a Stump and a Sapling take their Tree\'s room, though they are drawn small', () => {
-        expect(artRadiusOf(STUMP)).toBe(artRadiusOf(TREE) / 2);
+    it('a Stump and a Sapling take their Tree\'s room, and are drawn at its size too (one size)', () => {
+        expect(artRadiusOf(STUMP)).toBe(artRadiusOf(TREE));
         expect(MatPlacement.roomRadiusOf(STUMP)).toBe(artRadiusOf(TREE));
         expect(MatPlacement.roomRadiusOf(SAPLING)).toBe(artRadiusOf(TREE));
         expect(MatPlacement.hitRadiusOf(STUMP)).toBe(MatPlacement.hitRadiusOf(TREE));

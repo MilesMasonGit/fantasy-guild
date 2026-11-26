@@ -10,12 +10,13 @@ import { useEntityStore } from '../../cms/src/stores/useEntityStore';
 import { useSimulationStore } from '../../cms/src/stores/useSimulationStore';
 import { syncFiles } from '../../cms/src/engine/recipeSync';
 import TokenEditor from '../../cms/src/components/editors/TokenEditor.jsx';
-import { isSmallToken } from '../config/matGeometry.js';
+import { auditContent } from '../systems/core/ContentAudit.js';
 
 /**
- * B8.1 — the CMS models **`artSize`** before any content uses it (roadmap v1
- * §0.3: Sync destroys what the CMS does not carry). Slice B8.2 then sets the
- * saplings and the sprout small through the CMS.
+ * ⭐ One Token size (owner 2026-11-26): the Token editor has no Token Size control and writes no
+ * `artSize`. A Token still carrying the field keeps it through every edit and sync (Sync destroys
+ * only what the CMS does not carry, and it carries every field), the game reads it as standard,
+ * and the boot audit names it until a change pack removes it.
  */
 const DATA = path.resolve(__dirname, '../../data');
 const FILES = ['items.json', 'tokens.json', 'tokenRecipes.json', 'effects.json'];
@@ -53,13 +54,8 @@ function syncPayload() {
 
 const shippedTokens = JSON.parse(raw['tokens.json']);
 const STANDARD = 'token_stone_outcrop';
-// The stumps and the sprout, and the small creatures: the Wolf, the Crab and the Bee on plane 1, the
-// Fire Elemental, the Frog and the Sulphur Lizard on plane 2.
-const SHIPPED_SMALL = [
-    'token_bee', 'token_birch_stump', 'token_cedar_stump', 'token_crab', 'token_ebony_stump', 'token_fir_stump',
-    'token_fire_elemental', 'token_frog', 'token_mahogany_stump', 'token_maple_stump', 'token_oak_stump',
-    'token_sulphur_lizard', 'token_wheat_sprout', 'token_wolf',
-];
+const marked = () => Object.keys(shippedTokens).filter((id) => 'artSize' in shippedTokens[id]).sort();
+const LINE = 'which the game no longer reads: every Token is drawn and spaced at one size';
 
 beforeEach(() => load(shipped()));
 afterEach(() => {
@@ -68,88 +64,53 @@ afterEach(() => {
 });
 
 describe('a control sync of today’s data changes nothing', () => {
-    it('exactly the stumps, the sprout and the small creatures ship small (B8.2, through the CMS)', () => {
-        const marked = Object.keys(shippedTokens).filter((id) => 'artSize' in shippedTokens[id]).sort();
-        expect(marked).toEqual(SHIPPED_SMALL);
-        for (const id of SHIPPED_SMALL) {
-            expect(shippedTokens[id].artSize).toBe('small');
-            expect(shippedTokens[id].size).toBe(1);
-        }
-        expect('artSize' in shippedTokens[STANDARD]).toBe(false);
-        expect(shippedTokens[STANDARD].size).toBe(1);
-    });
-
-    it('load → Recalculate → Sync writes all four files byte-identical', () => {
+    it('load → Recalculate → Sync writes all four files byte-identical, a leftover Token Size included', () => {
         const files = syncPayload();
         for (const f of FILES) expect(JSON.stringify(files[f], null, 2)).toBe(raw[f].trimEnd());
+        for (const id of marked()) expect(files['tokens.json'][id].artSize).toBe(shippedTokens[id].artSize);
     });
 });
 
-describe("artSize: 'small' survives load → edit → sync → reload", () => {
-    it("reaches tokens.json on that Token only, the rest of its record untouched", () => {
-        const before = { ...useEntityStore.getState().tokens[STANDARD] };
-        useEntityStore.getState().updateToken(STANDARD, { artSize: 'small' });
-
-        const written = syncPayload()['tokens.json'][STANDARD];
-        expect(written).toEqual({ ...before, artSize: 'small' });
-        expect(isSmallToken(written)).toBe(true);
-    });
-
-    it('a second load of the synced files and a second sync change nothing, and keep it', () => {
-        useEntityStore.getState().updateToken(STANDARD, { artSize: 'small' });
-        const first = syncPayload();
-        const serialised = Object.fromEntries(FILES.map((f) => [f, JSON.stringify(first[f], null, 2)]));
-
-        load(Object.fromEntries(FILES.map((f) => [f, JSON.parse(serialised[f])])));
-        const second = syncPayload();
-        for (const f of FILES) expect(JSON.stringify(second[f], null, 2)).toBe(serialised[f]);
-        expect(second['tokens.json'][STANDARD].artSize).toBe('small');
-
-        const now = second['tokens.json'];
-        for (const other of Object.keys(shippedTokens).filter((t) => t !== STANDARD)) {
-            expect(JSON.stringify(now[other])).toBe(JSON.stringify(shippedTokens[other]));
-        }
-        // Every other file is exactly as shipped.
-        for (const f of FILES.filter((x) => x !== 'tokens.json')) {
-            expect(serialised[f]).toBe(raw[f].trimEnd());
-        }
+describe('⭐ the audit names every shipped Token still carrying a Token Size', () => {
+    it('one line on each, and none on a Token without the field', () => {
+        const lines = auditContent().filter((f) => f.what.includes(LINE));
+        expect(lines.map((f) => f.where).sort()).toEqual(marked().map((id) => `Token "${id}"`));
+        expect('artSize' in shippedTokens[STANDARD]).toBe(false);
     });
 });
 
-describe('the Token editor’s Token Size control', () => {
+describe('⭐ the Token editor has no Token Size control', () => {
     function editor(id) {
         useEntityStore.getState().setActiveEntity(id, 'token');
         return render(React.createElement(TokenEditor));
     }
 
-    it('Small writes artSize: small; Standard removes it and the sync is byte-identical again', () => {
+    it('no control by that name, and no select offering small', () => {
         const { container } = editor(STANDARD);
-        const select = within(container).getByLabelText('Token Size');
-        expect(select.value).toBe('standard');
-        expect(select.disabled).toBe(false);
-
-        fireEvent.change(select, { target: { value: 'small' } });
-        expect(useEntityStore.getState().tokens[STANDARD].artSize).toBe('small');
-        expect(select.value).toBe('small');
-
-        fireEvent.change(select, { target: { value: 'standard' } });
-        expect(useEntityStore.getState().tokens[STANDARD].artSize).toBeUndefined();
-        const files = syncPayload();
-        expect(JSON.stringify(files['tokens.json'], null, 2)).toBe(raw['tokens.json'].trimEnd());
+        expect(within(container).queryByLabelText('Token Size')).toBeNull();
+        expect(container.textContent).not.toContain('Token Size');
+        const offersSmall = [...container.querySelectorAll('select')].some((s) => [...s.options].some((o) => o.value === 'small'));
+        expect(offersSmall).toBe(false);
     });
 
-    it('⚠️ a 2×2 cannot be small: the control is disabled and going 2×2 clears it', () => {
+    it('going 2×2 writes the size and nothing else', () => {
+        const before = { ...useEntityStore.getState().tokens[STANDARD] };
+        const { container } = editor(STANDARD);
+        const grid = [...container.querySelectorAll('select')]
+            .find((s) => [...s.options].map((o) => o.value).join() === '1,2');
+        fireEvent.change(grid, { target: { value: '2' } });
+        expect(useEntityStore.getState().tokens[STANDARD]).toEqual({ ...before, size: 2 });
+    });
+
+    it('an edit to a Token still carrying the field leaves the field as it was', () => {
+        // As a Token the old control marked small comes into the workspace.
         useEntityStore.getState().updateToken(STANDARD, { artSize: 'small' });
         const { container } = editor(STANDARD);
         const grid = [...container.querySelectorAll('select')]
             .find((s) => [...s.options].map((o) => o.value).join() === '1,2');
         fireEvent.change(grid, { target: { value: '2' } });
-
-        const token = useEntityStore.getState().tokens[STANDARD];
-        expect(token.size).toBe(2);
-        expect(token.artSize).toBeUndefined();
-        const select = within(container).getByLabelText('Token Size');
-        expect(select.disabled).toBe(true);
-        expect(select.value).toBe('standard');
+        const written = syncPayload()['tokens.json'][STANDARD];
+        expect(written.size).toBe(2);
+        expect(written.artSize).toBe('small');
     });
 });
