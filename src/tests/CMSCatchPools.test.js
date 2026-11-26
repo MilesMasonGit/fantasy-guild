@@ -59,11 +59,15 @@ afterEach(() => {
     expect(globalThis.localStorage?.getItem('fantasy-guild-cms-v2') ?? null).toBe(storedBefore);
 });
 
-/** The Coast authored as a sea: a rod's basic pool and a baited one. */
+/** A water authored as a sea: a rod's basic pool and a baited one. */
 const SEA_POOLS = [
     { tool: 'fishing_rod', catches: [{ itemId: 'item_raw_shrimp', weight: 50 }, { itemId: 'item_shrimp', weight: 40 }, { itemId: 'item_water', weight: 10 }] },
-    { tool: 'fishing_rod', bait: 'item_shrimp_bait', catches: [{ itemId: 'item_shrimp', weight: 1 }] }
+    { tool: 'fishing_rod', bait: 'item_bait', catches: [{ itemId: 'item_shrimp', weight: 1 }] }
 ];
+
+/** A fixture Token of the workspace's own, with no work cycle and no pools, so no content pass moves it. */
+const fixtureWater = (name = 'Fixture Sea') => store().addToken({ name });
+const FISHING = { skill: 'fishing', skillRequired: 1, cycleTimeMs: 10000, xp: 1, inputs: [], outputs: [] };
 
 describe('⭐ the Catch pools block', () => {
     it('reads the game\'s own pools', () => {
@@ -71,17 +75,16 @@ describe('⭐ the Catch pools block', () => {
     });
 
     it('adding the first pool writes catchPools and gives a Token with no work cycle a Fishing one', () => {
-        // Fixture: the shipped Coast is already water, so it is put back to no work cycle and no pools.
-        store().updateToken('token_coast', { config: null, catchPools: [] });
-        expect(store().tokens.token_coast.config).toBeNull();
-        const container = openEditor('token_coast');
+        const id = fixtureWater();
+        expect(store().tokens[id].config).toBeNull();
+        const container = openEditor(id);
         expect(q(container, '[data-field="catch-pools"]')).not.toBeNull();
         expect(qa(container, '[data-pool-index]')).toHaveLength(0);
 
         fireEvent.click(q(container, '[data-add-pool]'));
-        const coast = store().tokens.token_coast;
-        expect(coast.catchPools).toEqual([{ tool: 'fishing_rod', catches: [] }]);
-        expect(coast.config).toMatchObject({ skill: 'fishing', cycleTimeMs: 10000, xp: 1, inputs: [], outputs: [] });
+        const sea = store().tokens[id];
+        expect(sea.catchPools).toEqual([{ tool: 'fishing_rod', catches: [] }]);
+        expect(sea.config).toMatchObject({ skill: 'fishing', cycleTimeMs: 10000, xp: 1, inputs: [], outputs: [] });
 
         fireEvent.click(q(container, '[data-add-catch]'));
         fireEvent.change(q(container, '[data-catch-item]'), { target: { value: 'item_raw_shrimp' } });
@@ -89,62 +92,67 @@ describe('⭐ the Catch pools block', () => {
         fireEvent.click(q(container, '[data-add-catch]'));
         fireEvent.change(qa(container, '[data-catch-item]')[1], { target: { value: 'item_shrimp' } });
         fireEvent.change(qa(container, '[data-catch-weight]')[1], { target: { value: '150' } });
-        expect(store().tokens.token_coast.catchPools[0].catches).toEqual([
+        expect(store().tokens[id].catchPools[0].catches).toEqual([
             { itemId: 'item_raw_shrimp', weight: 50 }, { itemId: 'item_shrimp', weight: 150 }
         ]);
         expect(qa(container, '[data-catch-share]').map((n) => n.textContent)).toEqual(['25%', '75%']);
     });
 
     it('the bait list offers only Consumables; choosing one writes bait, No bait drops the key', () => {
-        store().updateToken('token_coast', { catchPools: [{ tool: 'fishing_rod', catches: [{ itemId: 'item_raw_shrimp', weight: 1 }] }] });
-        const container = openEditor('token_coast');
+        const id = fixtureWater();
+        store().updateToken(id, { catchPools: [{ tool: 'fishing_rod', catches: [{ itemId: 'item_raw_shrimp', weight: 1 }] }] });
+        const container = openEditor(id);
         const bait = q(container, '[data-catch-bait]');
         const offered = [...bait.querySelectorAll('option')].map((o) => o.value).filter(Boolean);
-        expect(offered).toContain('item_shrimp_bait');
+        expect(offered).toContain('item_bait');
         expect(offered).not.toContain('item_raw_shrimp');
         expect(offered.every((id) => store().items[id].equipSlot === 'consumable')).toBe(true);
 
-        fireEvent.change(bait, { target: { value: 'item_shrimp_bait' } });
-        expect(store().tokens.token_coast.catchPools[0].bait).toBe('item_shrimp_bait');
+        fireEvent.change(bait, { target: { value: 'item_bait' } });
+        expect(store().tokens[id].catchPools[0].bait).toBe('item_bait');
         fireEvent.change(q(container, '[data-catch-bait]'), { target: { value: '' } });
-        expect(store().tokens.token_coast.catchPools[0]).not.toHaveProperty('bait');
+        expect(store().tokens[id].catchPools[0]).not.toHaveProperty('bait');
     });
 
     it('the tool picker offers every kind; with a pool the Needs tool field says the pools set it, and can clear an old one', () => {
-        store().updateToken('token_shrimp_coast', { catchPools: [
+        // A worked Token with an old Needs tool, from before it was water.
+        const id = fixtureWater('Fixture Shrimp Water');
+        store().updateToken(id, { config: FISHING, needsTool: { kind: 'fishing_rod', minTier: 1 }, catchPools: [
             { tool: 'fishing_rod', catches: [{ itemId: 'item_raw_shrimp', weight: 1 }] },
             { tool: 'fishing_net', catches: [{ itemId: 'item_raw_shrimp', weight: 1 }] }
         ] });
-        const container = openEditor('token_shrimp_coast');
+        const container = openEditor(id);
         const kinds = [...q(container, '[data-catch-tool]').querySelectorAll('option')].map((o) => o.value);
         expect(kinds).toEqual(['pickaxe', 'woodaxe', 'fishing_rod', 'sickle', 'fishing_net', 'fishing_trap', 'harpoon']);
         expect(q(container, '[data-field="needs-tool"]')).toBeNull();
         expect(q(container, '[data-field="needs-tool-pools"]').textContent).toContain('a Fishing Rod or Fishing Net, at any tier');
         expect(q(container, '[data-field="needs-tool-pools"]').textContent).toContain('Its own Needs tool is ignored.');
         fireEvent.click(q(container, '[data-clear-needs-tool]'));
-        expect(store().tokens.token_shrimp_coast.needsTool).toBeUndefined();
+        expect(store().tokens[id].needsTool).toBeUndefined();
         // Water never wears: the Charges field says so.
         expect(q(container, '[data-field="never-wears"]').textContent).toContain('water never runs out');
     });
 
     it('removing the last pool drops the key: the synced record has no catchPools', () => {
-        store().updateToken('token_coast', { catchPools: [{ tool: 'fishing_rod', catches: [] }] });
-        const container = openEditor('token_coast');
+        const id = fixtureWater();
+        store().updateToken(id, { catchPools: [{ tool: 'fishing_rod', catches: [] }] });
+        const container = openEditor(id);
         fireEvent.click(q(container, '[data-remove-pool]'));
-        expect(store().tokens.token_coast.catchPools).toBeUndefined();
-        expect(JSON.parse(JSON.stringify(syncPayload()['tokens.json'].token_coast))).not.toHaveProperty('catchPools');
+        expect(store().tokens[id].catchPools).toBeUndefined();
+        expect(JSON.parse(JSON.stringify(syncPayload()['tokens.json'][id]))).not.toHaveProperty('catchPools');
     });
 });
 
 describe('⭐ catch pools through Recalculate, Sync and a reload', () => {
     it('survive Recalculate and Sync, file the Token as a resource, and a reload and a second sync keep them byte-identical', () => {
-        store().updateToken('token_coast', { catchPools: SEA_POOLS, config: { skill: 'fishing', skillRequired: 1, cycleTimeMs: 10000, xp: 1, inputs: [], outputs: [] } });
+        const id = fixtureWater();
+        store().updateToken(id, { catchPools: SEA_POOLS, config: FISHING });
         const first = asFile(syncPayload());
-        expect(first['tokens.json'].token_coast.catchPools).toEqual(SEA_POOLS);
-        expect(first['tokens.json'].token_coast.tokenType).toBe('resource');
+        expect(first['tokens.json'][id].catchPools).toEqual(SEA_POOLS);
+        expect(first['tokens.json'][id].tokenType).toBe('resource');
 
         store().hydrate(workspaceFromFiles(first));
-        expect(store().tokens.token_coast.catchPools).toEqual(SEA_POOLS);
+        expect(store().tokens[id].catchPools).toEqual(SEA_POOLS);
         const second = asFile(syncPayload());
         for (const f of FILES) expect(JSON.stringify(second[f], null, 2)).toBe(JSON.stringify(first[f], null, 2));
     });
@@ -155,10 +163,11 @@ describe('⭐ catch pools through Recalculate, Sync and a reload', () => {
     });
 
     it('renaming an item follows it into the pools, as a catch and as a bait', () => {
-        store().updateToken('token_coast', { catchPools: SEA_POOLS });
+        const id = fixtureWater();
+        store().updateToken(id, { catchPools: SEA_POOLS });
         expect(store().renameEntityId('item_shrimp', 'item_cooked_shrimp', 'item')).toBe(true);
-        expect(store().renameEntityId('item_shrimp_bait', 'item_shrimp_lure', 'item')).toBe(true);
-        const pools = store().tokens.token_coast.catchPools;
+        expect(store().renameEntityId('item_bait', 'item_shrimp_lure', 'item')).toBe(true);
+        const pools = store().tokens[id].catchPools;
         expect(pools[0].catches.map((c) => c.itemId)).toEqual(['item_raw_shrimp', 'item_cooked_shrimp', 'item_water']);
         expect(pools[1]).toEqual({ tool: 'fishing_rod', bait: 'item_shrimp_lure', catches: [{ itemId: 'item_cooked_shrimp', weight: 1 }] });
     });
@@ -174,11 +183,12 @@ describe('⭐ catch pools through Recalculate, Sync and a reload', () => {
         const unreachable = () => audit().filter((r) => r.entityId === troutId && /Unreachable/.test(r.details));
         expect(unreachable()).toHaveLength(1);
         // Not a retired fixed water: the audits leave those to the spot audit.
-        store().updateToken('token_shrimp_coast', {
-            config: { skill: 'fishing', skillRequired: 1, cycleTimeMs: 10000, xp: 1, inputs: [], outputs: [] },
+        const id = fixtureWater();
+        store().updateToken(id, {
+            config: FISHING,
             catchPools: [{ tool: 'fishing_rod', catches: [{ itemId: troutId, weight: 1 }] }, { tool: 'lobster_pot', catches: [{ itemId: troutId, weight: 1 }] }]
         });
         expect(unreachable()).toHaveLength(0);
-        expect(audit().some((r) => r.entityId === 'token_shrimp_coast' && /names the tool kind "lobster_pot"/.test(r.details))).toBe(true);
+        expect(audit().some((r) => r.entityId === id && /names the tool kind "lobster_pot"/.test(r.details))).toBe(true);
     });
 });
