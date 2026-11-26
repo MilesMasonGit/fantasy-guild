@@ -72,7 +72,8 @@ describe('the report', () => {
     });
 
     it('reads the Ledger settings: a longer payback lets Typical buy the statue', () => {
-        const { pace } = workspaceReport({ ...paceWorkspace(), planSettings: { paybackHours: 1000 } });
+        // Yield's places have room for it beside the four Mines (brief 900 B1).
+        const { pace } = workspaceReport({ ...paceWorkspace(), planSettings: { paybackHours: 1000, sitePlaces: { buildings: 8, perKind: 5 } } });
         expect(pace.rateAt({ token: 'token_vein' }, 'typical').chosen.map((c) => c.id)).toContain('token_statue');
     });
 });
@@ -98,14 +99,14 @@ describe('the tab', { timeout: 20000 }, () => {
         const view = mount();
         openRow(view, 'tokens:token_vein', 'Copper Vein');
         const rates = within(view.getByLabelText('Rates'));
-        // Typical: the camp, the Mine and Beer; 720 cycles an hour, 1.5 ore, the Mine's quarter more.
+        // Typical: the camp, four Mines and Beer; the camp's two veins, 480 cycles an hour, 1.5 ore, four Mines' sure double (brief 900 B1).
         const items = () => view.container.querySelector('[data-rate-items]').textContent;
-        expect(items()).toBe('1350 Copper Ore');
-        expect(view.container.querySelector('[data-rate-factor="support:token_mine"]').textContent).toMatch(/Mine.*double drop/i);
-        fireEvent.click(rates.getByLabelText('Switch Mine'));
-        expect(items()).toBe('1080 Copper Ore');
-        fireEvent.click(rates.getByLabelText('Switch Mine'));
-        expect(items()).toBe('1350 Copper Ore');
+        expect(items()).toBe('1440 Copper Ore');
+        expect(view.container.querySelector('[data-rate-factor="support:token_mine"]').textContent).toMatch(/Mine ×4.*double drop/i);
+        fireEvent.click(rates.getByLabelText('Switch Mine ×4'));
+        expect(items()).toBe('720 Copper Ore');
+        fireEvent.click(rates.getByLabelText('Switch Mine ×4'));
+        expect(items()).toBe('1440 Copper Ore');
         // Bare: one vein, no boosts.
         fireEvent.click(rates.getByRole('tab', { name: 'Bare' }));
         expect(items()).toBe('360 Copper Ore');
@@ -116,8 +117,8 @@ describe('the tab', { timeout: 20000 }, () => {
         openRow(view, 'tokens:token_big_hut', 'Big Hut');
         const path = within(view.getByLabelText('Path time'));
         expect([...view.container.querySelectorAll('[data-path-profile]')].map((r) => r.getAttribute('data-path-profile'))).toEqual(['bare', 'typical', 'maxed']);
-        // Construction 15 at the build's full pace, fed by the foresters it needs (brief 880 L3; 7 h with one forester before).
-        expect(view.container.querySelector('[data-path-profile="typical"] [data-path-hours]').textContent).toMatch(/^3 h 41 min/);
+        // Construction 15 fed by the foresters it needs, the Starter Camp's one hero building and felling in turn (brief 900 B1; 3 h 41 min with a hero for each before).
+        expect(view.container.querySelector('[data-path-profile="typical"] [data-path-hours]').textContent).toMatch(/^11 h 9 min/);
         expect(path.getByText(/waits for Construction 15/)).toBeTruthy();
         // The Construction wall is filed under the skill; the page of what waits on it shows it too.
         expect(view.container.querySelector('[data-waits-on="wall"]').textContent).toMatch(/Construction 1 → 15/);
@@ -132,7 +133,8 @@ describe('the tab', { timeout: 20000 }, () => {
         fireEvent.click(view.getAllByText('Construction')[0]);
         expect(view.getByRole('tab', { name: 'Pace' }).getAttribute('aria-selected')).toBe('true');
         expect(view.container.querySelector('[data-breakdown="construction|0"]')).toBeTruthy();
-        expect(view.container.querySelector('[data-stage="0"] [data-stage-hours]').textContent).toMatch(/^3 h 41 min/);
+        expect(view.container.querySelector('[data-stage="0"] [data-stage-hours]').textContent).toMatch(/^11 h 10 min/);
+        expect(view.container.querySelector('[data-stage="0"] [data-stage-heroes]').textContent).toMatch(/^1 hero/);
         expect(view.container.querySelector('[data-hall="roster_size|2"]')).toBeTruthy();
     });
 

@@ -502,10 +502,19 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         const times = (m) => Object.fromEntries(Object.entries(m || {}).map(([k, v]) => [k, v * chain]));
         return { ...f, chain, scale: f.scale * chain, items: times(f.items), tokens: times(f.tokens), xp: times(f.xp), inputs: times(f.inputs) };
     };
-    /** What the guild gets of an item an hour on its best source as the reference chain runs it. */
+    /**
+     * What the guild gets of an item an hour on its best source as the reference chain runs it, with
+     * the profile's setups or a lower profile's, whichever gathers more: a chain short of heroes may
+     * leave off a drink whose brewing it cannot staff, as a hero levelling may.
+     */
     const pacedSupply = (itemId, profile, cap) => {
-        const s = supplyOf(itemId, profile, cap);
-        return s.work && Number.isFinite(s.perHour) ? s.perHour * chainScale(s.work, profile, cap) : s.perHour;
+        let best = 0;
+        for (const as of levelledAs(profile)) {
+            const s = supplyOf(itemId, as, cap);
+            const n = s.work && Number.isFinite(s.perHour) ? s.perHour * chainScale(s.work, as, cap) : s.perHour;
+            if (n > best) best = n;
+        }
+        return best;
     };
 
     // ── coins ──────────────────────────────────────────────────────────────────────────────────

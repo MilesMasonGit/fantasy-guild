@@ -46,8 +46,9 @@ function balanceWorkspace() {
     for (const r of c.recipes) (recipePools[r.skill] ||= []).push(r);
     return {
         items: c.items, tokens: c.tokens, effects: c.effects, recipePools, starterCamp: c.starterCamp, skillPerks: null,
-        // The camp is done when the pace rule reaches level 9, about 30 minutes in (brief 880 L3).
-        planSettings: { tierLevels: [{ tier: 0, level: 1 }, { tier: 1, level: 9 }] }
+        // The camp is done when the pace rule reaches level 9, about 30 minutes in (brief 880 L3), with eight
+        // heroes from the start so a stage is its slowest path, the levers' measure (brief 900 B1).
+        planSettings: { tierLevels: [{ tier: 0, level: 1 }, { tier: 1, level: 9 }], heroesByTier: [{ tier: 0, heroes: 8 }] }
     };
 }
 
@@ -70,7 +71,7 @@ describe('the preview over a workspace', () => {
         expect(changeText({ from: 12, to: 8 })).toBe('12 → 8 (1.5× down)');
         expect(cantFixGroups(result.cantFix).map(g => g.cause)).toContain('content');
         const text = balanceText(result);
-        expect(text).toMatch(/Starter Camp: 4 h 38 min \(\+827 %\) → \d+ min .*within/);
+        expect(text).toMatch(/Starter Camp: 1 h 33 min \(\+209 %\) → \d+ min .*within/);
         expect(text).toMatch(/Numbers to change: \d+/);
     });
 });

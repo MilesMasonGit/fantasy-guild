@@ -12,7 +12,10 @@ import { balanceContent, calmContent } from './fixtures/balanceWorld.js';
  */
 
 // The stages follow the pace rule (brief 880 L3): the Starter Camp is done when the curve reaches level 9, about 30 minutes in.
-const CAMP_ONLY = { tierLevels: [{ tier: 0, level: 1 }, { tier: 1, level: 9 }] };
+// Eight heroes from the start, so a stage is its slowest path, the levers' measure; with the reference guild's one hero
+// the camp is its hero's work, which no lever shrinks alone (brief 900 B1, below).
+const SPARE_HEROES = [{ tier: 0, heroes: 8 }];
+const CAMP_ONLY = { tierLevels: [{ tier: 0, level: 1 }, { tier: 1, level: 9 }], heroesByTier: SPARE_HEROES };
 const proposalOf = (result, key, field) => result.proposals.find(p => p.key === key && p.field === field) || null;
 const stage = (summary, tier) => summary.stages.find(s => s.tier === tier);
 
@@ -22,7 +25,8 @@ describe('the balancing preview', () => {
     it('moves a too-slow stage to its budget: the camp is hours late before, within the tolerance after', () => {
         const before = stage(result.before, 0);
         const after = stage(result.after, 0);
-        expect(before.hours).toBeGreaterThan(4);
+        // Over an hour late: four Groves round the Oak (brief 900 B1) bring the Statue's wood faster than one did.
+        expect(before.hours).toBeGreaterThan(1);
         expect(before.within).toBe(false);
         expect(Math.abs(after.hours * 60 / 30 - 1)).toBeLessThanOrEqual(0.25);
         expect(after.within).toBe(true);
@@ -91,9 +95,20 @@ describe('the balancing preview', () => {
 });
 
 describe('what the preview never does', () => {
+    it('⭐ says when a stage is its heroes\' work, which no one number shrinks: the camp with the reference guild\'s one hero', () => {
+        const r = proposeBalance(balanceContent(), { tierLevels: CAMP_ONLY.tierLevels });
+        const camp = stage(r.after, 0);
+        expect(camp.within).toBe(false);
+        const left = r.cantFix.find(x => x.key === 'stage:0');
+        expect(left).toMatchObject({ cause: CANT_FIX.HEROES });
+        expect(left.message).toMatch(/its 1 hero set it, with .* of the guild's work by then/);
+        // With heroes to spare the preview brings it within its budget.
+        expect(stage(proposeBalance(balanceContent(), CAMP_ONLY).after, 0).within).toBe(true);
+    });
+
     it('proposes nothing for a world already on its pace', () => {
         // The camp is done 17 minutes in, at the curve's level 6.
-        const r = proposeBalance(calmContent(), { tierLevels: [{ tier: 0, level: 1 }, { tier: 1, level: 6 }] });
+        const r = proposeBalance(calmContent(), { tierLevels: [{ tier: 0, level: 1 }, { tier: 1, level: 6 }], heroesByTier: SPARE_HEROES });
         expect(stage(r.before, 0).within).toBe(true);
         expect(r.proposals).toEqual([]);
         expect(r.after.stages).toEqual(r.before.stages);

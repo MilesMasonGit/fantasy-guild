@@ -35,7 +35,8 @@ import { SKILLS, SKILL_LAYERS } from '../../../../src/config/registries/skillReg
  *
  * What none of them can fix is reported with its cause (`CANT_FIX`): a skill with no source where
  * the curve needs one, a source that wears out, luck, the world tables, the XP floor, the Hall, a
- * step the calculator cannot time, a chain of first finds, a proposal at its cap.
+ * step the calculator cannot time, a chain of first finds, a stage the guild's heroes cannot do all
+ * the work of by its budget, a proposal at its cap.
  *
  * Pure: reads only the content and settings it is handed and changes neither.
  * ⚠️ The Economy simulator's Recalculate derives XP a cycle of tagged entries from its XPH pins, so
@@ -57,6 +58,7 @@ export const CANT_FIX = Object.freeze({
     HALL: 'hall',
     UNTIMED: 'untimed',
     CHAIN: 'chain',
+    HEROES: 'heroes',
     LIMIT: 'limit',
     OTHER: 'other'
 });
@@ -66,7 +68,7 @@ export const BALANCE_TEXT = Object.freeze({
     lever: Object.freeze({ xp: 'XP a cycle', gate: 'Level gate', cost: 'Cost', time: 'Time', boost: 'Boost strength', coins: 'Coins' }),
     cause: Object.freeze({
         content: 'Needs content', 'one-off': 'A source that wears out', luck: 'Luck', rare: 'A rare find', world: 'World tables',
-        floor: 'The XP floor', hall: 'Guild Hall pass', untimed: 'Not timed', chain: 'A chain of first finds',
+        floor: 'The XP floor', hall: 'Guild Hall pass', untimed: 'Not timed', chain: 'A chain of first finds', heroes: "The guild's heroes",
         limit: 'At its cap', other: 'Other'
     }),
     worldTables: 'World tables',
@@ -764,6 +766,11 @@ function explain(state, after) {
             continue;
         }
         if (!top) continue;
+        if (st.byWork) {
+            // The guild's heroes cannot put in all the stage's work by its budget, however fast each skill climbs on its own.
+            out.push({ ...base, cause: CANT_FIX.HEROES, message: `${words}: its ${PACE_TEXT.heroes(st.heroes)} set it, with ${PACE_TEXT.hours(st.heroHours)} of the guild's work by then (each level and each price once), where every skill levelled side by side would take ${PACE_TEXT.hours(st.pathHours)}. No one number shrinks the whole guild's work: fewer unlocks planned for the stage, a longer budget, or more heroes by then.` });
+            continue;
+        }
         const cause = stepCause(state, top.key);
         out.push({ ...base, cause: cause.cause, message: `${words}: ${name(top.key)} (${PACE_TEXT.hours(top.hours)}) ${cause.words}.` });
     }

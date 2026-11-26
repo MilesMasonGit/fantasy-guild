@@ -72,9 +72,9 @@ describe('npm run cms -- ledger', () => {
         expect(fs.readdirSync(path.join(dir, 'workspace'))).toEqual(['workspace.json']);
 
         const out = JSON.parse(fs.readFileSync(jsonFile, 'utf8'));
-        expect(out).toMatchObject({ format: 'fantasy-guild-ledger-readout', version: 2, profiles: { opt: 'maxed', typ: 'typical', bare: 'bare' } });
+        expect(out).toMatchObject({ format: 'fantasy-guild-ledger-readout', version: 3, profiles: { opt: 'maxed', typ: 'typical', bare: 'bare' } });
         expect(out.workspace).toMatchObject({ revision: 1 });
-        for (const section of ['pace', 'rows', 'stages', 'boostBudget', 'checks', 'notes', 'units', 'counts']) expect(out, section).toHaveProperty(section);
+        for (const section of ['guild', 'pace', 'rows', 'stages', 'layouts', 'boostBudget', 'checks', 'notes', 'units', 'counts']) expect(out, section).toHaveProperty(section);
 
         // Each skill's pace: levels 1 to 98 (the time to the next), hero and guild time at all three profiles, and the gatherers a level's work needs.
         expect(Object.keys(out.pace)).toEqual(expect.arrayContaining(['mining', 'forestry', 'construction']));
@@ -85,6 +85,8 @@ describe('npm run cms -- ledger', () => {
                 for (const k of [...keys, 'curve']) expect(l, `${skill} ${l.L} ${k}`).toHaveProperty(k);
                 expect(Object.keys(l.reach).sort(), `${skill} ${l.L} reach`).toEqual([...keys].sort());
                 expect(Object.keys(l.gatherers).sort(), `${skill} ${l.L} gatherers`).toEqual(['bare', 'opt', 'typ']);
+                expect(Object.keys(l.brewers).sort(), `${skill} ${l.L} brewers`).toEqual(['bare', 'opt', 'typ']);
+                for (const who of ['opt', 'typ', 'bare']) expect(l.chain[who], `${skill} ${l.L} chain`).toBeLessThanOrEqual(1);
                 expect(l.best).toHaveProperty('bare');
             }
             for (const k of [...keys, 'curve']) expect(p.days, `${skill} days ${k}`).toHaveProperty(k);
@@ -97,7 +99,7 @@ describe('npm run cms -- ledger', () => {
         expect(construction.levels[0].best.opt).toEqual(expect.any(String));
         expect(construction.levels[13].pastTop).toBeUndefined();
         expect(construction.levels[14]).toMatchObject({ pastTop: true, best: { opt: null, typ: null } });
-        // Maxed never levels slower than Typical, Typical never slower than Bare, and guild time is never under hero time.
+        // Maxed never levels slower than Typical, Typical never slower than Bare, and guild time is never under hero time (one hero at work at least).
         for (const l of mining.levels) {
             if (l.opt === null || l.typ === null || l.bare === null) continue;
             expect(l.opt).toBeLessThanOrEqual(l.typ + 1e-9);
@@ -105,11 +107,13 @@ describe('npm run cms -- ledger', () => {
             expect(l.guild).toBeGreaterThanOrEqual(l.opt - 1e-9);
             expect(l.guildBare).toBeGreaterThanOrEqual(l.bare - 1e-9);
         }
-        // ⭐ Guild time is the hours times the heroes the ledger counts for the level's work: a build fed by two foresters at Bare.
+        // ⭐ Guild time is the hero-hours the level takes: a build fed by two foresters at Bare, which the Starter
+        // Camp's one hero does in turn, a third as fast, its guild time its own (brief 900 B1).
         const build = construction.levels[0];
         expect(build.best.bare).toBe('Build Hut at Plot');
         expect(build.gatherers.bare).toBeCloseTo(2, 3);
-        expect(build.guildBare).toBeCloseTo(build.bare * 3, 2);
+        expect(build.chain.bare).toBeCloseTo(1 / 3, 3);
+        expect(build.guildBare).toBeCloseTo(build.bare, 2);
         // The Bare column is the balance rules' divisor: a level's bare over its opt is the optimized boost factor there.
         expect(mining.levels[0].bare / mining.levels[0].opt).toBeGreaterThan(1);
 
@@ -142,7 +146,26 @@ describe('npm run cms -- ledger', () => {
         const budgetChecks = out.checks.filter((c) => c.check === 'boost-budget');
         expect(budgetChecks.length).toBeGreaterThan(0);
         expect(new Set(out.boostBudget.over.map((o) => `${o.kind}|${o.profile}`)).size).toBe(budgetChecks.length);
-        expect(out.stages[0]).toMatchObject({ profile: 'maxed', endsAt: 10 });
+        expect(out.stages[0]).toMatchObject({ profile: 'maxed', endsAt: 10, heroes: 1 });
+        // ⭐ Stages timed with the reference guild's heroes: the later of the slowest path and the heroes' work.
+        for (const s of out.stages.filter((x) => x.entries)) {
+            expect(s.minutes).toBeCloseTo(Math.max(s.pathMinutes, s.workMinutes), 1);
+            expect(s.heroMinutes).toBeCloseTo(s.levelHeroMinutes + s.stepHeroMinutes, 1);
+            expect(typeof s.byWork).toBe('boolean');
+        }
+        expect(out.guild.heroes.map((h) => h.heroes)).toEqual([1, 1, 2, 3, 4, 5, 6, 8]);
+        expect(out.guild).toMatchObject({ gatherersPerMaker: 2.2, layout: 'sparse', layoutNodes: { sparse: 2, dense: 4 }, sitePlaces: { buildings: 8, perKind: 4 } });
+        // ⭐ Both layouts, the warning where they differ, and the vein the dense layout makes more of.
+        expect(out.layouts).toMatchObject({ timed: 'sparse', other: 'dense', nodes: { sparse: 2, dense: 4 } });
+        expect(out.layouts.skills.mining).toMatchObject({ warn: true });
+        expect(out.layouts.skills.mining.dense.opt).toBeLessThan(out.layouts.skills.mining.sparse.opt);
+        expect(out.layouts.warnings).toContain('mining');
+        expect(out.layouts.nodesOff.map((n) => n.entry)).toEqual(['token:token_vein']);
+        // ⭐ Each work's site: the buildings in its places, with their copies, and its camp's nodes.
+        expect(vein.site.opt).toMatchObject({ places: 4, room: 8, byKind: { yield: 4 }, camp: { id: 'token_mining_camp', nodes: 2 } });
+        expect(vein.site.opt.buildings).toEqual([{ id: 'token_mine', name: 'Mine', count: 4, kinds: ['yield'] }]);
+        // An arrival is never before its path.
+        for (const row of out.rows.filter((x) => x.arriveTyp !== null)) expect(row.arriveTyp, row.key).toBeGreaterThanOrEqual(row.pathTyp - 1e-6);
 
         // The ledger's checks, each with its severity and words.
         expect(out.checks.length).toBeGreaterThan(0);
@@ -161,15 +184,19 @@ describe('npm run cms -- ledger', () => {
     });
 
     it('⭐ times a level on the reference chain, keeps the full gatherer count, and its guild time is that chain\'s', () => {
-        // A chain of one maker and one gatherer: the Hut builder, needing two foresters, builds half the time.
-        const loose = ledgerReadout(paceWorkspace()).pace.construction.levels[0];
-        const tight = ledgerReadout({ ...paceWorkspace(), planSettings: { gatherersPerMaker: 1 } }).pace.construction.levels[0];
-        expect(tight.bare).toBeCloseTo(loose.bare * 2, 2);
+        // Rewritten for brief 900 B1: the chain's heroes share all its work. Eight heroes, a chain of one maker
+        // and one gatherer: two heroes for the Hut builder's three heroes' work, half as long again.
+        const eight = [{ tier: 0, heroes: 8 }];
+        const loose = ledgerReadout({ ...paceWorkspace(), planSettings: { heroesByTier: eight } }).pace.construction.levels[0];
+        const tight = ledgerReadout({ ...paceWorkspace(), planSettings: { heroesByTier: eight, gatherersPerMaker: 1 } }).pace.construction.levels[0];
+        expect(tight.bare).toBeCloseTo(loose.bare * 1.5, 2);
         expect(tight.gatherers.bare).toBeCloseTo(2, 3);
         expect(loose.gatherers.bare).toBeCloseTo(2, 3);
-        // The maker and its one gatherer, for twice as long: the same hero-hours as three heroes for the shorter time.
+        expect(tight.chain.bare).toBeCloseTo(2 / 3, 3);
+        // Two heroes for half as long again: the same hero-hours as three heroes for the shorter time.
         expect(tight.guildBare).toBeCloseTo(tight.bare * 2, 2);
         expect(loose.guildBare).toBeCloseTo(loose.bare * 3, 2);
+        expect(tight.guildBare).toBeCloseTo(loose.guildBare, 2);
     });
 
     it('⭐ run from a worktree with no workspace of its own, reads the main checkout\'s, and says so', async () => {

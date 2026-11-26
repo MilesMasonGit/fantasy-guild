@@ -127,23 +127,30 @@ describe('the profiles', () => {
 
         const typical = vein(PROFILE.TYPICAL);
         const ids = typical.chosen.map(c => c.id);
-        // Beer pays as it is drunk (+10 % XP); the camp and the Mine pay back in minutes.
+        // Beer pays as it is drunk (+10 % XP); the camp and each of four Mines pay back in minutes (four 25 % doubles: a sure double, in yield's four places).
         expect(ids).toEqual(expect.arrayContaining(['item_beer', 'token_mining_camp', 'token_mine']));
+        expect(typical.chosen.filter(c => c.id === 'token_mine')).toHaveLength(4);
         // The Gold Statue's 1 % for 1000 wood never pays back within the two hours.
         expect(ids).not.toContain('token_statue');
         expect(typical.chosen.find(c => c.id === 'token_mine').payback).toBeLessThan(2);
-        expect(typical.items.item_copper_ore).toBeCloseTo(720 * 1.5 * 1.25);
-        expect(typical.xp.mining).toBeCloseTo(720 * 1.1);
+        // The camp's two veins (the sparse layout), 240 cycles an hour each.
+        expect(typical.items.item_copper_ore).toBeCloseTo(480 * 1.5 * 2);
+        expect(typical.xp.mining).toBeCloseTo(480 * 1.1);
 
+        // Maxed takes everything that lifts the vein and has a place: the Mines fill yield's four, so the Statue's yield has none.
         const maxed = vein(PROFILE.MAXED);
-        expect(maxed.chosen.map(c => c.id)).toEqual(expect.arrayContaining([...ids, 'token_statue']));
-        expect(maxed.items.item_copper_ore).toBeGreaterThan(typical.items.item_copper_ore);
+        expect(maxed.chosen.map(c => c.id)).toEqual(expect.arrayContaining(ids));
+        expect(maxed.chosen.map(c => c.id)).not.toContain('token_statue');
+        expect(maxed.items.item_copper_ore).toBeGreaterThanOrEqual(typical.items.item_copper_ore);
+        const roomy = buildPace(paceContent(), buildLedger(paceContent()), { sitePlaces: { buildings: 8, perKind: 5 } });
+        expect(roomy.rateAt({ token: 'token_vein' }, PROFILE.MAXED).chosen.map(c => c.id)).toContain('token_statue');
     });
 
     it('a longer payback horizon lets Typical buy the statue too', () => {
         const content = paceContent();
         const ledger = buildLedger(content);
-        const pace = buildPace(content, ledger, { paybackHours: 1000 });
+        // Yield's places have room for it beside the four Mines.
+        const pace = buildPace(content, ledger, { paybackHours: 1000, sitePlaces: { buildings: 8, perKind: 5 } });
         expect(pace.rateAt({ token: 'token_vein' }, PROFILE.TYPICAL).chosen.map(c => c.id)).toContain('token_statue');
     });
 
@@ -169,8 +176,9 @@ describe('supply, level tracks and path time', () => {
 
         const track = pace.trackOf('construction');
         expect(track.top).toBe(15);
-        // Every level at 600 XP an hour, Bare: XP to 15 over 600.
-        expect(track.levels[13].cumulative.bare).toBeCloseTo(xpForLevel(15) / 600);
+        // Every level at 600 XP an hour, Bare, for three heroes' work: the Starter Camp's one hero builds and fells in turn, a third as fast (brief 900 B1).
+        expect(track.levels[13].cumulative.bare).toBeCloseTo(xpForLevel(15) / (600 / 3));
+        expect(track.levels[13].cumulativeWork.bare).toBeCloseTo(xpForLevel(15) / (600 / 3));
         expect(track.levels[13].cumulative.typical).toBeLessThan(track.levels[13].cumulative.bare);
     });
 
@@ -271,7 +279,9 @@ describe('a loop through the drinks', () => {
                 expect(row.hours.maxed).toBeLessThanOrEqual(row.hours.typical + 1e-9);
                 expect(row.hours.typical).toBeLessThanOrEqual(row.hours.bare + 1e-9);
                 expect(row.source.maxed).toMatchObject({ work: { key: 'token_still|recipe_tea|' }, profile: PROFILE.TYPICAL });
-                expect(row.source.maxed.xp).toBeCloseTo(typical.xp.cooking);
+                // At the chain's staffing: the Starter Camp's one hero brews and fells the Tea's wood in turn.
+                expect(row.source.maxed.xp).toBeCloseTo(typical.xp.cooking * row.source.maxed.chain);
+                expect(row.source.maxed.chain).toBeLessThan(1);
             }
         }
     });
@@ -338,7 +348,8 @@ describe('checks D', () => {
     });
 
     it('Beer at +10 % XP is a true 10 % on a 1-XP cycle, so it stays under the consumable target', () => {
-        expect(findings().filter(x => x.check === 'boost-target')).toEqual([]);
+        // The buildings' own target is another matter: four Mines' sure double is past the 30 % once given a building.
+        expect(findings().filter(x => x.check === 'boost-target' && /\(consumables\)/.test(x.message))).toEqual([]);
     });
 
     it('Guild Hall ranks that add no rate are named, not priced; Bunk Beds pay back in hours of wood', () => {
@@ -379,19 +390,25 @@ const DATA = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../d
 const load = (name) => JSON.parse(fs.readFileSync(path.join(DATA, name), 'utf8'));
 
 describe('the shipped content', () => {
-    it('shows no Construction wall now that builds pay their XP, and the Copper Mine on copper ore, switchable', () => {
+    it('shows no Construction wall from the builds\' XP, only where one hero builds and gathers in turn, and the Copper Mine on copper ore, switchable', () => {
         const content = { items: load('items.json'), tokens: load('tokens.json'), recipes: load('tokenRecipes.json'), effects: load('effects.json'), starterCamp: load('starterCamp.json') };
         const ledger = buildLedger(content);
         const pace = buildPace(content, ledger, null);
-        // The ledger fix pack raised the build recipes' XP; the wall the check found before is gone.
-        expect(pace.findings().filter(f => f.check === 'wall' && f.key === 'skill:construction')).toEqual([]);
+        // The ledger fix pack raised the build recipes' XP; the wall the check found before is gone with heroes to spare.
+        const spare = buildPace(content, ledger, { heroesByTier: [{ tier: 0, heroes: 8 }] });
+        expect(spare.findings().filter(f => f.check === 'wall' && f.key === 'skill:construction')).toEqual([]);
+        // With the reference guild's heroes, a Construction wall is only its chain short of heroes (brief 900 B1).
+        for (const run of pace.walls('construction')) expect(run.source.chain).toBeLessThan(1);
 
         const vein = pace.rateAt({ token: 'token_copper_ore_vein' }, PROFILE.TYPICAL);
         expect(vein.chosen.map(c => c.id)).toContain('token_copper_mine');
         const mine = vein.rate.factors.find(f => f.id === 'support:token_copper_mine');
         expect(mine.axes).toContain('DOUBLE_DROP');
         const without = pace.book.rateOf({ token: 'token_copper_ore_vein' }, { ...vein.setup, off: ['support:token_copper_mine'] });
-        expect(without.items.item_copper_ore).toBeCloseTo(vein.rate.items.item_copper_ore / 1.25);
+        // Each Copper Mine in reach is a 25 % double, and Typical stands it in as many places as pay back.
+        const mines = pace.siteOf({ token: 'token_copper_ore_vein' }, PROFILE.TYPICAL).buildings.find(b => b.id === 'token_copper_mine').count;
+        expect(mines).toBeGreaterThan(1);
+        expect(without.items.item_copper_ore).toBeCloseTo(vein.rate.items.item_copper_ore / (1 + 0.25 * mines));
 
         // Every skill's levels: Maxed never slower than Typical, Typical never slower than Bare.
         for (const skill of pace.skills()) {
