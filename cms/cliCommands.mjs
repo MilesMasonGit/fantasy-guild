@@ -6,7 +6,7 @@ import { loadGameData, writeSync } from './gameData.js';
 import { archivePack, packFilePath } from './changePackInbox.js';
 import { createRequire } from 'module';
 import { validatePack, entryConflict } from './src/engine/changePacks.js';
-import { writeNumberPack, solverRows, unclearText } from './src/engine/numberPack.js';
+import { writeNumberPack, writeLiveNumberPack, solverRows, unclearText } from './src/engine/numberPack.js';
 import { emptySession, accept, force, finish } from './src/engine/packReview.js';
 import { describeSyncDiff, SYNC_COLLECTIONS } from './src/engine/syncGuard.js';
 import { PLAN_SYNC_KEY } from './src/engine/planFile.js';
@@ -41,6 +41,18 @@ export const USAGE = `Usage: npm run cms -- <command> [options]
                                   no clear recipe or Token cycle are listed for the content session
                                   (and written to --unclear), never guessed. Reads the workspace,
                                   never saves it; a worktree reads the main checkout's.
+                                  A gathering Token also gets its uses and rest by the rest rule:
+                                  an end chance a cycle for about 30 s of work, a 30 s refill; a
+                                  regrow or a refill that needs its owner gets the chance only, and
+                                  is listed. A Token's plan.split gives its outputs, one line each.
+  pack numbers --live --out=<pack.json> [--ids=<ids.json>] [--catalogue=<catalogue.json>] ...
+                                  The same for the Live recipes and gathering Tokens the id map
+                                  (default docs/active/content_cms_ids.json) matches to the
+                                  catalogue (default docs/active/content_catalogue.json): edits with
+                                  level, time, XP (pinned, so Recalculate keeps it), input and
+                                  output counts, uses and rest. A Live entry with no match, other
+                                  ingredients or another output than the catalogue's is listed,
+                                  never guessed. Its own pack, apart from the Planned one.
   recalc [--all]                  Recalculate (the economic simulator) on the workspace and save it.
   sync [--confirm-removals] [--no-commit]
                                   Recalculate, then write data/ exactly as Sync to Game does, and
@@ -372,6 +384,7 @@ async function cmdLedger(paths, options, load, out) {
 
 const SOLVER = ['.claude', 'skills', 'balancer', 'balance_solver.cjs'];
 const CATALOGUE = ['docs', 'active', 'content_catalogue.json'];
+const ID_MAP = ['docs', 'active', 'content_cms_ids.json'];
 
 function readJsonFile(file, what) {
     try {
@@ -424,8 +437,24 @@ async function cmdPackNumbers(paths, options, out) {
     }
     const disk = requireDisk(paths);
     const rows = rowsFor(paths, options, out);
-    const { pack, filled, unclear, skipped } = writeNumberPack(disk.workspace, rows, { id });
+    const live = options.live === true;
+    let result;
+    if (live) {
+        const idsFile = typeof options.ids === 'string' ? path.resolve(options.ids) : path.join(paths.root, ...ID_MAP);
+        const catalogueFile = typeof options.catalogue === 'string' ? path.resolve(options.catalogue) : path.join(paths.root, ...CATALOGUE);
+        try {
+            result = writeLiveNumberPack(disk.workspace, rows, { id, ids: readJsonFile(idsFile, 'id map'), catalogue: readJsonFile(catalogueFile, 'content catalogue') });
+        } catch (err) {
+            throw err instanceof CliError ? err : new CliError(err.message);
+        }
+        out(`Live mode: the Live recipes and gathering Tokens ${shortPath(paths.root, idsFile)} matches to ${shortPath(paths.root, catalogueFile)}.`);
+    } else {
+        result = writeNumberPack(disk.workspace, rows, { id });
+    }
+    const { pack, filled, unclear, skipped, restUnclear } = result;
     out(`Against ${shortPath(paths.root, paths.workspaceFile)} (revision ${disk.revision}), never saved: ${plural(filled.length, 'entry', 'entries')} written, ${unclear.length} unclear, ${skipped.length} skipped.`);
+    const tagged = filled.filter((f) => f.tagged).length;
+    if (tagged) out(`  ${plural(tagged, 'edit')} on a record with a Tempo and a Purpose: Recalculate keeps the pinned XP but derives its time and output counts again.`);
     const reasons = new Map();
     for (const s of skipped) reasons.set(s.reason, (reasons.get(s.reason) || 0) + 1);
     for (const [reason, n] of reasons) out(`  skipped ${n}: ${reason}`);
@@ -433,19 +462,24 @@ async function cmdPackNumbers(paths, options, out) {
         out('Unclear, for the content session (not written):');
         for (const line of unclearText(unclear)) out(line);
     }
+    if (restUnclear.length) {
+        out(`Uses and rest not written in full (${restUnclear.length}):`);
+        for (const line of unclearText(restUnclear)) out(line);
+    }
     if (typeof options.unclear === 'string') {
         const listFile = path.resolve(options.unclear);
-        fs.writeFileSync(listFile, ['Planned entries with no clear recipe or Token cycle, for the content session:', ...unclearText(unclear), ''].join('\n'));
+        const head = live ? 'Live entries with no clear match to the catalogue, for the content session:' : 'Planned entries with no clear recipe or Token cycle, for the content session:';
+        fs.writeFileSync(listFile, [head, ...unclearText(unclear), '', 'Gathering Tokens whose uses and rest are not written in full (the rest rule):', ...unclearText(restUnclear), ''].join('\n'));
         out(`The unclear list written to ${shortPath(paths.root, listFile)}.`);
     }
     if (!pack) {
-        out('Nothing to write: no Planned entry has numbers from the solver.');
+        out(`Nothing to write: no ${live ? 'Live' : 'Planned'} entry has numbers from the solver.`);
         return 0;
     }
     const check = validatePack(pack, { fileName: path.basename(file) });
     if (!check.ok) throw new CliError('The pack came out malformed, so it was not written:\n- ' + check.errors.join('\n- '));
     fs.writeFileSync(file, JSON.stringify(pack, null, 2) + '\n');
-    out(`The pack written to ${shortPath(paths.root, file)}: ${plural(pack.entries.length, 'entry', 'entries')} (${pack.entries.filter((e) => e.op === 'create').length} new Planned recipes, ${pack.entries.filter((e) => e.op === 'edit').length} edits). Check it with: npm run cms -- pack check ${shortPath(paths.root, file)}`);
+    out(`The pack written to ${shortPath(paths.root, file)}: ${plural(pack.entries.length, 'entry', 'entries')} (${pack.entries.filter((e) => e.op === 'create').length} new ${live ? '' : 'Planned '}recipes, ${pack.entries.filter((e) => e.op === 'edit').length} edits). Check it with: npm run cms -- pack check ${shortPath(paths.root, file)}`);
     return 0;
 }
 

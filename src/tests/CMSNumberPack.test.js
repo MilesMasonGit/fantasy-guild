@@ -41,7 +41,9 @@ const fixtureWorkspace = () => ({
         item_twine: { id: 'item_twine', name: 'Twine', type: 'material', plan: { status: 'live', tier: 0, catalogueId: 'twine', skill: 'tailor', madeWith: ['item_flax'] } },
     },
     tokens: {
-        token_bamboo_grove: { id: 'token_bamboo_grove', name: 'Bamboo Grove', autoSyncId: true, plan: planned({ catalogueId: 'bamboo_grove', skill: 'forestry', level: 5, gives: ['item_bamboo'] }) },
+        token_bamboo_grove: { id: 'token_bamboo_grove', name: 'Bamboo Grove', autoSyncId: true, uses: 5, respawn: { mode: 'refill', afterMs: 12000 }, plan: planned({ catalogueId: 'bamboo_grove', skill: 'forestry', level: 5, gives: ['item_bamboo'] }) },
+        // Two things from one cycle, shared by the plan's split: one Bamboo a cycle, a Flax one cycle in four.
+        token_fallen_star: { id: 'token_fallen_star', name: 'Fallen Star', plan: planned({ catalogueId: 'fallen_star', skill: 'mining', level: 80, gives: ['item_bamboo', 'item_flax'], split: [{ itemId: 'item_bamboo', share: 1 }, { itemId: 'item_flax', share: 0.25 }] }) },
         // Two things from one cycle: how they share it is not the solver's.
         token_hollow_tree: { id: 'token_hollow_tree', name: 'Hollow Tree', plan: planned({ catalogueId: 'hollow_tree', skill: 'forestry', level: 10, gives: ['item_bamboo', 'item_flax'] }) },
         token_summoned_slime: { id: 'token_summoned_slime', name: 'Summoned Slime', plan: planned({ catalogueId: 'summoned_slime', skill: 'summoning', level: 1, madeWith: ['item_flax'] }) },
@@ -62,6 +64,7 @@ const fixtureRows = () => [
     { id: 'sack', name: 'Sack', skill: 'Tailor', category: 'item', planned: 6, level: 6, work: 'make', inputs: [{ id: 'hemp', name: 'Hemp', count: 2 }], seconds: 14, xp: 6, makes: 1 },
     { id: 'bamboo', name: 'Bamboo', skill: 'Forestry', category: 'item', planned: 5, level: 5, work: null, why: 'Gathered from a Token' },
     { id: 'bamboo_grove', name: 'Bamboo Grove', skill: 'Forestry', category: 'token', planned: 5, level: 5, work: 'gather', inputs: [], seconds: 6.4, xp: 2, makes: 1 },
+    { id: 'fallen_star', name: 'Fallen Star', skill: 'Mining', category: 'token', planned: 80, level: 80, work: 'gather', inputs: [], seconds: 12, xp: 40, makes: 1 },
     { id: 'hollow_tree', name: 'Hollow Tree', skill: 'Forestry', category: 'token', planned: 10, level: 10, work: 'gather', inputs: [], seconds: 5.9, xp: 3, makes: 1 },
     { id: 'summoned_slime', name: 'Summoned Slime', skill: 'Summoning', category: 'token', planned: 1, level: 1, work: 'gather', inputs: [], seconds: 6, xp: 2, makes: 1 },
     { id: 'tailor_s_shop', name: "Tailor's Shop", skill: 'Construction', category: 'building', planned: 1, level: 1, work: null, why: 'Builds follow the one-off step rule' },
@@ -125,7 +128,7 @@ describe('pack numbers', () => {
 
     it('gives a made item its recipe, a gathering Token its cycle and a crop its numbers', () => {
         const byId = Object.fromEntries(pack.entries.map((e) => [e.id, e]));
-        expect(Object.keys(byId).sort()).toEqual(['recipe_flax', 'recipe_rope', 'recipe_string', 'token_bamboo_grove']);
+        expect(Object.keys(byId).sort()).toEqual(['recipe_flax', 'recipe_rope', 'recipe_string', 'token_bamboo_grove', 'token_fallen_star']);
 
         expect(byId.recipe_string).toMatchObject({ op: 'create', kind: 'recipe' });
         expect(byId.recipe_string.value).toMatchObject({
@@ -145,8 +148,27 @@ describe('pack numbers', () => {
         expect(byId.token_bamboo_grove.value.config).toEqual({ skill: 'forestry', skillRequired: 5, cycleTimeMs: 6400, xp: 2, inputs: [], outputs: [out1('item_bamboo', 1)] });
         expect(byId.token_bamboo_grove.value.name).toBe('Bamboo Grove');
 
+        // The plan's split: one line a share, the solver's cycle and XP.
+        expect(byId.token_fallen_star.value.config).toEqual({
+            skill: 'mining', skillRequired: 80, cycleTimeMs: 12000, xp: 40, inputs: [],
+            outputs: [out1('item_bamboo', 1), { itemId: 'item_flax', chance: 25, minQty: 1, maxQty: 1, baseQty: { min: 1, max: 1 }, variable: false }],
+        });
+
         expect(byId.recipe_flax).toMatchObject({ op: 'edit', kind: 'recipe' });
         expect(byId.recipe_flax.value).toMatchObject({ skill: 'farming', levelRequirement: 3, xp: 2, durationMs: 6100, outputs: [out1('item_flax', 1)] });
+    });
+
+    it('gives a gathering Token its uses and rest by the rest rule', () => {
+        const v = pack.entries.find((e) => e.id === 'token_bamboo_grove').value;
+        // 6.4 s a cycle: 21.3 % a cycle that it ends, about 30 s of work on average; back in 30 s.
+        expect(v.endChance).toBe(21.3);
+        expect(6.4 * 100 / v.endChance).toBeCloseTo(30, 0);
+        expect('uses' in v).toBe(false);
+        expect(v.respawn).toEqual({ mode: 'refill', afterMs: 30000 });
+        // No respawn of its own: its end chance would do nothing, so nothing is written and it is listed.
+        const star = pack.entries.find((e) => e.id === 'token_fallen_star').value;
+        expect('endChance' in star).toBe(false);
+        expect(fs.readFileSync(f.unclearFile, 'utf8')).toMatch(/Fallen Star.*no respawn/);
     });
 
     it('leaves every entry Planned, and touches nothing Live', () => {
@@ -184,7 +206,7 @@ describe('pack numbers', () => {
         expect(listed).toMatch(/Sack.*Hemp/);
         expect(listed).toMatch(/Canvas.*no row/);
         expect(listed).toMatch(/Hollow Tree.*share/);
-        expect(run.out).toMatch(/4 entries written/);
+        expect(run.out).toMatch(/5 entries written/);
         expect(run.out).toMatch(/4 unclear/);
         // Skipped, with no work to write: a gathered item, a building, an enemy, an entry with no catalogue id.
         expect(listed).not.toContain('(item item_bamboo');

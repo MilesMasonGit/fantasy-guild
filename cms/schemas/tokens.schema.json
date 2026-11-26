@@ -37,6 +37,7 @@
         "tags": { "type": "array", "items": { "type": "string" }, "description": "Mechanical, unlike item tags: a rule can aim at a tag, matched exactly and case-sensitively (filterRegistry.js)." },
         "tier": { "type": "number", "minimum": 1, "description": "The default tier of its Acts-as tags and older provides (src/systems/effects/statements.js). The factory sets 1; no editor field." },
         "uses": { "type": ["number", "null"], "description": "Charges it starts with (tokenRegistry.js tokenStartingUses): a whole number from 1, or null for unlimited, never 0 for unlimited." },
+        "endChance": { "type": "number", "exclusiveMinimum": 0, "maximum": 100, "description": "A Token that comes back runs out by chance: the percent a charge spent ends it (tokenConstants.js endTermsOf); in place of uses, which it then ignores." },
         "requiresHero": { "type": "boolean", "description": "false lets it work without a hero (BoardRunner.js, workSkillRule.js, Growth.js); absent means true." },
         "noStackDuplicates": { "type": "boolean", "description": "Its buffs do not stack with another copy (TileModifiers.js, supportLinks.js). No editor writes it." },
         "size": { "type": "number", "enum": [1, 2], "description": "1, or 2 for a 2-by-2 footprint (src/config/matGeometry.js)." },
