@@ -135,7 +135,7 @@ describe('npm run cms -- ledger', () => {
 
         // ⭐ The boost budget, cell by tier, and every total over its cell; the check lists the same.
         expect(out.boostBudget.tiers.map((t) => t.tier)).toEqual([0, 2, 3, 4, 5, 6, 7]);
-        expect(out.boostBudget.tiers[0]).toMatchObject({ label: 'Starter Camp', level: 1, xp: { typical: 5, maxed: 10 } });
+        expect(out.boostBudget.tiers[0]).toMatchObject({ label: 'Starter Camp', level: 1, xp: { typical: 7.5, maxed: 10 } });
         expect(out.boostBudget.speedCapPct).toBe(65);
         expect(out.boostBudget.over.length).toBeGreaterThan(0);
         for (const o of out.boostBudget.over) expect(o.pct).toBeGreaterThan(o.budget);

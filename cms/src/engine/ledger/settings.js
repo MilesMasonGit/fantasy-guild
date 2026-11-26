@@ -50,10 +50,10 @@ const TOP_LEVEL = 99;
 const DEFAULT_PACE_RULE = Object.freeze({ startMinutes: 3, stepPct: 6.25, minPct: 6, maxPct: 6.5 });
 
 /**
- * The curve's player is Maxed (owner, 2026-11-07): a typical player lands about 1.5 to 2x slower
+ * The curve's player is Maxed (owner, 2026-11-07): a typical player lands about 1.45x slower
  * than the curve and one with no boosts at most 3x; Maxed no more than 3x faster.
  */
-const DEFAULT_PROFILE_BOUNDS = Object.freeze({ typical: 2, bare: 3, maxed: 3 });
+const DEFAULT_PROFILE_BOUNDS = Object.freeze({ typical: 1.45, bare: 3, maxed: 3 });
 
 /** The kinds of boost the budget counts, with their words. */
 export const BOOST_BUDGET_KINDS = Object.freeze([
@@ -70,13 +70,13 @@ const BUDGET_KINDS = BOOST_BUDGET_KINDS.map((k) => k.id);
  * of the work's main output a cycle) and rare finds. Copper's row serves tiers 0 and 1.
  */
 const DEFAULT_BOOST_BUDGET = Object.freeze([
-    [0, [10, 20], [5, 10], [2, 27], [0, 100]],
-    [2, [15, 30], [5, 10], [41, 77], [0, 100]],
-    [3, [18, 35], [8, 15], [68, 110], [0, 100]],
-    [4, [20, 40], [8, 15], [100, 150], [50, 150]],
-    [5, [22, 45], [10, 20], [138, 197], [50, 150]],
-    [6, [25, 50], [10, 20], [183, 254], [50, 250]],
-    [7, [30, 60], [10, 20], [300, 400], [50, 250]],
+    [0, [15, 20], [7.5, 10], [2, 27], [0, 100]],
+    [2, [22.5, 30], [7.5, 10], [41, 77], [0, 100]],
+    [3, [26.25, 35], [11.25, 15], [68, 110], [0, 100]],
+    [4, [30, 40], [11.25, 15], [100, 150], [50, 150]],
+    [5, [33.75, 45], [15, 20], [138, 197], [50, 150]],
+    [6, [37.5, 50], [15, 20], [183, 254], [50, 250]],
+    [7, [45, 60], [15, 20], [300, 400], [50, 250]],
 ].map(([tier, ...cells]) => Object.freeze({
     tier, ...Object.fromEntries(BUDGET_KINDS.map((kind, i) => [kind, Object.freeze({ typical: cells[i][0], maxed: cells[i][1] })])),
 })));

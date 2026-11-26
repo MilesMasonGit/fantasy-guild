@@ -74,8 +74,8 @@ describe('the curve\'s player is Maxed', () => {
         }
         const wall = pace.findings().find(f => f.check === 'wall' && f.key === 'skill:construction');
         expect(wall.message).toMatch(/at Maxed/);
-        expect(settingsOf(null).profileBounds).toEqual({ typical: 2, bare: 3, maxed: 3 });
-        expect(settingsOf({ profileBounds: 4 }).profileBounds).toEqual({ typical: 2, bare: 4, maxed: 4 });
+        expect(settingsOf(null).profileBounds).toEqual({ typical: 1.45, bare: 3, maxed: 3 });
+        expect(settingsOf({ profileBounds: 4 }).profileBounds).toEqual({ typical: 1.45, bare: 4, maxed: 4 });
     });
 
     it('⭐ Typical over its bound is found, against the curve, where it was not before', () => {
@@ -219,13 +219,25 @@ describe('the boost budget', () => {
     it('⭐ holds BALANCE_RULES section 5\'s table, the 65 % speed cap its last row', () => {
         const s = settingsOf(null);
         expect(s.boostBudget.map(r => r.tier)).toEqual([0, 2, 3, 4, 5, 6, 7]);
-        expect(s.boostBudget[0]).toEqual({ tier: 0, speed: { typical: 10, maxed: 20 }, xp: { typical: 5, maxed: 10 }, yield: { typical: 2, maxed: 27 }, rare: { typical: 0, maxed: 100 } });
-        expect(s.boostBudget[6]).toEqual({ tier: 7, speed: { typical: 30, maxed: 60 }, xp: { typical: 10, maxed: 20 }, yield: { typical: 300, maxed: 400 }, rare: { typical: 50, maxed: 250 } });
+        expect(s.boostBudget[0]).toEqual({ tier: 0, speed: { typical: 15, maxed: 20 }, xp: { typical: 7.5, maxed: 10 }, yield: { typical: 2, maxed: 27 }, rare: { typical: 0, maxed: 100 } });
+        expect(s.boostBudget[6]).toEqual({ tier: 7, speed: { typical: 45, maxed: 60 }, xp: { typical: 15, maxed: 20 }, yield: { typical: 300, maxed: 400 }, rare: { typical: 50, maxed: 250 } });
         expect(s.speedCapPct).toBe(65);
         // Speed and XP climb level by level between tier openings; yield and rare finds step.
-        expect(boostBudgetAt(s, 25)).toMatchObject({ speed: { typical: 16.5, maxed: 32.5 }, yield: { typical: 41, maxed: 77 } });
-        expect(boostBudgetAt(s, 1)).toMatchObject({ speed: { typical: 10, maxed: 20 } });
-        expect(boostBudgetAt(s, 95)).toMatchObject({ speed: { typical: 30, maxed: 60 } });
+        expect(boostBudgetAt(s, 25)).toMatchObject({ speed: { typical: 24.375, maxed: 32.5 }, yield: { typical: 41, maxed: 77 } });
+        expect(boostBudgetAt(s, 1)).toMatchObject({ speed: { typical: 15, maxed: 20 } });
+        expect(boostBudgetAt(s, 95)).toMatchObject({ speed: { typical: 45, maxed: 60 } });
+    });
+
+    it('defaults hold three quarters of each speed and XP boost at Typical', () => {
+        const s = settingsOf(null);
+        expect(s.profileBounds.typical).toBe(1.45);
+        const rows = { 0: [15, 7.5], 2: [22.5, 7.5], 3: [26.25, 11.25], 4: [30, 11.25], 5: [33.75, 15], 6: [37.5, 15], 7: [45, 15] };
+        for (const r of s.boostBudget) {
+            expect(r.speed.typical).toBe(rows[r.tier][0]);
+            expect(r.xp.typical).toBe(rows[r.tier][1]);
+            expect(r.speed.typical).toBe(0.75 * r.speed.maxed);
+            expect(r.xp.typical).toBe(0.75 * r.xp.maxed);
+        }
     });
 
     it('⭐ counts every boost a profile holds against its cell, and finds a total over it', () => {
@@ -237,8 +249,8 @@ describe('the boost budget', () => {
         expect(xp.budget).toBe(10);
         const found = pace.findings().filter(f => f.check === 'boost-budget');
         expect(found.filter(f => /^XP at Maxed/.test(f.message))).toEqual([]);
-        expect(found.find(f => /^XP at Typical/.test(f.message)).message).toMatch(/6 pieces of work over the boost budget, .*\+10 % against 5 %/);
-        expect(vein.find(r => r.kind === 'xp' && r.profile === PROFILE.TYPICAL)).toMatchObject({ budget: 5 });
+        expect(found.find(f => /^XP at Typical/.test(f.message)).message).toMatch(/6 pieces of work over the boost budget, .*\+10 % against 8 %/);
+        expect(vein.find(r => r.kind === 'xp' && r.profile === PROFILE.TYPICAL)).toMatchObject({ budget: 7.5 });
         // Halve the budget and it is over.
         const tight = paceOf(paceContent(), { boostBudget: [{ tier: 0, speed: { typical: 10, maxed: 20 }, xp: { typical: 2, maxed: 5 }, yield: { typical: 50, maxed: 50 }, rare: { typical: 0, maxed: 100 } }] });
         const over = tight.findings().filter(f => f.check === 'boost-budget');
