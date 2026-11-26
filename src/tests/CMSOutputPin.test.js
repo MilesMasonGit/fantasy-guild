@@ -10,6 +10,7 @@ import { adaptToken, adaptRecipe, adaptCorpus } from '../../cms/src/engine/sim/f
 import { runTempoPass } from '../../cms/src/engine/sim/tempoPass.js';
 import { runTuningPass } from '../../cms/src/engine/sim/tuningPass.js';
 import { normaliseDials } from '../../cms/src/engine/sim/dials.js';
+import { applyTokenResults, applyRecipePoolResults } from '../../cms/src/engine/sim/writeBack.js';
 import { recalculateWorkspace } from '../../cms/src/engine/recalculate.js';
 import SupplyChainLayout from '../../cms/src/components/layout/SupplyChainLayout.jsx';
 import RecipeEditor from '../../cms/src/components/editors/RecipeEditor.jsx';
@@ -138,6 +139,28 @@ describe('the TUNE pass', () => {
         expect(rows.some((r) => r.code === 'levers-exhausted' || r.code === 'correction-too-large')).toBe(false);
         expect(report.sim.tunings.get('fx_press').lever).toBe('none');
         expect(recalculateWorkspace(pinWorkspace(), {}).report.sim.rows.some((r) => r.code === 'outputs-pinned')).toBe(false);
+    });
+});
+
+describe('the write-back', () => {
+    // A tuning that moved Fx Seed's chance and a downcycle that capped Fx Bar's count: neither lands on a pinned record.
+    const moved = { before: { outputs: [{ minQty: 1, maxQty: 1, chancePercent: 50 }] }, after: { outputs: [{ minQty: 1, maxQty: 1, chancePercent: 30 }] }, lever: 'chance' };
+    const sim = () => ({
+        cycleTimes: new Map(), xp: new Map(),
+        tunings: new Map([['fx_t', moved]]),
+        downcycles: new Map([['fx_r', { outputs: [{ derivedAvgQty: 2, authoredAvgQty: 5 }] }]]),
+    });
+    const token = (pinned) => ({ id: 'fx_t', name: 'Fx T', sim: pinned ? { ...TAGS, outputsPinned: true } : TAGS, config: { skill: 'mining', cycleTimeMs: 3000, outputs: [o('fx_seed', 1, 1, 50)] } });
+    const pools = (pinned) => ({ smithing: [{ id: 'fx_r', name: 'Fx R', downcycle: true, sim: pinned ? { ...TAGS, outputsPinned: true } : TAGS, durationMs: 3000, outputs: [o('fx_bar', 5, 5)] }] });
+
+    it('puts a pinned record\'s outputs back as written, whatever a pass handed it', () => {
+        expect(applyTokenResults({ fx_t: token(true) }, sim()).fx_t.config.outputs).toEqual([o('fx_seed', 1, 1, 50)]);
+        expect(applyRecipePoolResults(pools(true), sim()).smithing[0].outputs).toEqual([o('fx_bar', 5, 5)]);
+    });
+
+    it('lands them on an unpinned one: the guard has teeth', () => {
+        expect(applyTokenResults({ fx_t: token(false) }, sim()).fx_t.config.outputs[0].chance).toBe(30);
+        expect(applyRecipePoolResults(pools(false), sim()).smithing[0].outputs[0].minQty).toBe(2);
     });
 });
 

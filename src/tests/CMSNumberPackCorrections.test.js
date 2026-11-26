@@ -6,6 +6,13 @@ import { useSimulationStore } from '../../cms/src/stores/useSimulationStore';
 import { syncFiles } from '../../cms/src/engine/recipeSync';
 import { writeNumberPack, writeLiveNumberPack, ruledMakes, restTerms } from '../../cms/src/engine/numberPack.js';
 import { setValue, proposedValue, entryConflict, validatePack } from '../../cms/src/engine/changePacks.js';
+import { createRequire } from 'module';
+import path from 'path';
+
+// The balance solver itself, so a Bait recipe's prepare step is timed by the solver's own rule.
+const solver = createRequire(import.meta.url)(path.resolve(__dirname, '../../.claude/skills/balancer/balance_solver.cjs'));
+const RULES = solver.make({});
+const prepareStep = (level, xpLevel) => solver.timeStep(RULES, 'prepare', level, xpLevel);
 
 /**
  * The number pack writer's corrections (both modes): every edit that writes a time pins it
@@ -15,7 +22,9 @@ import { setValue, proposedValue, entryConflict, validatePack } from '../../cms/
  * work potion's 5); a regrowing tree's rest is its Stump's regrowth at 30 s; and the content
  * session's answers on what a Live record follows (a build or Dig recipe its Token, an offering its
  * shrine, the Bait recipes their fish, chance-only extras kept, a water's catch on its fish, the two
- * rods as they are). Fixtures only; the real workspace is never read.
+ * rods as they are). Every edit that writes outputs pins them (`sim.outputsPinned`), a Live gather
+ * whose yield it leaves alone never; a Bait recipe is a prepare step at its fish's level.
+ * Fixtures only; the real workspace is never read.
  *
  * ⚠️ The round trip hydrates the CMS store with persistence off (TESTING, "The CMS").
  */
@@ -144,7 +153,7 @@ const liveRows = () => [
     { id: 'twine', name: 'Twine', skill: 'Crafting', category: 'item', level: 1, work: 'prepare', inputs: [{ id: 'flax', name: 'Flax', count: 2 }], seconds: 7.5, xp: 3, makes: 1 },
     { id: 'fishing_rod', name: 'Fishing Rod', skill: 'Crafting', category: 'item', type: 'tool', level: 3, work: 'make', inputs: [{ id: 'bamboo', name: 'Bamboo', count: 1 }, { id: 'copper_nails', name: 'Copper Nails', count: 1 }, { id: 'string', name: 'String', count: 1 }], seconds: 11.3, xp: 4, makes: 1 },
     { id: 'bait', name: 'Bait', skill: 'Fishing', category: 'item', type: 'bait', level: 1, work: 'make', inputs: [{ id: 'carp', name: 'Carp', count: 1 }, { id: 'worm', name: 'Worm', count: 1 }], seconds: 11.9, xp: 4, makes: 1 },
-    { id: 'carp', name: 'Carp', skill: 'Fishing', category: 'item', level: 5, work: 'gather', inputs: [], seconds: 6.7, xp: 3, makes: 1 },
+    { id: 'carp', name: 'Carp', skill: 'Fishing', category: 'item', level: 5, work: 'gather', inputs: [], seconds: 6.7, xp: 3, makes: 1, xpLevel: 10 },
     { id: 'worm', name: 'Worm', skill: 'Farming', category: 'item', level: null, work: 'gather', why: 'No level of its own: gathered or found, no rule for it yet' },
     gather('flax_field', 'Flax Field', 'Farming', 4, 5.5, 2),
     gather('geode', 'Geode', 'Mining', 15, 7.4, 4),
@@ -154,7 +163,7 @@ const liveRows = () => [
     { id: 'hut', name: 'Hut', skill: 'Construction', category: 'building', level: 1, work: null, why: 'Builds follow the one-off step rule; Construction XP has no rule yet' },
 ];
 
-const runLive = (ws = liveWorkspace()) => writeLiveNumberPack(ws, liveRows(), { ids: liveIds(), catalogue: liveCatalogue(), id: 'test-live-corrections', createdAt: '2026-11-26T00:00:00Z' });
+const runLive = (ws = liveWorkspace(), extra = { prepareStep }) => writeLiveNumberPack(ws, liveRows(), { ids: liveIds(), catalogue: liveCatalogue(), id: 'test-live-corrections', createdAt: '2026-11-26T00:00:00Z', ...extra });
 const timeOf = (e) => (e.kind === 'recipe' ? e.value.durationMs : e.value.config?.cycleTimeMs);
 
 describe('live mode: the time pin', () => {
@@ -265,12 +274,16 @@ describe('live mode: the content session\'s answers', () => {
         expect(result.unclear.some((u) => u.id === 'recipe_offer_wood')).toBe(false);
     });
 
-    it('times each Bait recipe by its own fish, its fish and its Bait a craft as they are', () => {
+    it('times each Bait recipe as a prepare step at its fish\'s level, its fish and its Bait a craft as they are', () => {
         const bait = byId.recipe_bait_from_carp.value;
-        expect(bait).toMatchObject({ levelRequirement: 5, durationMs: 6700, xp: 3 });
+        // 8 s x 1.15^(5/20), 8.3 s, trimmed for whole XP at the Carp's Fishing rate: 4 XP in 9 s.
+        const step = solver.timeStep(RULES, 'prepare', 5, 10);
+        expect(step.ruleSeconds).toBeCloseTo(8.28, 2);
+        expect(step).toMatchObject({ seconds: 9, xp: 4 });
+        expect(bait).toMatchObject({ levelRequirement: 5, durationMs: 9000, xp: 4 });
         expect(bait.inputs).toEqual([{ itemId: 'item_carp', quantity: 1 }]);
         expect(bait.outputs).toEqual([out1('item_bait', 4)]);
-        expect(byId.recipe_bait_from_carp.note).toMatch(/timed by its Carp/);
+        expect(byId.recipe_bait_from_carp.note).toMatch(/a prepare step at its Carp's level/);
         // Its Worm has no level of its own, so that one is listed, and neither is a clash on the shared row.
         expect(reasonOf(result.unclear, 'recipe_bait_from_worm')).toMatch(/timed by its Worm, whose row has no numbers of its own/);
         expect(result.unclear.some((u) => /matched by/.test(u.reason))).toBe(false);
@@ -296,6 +309,45 @@ describe('live mode: the content session\'s answers', () => {
     });
 });
 
+describe('live mode: a Bait recipe without the prepare rule', () => {
+    it('is listed, never timed by its fish\'s gather', () => {
+        const { pack, unclear } = runLive(liveWorkspace(), {});
+        expect(pack.entries.some((e) => e.id === 'recipe_bait_from_carp')).toBe(false);
+        expect(unclear.find((u) => u.id === 'recipe_bait_from_carp').reason).toMatch(/prepare step/);
+    });
+});
+
+describe('live mode: the output pin', () => {
+    let byId;
+    beforeAll(() => { byId = Object.fromEntries(runLive().pack.entries.map((e) => [e.id, e])); });
+    const pinned = (id) => byId[id].value.sim?.outputsPinned === true;
+
+    it('pins the outputs of every made thing it counts', () => {
+        for (const id of ['recipe_tonic', 'recipe_copper_arrow', 'recipe_twine', 'recipe_fishing_rod']) expect(pinned(id), id).toBe(true);
+        expect(byId.recipe_tonic.value.sim).toEqual({ ...TAGS, xpPinned: true, timePinned: true, outputsPinned: true });
+    });
+
+    it('never pins a Live gather whose yield it leaves alone, nor a Bait recipe whose count it keeps', () => {
+        for (const id of ['token_vein', 'token_birch_tree', 'token_geode', 'token_pond', 'recipe_flax', 'recipe_bait_from_carp']) expect(pinned(id), id).toBe(false);
+    });
+
+    it('pins a Live gather\'s outputs when it writes them from its plan\'s split', () => {
+        const ws = liveWorkspace();
+        ws.tokens.token_vein.plan = { ...live, split: [{ itemId: 'item_ore', share: 2 }] };
+        const { pack } = runLive(ws);
+        const v = pack.entries.find((e) => e.id === 'token_vein').value;
+        expect(v.config.outputs).toEqual([out1('item_ore', 2)]);
+        expect(v.sim.outputsPinned).toBe(true);
+    });
+
+    it('drops a chance an old tuning left on the output it counts', () => {
+        const ws = liveWorkspace();
+        ws.recipePools.alchemy[0].outputs = [{ ...out1('item_tonic', 1), baseChance: 60 }];
+        const { pack } = runLive(ws);
+        expect(pack.entries.find((e) => e.id === 'recipe_tonic').value.outputs).toEqual([out1('item_tonic', 5)]);
+    });
+});
+
 describe('live mode: round trip', () => {
     it('every time the pack writes survives Recalculate and Sync', () => {
         const ws = liveWorkspace();
@@ -311,6 +363,39 @@ describe('live mode: round trip', () => {
         const timed = pack.entries.filter((e) => Number.isFinite(timeOf(e)));
         expect(timed.map((e) => `${e.id} ${synced(e)}`)).toEqual(timed.map((e) => `${e.id} ${timeOf(e)}`));
         expect(files['tokens.json'].token_birch_stump.grows.afterMs).toBe(30000);
+    });
+
+    it('every count and chance the pack pins survives Recalculate and Sync, and moves without the pin', () => {
+        const ws = liveWorkspace();
+        // A Still that anchors the Tonic's value and a Press its Flax's, so the Tonic recipe's 5 a craft is a source Recalculate tunes.
+        const anchoring = (id, name, itemId) => ({
+            id, name, uses: null, sim: TAGS, plan: live,
+            config: { skill: 'alchemy', skillRequired: 10, cycleTimeMs: 4000, xp: 2, inputs: [], outputs: [{ ...out1(itemId, 1), anchor: true }] },
+        });
+        ws.tokens.token_still = anchoring('token_still', 'Still', 'item_tonic');
+        ws.tokens.token_press = anchoring('token_press', 'Press', 'item_flax');
+        const { pack } = runLive(ws);
+        let accepted = ws;
+        for (const e of pack.entries) accepted = { ...accepted, ...setValue(accepted, e.kind, e.id, proposedValue(e)) };
+        const outputsOf = (files, e) => (e.kind === 'recipe' ? files['tokenRecipes.json'].find((r) => r.id === e.id)?.outputs : files['tokens.json'][e.id]?.config?.outputs);
+        const numbers = (list) => (list || []).map((o) => `${o.itemId} ${o.minQty}-${o.maxQty} ${o.chance}`);
+        const sync = (workspace) => {
+            useEntityStore.getState().hydrate(workspace);
+            return JSON.parse(JSON.stringify(syncFiles(useEntityStore.getState().recalculateEconomy({}))));
+        };
+        const pinnedEntries = pack.entries.filter((e) => e.value.sim?.outputsPinned);
+        expect(pinnedEntries.length).toBeGreaterThan(3);
+        const files = sync(accepted);
+        const written = (e) => (e.kind === 'recipe' ? e.value.outputs : e.value.config.outputs);
+        expect(pinnedEntries.map((e) => [e.id, numbers(outputsOf(files, e))])).toEqual(pinnedEntries.map((e) => [e.id, numbers(written(e))]));
+        // The guard has teeth: unpinned, Recalculate moves some of the same numbers.
+        let unpinned = accepted;
+        for (const e of pinnedEntries) {
+            const value = proposedValue(e);
+            unpinned = { ...unpinned, ...setValue(unpinned, e.kind, e.id, { ...value, sim: { ...value.sim, outputsPinned: undefined } }) };
+        }
+        const moved = sync(unpinned);
+        expect(pinnedEntries.some((e) => JSON.stringify(numbers(outputsOf(moved, e))) !== JSON.stringify(numbers(written(e))))).toBe(true);
     });
 });
 
@@ -366,6 +451,11 @@ describe('Planned mode', () => {
         const timed = result.pack.entries.filter((e) => Number.isFinite(timeOf(e)));
         expect(timed.map((e) => e.id).sort()).toEqual(['recipe_draught', 'recipe_herb_bed', 'token_ash_tree', 'token_deep_vein', 'token_elm_tree', 'token_herb_patch']);
         for (const e of timed) expect(e.value.sim, e.id).toMatchObject({ timePinned: true });
+    });
+
+    it('pins the outputs it writes: a craft\'s count, a split, a new line of 1; never outputs it leaves as they are', () => {
+        for (const id of ['recipe_draught', 'recipe_herb_bed', 'token_herb_patch', 'token_ash_tree', 'token_elm_tree']) expect(byId[id].value.sim?.outputsPinned, id).toBe(true);
+        expect(byId.token_deep_vein.value.sim?.outputsPinned).toBeUndefined();
     });
 
     it('leaves a gathering Token\'s written outputs as they are, and gives a new one a line of 1', () => {
