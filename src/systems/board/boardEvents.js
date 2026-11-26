@@ -165,7 +165,7 @@ export const BOARD_EVENTS = {
      * A hero finished demolishing a marked Token and it left the board, or an event Token was
      * demolished at once (`Demolition.js`). Payload: `{ instanceId, typeId, x, y, heroId, event? }`,
      * `event` the event Token's `instance.event`. ⚠️ Never with `TOKEN_DEPLETED`: nothing ran out,
-     * and nothing is refunded or dropped.
+     * and nothing is refunded or dropped, but for its hero's Salvage, landed as loot after it.
      */
     TOKEN_DEMOLISHED: 'board:token_demolished',
 
@@ -253,7 +253,10 @@ export const BOARD_EVENTS = {
      */
     RARE_DROP: 'board:rare_drop',
 
-    /** Combat on an enemy Token resolved. Payload: `{ instanceId, outcome: 'victory'|'defeat', heroId, typeId }` */
+    /**
+     * Combat on an enemy Token resolved. Payload: `{ instanceId, outcome: 'victory'|'defeat'|'fled',
+     * heroId, typeId }` (`fled`: brought down under Valiant, losing nothing).
+     */
     COMBAT_RESOLVED: 'board:combat_resolved',
 
     /**
@@ -303,8 +306,8 @@ export const BOARD_EVENTS = {
     /**
      * A named effect just did something on a Token — `{ instanceId, title }`. Also, untitled, a
      * support's bonus landing (`{ instanceId, amount, bonus, fromTokenId? }`), a Giant Harvest
-     * (`{ instanceId, giant: true }`) and an Echo (`{ instanceId, echo: true, fromTokenId? }`), all
-     * from `EffectFeedback`.
+     * (`{ instanceId, giant: true }`), an Echo (`{ instanceId, echo: true, fromTokenId? }`) and
+     * Fortune's sure find (`{ instanceId, fortune: true, fromTokenId? }`), all from `EffectFeedback`.
      *
      * ⚠️ **Not an alert.** `TILE_EVENT_ALERT` is for problems a player has to
      * act on (no inputs, no charges, a refused placement). An effect firing is
@@ -322,7 +325,8 @@ export const BOARD_EVENTS = {
     COMBAT_ENGAGED: 'board:combat_engaged',
 
     /**
-     * A hero was defeated: `{ heroId, heroName, lost }` (`lost`: the names of the gear it cost).
+     * A hero was defeated: `{ heroId, heroName, lost, fled? }` (`lost`: the names of the gear it
+     * cost; `fled`: Valiant reached the fight, so they fled, losing nothing, and are wounded as ever).
      *
      * Published by `BoardCombat.resolveDefeat` instead of a direct call into `Flags`, which would
      * make a `BoardCombat ↔ Flags` import cycle. `Flags.init` subscribes and furls the hero's flag;
@@ -402,6 +406,12 @@ export const ALERT = {
      * the hero lets go and says the level they need.
      */
     FISH_LEVEL: 'fish_level',
+    /**
+     * At an enemy, the hero's bow has no arrow: none carried that the Bank still holds
+     * (`Ammo.leavesWithout`). Like `NO_BAIT`: never a badge, never a refusal; the hero lets go of
+     * the enemy (which keeps its wounds) and says which arrow they need.
+     */
+    NO_AMMO: 'no_ammo',
     /**
      * The station cannot run the recipe it is set to, because the context Tokens that recipe names
      * are not beside it. (A station with nothing picked says `CHOOSE_RECIPE` instead.)

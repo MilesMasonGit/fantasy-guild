@@ -18,6 +18,10 @@ import { roundByChance, WHOLE_EPSILON } from '../../utils/RNG.js';
  *   own skill starts, for that cycle: one potion, one cycle.
  * * **Nothing acts by sitting in the Bank**: an always-on rule (no moment) on a food, drink or
  *   potion does nothing. A shared item acts only through its moment and its dose.
+ * * **A poison** (owner 2026-11-21, brief 750 S3: a Consumable whose fight-start rule applies its
+ *   effect "for N attacks") is taken like an elixir as a fight starts, but only by a hero holding a
+ *   Stealth weapon, and lasts N of its hero's attacks, hit or miss; what is left carries into later
+ *   fights, and a fresh one is taken only as a fight starts.
  *
  * ⚠️ Kept free of the item and effect registries: the CMS imports it, and hands in the statements.
  */
@@ -65,7 +69,21 @@ export function workSkillMatches(when, skill) {
 }
 
 /** How a spent item is used. */
-export const DOSE = Object.freeze({ ELIXIR: 'elixir', DRINK: 'drink', POTION: 'potion' });
+export const DOSE = Object.freeze({ ELIXIR: 'elixir', DRINK: 'drink', POTION: 'potion', POISON: 'poison' });
+
+/**
+ * How many attacks a poison's dose lasts, from its fight-start rules: the most any of them names as
+ * "for N attacks" (`payload.forAttacks`), or 0 when none does (not a poison).
+ */
+export function poisonAttacksOf(statements) {
+    let most = 0;
+    for (const s of Array.isArray(statements) ? statements : []) {
+        if (s?.when?.event !== FIGHT_START) continue;
+        const n = Math.floor(Number(s?.payload?.forAttacks));
+        if (Number.isFinite(n) && n > most) most = n;
+    }
+    return most;
+}
 
 /** How many of its moments one dose lasts. */
 export const DOSE_LENGTH = Object.freeze({
@@ -120,7 +138,7 @@ export function doseKindsOf(categoryId, statements) {
     const onFight = list.some(s => s?.when?.event === FIGHT_START);
     const onWork = list.some(s => isWorkMoment(s?.when?.event));
     const kinds = [];
-    if (kind === CATEGORY_KINDS.CONSUMABLE && onFight) kinds.push(DOSE.ELIXIR);
+    if (kind === CATEGORY_KINDS.CONSUMABLE && onFight) kinds.push(poisonAttacksOf(list) > 0 ? DOSE.POISON : DOSE.ELIXIR);
     if (categoryId === 'drink' && onWork) kinds.push(DOSE.DRINK);
     if (kind === CATEGORY_KINDS.CONSUMABLE && onWork) kinds.push(DOSE.POTION);
     return kinds;
@@ -130,7 +148,8 @@ export function doseKindsOf(categoryId, statements) {
 export const DOSE_WHY = Object.freeze({
     [DOSE.ELIXIR]: `An elixir: one is drunk from the Bank as a fight starts and lasts ${ELIXIR_FIGHTS} fights (one number for every elixir). Its fight-start rules work from that dose.`,
     [DOSE.DRINK]: `A drink: one is drunk from the Bank as a work cycle starts and lasts ${DRINK_CYCLES} work cycles (one number for every drink). Its On Work Start rules work from that dose; a rule naming a skill counts only that skill's cycles.`,
-    [DOSE.POTION]: 'A work potion: one is drunk from the Bank each time a work cycle of its skill starts, for that cycle. The hero keeps it while doing other work.'
+    [DOSE.POTION]: 'A work potion: one is drunk from the Bank each time a work cycle of its skill starts, for that cycle. The hero keeps it while doing other work.',
+    [DOSE.POISON]: 'A poison: one is taken from the Bank as a fight starts, only by a hero holding a Stealth weapon, and lasts the attacks its rule names (for N attacks), hit or miss. What is left carries into later fights; a fresh one is taken only as a fight starts.'
 });
 
 /** What the CMS says about a food, drink or Consumable that no moment drinks. */

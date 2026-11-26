@@ -34,13 +34,15 @@ export function heroCombatStats(hero) {
     const side = heroSide(hero);
     if (!side) return null;
     const arrow = side.arrows?.arrow || null;
+    // Out of Motes or spare Kunai, the hero hits at half, as the fight would.
+    const short = !!side.ammo?.short;
     const vs = COMBAT_SKILL_IDS.map(style => {
         // An enemy of this style with nothing on it: no resistances, no effects.
         const enemy = { combatType: style };
         return {
             style,
-            hit: CombatFormulas.heroBlow(hero, enemy, { arrow }).exact,
-            crit: CombatFormulas.heroBlow(hero, enemy, { crit: true, arrow }).exact
+            hit: CombatFormulas.heroBlow(hero, enemy, { arrow, short }).exact,
+            crit: CombatFormulas.heroBlow(hero, enemy, { crit: true, arrow, short }).exact
         };
     });
     const hits = vs.map(v => v.hit);

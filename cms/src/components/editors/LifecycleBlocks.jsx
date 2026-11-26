@@ -612,7 +612,7 @@ function ShrineBlock({ block, token, effects, recipePools, items, onChange }) {
       <p className="text-[10px] text-gray-600" data-field="shrine-note">
         {note} {blessings.length
           ? `Its ${blessings.length === 1 ? 'rule is its blessing' : `${blessings.length} rules are its blessing`}, on only while it is lit.`
-          : 'It has no rule yet: give it a blessing (Can’t Run Out, Echo, or any rule), which holds only while it is lit.'}
+          : 'It has no rule yet: give it a blessing (Can’t Run Out, Fortune, Valiant, Wisdom, Echo, or any rule), which holds only while it is lit.'}
         {' '}A hero offers only when a whole offering fits under the most; a shrine that is out always takes one.
       </p>
     </div>

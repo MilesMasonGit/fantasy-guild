@@ -108,6 +108,31 @@ describe('⭐ the item editor: a weapon has one style, damage and speed', () => 
         expect(store().items[id].styles).toEqual(['ranged']);
     });
 
+    it('a Magic weapon names the Mote it burns; a Stealth one may be thrown; another style clears either', () => {
+        const mote = store().addItem({ name: 'Fixture Fire Mote', equipSlot: 'consumable' });
+        const id = store().addItem({ name: 'Wand Fixture', equipSlot: 'hand', styles: ['magic'] });
+        const { container, rerender } = itemEditor(id);
+        expect(field(container, 'weapon-thrown')).toBeNull();
+        const picker = field(container, 'weapon-mote');
+        expect([...picker.options].some(o => o.value === mote)).toBe(true);
+        // Only Consumables are offered.
+        expect([...picker.options].some(o => o.value === id)).toBe(false);
+        fireEvent.change(picker, { target: { value: mote } });
+        expect(store().items[id].mote).toBe(mote);
+        fireEvent.change(field(container, 'weapon-mote'), { target: { value: '' } });
+        expect(store().items[id].mote).toBeUndefined();
+        fireEvent.change(field(container, 'weapon-mote'), { target: { value: mote } });
+
+        fireEvent.change(field(container, 'weapon-style'), { target: { value: 'stealth' } });
+        rerender(React.createElement(ItemEditor));
+        expect(store().items[id].mote).toBeUndefined();
+        expect(field(container, 'weapon-mote')).toBeNull();
+        fireEvent.click(field(container, 'weapon-thrown'));
+        expect(store().items[id].thrown).toBe(true);
+        fireEvent.change(field(container, 'weapon-style'), { target: { value: 'melee' } });
+        expect(store().items[id].thrown).toBeUndefined();
+    });
+
     it('an older two-style weapon says it fights as its first; picking one keeps one', () => {
         const id = store().addItem({ name: 'Old Dagger Fixture', equipSlot: 'hand', styles: ['melee', 'stealth'] });
         const { container } = itemEditor(id);

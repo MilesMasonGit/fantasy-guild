@@ -386,12 +386,12 @@ function tintColour(tint) {
 
 /**
  * What a "used" bubble says for one `HERO_CONSUMED`: the health a meal gave back ("+5 ♥"), or the
- * name of an elixir, a drink or a work potion as it is drunk (`dose`). Null when there is nothing to
+ * name of an elixir, a poison, a drink or a work potion as it is drunk (`dose`). Null when there is nothing to
  * say (a meal at full health).
  */
 export function usedBubbleText(p) {
     if (!p?.itemId) return null;
-    if (p.elixir || p.dose) return getItem(p.itemId)?.name || p.itemId;
+    if (p.elixir || p.poison || p.dose) return getItem(p.itemId)?.name || p.itemId;
     const healed = Math.round(Number(p.amount) || 0);
     return healed > 0 ? `+${healed} ♥` : null;
 }
@@ -511,9 +511,10 @@ export function watchMatFx() {
             }
             const from = p.fromTokenId && p.fromTokenId !== p.instanceId ? p.fromTokenId : null;
             if (from) spark(from, p.instanceId);
-            // An Echo: the shrine's spark, then "Echo!" off the Token whose cycle came again.
-            if (p.echo) {
-                floatNumber(p.instanceId, i18n('effectBadges.float.echo'), 'gain', { delay: from ? SPARK_MS : 0 });
+            // An Echo: the shrine's spark, then "Echo!" off the Token whose cycle came again; Fortune's
+            // sure find the same, "Fortune!".
+            if (p.echo || p.fortune) {
+                floatNumber(p.instanceId, i18n(p.echo ? 'effectBadges.float.echo' : 'effectBadges.float.fortune'), 'gain', { delay: from ? SPARK_MS : 0 });
                 return;
             }
             const n = Number(p.amount);

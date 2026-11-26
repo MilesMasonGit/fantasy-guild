@@ -822,6 +822,12 @@ function bodySegments(statement, names) {
             if (entry.heroOnly) {
                 return segs(head(), ' in combat', styleScopeSegments(statement, carried), reach);
             }
+            // "Salvage 50% on what the hero demolishes": a share of what a Token cost, on the hero's own work.
+            if (carried && payload.type === EFFECT_TYPES.SALVAGE) return segs(head(), ' on what the hero demolishes');
+            // A Build Discount reaches every Foundation the guild buys or builds on, through its best holder.
+            if (carried && payload.type === EFFECT_TYPES.BUILD_DISCOUNT) {
+                return segs(head(), ' on Foundations and their builds, while the hero is in the guild');
+            }
             if (carried) return segs(head(), carriedScopeSegments(statement));
             // "Double Item 10% on Raw Beef at every nearby Token": the lead's own "on" names the item.
             const prep = namesItsNarrowing(statement) ? 'at' : 'on';
@@ -1023,14 +1029,18 @@ function bodySegments(statement, names) {
             /**
              * A library effect (a status included). With a duration it lingers, "for the fight" it
              * lasts until its fight ends, "for the swing" until the swing being made is over, "for
-             * the cycle" until the work cycle starting is over; without any it fires immediately
-             * (chaining). A status's own lifetime is its effect's, and the editor offers none for one.
+             * the cycle" until the work cycle starting is over, "for N attacks" (a poison's) that many
+             * of its hero's attacks; without any it fires immediately (chaining). A status's own
+             * lifetime is its effect's, and the editor offers none for one.
              */
             if (payload.effectId) {
                 const title = names.effect ? names.effect(payload.effectId) : payload.effectId;
                 const ms = Number(payload.durationMs) || 0;
+                const attacks = Math.floor(Number(payload.forAttacks)) || 0;
                 const lasting = payload.forSwing
                     ? segs(' ', d('for the swing', 'forSwing'))
+                    : attacks > 0
+                        ? segs(' ', d(`for ${attacks} attack${attacks === 1 ? '' : 's'}`, 'forAttacks'))
                     : payload.forFight
                         ? segs(' ', d('for the fight', 'forFight'))
                         : payload.forCycle

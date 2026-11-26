@@ -2,7 +2,7 @@ import * as TileModifiers from './TileModifiers.js';
 import { rollChance } from './CycleSavings.js';
 import { getGlobalAggregator } from '../effects/GuildModifiers.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
-import { rareTableOf, pickRareEntry, rareEntryShare } from '../../config/registries/rareTables.js';
+import { rareTableOf, pickRareEntry, rareEntryShare, rarestEntry } from '../../config/registries/rareTables.js';
 
 /**
  * A Token's rare drop table rolled at the end of a cycle (`BoardRunner.completeCycle`) or a kill
@@ -51,4 +51,15 @@ export function rollRareTable(instanceId, def, skill, random = Math.random) {
     if (!rollChance(chance, random)) return null;
     const entry = pickRareEntry(table, random);
     return entry ? { entry, chance: chance * rareEntryShare(table, entry) } : null;
+}
+
+/**
+ * Token type `def`'s rarest find at Token `instanceId`, for certain (Fortune): `{ entry, chance }` as
+ * {@link rollRareTable} answers a hit, `chance` the entry's usual chance a cycle. Null with no table.
+ * Draws nothing: the table is not rolled.
+ */
+export function sureFind(instanceId, def, skill) {
+    const table = rareTableOf(def);
+    const entry = rarestEntry(table);
+    return entry ? { entry, chance: luckyChance(instanceId, table, skill) * rareEntryShare(table, entry) } : null;
 }

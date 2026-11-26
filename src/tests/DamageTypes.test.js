@@ -33,7 +33,7 @@ import {
     DAMAGE_TYPES, DAMAGE_GROUPS, groupOf, typesOfGroup, withGroupFilled, PLAIN_ENEMY_HIT_TYPE, weaponDamageTypeOf, arrowOf, normaliseResistances,
     resistanceFor, RESISTANCE_STEPS, DEFAULT_DAMAGE_TYPE_BY_STYLE, BAREHANDED_DAMAGE_TYPE
 } from '../config/registries/damageTypes.js';
-import { nextArrowOf } from '../systems/combat/Arrows.js';
+import { nextArrowOf } from '../systems/combat/Ammo.js';
 import { heroSide, enemyCardView, heroResistLines } from '../ui/components/combat/fightView.js';
 import { itemTipFacts } from '../ui/components/drawer/ItemTip.jsx';
 
@@ -348,15 +348,16 @@ describe('arrows', () => {
         expect(hit.verdict).toBe('resisted');
     });
 
-    it('with none left the bow shoots its own part alone and spends nothing', () => {
+    // Rewritten for brief 750 S2 (owner ruling): with no arrow the bow no longer shoots its own
+    // part alone; the hero starts no fight (`CombatAmmo.test.js` has the rest).
+    it('with none left the bow does not shoot and the hero starts no fight', () => {
         const archer = addHero('Cara', { ranged: 1 });
         equip(archer, 'dt_spark_bow');
         expect(nextArrowOf(archer)).toBeNull();
         startFight('dt_dummy', archer);
         const seen = play(12000);
-        expect(seen.hero.length).toBeGreaterThan(2);
-        expect(seen.hero.every(p => p.arrowId === null)).toBe(true);
-        expect(seen.hero.filter(p => p.hit).every(p => p.types.length === 1 && p.types[0] === 'electric')).toBe(true);
+        expect(seen.hero).toHaveLength(0);
+        expect(BoardCombat.fightOfHero(archer.id)).toBeNull();
     });
 
     it('the first carried arrow the Bank holds is the one shot; a melee hero carrying arrows spends none', () => {
@@ -472,7 +473,9 @@ describe('the audits', () => {
         expect(findUnknownRefs({
             tokens: { t: { id: 't', enemy: { level: 1, kinds: ['armoured'], resistances: { slash: 50, crush: -50 } } } },
             items: {
-                w: { id: 'w', equipSlot: 'hand', styles: ['magic'], damageType: 'ice' },
+                // Since brief 750 S2 a Magic weapon names the Mote it burns (one naming none is named).
+                w: { id: 'w', equipSlot: 'hand', styles: ['magic'], damageType: 'ice', mote: 'm' },
+                m: { id: 'm', equipSlot: 'consumable' },
                 a: { id: 'a', equipSlot: 'consumable', arrow: { damage: 1, damageType: 'stab' } }
             },
             effects: { e: { id: 'e', statements: [provides(EFFECT_TYPES.TYPE_DAMAGE, 15, 'light')] } }

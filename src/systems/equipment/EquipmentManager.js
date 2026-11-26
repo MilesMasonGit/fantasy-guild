@@ -361,10 +361,10 @@ export function recalculateEquipmentModifiers(hero) {
         // Worn gear's resistances and damage cuts, fields of the item rather than rules.
         ...HeroEffects.loadoutDefenceContributions(hero)
     ];
-    for (const { type, value, category } of contributions) {
+    for (const { type, value, category, bucket } of contributions) {
         // `target.category` lets STATUS_IMMUNITY name one status instead of blocking all.
         hero.aggregator.addModifier({
-            type, value, bucket: 'flat', source,
+            type, value, bucket: bucket || 'flat', source,
             ...(category ? { target: { category } } : {})
         });
     }

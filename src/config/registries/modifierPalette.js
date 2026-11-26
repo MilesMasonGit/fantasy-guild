@@ -10,6 +10,8 @@ import { EFFECT_TYPES, TARGET_CATEGORIES, GIANT_HARVEST_SKILLS } from '../../sys
 import { COMBAT_SKILL_IDS } from './skillRegistry.js';
 import { DOSE_KIND_IDS } from './carriedKinds.js';
 import { effectTag } from './effectWords.js';
+import { CRIT_CHANCE_CAP } from '../FormulaRegistry.js';
+import { MAX_BUILD_DISCOUNT } from '../buildPrices.js';
 
 /** The work Quiet is read for: a Hideout's thefts. */
 const CRIME_SKILLS = Object.freeze(['crime']);
@@ -118,7 +120,8 @@ export const MODIFIER_BUCKETS = ['flat', 'multiplier', 'percentage'];
  * picker on Yield and a status picker on Immunity without knowing either list.
  *
  * * `'combatStyle'` — `CombatFormulas` passes the style the hero fights in (the weapon's; Melee
- *   barehanded) when it reads Damage, Swing Time and Accuracy, which is how a Hall star names the
+ *   barehanded) when it reads Damage, Swing Time, Accuracy and the combat tricks (Heal on Kill,
+ *   Last Stand, Twin Strike, Crit After Dodge), which is how a Hall star or a perk names the
  *   fighters it helps.
  *
  * A row without `categories` offers no narrowing at all, which is right for the
@@ -165,6 +168,13 @@ export const MODIFIER_BUCKETS = ['flat', 'multiplier', 'percentage'];
  * A `heroOnly` axis a hero also reads off the guild-wide aggregator (a Hall star),
  * summed in the same bucket as what they carry (`CombatFormulas`). Enemies never read the guild's.
  * Any other `heroOnly` axis on a star or a guild rule reaches nobody.
+ *
+ * ## `carriedPercentage` — a hero's gear and perks lend it as a percentage
+ *
+ * The loadout registers its combat numbers on the hero's aggregator flat (`HeroEffects`), as the
+ * combat axes are read. A row marked so is read as a percentage (Attack Speed's
+ * `getPercentageBucket`), so the loadout registers its percentage rules too, in the bucket the
+ * reader sums them in, beside a lingering effect's and a star's.
  *
  * ## `neverOnGuild` — a star or a guild rule cannot carry it
  *
@@ -674,6 +684,75 @@ export const MODIFIER_PALETTE = [
         group: 'Blessing',
         hint: 'A shrine\'s blessing: a chance a finished work cycle repeats at once, for free: its outputs again and its XP again, with no inputs, charges, Bait or tool wear, and no chance to end. In percent. Two shrines add their chances. Never a kill or a build.'
     },
+    {
+        /**
+         * Read by `Fortune.countCycle` once per finished work cycle (not failed, no build) of a Token
+         * with a rarest drop: its number is added to the Token's saved count, and the cycle that
+         * fills it to 100 lands that drop for certain, unrolled (`BoardRunner.landOutputs`). Points
+         * a cycle, not a chance, though resolved from 0 like one: 10 is every tenth cycle.
+         */
+        type: EFFECT_TYPES.FORTUNE,
+        reads: {
+            up: (n) => `have each finished cycle count ${n} toward a sure rare find`,
+            down: (n) => `have each finished cycle count ${n} less toward a sure rare find`
+        },
+        label: 'Fortune',
+        explains: 'Every so many finished cycles, the Token gives its rarest drop for certain',
+        when: 'never',
+        scales: 'value',
+        blessing: true,
+        buckets: ['flat'],
+        categories: 'skill',
+        shape: MODIFIER_SHAPES.PROC,
+        group: 'Blessing',
+        hint: 'A shrine\'s blessing: each finished work cycle of a Token it reaches counts this many percent toward a sure rare find, and the cycle that reaches 100% gives the Token\'s rarest drop for certain (10 is every tenth cycle, 25 every fourth). The rarest drop is the lowest-chance entry of its rare table, or with no table its lowest-chance output line; a Token whose lines all drop for certain has none. Each Token keeps its own count. Two shrines add up. Never a failed cycle, a kill or a build.'
+    },
+    {
+        /**
+         * Read by `CycleSavings.fleesDefeat` once, as a hero falls to 0 HP in a fight
+         * (`BoardCombat.resolveDefeat`), at the enemy Token they fight with their own scope: on a hit
+         * no defeat cost is taken (the food and drink share, the gear roll), and the fight's end
+         * says Fled. The hero is wounded and carried home as ever. Sure at 100 (no draw).
+         */
+        type: EFFECT_TYPES.VALIANT,
+        reads: {
+            up: (n) => `have a ${n} chance a hero brought down fighting here flees, losing nothing`,
+            down: (n) => `have ${n} less chance a hero brought down fighting here flees, losing nothing`
+        },
+        label: 'Valiant',
+        explains: 'A hero brought down fighting here flees instead of being Defeated, losing nothing',
+        when: 'never',
+        scales: 'value',
+        blessing: true,
+        // A chance is a plain number of percent; resolved from a base of 0, so any other bucket is 0.
+        buckets: ['flat'],
+        shape: MODIFIER_SHAPES.PROC,
+        group: 'Blessing',
+        hint: 'A shrine\'s blessing: a hero brought to 0 HP fighting an enemy it reaches is never Defeated. They flee and keep all their food, drink and gear, though they still go home wounded and heal; the log and banner say Fled. In percent: 100 is always. Aim it at the enemies (or camps\' enemies) in the shrine\'s reach.'
+    },
+    {
+        /**
+         * Read by `Wisdom.shareXp` each time a hero earns XP (a work cycle, a kill) at a Token it
+         * reaches: every other hero working or fighting a Token the same rule reaches gets this share
+         * of it, in the same skill. Off the Tokens' own rules only: on gear or a Hall star it reaches
+         * nobody. The skill is the one the XP was earned in (a kill's, its combat style).
+         */
+        type: EFFECT_TYPES.WISDOM,
+        reads: {
+            up: (n) => `share ${n} of the XP earned here with every other hero working or fighting in reach`,
+            down: (n) => `share ${n} less of the XP earned here with every other hero working or fighting in reach`
+        },
+        label: 'Wisdom',
+        explains: 'Heroes working or fighting in its reach share a part of the XP each earns',
+        when: 'never',
+        scales: 'value',
+        blessing: true,
+        buckets: ['flat'],
+        categories: 'skill',
+        shape: MODIFIER_SHAPES.PROC,
+        group: 'Blessing',
+        hint: 'A shrine\'s blessing: when a hero earns XP at a Token it reaches (a work cycle or a kill), every other hero working or fighting a Token in the same shrine\'s reach gets this many percent of it, in the same skill (a kill\'s, its combat style). A share is never shared again; heroes walking, idle or at home get none. Two shrines add up. In percent. Pick a skill to share only that work\'s XP. Only a Token\'s rule shares: on gear or a Hall star it does nothing.'
+    },
 
     // The gathering signature perks (Motherlode, Evergreen, Grove Feller, Master Angler): each a
     // chance, so the perk is 100 and a star or gear may hold less. Read at the worked Token through
@@ -738,6 +817,51 @@ export const MODIFIER_PALETTE = [
         shape: MODIFIER_SHAPES.PROC,
         group: 'Support',
         hint: 'A chance a catch lands as the next fish up the pool the hero fishes: the lowest Fishing level above the fish that bit, among those the hero\'s level allows. The Bait spent is the fish that bit\'s. In percent, rolled after the pick. A lure still picks the fish that bites; the top fish, and a Trap\'s one catch, stay as they are.'
+    },
+
+    // The building perks (Salvage, Master Builder): each a percent read from a hero (what they
+    // carry, their perks, what lingers on them) and the guild's stars, never from a Token, so they
+    // are `heroOrGuild` and have no skill to narrow to. `BuildPrices.js` reads both.
+    {
+        /**
+         * Read by `BuildPrices.salvageOf` as a demolition finishes, off the hero who did it: their
+         * share of what the Token cost (`instance.paid`), each line rounded down, at most 100.
+         */
+        type: EFFECT_TYPES.SALVAGE,
+        reads: {
+            up: (n) => `give back ${n}% of what a demolished Token cost`,
+            down: (n) => `give back ${n}% less of what a demolished Token cost`
+        },
+        label: 'Salvage',
+        explains: 'A Token this hero demolishes gives back part of what it cost',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat'],
+        heroOrGuild: true,
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Support',
+        hint: 'The share of what a Token cost that comes back, as loot where it stood, when a hero holding this demolishes it: its Shop price as bought and, for a building, its Foundation and the build\'s materials as paid, coins too. In percent (50 gives back half), each line rounded down, at most 100. Only Tokens the guild bought or built give anything back. On gear or a perk; a Token\'s reaches nobody.'
+    },
+    {
+        /**
+         * Read by `BuildPrices.buildDiscount` for a Foundation's Shop price (`Shop.priceOf`) and a
+         * build's materials (`InputCost.exactInputQuantity`): the guild's best hero's, never the sum,
+         * at most `MAX_BUILD_DISCOUNT`.
+         */
+        type: EFFECT_TYPES.BUILD_DISCOUNT,
+        reads: {
+            up: (n) => `cut ${n}% off Foundations and their builds`,
+            down: (n) => `cut ${n}% less off Foundations and their builds`
+        },
+        label: 'Build Discount',
+        explains: 'Foundations and the buildings made on them cost less while this hero is in the guild',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat'],
+        heroOrGuild: true,
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Support',
+        hint: `Percent off the Shop price of every Foundation (its items and coins, each rounded up) and off the materials of every build on a Foundation, while a hero holding this is in the guild. Only the guild's best holder counts, never the sum of several, and at most ${MAX_BUILD_DISCOUNT}% comes off. A Foundation goes back to the Shop for what it was bought for. On gear or a perk; a Token's reaches nobody.`
     },
 
     // --- Combat ---------------------------------------------------------
@@ -810,7 +934,7 @@ export const MODIFIER_PALETTE = [
         fromGuild: true,
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
-        hint: 'Percentage points added to the bearer\'s chance to crit, a hero\'s or an enemy\'s: 5% unless an enemy sets its own (a crit doubles the hit).'
+        hint: `Percentage points added to the bearer's chance to crit, a hero's or an enemy's: 5% unless an enemy sets its own. Every source adds in full, up to ${CRIT_CHANCE_CAP}% at most. A crit doubles the hit, for everyone.`
     },
     {
         /**
@@ -865,9 +989,9 @@ export const MODIFIER_PALETTE = [
     },
     {
         /**
-         * Read as a percentage off whoever carries it (`CombatFormulas` attack speeds), so it lives
-         * on a lingering effect: an elixir's faster attacks, a boss's enrage. Gear's flat-only
-         * contributions do not carry it.
+         * Read as a percentage off whoever carries it (`CombatFormulas` attack speeds): a lingering
+         * effect (an elixir's faster attacks, a boss's enrage), a Hall star, and a hero's worn gear
+         * and perks (`carriedPercentage`), all in one bucket.
          */
         type: EFFECT_TYPES.SWING_TIME,
         label: 'Attack Speed',
@@ -878,10 +1002,11 @@ export const MODIFIER_PALETTE = [
         categories: 'combatStyle',
         heroOnly: true,
         fromGuild: true,
+        carriedPercentage: true,
         inverted: true,
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
-        hint: 'How long between attacks, shown as Attack Speed. A negative value is faster: -25% attacks a quarter sooner (attacks every 3s become every 2.25s). On a lingering effect: an elixir on a hero, or a rule putting it on an enemy.'
+        hint: 'How long between attacks, shown as Attack Speed. A negative value is faster: -25% attacks a quarter sooner (attacks every 3s become every 2.25s). On worn gear or the weapon in use (a weapon\'s Attacks every counts its own), a perk, a Guild Hall star, an elixir on a hero, or a rule putting it on an enemy; every source adds in one bucket. Narrow it to a style to help only that style\'s fighters.'
     },
     {
         // Read by `ConsumptionSystem` when a hero eats in a fight: Burn's half heal.
@@ -913,6 +1038,98 @@ export const MODIFIER_PALETTE = [
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Combat',
         hint: 'How fast a hero heals out of a fight (1 health every 10 s). +50% heals half again as much. On gear, a perk or a Guild Hall star, never a building.'
+    },
+
+    // The combat tricks (Second Wind, Unbreakable, Twin Shot and Double Cast, Shadowstep): each read
+    // off the hero for the style they fight in, from their gear, perks, a lingering effect and the
+    // guild's stars, all added. Three are chances (100 sure, drawing nothing); Heal on Kill is health.
+    {
+        /**
+         * Read by `CombatTricks.healOnKill` once per kill (`CombatResolutionProcessor.handleVictory`),
+         * before the kill's loot: whole health, never past the hero's most. Draws nothing.
+         */
+        type: EFFECT_TYPES.KILL_HEAL,
+        reads: { up: (n) => `heal ${n} health on each kill`, down: (n) => `heal ${n} less health on each kill` },
+        label: 'Heal on Kill',
+        explains: 'The hero heals a little on each kill',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat'],
+        categories: 'combatStyle',
+        heroOnly: true,
+        fromGuild: true,
+        shape: MODIFIER_SHAPES.DETERMINISTIC,
+        group: 'Combat',
+        hint: 'Health the hero heals on each kill, never past their most; a fraction is dropped (2.5 heals 2). Every source adds. Narrow it to a style to heal only that style\'s fighters (Second Wind: Melee).'
+    },
+    {
+        /**
+         * Read by `CombatTricks.holdsOn` when an enemy's landed blow would take the hero to 0 or
+         * below, if the hero has not held on yet this fight: on a hit the blow leaves them at 1. The
+         * mark is saved on the hero (`fightTricks`) until the fight ends, so a load mid-fight keeps it.
+         */
+        type: EFFECT_TYPES.LAST_STAND,
+        reads: {
+            up: (n) => `have a ${n} chance, once a fight, to hold on at 1 health`,
+            down: (n) => `have ${n} less chance, once a fight, to hold on at 1 health`
+        },
+        label: 'Last Stand',
+        explains: 'Once a fight, a blow that would defeat the hero leaves them at 1 health',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat'],
+        categories: 'combatStyle',
+        heroOnly: true,
+        fromGuild: true,
+        shape: MODIFIER_SHAPES.PROC,
+        group: 'Combat',
+        hint: 'A chance that an enemy\'s blow which would defeat the hero leaves them at 1 health instead, once a fight: the next defeating blow defeats them. In percent; at 100% it always holds (Unbreakable). Only an enemy\'s blow, not a status ticking or a rule\'s damage. Narrow it to a style.'
+    },
+    {
+        /**
+         * Read by `CombatAttackProcessor.handleHeroAttack` after each attack the hero makes, once its
+         * own rules have run and both still stand: on a hit the same attack strikes again at once,
+         * with its own miss, crit and On Hit rules, spending no more ammo and no second On Attack.
+         */
+        type: EFFECT_TYPES.TWIN_STRIKE,
+        reads: {
+            up: (n) => `have a ${n} chance an attack strikes twice`,
+            down: (n) => `have ${n} less chance an attack strikes twice`
+        },
+        label: 'Twin Strike',
+        explains: 'A chance an attack strikes twice, its arrow or Mote spent once',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat'],
+        categories: 'combatStyle',
+        heroOnly: true,
+        fromGuild: true,
+        shape: MODIFIER_SHAPES.PROC,
+        group: 'Combat',
+        hint: 'A chance a hero\'s attack strikes again at once: the second rolls its own miss and crit and lands the same damage, spending no second arrow, Mote or Kunai, and a poison counts the attack once. In percent. Narrow it to a style (Twin Shot: Ranged; Double Cast: Magic).'
+    },
+    {
+        /**
+         * Read by `CombatTricks.noteDodge` when an enemy's attack at the hero misses: on a hit the
+         * hero's next landed hit in the fight is a sure crit, above the crit cap (one crit doubles,
+         * as any crit). Saved on the hero with the fight (`fightTricks`).
+         */
+        type: EFFECT_TYPES.DODGE_CRIT,
+        reads: {
+            up: (n) => `have a ${n} chance a dodge makes their next hit a sure crit`,
+            down: (n) => `have ${n} less chance a dodge makes their next hit a sure crit`
+        },
+        label: 'Crit After Dodge',
+        explains: 'After the hero dodges, their next hit is a sure crit',
+        when: 'never',
+        scales: 'value',
+        buckets: ['flat'],
+        categories: 'combatStyle',
+        heroOnly: true,
+        fromGuild: true,
+        shape: MODIFIER_SHAPES.PROC,
+        group: 'Combat',
+        hint: 'A chance that an enemy\'s attack missing the hero makes the hero\'s next hit that lands a sure crit (double, as every crit), whatever the crit cap. In percent; at 100% every dodge does (Shadowstep). A miss of the hero\'s own keeps it for the next. Narrow it to a style.'
     },
 
     // --- Protection ---------------------------------------------------------

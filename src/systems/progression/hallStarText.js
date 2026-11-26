@@ -176,7 +176,11 @@ const STYLE_PHRASES = {
     [EFFECT_TYPES.SWING_TIME]: ['attack faster', 'attack slower'],
     [EFFECT_TYPES.ACCURACY]: ['miss less', 'miss more'],
     [EFFECT_TYPES.DODGE]: ['dodge more', 'dodge less'],
-    [EFFECT_TYPES.CRIT_CHANCE]: ['crit more often', 'crit less often']
+    [EFFECT_TYPES.CRIT_CHANCE]: ['crit more often', 'crit less often'],
+    [EFFECT_TYPES.KILL_HEAL]: ['heal on each kill', 'heal less on each kill'],
+    [EFFECT_TYPES.LAST_STAND]: ['hold on at 1 health once a fight', 'hold on less often'],
+    [EFFECT_TYPES.TWIN_STRIKE]: ['strike twice more often', 'strike twice less often'],
+    [EFFECT_TYPES.DODGE_CRIT]: ['crit after a dodge', 'crit after a dodge less often']
 };
 
 /** Who a star's rule reaches, as a singular noun after "Every": "Forestry Token", "Logging Camp", "hero". */

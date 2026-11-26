@@ -58,7 +58,8 @@ export function processCombat(fight, trait, deltaTime) {
 
         const repeats = CombatFormulas.swingRepeatsInStep(attackSpeed);
         while (combat.heroTickProcesses[heroId] >= attackSpeed) {
-            handleHeroAttack(fight, hero, enemy, attackSpeed);
+            // A bow out of arrows does not shoot: its hero leaves at the next look.
+            if (!handleHeroAttack(fight, hero, enemy, attackSpeed)) break;
             if (combat.enemyHp.current <= 0) {
                 if (standing(hero)) handleVictory(fight, hero, enemy, heroId, assignedHeroIds);
                 return;

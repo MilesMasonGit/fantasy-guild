@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Settings2, Shield, HelpCircle, Lock, Sparkles } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
 import {
-  EQUIP_CATEGORIES, TOOL_KINDS, HAND_CATEGORY, tierValue, SKILLS, ENEMY_STYLES, weaponStyleOf, authoredWeaponStyles, ATTACK_SPEED_MS, DEFAULT_ATTACK_SPEED, WEAPON_TIERS,
+  EQUIP_CATEGORIES, TOOL_KINDS, HAND_CATEGORY, tierValue, SKILLS, COMBAT_SKILL_IDS, weaponStyleOf, authoredWeaponStyles, ATTACK_SPEED_MS, DEFAULT_ATTACK_SPEED, weaponMoteOf,
   expandBearer, statementsOf, doseKindsOf, DOSE_WHY, noDoseWhy, isSpentCategory,
   DAMAGE_TYPES, DAMAGE_GROUPS, DEFAULT_DAMAGE_TYPE_BY_STYLE, DEFAULT_ARROW_DAMAGE_TYPE, damageTypeLabel, isConsumableCategory,
   isWornGear, BREAK_CHANCE_MAX, catchItemIds, coinWorthOf,
@@ -24,7 +24,7 @@ import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 const RESTORING_CATEGORIES = new Set(['food']);
 
 /** A weapon's own fields, cleared when the item stops being one (out of the hands, or made a tool). */
-const WEAPON_CLEARED = { styles: undefined, damage: undefined, damageType: undefined, speed: undefined, tier: undefined, levelRequired: undefined };
+const WEAPON_CLEARED = { styles: undefined, damage: undefined, damageType: undefined, speed: undefined, tier: undefined, levelRequired: undefined, mote: undefined, thrown: undefined };
 
 /** The nine damage types as dropdown options, grouped under Physical, Elemental and Special. */
 function DamageTypeOptions() {
@@ -46,9 +46,11 @@ const SPEED_WORDS = { fast: 'Fast', normal: 'Normal', slow: 'Slow' };
  * (the Dagger was Melee and Stealth) fights in the first until one is picked here, and an older
  * single `skillRequired` style is folded in on the first pick. `speed` is written only when it is
  * not Normal. `tier` (1 copper, 2 iron, and so on) is written only when typed. `damageType` is
- * written only when picked; blank hits with its style's default.
+ * written only when picked; blank hits with its style's default. A Magic weapon names the Mote it
+ * burns (`mote`, a Consumable's id; blank casts free), a Stealth one may be thrown (`thrown: true`,
+ * a Kunai that spends itself); either is cleared when the style changes.
  */
-function WeaponFields({ item, onChange }) {
+function WeaponFields({ item, items, onChange }) {
   const style = weaponStyleOf(item);
   const authored = authoredWeaponStyles(item);
   const pickStyle = (id) => {
@@ -56,11 +58,16 @@ function WeaponFields({ item, onChange }) {
       type: 'weapon',
       styles: [id],
       // The style lives in `styles` now; an older item's one-style field would only shadow it.
-      ...(ENEMY_STYLES.includes(item.skillRequired) ? { skillRequired: undefined } : {}),
+      ...(COMBAT_SKILL_IDS.includes(item.skillRequired) ? { skillRequired: undefined } : {}),
+      // What a weapon spends belongs to its style: a Mote to Magic, a throw to Stealth.
+      ...(id !== 'magic' ? { mote: undefined } : {}),
+      ...(id !== 'stealth' ? { thrown: undefined } : {}),
     });
   };
+  const motes = Object.values(items || {})
+    .filter((i) => i?.id && isConsumableCategory(i.equipSlot))
+    .sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id));
   const speed = ATTACK_SPEED_MS[item.speed] ? item.speed : DEFAULT_ATTACK_SPEED;
-  const tierLine = WEAPON_TIERS.map((t) => `${t.tier} ${t.fast}/${t.normal}/${t.slow}`).join(', ');
 
   return (
     <div className="col-span-2 grid grid-cols-2 gap-4">
@@ -72,7 +79,7 @@ function WeaponFields({ item, onChange }) {
           onChange={(e) => pickStyle(e.target.value)}
           className="w-full"
         >
-          {ENEMY_STYLES.map((id) => (
+          {COMBAT_SKILL_IDS.map((id) => (
             <option key={id} value={id}>{styleName(id)}</option>
           ))}
         </select>
@@ -119,7 +126,7 @@ function WeaponFields({ item, onChange }) {
         />
         <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
           What every hit does before the level step, the matchup and the enemy's resistances. Blank hits like a fist (1).
-          Proposed tiers, fast/normal/slow: {tierLine}.
+          The tier table (damage by metal and speed, the level by tier) is the content guide's: CONTENT_PHILOSOPHY, Weapon tiers.
         </p>
       </Field>
 
@@ -158,6 +165,41 @@ function WeaponFields({ item, onChange }) {
           A fast weapon hits about 2/3 as hard as a normal one, a slow one about 4/3.
         </p>
       </Field>
+
+      {style === 'magic' && (
+        <Field label="Mote it burns" className="col-span-2">
+          <select
+            aria-label="Mote it burns"
+            data-field="weapon-mote"
+            value={weaponMoteOf(item) || ''}
+            onChange={(e) => onChange({ type: 'weapon', mote: e.target.value || undefined })}
+            className="w-full"
+          >
+            <option value="">None: casts free</option>
+            {weaponMoteOf(item) && !items?.[weaponMoteOf(item)] && <option value={weaponMoteOf(item)}>{weaponMoteOf(item)} (no such item)</option>}
+            {motes.map((m) => (
+              <option key={m.id} value={m.id}>{m.name || m.id}</option>
+            ))}
+          </select>
+          <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
+            Every cast spends one, hit or miss, carried in a Consumable slot and drawn from the Bank like arrows. With none, the hero casts at half damage and says Needs (the Mote). None picked: casts free at full damage (the content check names it).
+          </p>
+        </Field>
+      )}
+
+      {style === 'stealth' && (
+        <label className="col-span-2 flex items-center gap-2 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            aria-label="Thrown"
+            data-field="weapon-thrown"
+            checked={item.thrown === true}
+            onChange={(e) => onChange({ type: 'weapon', thrown: e.target.checked ? true : undefined })}
+            className="rounded border-white/10 text-emerald-500 cursor-pointer"
+          />
+          <span className="text-xs text-gray-300">Thrown (a Kunai): the one in hand is kept, each throw spends another from the Bank; with none there, it throws the one in hand at half damage</span>
+        </label>
+      )}
     </div>
   );
 }
@@ -556,7 +598,7 @@ export default function ItemEditor() {
           )}
 
           {isHand && !isTool && !isOffHandItem && (
-            <WeaponFields item={item} onChange={(patch) => updateItem(activeId, patch)} />
+            <WeaponFields item={item} items={items} onChange={(patch) => updateItem(activeId, patch)} />
           )}
 
           {isWornGear(item) && (

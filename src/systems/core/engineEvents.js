@@ -176,6 +176,12 @@ export const ENGINE_EVENTS = Object.freeze({
     COMBAT_ENEMY_ATTACK: 'combat_enemy_attack',
     /** Payload: `{ cardId, heroId, itemId, healed }`. */
     COMBAT_HERO_ATE: 'combat_hero_ate',
+    /**
+     * A hero's combat trick acted (`CombatTricks.TRICK`): a heal on a kill (`amount` healed), a
+     * defeating blow held at 1 health, an attack striking twice, a sure crit after a dodge.
+     * Payload: `{ cardId, instanceId, heroId, trick, amount? }` (`instanceId`: the enemy Token).
+     */
+    COMBAT_TRICK: 'combat_trick',
     /** Payload: `{ cardId, heroId, instanceId, enemyId, enemyName, drops }`. */
     COMBAT_VICTORY: 'combat_victory',
     /** Payload: `{ cardId, heroId, enemyId, enemyName, instanceId?, drops }`. */

@@ -5,6 +5,7 @@ import { getSkill } from '../../config/registries/skillRegistry.js';
 import { isWornGear } from '../../config/registries/gearDefence.js';
 import { BASE_CRIT_CHANCE } from '../../config/FormulaRegistry.js';
 import { MAX_SPEED_UP_CUT } from '../../config/loopConstants.js';
+import { MAX_BUILD_DISCOUNT, MAX_SALVAGE } from '../../config/buildPrices.js';
 import { effectRefsOf, statementsFromEntry } from '../effects/effectLibrary.js';
 import { KEYWORD } from '../effects/statements.js';
 import { EFFECT_TYPES, TARGET_CATEGORIES } from '../effects/constants.js';
@@ -13,8 +14,9 @@ import { bestPieces } from './gearDefenceRule.js';
 /**
  * The same effect from several sources adds in full (owner: no cap, small numbers instead), so the
  * audits name an effect a hero's best stack pushes to the effect's own limit, where more stops
- * helping: a chance at 100 %, a speed-up at the speed-up floor, a cost cut at 100 %. Shared by the
- * boot audit (`ContentAudit`) and the CMS Economy Audit.
+ * helping: a chance at 100 %, a speed-up at the speed-up floor, a cost cut at 100 %, Salvage at the
+ * whole price, Build Discount at its cap. Shared by the boot audit (`ContentAudit`) and the CMS
+ * Economy Audit.
  *
  * ⚠️ Kept free of the registries' loaded content: the CMS imports it and hands in its own workspace.
  *
@@ -58,6 +60,15 @@ export const STACK_LIMITS = Object.freeze([
     {
         type: EFFECT_TYPES.INPUT_COST, bucket: 'percentage', sign: -1, reach: 1,
         shown: (n) => `-${percent(n)}`, step: (n) => `-${percent(n)}`, why: 'inputs cut by 100%'
+    },
+    // The building perks, read from a hero's own stack: Salvage at all of the price, Build Discount at its cap.
+    {
+        type: EFFECT_TYPES.SALVAGE, bucket: 'flat', sign: 1, reach: MAX_SALVAGE,
+        shown: (n) => points(n), step: (n) => `+${points(n)}`, why: 'the whole price back'
+    },
+    {
+        type: EFFECT_TYPES.BUILD_DISCOUNT, bucket: 'flat', sign: 1, reach: MAX_BUILD_DISCOUNT,
+        shown: (n) => points(n), step: (n) => `+${points(n)}`, why: `the most a price comes down (${MAX_BUILD_DISCOUNT}% off)`
     }
 ].map(limit => Object.freeze({ ...limit, label: MODIFIER_PALETTE.find(row => row.type === limit.type)?.label || limit.type })));
 

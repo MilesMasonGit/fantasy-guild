@@ -59,6 +59,18 @@ export const EFFECT_TYPES = {
     SWING_TIME: 'SWING_TIME',
     // How much a meal heals the bearer, as a percentage (Burn: -50%); drinks never heal — ConsumptionSystem.
     FOOD_HEALING: 'FOOD_HEALING',
+    // The combat tricks, read off a hero for the style they fight in — CombatTricks.js.
+    // Heal on Kill: whole health a hero heals on each kill (Second Wind).
+    KILL_HEAL: 'KILL_HEAL',
+    // Last Stand: a chance, once a fight, that an enemy's blow which would defeat the hero leaves
+    // them at 1 health instead (Unbreakable).
+    LAST_STAND: 'LAST_STAND',
+    // Twin Strike: a chance a hero's attack strikes again at once, its ammo spent once (Twin Shot,
+    // Double Cast).
+    TWIN_STRIKE: 'TWIN_STRIKE',
+    // Crit After Dodge: a chance an enemy's attack missing the hero makes their next landed hit a
+    // sure crit (Shadowstep).
+    DODGE_CRIT: 'DODGE_CRIT',
     FAIL_CHANCE: 'FAIL_CHANCE', // Chance for failure/debuff
     // Regen: how fast a hero heals out of a fight, as a percentage on 1 HP every 10 s. From what the
     // hero carries and the guild, never a Token — hero/regen.js.
@@ -104,6 +116,14 @@ export const EFFECT_TYPES = {
     // Coin Find: a percentage on the coins an enemy defeated in reach drops, and on the coins a
     // Hideout in reach steals. A building's only: no Guild Hall star touches coins — CoinDrops.
     COIN_FIND: 'COIN_FIND',
+    // Salvage (the Construction 75 perk): the percent of what a Token cost that comes back, as loot
+    // where it stood, when a hero holding it demolishes it. Read off the demolisher (their gear,
+    // perks and lingering effects) and the guild's stars, never a Token — BuildPrices.salvageOf.
+    SALVAGE: 'SALVAGE',
+    // Build Discount (the Master Builder perk, Construction 99): percent off a Foundation's Shop price
+    // and off the materials of a build on a Foundation, while a hero holding it is in the guild. The
+    // guild's best holder counts, never the sum — BuildPrices.buildDiscount.
+    BUILD_DISCOUNT: 'BUILD_DISCOUNT',
 
     // Faith's blessings, the effects no building gives (owner, 2026-11-25), carried by a shrine.
     // Can't Run Out (also the Motherlode perk): a chance a work cycle at a Token it reaches spends none
@@ -113,6 +133,19 @@ export const EFFECT_TYPES = {
     // Echo: a chance a finished work cycle repeats at once, for free (its outputs and XP again, no
     // inputs, charges, load or tool wear); narrowed to the Token's skill — BoardRunner.completeCycle.
     ECHO: 'ECHO',
+    // Fortune: each finished work cycle at a Token it reaches counts this many percent toward a sure
+    // rare find; the cycle that fills the count gives the Token's rarest drop for certain (25: every
+    // fourth cycle). The count is the Token's own, saved; narrowed to the Token's skill — Fortune.js.
+    FORTUNE: 'FORTUNE',
+    // Valiant: a chance a hero brought to 0 HP in a fight it reaches flees instead of being Defeated:
+    // no defeat costs (their food and drink and their gear are kept), still carried home wounded.
+    // Read at the enemy they fight, with the hero's own scope — CycleSavings.fleesDefeat.
+    VALIANT: 'VALIANT',
+    // Wisdom: when a hero earns XP at a Token it reaches (a work cycle, a kill), every other hero
+    // working or fighting a Token the same rule reaches gets this many percent of it, in the same
+    // skill; a share is never shared again. Read off the Tokens' own rules (a shrine's reach), not the
+    // guild's or a hero's; narrowed to the skill the XP was earned in — Wisdom.js.
+    WISDOM: 'WISDOM',
 
     /**
      * A chance to yield an extra, **different** item on top of a Token's normal output.

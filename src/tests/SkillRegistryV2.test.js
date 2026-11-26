@@ -63,12 +63,15 @@ describe('The 20 skills in two layers', () => {
         });
     });
 
-    it('every skill has an id matching its key, a name, a description and an icon', () => {
+    // Rewritten for brief 750 S5 (T-569): a combat style has one text, the hero sheet's
+    // (`skillPurpose`), so its registry description is retired; the other skills keep theirs.
+    it('every skill has an id matching its key, a name and an icon; a description unless it is a combat style', () => {
         for (const [key, skill] of Object.entries(SKILLS)) {
             expect(skill.id, key).toBe(key);
             expect(skill.name, key).toBeTruthy();
-            expect(skill.description, key).toBeTruthy();
             expect(skill.icon, key).toBeTruthy();
+            if (COMBAT_SKILL_IDS.includes(key)) expect(skill.description, key).toBeUndefined();
+            else expect(skill.description, key).toBeTruthy();
         }
     });
 

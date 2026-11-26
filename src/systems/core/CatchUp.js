@@ -44,8 +44,9 @@ import { logger } from '../../utils/Logger.js';
  * - `broken`: `[{ heroId, heroName, itemId, times }]`: tools and weapons that broke in a hero's
  *   hands (`Breakage.js`), in the order they broke; each such hero stopped there.
  * - `fightsWon`: `{ total, byEnemy: { enemyId: count } }`.
- * - `combat`: `{ food, elixirs, drops }`, each `{ itemId: count }`: meals eaten in fights, elixirs
- *   drunk as fights started, and what kills dropped (fights lost are `wounded`).
+ * - `combat`: `{ food, elixirs, poisons, ammo, drops }`, each `{ itemId: count }`: meals eaten in
+ *   fights, elixirs drunk and poisons taken as fights started, the arrows, Motes and Kunai spent
+ *   (Preservation's kept ones not counted), and what kills dropped (fights lost are `wounded`).
  * - `events`: `[{ instanceId, eventId, typeId, name, kind, landed, ended }]`, one per event Token
  *   that landed or left while away, in the order first heard: `landed` true when it came during the
  *   catch-up, `ended` how it left (`EventTokens.ENDED`) or null while it still stands.
@@ -269,7 +270,7 @@ function startSummary({ news: withNews = true } = {}) {
     /** `heroId|itemId` → row, in the order they broke. */
     const broken = new Map();
     const fightsWon = { total: 0, byEnemy: {} };
-    const combat = { food: {}, elixirs: {}, drops: {} };
+    const combat = { food: {}, elixirs: {}, poisons: {}, ammo: {}, drops: {} };
     /** instanceId → row, in the order first heard. */
     const events = new Map();
     const eventRow = ({ instanceId, eventId, typeId, name, kind } = {}) => {
@@ -317,8 +318,12 @@ function startSummary({ news: withNews = true } = {}) {
         EventBus.subscribe(ENGINE_EVENTS.COMBAT_HERO_ATE, ({ itemId } = {}) => {
             if (itemId) add(combat.food, itemId);
         }),
-        EventBus.subscribe(ENGINE_EVENTS.HERO_CONSUMED, ({ itemId, elixir } = {}) => {
+        EventBus.subscribe(ENGINE_EVENTS.COMBAT_HERO_ATTACK, ({ ammoId, ammoKept } = {}) => {
+            if (ammoId && !ammoKept) add(combat.ammo, ammoId);
+        }),
+        EventBus.subscribe(ENGINE_EVENTS.HERO_CONSUMED, ({ itemId, elixir, poison } = {}) => {
             if (elixir && itemId) add(combat.elixirs, itemId);
+            if (poison && itemId) add(combat.poisons, itemId);
         }),
         EventBus.subscribe(ENGINE_EVENTS.LOOT_GENERATED, ({ drops } = {}) => {
             for (const d of drops || []) {
