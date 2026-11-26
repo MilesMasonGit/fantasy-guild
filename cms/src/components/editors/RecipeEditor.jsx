@@ -17,6 +17,7 @@ import { Field } from '../shared/EditorLayout';
 import SimIntentControls from '../shared/SimIntentControls';
 import SimAnswer from '../shared/SimAnswer';
 import XpPin from '../shared/XpPin';
+import TimePin from '../shared/TimePin';
 import PlanFields from '../shared/PlanFields';
 
 /** Pooled recipes: authoring and review on one screen. A recipe is owned by its skill, not by any Token, so this is a top-level screen. It has a stable global `id`, minted on create and never edited here. */
@@ -765,7 +766,7 @@ function RecipeCard({ recipe, tokens, stations = [], skillName, availableContext
 
       {/* Timing belongs to the recipe, so a Feast can take longer than Bread on the same station. */}
       <div className="grid grid-cols-2 gap-4">
-        <Field label={building ? 'Build Time (ms)' : 'Cycle Time (ms)'} derived>
+        <Field label={building ? 'Build Time (ms)' : 'Cycle Time (ms)'} derived={recipe.sim?.timePinned !== true}>
           <input
             type="number"
             min={0}
@@ -774,6 +775,7 @@ function RecipeCard({ recipe, tokens, stations = [], skillName, availableContext
             onChange={(e) => onChange({ durationMs: Number(e.target.value) })}
             className="w-full"
           />
+          <TimePin sim={recipe.sim} onChange={(patch) => onChange({ sim: { ...(recipe.sim || {}), ...patch } })} />
         </Field>
         <Field label="XP" derived={recipe.sim?.xpPinned !== true}>
           <input

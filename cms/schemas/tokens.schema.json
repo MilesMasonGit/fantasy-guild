@@ -64,7 +64,7 @@
           "properties": {
             "skill": { "type": "string", "description": "The skill that works it (src/config/registries/skillRegistry.js); empty or unknown means no hero can work it (the audit says so)." },
             "skillRequired": { "type": "number", "minimum": 0, "description": "The level needed, a whole number from 1." },
-            "cycleTimeMs": { "type": "number", "minimum": 0, "description": "Milliseconds a cycle; derived from Tempo by Recalculate. A recipe's durationMs wins." },
+            "cycleTimeMs": { "type": "number", "minimum": 0, "description": "Milliseconds a cycle; derived from Tempo by Recalculate unless sim.timePinned. A recipe's durationMs wins." },
             "xp": { "type": "number", "minimum": 0, "description": "XP a cycle; derived by Recalculate unless sim.xpPinned." },
             "inputs": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/itemQuantity" } },
             "outputs": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/output" } }

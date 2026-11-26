@@ -33,7 +33,7 @@
         },
         "inputs": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/itemQuantity" }, "description": "Paid each cycle (RecipeResolver.js); for a crop, the seeds, paid once per sowing." },
         "outputs": { "type": "array", "items": { "$ref": "common.schema.json#/$defs/output" } },
-        "durationMs": { "type": "number", "minimum": 0, "description": "Milliseconds a cycle; overrides the station's cycleTimeMs. Derived from Tempo by Recalculate." },
+        "durationMs": { "type": "number", "minimum": 0, "description": "Milliseconds a cycle; overrides the station's cycleTimeMs. Derived from Tempo by Recalculate unless sim.timePinned." },
         "stationChargeCost": { "type": "number", "minimum": 0, "description": "Station charges a cycle spends (cycleCharges.js, default 1); 0 on a Foundation." },
         "xp": { "type": "number", "minimum": 0, "description": "XP a cycle; derived by Recalculate unless sim.xpPinned." },
         "sim": { "$ref": "common.schema.json#/$defs/sim" },

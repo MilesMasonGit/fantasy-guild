@@ -391,7 +391,8 @@ function judge(entity, { cycleTimeMs, anchoredItemIds, values, details, dials, r
     }
 
     const desiredMs = cycleTimeMs / ratio;
-    for (const ms of cycleCandidates(entity.tempo, entity.level, cycleTimeMs, desiredMs)) {
+    // A pinned time is not a lever: moving it would undo the pin on the way out.
+    for (const ms of entity.timePinned ? [] : cycleCandidates(entity.tempo, entity.level, cycleTimeMs, desiredMs)) {
         const state = { ...before, cycleTimeMs: ms };
         const earned = earningsPerHour(entity, state, values);
         if (!inBand(earned.profitPerHour, targetPerHour, band)) continue;

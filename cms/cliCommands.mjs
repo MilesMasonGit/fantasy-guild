@@ -34,8 +34,10 @@ export const USAGE = `Usage: npm run cms -- <command> [options]
                                   The number pack writer: the balance solver's rows onto the plan's
                                   Planned entries, as a change pack written to --out (never into
                                   cms/incoming/). A made item gets a Planned recipe, a gathering
-                                  Token its cycle, a crop its numbers: level, seconds, XP, inputs
-                                  with counts, what it makes. Everything stays Planned. --rows reads
+                                  Token its cycle, a crop its numbers: level, seconds (pinned, so
+                                  Recalculate keeps them), XP, inputs with counts, what a craft
+                                  makes (a gather's yield stays the content's). Everything stays
+                                  Planned. --rows reads
                                   a solver output ({ rows } or a list); without it the solver runs
                                   on docs/active/content_catalogue.json (with --dials). Entries with
                                   no clear recipe or Token cycle are listed for the content session
@@ -43,16 +45,19 @@ export const USAGE = `Usage: npm run cms -- <command> [options]
                                   never saves it; a worktree reads the main checkout's.
                                   A gathering Token also gets its uses and rest by the rest rule:
                                   an end chance a cycle for about 30 s of work, a 30 s refill; a
-                                  regrow or a refill that needs its owner gets the chance only, and
-                                  is listed. A Token's plan.split gives its outputs, one line each.
+                                  regrowing tree's Stump grows back in 30 s; a refill that needs its
+                                  owner gets the chance only, and is listed. A Token's plan.split
+                                  gives its outputs, one line each.
   pack numbers --live --out=<pack.json> [--ids=<ids.json>] [--catalogue=<catalogue.json>] ...
                                   The same for the Live recipes and gathering Tokens the id map
                                   (default docs/active/content_cms_ids.json) matches to the
                                   catalogue (default docs/active/content_catalogue.json): edits with
-                                  level, time, XP (pinned, so Recalculate keeps it), input and
-                                  output counts, uses and rest. A Live entry with no match, other
-                                  ingredients or another output than the catalogue's is listed,
-                                  never guessed. Its own pack, apart from the Planned one.
+                                  level, time and XP (both pinned, so Recalculate keeps them), input
+                                  counts and a craft's count, uses and rest. A build or Dig recipe
+                                  follows the Token it places and an offering its shrine (skipped:
+                                  no timed work); the Bait recipes are timed by their own fish. A
+                                  Live entry with no match, other ingredients or another output than
+                                  the catalogue's is listed, never guessed. Its own pack.
   recalc [--all]                  Recalculate (the economic simulator) on the workspace and save it.
   sync [--confirm-removals] [--no-commit]
                                   Recalculate, then write data/ exactly as Sync to Game does, and
@@ -453,10 +458,11 @@ async function cmdPackNumbers(paths, options, out) {
     } else {
         result = writeNumberPack(disk.workspace, rows, { id });
     }
-    const { pack, filled, unclear, skipped, restUnclear } = result;
+    const { pack, filled, unclear, skipped, restUnclear, stumps = [] } = result;
     out(`Against ${shortPath(paths.root, paths.workspaceFile)} (revision ${disk.revision}), never saved: ${plural(filled.length, 'entry', 'entries')} written, ${unclear.length} unclear, ${skipped.length} skipped.`);
     const tagged = filled.filter((f) => f.tagged).length;
-    if (tagged) out(`  ${plural(tagged, 'edit')} on a record with a Tempo and a Purpose: Recalculate keeps the pinned XP but derives its time and output counts again.`);
+    if (tagged) out(`  ${plural(tagged, 'edit')} on a record with a Tempo and a Purpose: Recalculate keeps its pinned time and XP.`);
+    if (stumps.length) out(`  ${plural(stumps.length, 'Stump')} given its tree's rest, back in ${stumps[0].afterMs / 1000} s: ${stumps.map((x) => x.name).join(', ')}.`);
     const reasons = new Map();
     for (const s of skipped) reasons.set(s.reason, (reasons.get(s.reason) || 0) + 1);
     for (const [reason, n] of reasons) out(`  skipped ${n}: ${reason}`);

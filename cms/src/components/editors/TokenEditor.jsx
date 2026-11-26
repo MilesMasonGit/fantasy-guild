@@ -7,6 +7,7 @@ import { Header, Section, Field, Empty } from '../shared/EditorLayout';
 import SimIntentControls from '../shared/SimIntentControls';
 import SimAnswer from '../shared/SimAnswer';
 import XpPin from '../shared/XpPin';
+import TimePin from '../shared/TimePin';
 import SpritePickerModal from './SpritePickerModal';
 import Statements from './Statements';
 import LifecycleBlocks from './LifecycleBlocks';
@@ -244,7 +245,7 @@ export default function TokenEditor() {
                   </div>
                 </Field>
               ) : (
-                <Field label="Cycle Time (ms)" derived>
+                <Field label="Cycle Time (ms)" derived={token.sim?.timePinned !== true}>
                   <input
                     type="number"
                     min={0}
@@ -253,6 +254,7 @@ export default function TokenEditor() {
                     onChange={(e) => updateConfig({ cycleTimeMs: Number(e.target.value) })}
                     className="w-full"
                   />
+                  <TimePin sim={token.sim} onChange={updateSim} />
                 </Field>
               )}
               {isEnemy ? (

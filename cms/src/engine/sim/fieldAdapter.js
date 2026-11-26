@@ -100,6 +100,7 @@ function adaptCommon({ id, name, kind, skill, level, cycleTimeMs, xp, inputs, ou
         tempo: sim?.tempo ?? null,
         purpose: sim?.purpose ?? null,
         xpPinned: sim?.xpPinned === true,
+        timePinned: sim?.timePinned === true,
         downcycle: downcycle === true,
         rarity: rarity ?? null,
         tokenType: tokenType ?? null,
