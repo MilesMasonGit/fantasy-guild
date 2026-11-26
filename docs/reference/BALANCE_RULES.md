@@ -48,7 +48,7 @@ Status: approved 2026-11-07, amended the same day after a critical review and th
 
 About 11.6 million XP to 99. Today's table needs about 13 million.
 
-**XP per action** = the XP an hour × the action's seconds ÷ 3,600 ÷ **the optimized boost factor** for that tier, rounded, at least 1. The factor is how much faster a well-optimized hero earns than a hero with no boosts (speed and XP boosts together), read from the boost budget (section 5); until that table is filled, it is 1. The seconds are **the work cycle alone**: rests don't count, because the rest rule (section 2) keeps a lone hero busy most of the time.
+**XP per action** = the XP an hour × the action's seconds ÷ 3,600 ÷ **the optimized boost factor** for that tier, rounded, at least 1. The factor is how much faster a well-optimized hero earns than a hero with no boosts (speed and XP boosts together), read from the boost budget (section 5). **Between tier openings the factor climbs level by level** (owner, 2026-11-25), in a straight line from one tier's budget to the next: with a step at each tier, a new tier's first recipes paid a hero up to 17 % less than the old tier's last ones for about three levels. The seconds are **the work cycle alone**: rests don't count, because the rest rule (section 2) keeps a lone hero busy most of the time.
 
 **Which level's XP an hour**: the level halfway between this unlock and the skill's next one, not the unlock itself. In a skill with few unlocks (Mining's metals, Fletching), XP an hour stays flat while the table keeps rising, so without this those skills climb about 40 % slower than the curve (review, on the old curve: Mining 47.7 days against 34.4; with the midpoint, 35.0). Where the next unlock is the next level, it's the same as the unlock level.
 
@@ -72,7 +72,7 @@ About 11.6 million XP to 99. Today's table needs about 13 million.
 
 The base times (6, 8 and 12 seconds) are starting values (agent's call). Builds, growth and fights aren't timed here: builds and growth follow the ledger's one-off step rule (no wait longer than the pace allows there), and fights belong to combat.
 
-**A make step takes longer the more bars it uses**: seconds × (1 + 0.2 × (count − 1)). A Chestplate (5 bars) takes 1.8x a Dagger (1 bar). Without it, XP per bar favours the smallest item, and players grind Daggers (review: 263 XP a bar for a darkmetal Dagger, 151 for a Chestplate).
+**A make step takes longer the more bars it uses**: seconds × (1 + 0.5 × (count − 1)). A Chestplate (5 bars) takes 3x a Dagger (1 bar): about 40 s for a Copper Chestplate, 69 s for a Darkmetal one. *Owner, 2026-11-25, raised from 0.2:* at 0.2 a bar spent on Daggers earned 2.8x the XP of a bar spent on Chestplates, so a guild short on ore ground Daggers; at 0.5 it is 1.7x, still the thrifty choice and no longer the only sensible one.
 
 **The rest rule**: a gathering Token's uses × its cycle is at least 3 × its rest, so one hero on one copy is busy at least 75 % of the time. Today's veins hold 5 uses of 3 to 4 seconds, then rest 60 to 90 seconds, so a lone hero waits most of the time and a camp of three copies earns 3 to 4x as much (review, from `rates.js`).
 
@@ -128,7 +128,7 @@ The base times (6, 8 and 12 seconds) are starting values (agent's call). Builds,
 | Adamantine (60) | 25 / 50 % | +10 / +20 % | +183 / +254 % | +50 / +250 % | 1.47x / 2.40x | 1.64x | 6.2 / 2.2 / 1.8 |
 | Darkmetal (80) | 30 / 60 % | +10 / +20 % | +300 / +400 % | +50 / +250 % | 1.57x / 3.00x | 1.91x | 8.8 / 2.2 / 1.8 |
 
-*Cells are typical / optimized. "Earns" is speed and XP together. Made by `balance_rules.py`; the speed and XP columns, the typical share and the yield gap are its settings.*
+*Cells are typical / optimized, at each tier's opening level; between openings the speed and XP columns climb level by level (owner, 2026-11-25). "Earns" is speed and XP together. Made by `balance_rules.py`; the speed and XP columns, the typical share and the yield gap are its settings.*
 
 **Who carries it, at darkmetal for an optimized hero** (earlier tiers in the same shares). **Buildings carry the most speed** (owner); the yield and XP shares are the agent's calls:
 
@@ -167,26 +167,28 @@ The base times (6, 8 and 12 seconds) are starting values (agent's call). Builds,
 
 | Metal | L | Ore | Coal | Seconds | XP | A Chestplate (5 bars) |
 |---|---|---|---|---|---|---|
-| Copper | 1 | 2 | 1 | 8.1 | 4 | 10 ore, 5 coal |
-| Iron | 20 | 3 | 1 | 9.2 | 8 | 15 ore, 5 coal |
-| Silver | 30 | 3 | 2 | 9.9 | 12 | 15 ore, 10 coal |
-| Mythril | 40 | 4 | 2 | 10.6 | 19 | 20 ore, 10 coal |
-| Gold | 50 | 5 | 2 | 11.3 | 29 | 25 ore, 10 coal |
-| Adamantine | 60 | 6 | 3 | 12.2 | 43 | 30 ore, 15 coal |
-| Darkmetal | 80 | 8 | 4 | 14.0 | 100 | 40 ore, 20 coal |
+| Copper | 1 | 2 | 1 | 8.9 | 3 | 10 ore, 5 coal |
+| Iron | 20 | 3 | 1 | 8.8 | 5 | 15 ore, 5 coal |
+| Silver | 30 | 3 | 2 | 9.8 | 7 | 15 ore, 10 coal |
+| Mythril | 40 | 4 | 2 | 10.8 | 10 | 20 ore, 10 coal |
+| Gold | 50 | 5 | 2 | 11.3 | 13 | 25 ore, 10 coal |
+| Adamantine | 60 | 6 | 3 | 12.1 | 18 | 30 ore, 15 coal |
+| Darkmetal | 80 | 8 | 4 | 13.9 | 33 | 40 ore, 20 coal |
 
-The ores themselves (gather): copper ore 6.0 s and 3 XP, iron 6.9 s and 6 XP, mythril 7.9 s and 14 XP, adamantine 9.1 s and 33 XP, darkmetal 10.5 s and 75 XP.
+The veins themselves (gather): copper 6.0 s and 2 XP, iron 7.4 s and 5 XP, mythril 7.9 s and 8 XP, adamantine 9.1 s and 16 XP, darkmetal 10.4 s and 27 XP. A Copper Chestplate (Smithing 16) takes 40.4 s and pays 22 XP; a Darkmetal Chestplate (93) takes 68.9 s and pays 280 XP.
+
+*These tables are the solver's (`balance_solver.cjs`, 2026-11-25): XP is what a hero with no boosts is paid, so it is the rule's XP an hour divided by the optimized boost factor, and the seconds are trimmed to pay whole XP exactly.*
 
 **Bread, a short chain** (four links, each paying its own skill):
 
 | Link | L | Kind | Seconds | XP |
 |---|---|---|---|---|
-| Wheat (Farming) | 4 | gather | 6.2 | 3 |
-| Flour | 4 | prepare | 8.2 | 4 |
-| Dough (Cooking) | 4 | prepare | 8.2 | 4 |
-| Bread (Cooking) | 7 | make | 12.6 | 7 |
+| Wheat (Farming) | 4 | gather | 5.5 | 2 |
+| Flour | 4 | prepare | 8.2 | 3 |
+| Dough (Cooking) | 4 | prepare | 8.2 | 3 |
+| Bread (Cooking) | 7 | make | 12.6 | 5 |
 
-**Master's Draught, a late potion** (Alchemy 90): 5 Starflower and 5 Moonpetal (base 1 at L 90), 1 Voidcap as the weird item, 1 Elder Draught as the base. It takes 22.5 s and pays 227 XP. Its herbs pay Farming 75 XP (Starflower, L 80) and 33 XP (Moonpetal, L 60) each, and the Elder Draught pays Cooking.
+**Master's Draught, a late potion** (Alchemy 90; ⚠️ written before the boost factor, its XP is high, and the solver gives a recipe with a made base 1 of each herb, not 5: an open question for the Alchemy run): 5 Starflower and 5 Moonpetal (base 1 at L 90), 1 Voidcap as the weird item, 1 Elder Draught as the base. It takes 22.5 s and pays 227 XP. Its herbs pay Farming 75 XP (Starflower, L 80) and 33 XP (Moonpetal, L 60) each, and the Elder Draught pays Cooking.
 
 ## Not covered yet
 

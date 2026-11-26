@@ -32,6 +32,8 @@ Status: built 2026-11-19 (approved by the owner 2026-11-19): the [Guild Balance 
 | Raw counts double every | 40 levels | Late raw cost |
 | Typical player behind optimized | 1.2x early to 2x late | The typical line |
 | Unlock move allowed | up to 3 levels | How much the system may shift an unlock |
+| Longer per extra bar | +50 % (owner, 2026-11-25; was +20 %) | A 5-bar Chestplate against a 1-bar Dagger |
+| Boosts between tiers | climb each level (owner, 2026-11-25; was a step at each tier) | How the optimized player's boosts arrive |
 
 **Three views**, each with the optimized and typical lines:
 

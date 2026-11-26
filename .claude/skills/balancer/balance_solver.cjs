@@ -18,8 +18,8 @@
     typicalShare: 0.5,        // a typical player holds this share of each speed and XP boost
     moveMax: 3,               // the most the solver may move an unlock, in levels
     gapFlag: 6,               // levels with nothing new before a stretch is flagged
-    extraPerBar: 0.2,         // a make step takes this much longer for each main ingredient past the first
-    boostSmooth: 0,           // 0: the boost budget steps up at each tier's opening level; 1: it climbs level by level between them
+    extraPerBar: 0.5,         // a make step takes this much longer for each main ingredient past the first
+    boostSmooth: 1,           // 0: the boost budget steps up at each tier's opening level; 1: it climbs level by level between them
   };
   const XP_HOUR_AT_1 = 1660;  // level 1's 83 XP in 3 minutes; keeps today's start
   const TIERS = [['Copper', 1], ['Iron', 20], ['Silver', 30], ['Mythril', 40], ['Gold', 50], ['Adamantine', 60], ['Darkmetal', 80]];

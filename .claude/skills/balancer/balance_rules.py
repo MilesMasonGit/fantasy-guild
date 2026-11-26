@@ -13,6 +13,8 @@ XP_HOUR_AT_1 = 1660      # what level 1's 83 XP in 3 minutes makes an hour; keep
 OLD_TASK_PER_TIER = 2    # an old task is this many times slower 20 levels later (owner, 2026-11-07)
 CYCLE_BASE = {'gather': 6, 'prepare': 8, 'make': 12}   # seconds at level 0
 CYCLE_GROWTH = 1.15      # a little longer every 20 levels
+EXTRA_PER_BAR = 0.5      # a make step is this much longer for each bar past the first (owner, 2026-11-25)
+BOOSTS_CLIMB = True      # between tier openings the boost budget climbs level by level (owner, 2026-11-25); the solver applies it
 COUNT_DOUBLES_EVERY = 40  # levels: ingredient counts double every two tiers
 FINDS_A_DAY = {'bonus find': 20, 'rare gear drop': 1}
 PAYBACK_HOURS = (1, 24)   # an upgrade's payback at level 1 and level 80
@@ -38,7 +40,7 @@ def cycle(kind, level):
 
 def make_seconds(level, bars):
     """A make step takes longer the more bars it uses, so XP per bar doesn't favour the smallest item."""
-    return cycle('make', level) * (1 + 0.2 * (bars - 1))
+    return cycle('make', level) * (1 + EXTRA_PER_BAR * (bars - 1))
 
 
 def xp_level(unlock, next_unlock):
