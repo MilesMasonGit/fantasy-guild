@@ -35,8 +35,8 @@
   const CONSUMABLE_TYPES = /^(food|drink|prep|elixir|poison|work|ingredient)/i;
   const ALWAYS_ONE = new Set(['water']);  // water is 1 in every recipe (section 3)
   // What one craft makes when it isn't 1 (section 3, owner 2026-11-25). An arrow craft uses a bar's worth of arrowheads.
-  const AMMO_A_CRAFT = 40, NAILS_A_BAR = 5, DRINKS_A_CRAFT = 5;
-  const makesOf = e => /^drink/i.test(e.type || '') ? DRINKS_A_CRAFT : /arrowheads|kunai|\barrow$/i.test(e.name) ? AMMO_A_CRAFT : /\bnails$/i.test(e.name) ? NAILS_A_BAR : 1;
+  const AMMO_A_CRAFT = 40, NAILS_A_BAR = 5, DRINKS_A_CRAFT = 5;  // drinks and work potions alike
+  const makesOf = e => /^(drink|work)/i.test(e.type || '') ? DRINKS_A_CRAFT : /arrowheads|kunai|\barrow$/i.test(e.name) ? AMMO_A_CRAFT : /\bnails$/i.test(e.name) ? NAILS_A_BAR : 1;
   const UNTIMED = { building: 'Builds follow the one-off step rule; Construction XP has no rule yet',
     event: 'Events copy the Token they stand in for' };
 
