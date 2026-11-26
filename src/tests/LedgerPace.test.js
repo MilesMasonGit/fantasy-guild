@@ -13,7 +13,7 @@ import { paceContent, potionWebContent } from './fixtures/paceWorld.js';
 
 /**
  * The progression ledger's pace (brief 290 L5): every kind of work rated, the three profiles (Bare,
- * Typical by payback, Maxed), supply fed by one hero on each input, level tracks, path time and
+ * Typical by payback, Maxed), supply fed by the gatherers each input needs (brief 880 L3), level tracks, path time and
  * checks D, on a small world whose numbers read by hand (`fixtures/paceWorld.js`). The calculator
  * against the real engine is `npm run bench:calibrate`.
  */
@@ -158,18 +158,19 @@ describe('the profiles', () => {
 });
 
 describe('supply, level tracks and path time', () => {
-    it('a build is fed by one forester: its wood sets the pace of Construction', () => {
+    it('a build is fed by the foresters it needs: two at Bare, so Construction levels at the pace of the build itself', () => {
         const { pace } = world();
-        // The oak gives 900 wood an hour; a build wants 15 at 120 builds an hour: fed half the time.
+        // The oak gives 900 wood an hour; a build wants 15 at 120 builds an hour, 1800: two foresters (brief 880 L3; one, and half the pace, before).
         expect(pace.supplyOf('item_oak_wood', PROFILE.BARE).perHour).toBeCloseTo(900);
         const hut = pace.rateAt({ token: 'token_plot', recipe: 'recipe_build_hut' }, PROFILE.BARE);
-        expect(hut.scale).toBeCloseTo(0.5);
-        expect(hut.xp.construction).toBeCloseTo(300);
+        expect(hut.scale).toBeCloseTo(1);
+        expect(hut.gatherers.item_oak_wood.heroes).toBeCloseTo(2);
+        expect(hut.xp.construction).toBeCloseTo(600);
 
         const track = pace.trackOf('construction');
         expect(track.top).toBe(15);
-        // Every level at 300 XP an hour, Bare: XP to 15 over 300.
-        expect(track.levels[13].cumulative.bare).toBeCloseTo(xpForLevel(15) / 300);
+        // Every level at 600 XP an hour, Bare: XP to 15 over 600.
+        expect(track.levels[13].cumulative.bare).toBeCloseTo(xpForLevel(15) / 600);
         expect(track.levels[13].cumulative.typical).toBeLessThan(track.levels[13].cumulative.bare);
     });
 
@@ -302,9 +303,9 @@ describe('a web of potions', () => {
         // 900 herbs an hour, 90 % more with nine potions; each potion brewed as fast as the Still can, 1200 an hour.
         expect(pace.supplyOf('item_herb_0', PROFILE.MAXED).perHour).toBeCloseTo(1710);
         expect(pace.supplyOf('item_potion_0', PROFILE.MAXED).perHour).toBeCloseTo(1200);
-        // Typical takes no potion (a potion costs more than its 10 % gives); Bare brews only as fast as one bush feeds it.
+        // Typical takes no potion (a potion costs more than its 10 % gives); Bare brews as fast as the Still can, fed by the bushes it needs.
         expect(pace.supplyOf('item_herb_0', PROFILE.TYPICAL).perHour).toBeCloseTo(900);
-        expect(pace.supplyOf('item_potion_0', PROFILE.BARE).perHour).toBeCloseTo(900);
+        expect(pace.supplyOf('item_potion_0', PROFILE.BARE).perHour).toBeCloseTo(1200);
         for (const row of pace.trackOf('construction').levels) {
             expect(row.hours.maxed).toBeLessThanOrEqual(row.hours.typical + 1e-9);
             expect(row.hours.typical).toBeLessThanOrEqual(row.hours.bare + 1e-9);
@@ -329,8 +330,10 @@ describe('checks D', () => {
 
     it('a stage over its budget, Bare out of its bounds, a long gather', () => {
         const f = findings();
-        expect(f.find(x => x.check === 'stage-budget' && x.key === 'stage:0').message).toMatch(/over its budget of 30 min/);
-        expect(f.filter(x => x.check === 'profile-bounds' && x.key === 'skill:construction')).toHaveLength(1);
+        // The Starter Camp is done when the curve reaches level 10, 35 minutes in, and timed at Maxed.
+        expect(f.find(x => x.check === 'stage-budget' && x.key === 'stage:0').message).toMatch(/at Maxed, \d+ % over its budget of 35 min/);
+        // Against the curve: Bare past its 3x and, the curve's player being Maxed, Typical past its 2x.
+        expect(f.filter(x => x.check === 'profile-bounds' && x.key === 'skill:construction').map(x => x.message.split(':')[0]).sort()).toEqual(['Bare', 'Typical']);
         expect(f.find(x => x.check === 'unlock-wall' && x.key === 'token:token_statue').message).toMatch(/gathering Oak Wood/);
     });
 

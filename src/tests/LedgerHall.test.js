@@ -212,12 +212,13 @@ describe('every rank\'s payback at Typical, and the price the ledger proposes', 
 
     it('a rank set past the last stage the pace knows is measured at that stage, and says so', () => {
         const c = content();
-        c.hallSky.stars.ph_gold.ranks[0].tier = 5;
+        // The stages run to Plane 7 on the ladder: a rank set past it is measured there.
+        c.hallSky.stars.ph_gold.ranks[0].tier = 9;
         const pace = buildPace(c, buildLedger(c), null);
         const gold = rowOf(pace, 'ph_gold', 1);
-        expect(gold).toMatchObject({ tier: 5, cap: pace.maxTier });
-        expect(pace.maxTier).toBe(2);
-        expect(pace.findings().find(x => x.key === 'hall:ph_gold').message).toMatch(/^Gold Leaf rank 1 \(Plane 5, measured at Plane 2, the last stage the pace knows\)/);
+        expect(gold).toMatchObject({ tier: 9, cap: pace.maxTier });
+        expect(pace.maxTier).toBe(7);
+        expect(pace.findings().find(x => x.key === 'hall:ph_gold').message).toMatch(/^Gold Leaf rank 1 \(Plane 9, measured at Plane 7, the last stage the pace knows\)/);
         // Never on offer before its own tier.
         expect(pace.rateAt(VEIN, PROFILE.MAXED, 2).setup.hallRanks.ph_gold).toBe(0);
     });

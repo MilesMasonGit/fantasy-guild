@@ -1,15 +1,15 @@
 import { HOW, COMBAT, parseKey, itemKey } from '../../../src/systems/progression/ledger/engine.js';
-import { PROFILE, PACE_TEXT } from './ledger/pace.js';
+import { PACE_TEXT, TARGET } from './ledger/pace.js';
 import { minutesToReach, minutesPerLevelAt, formatMinutes } from './ledger/settings.js';
 import { tierLabel } from '../../../src/systems/progression/ledger/plan.js';
 
 /**
  * What the Ledger's timeline draws, read from a pace (`pace.js`): a lane per skill with the level
- * the Typical player has over time and the pace curve beside it, every item and Token at its first
- * reach, the walls with their blocker, the crowded and empty stretches, and the stages. Pure; the
- * component draws it.
+ * the curve's player (`pace.TARGET`, Maxed) has over time and the pace curve beside it, every item
+ * and Token at its first reach, the walls with their blocker, the crowded and empty stretches, and
+ * the stages. Pure; the component draws it.
  *
- * Times are hours from a new game at Typical, as the pace gives them.
+ * Times are hours from a new game at the curve's player, as the pace gives them.
  */
 
 /** A crowded spot: this many first reaches in one lane within one check-in (or one curve level, if longer). */
@@ -86,7 +86,7 @@ export function emptyOf(times, settings) {
  * @returns {{ lanes, stages, unreached, maxHours }}
  *   lanes: `[{ id, name, top, track, curve, dots, walls, crowded, empty }]`, one per skill with a
  *   level track and one for what no level gates; `track` and `curve` are `[{ level, hours }]` (the
- *   hours a new game first has that level, at Typical and on the curve); `dots` `[{ key, name, kind,
+ *   hours a new game first has that level, at the curve's player and on the curve); `dots` `[{ key, name, kind,
  *   hours, level, tier, wait }]`, `wait` the message of a long wait for that one unlock.
  */
 export function timelineOf(pace, ledger, { tierOf = (key) => ledger.reach.get(key)?.tier ?? null, findings = [] } = {}) {
@@ -107,7 +107,7 @@ export function timelineOf(pace, ledger, { tierOf = (key) => ledger.reach.get(ke
         const { kind } = parseKey(key);
         if (kind !== 'item' && kind !== 'token') continue;
         if (at.planned || !Number.isInteger(at.tier) || !at.rule) { unreached++; continue; }
-        const path = pace.pathOf(key, PROFILE.TYPICAL);
+        const path = pace.pathOf(key, TARGET);
         if (!Number.isFinite(path.hours)) { unreached++; continue; }
         const gate = gateOf(ledger, at);
         const lane = laneOf(gate ? gate.skill : OTHER_LANE);
@@ -126,7 +126,7 @@ export function timelineOf(pace, ledger, { tierOf = (key) => ledger.reach.get(ke
             continue;
         }
         const track = pace.trackOf(lane.id);
-        const points = [{ level: 1, hours: 0 }, ...track.levels.map((r) => ({ level: r.level + 1, hours: r.cumulative.typical }))];
+        const points = [{ level: 1, hours: 0 }, ...track.levels.map((r) => ({ level: r.level + 1, hours: r.cumulative[TARGET] }))];
         const curve = points.map((p) => ({ level: p.level, hours: minutesToReach(settings, p.level) / 60 }));
         const walls = pace.walls(lane.id).map((w) => wallOf(pace, w, name));
         out.push({ ...lane, top: track.top, track: points, curve, walls, crowded: crowdedOf(times, settings), empty: emptyOf(times, settings) });

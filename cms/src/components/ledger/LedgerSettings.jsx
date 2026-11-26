@@ -4,14 +4,18 @@ import { Plus, Trash2, RotateCcw } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { tierLabel } from '../../../../src/systems/progression/ledger/plan.js';
 import {
-  settingsOf, minutesToReach, formatMinutes, DEFAULT_LEDGER_SETTINGS, RULES_VERSIONS, BOOST_TARGET_KINDS,
+  settingsOf, minutesToReach, minutesPerLevelAt, formatMinutes, DEFAULT_LEDGER_SETTINGS, RULES_VERSIONS, BOOST_TARGET_KINDS, BOOST_BUDGET_KINDS,
 } from '../../engine/ledger/settings.js';
 
+/** The levels the pace curve card shows its rule at. */
+const CURVE_LEVELS = [1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 99];
+
 /**
- * The Ledger settings (`ledger/settings.js`): stage budgets, the tolerance, the target player, the
- * pace curve, the profiles (their bounds, the payback a sensible investor asks, a camp's copies),
- * the boost targets and the roster rules. Kept in the workspace and written with the plan into
- * `cms/plan/plan.json` by Sync; Restore from Game reads them back.
+ * The Ledger settings (`ledger/settings.js`): the stages the pace rule sets, the tolerance, the
+ * tiers' opening levels, the target player, the pace rule, the profiles (their bounds, the payback a
+ * sensible investor asks, a camp's copies), the boost targets and budget, and the roster rules. Kept
+ * in the workspace and written with the plan into `cms/plan/plan.json` by Sync; Restore from Game
+ * reads them back.
  */
 export default function LedgerSettings() {
   const stored = useEntityStore((s) => s.planSettings);
@@ -19,21 +23,11 @@ export default function LedgerSettings() {
   const settings = settingsOf(stored);
   const save = (patch) => setPlanSettings(settingsOf({ ...settings, ...patch }));
 
-  const setStage = (i, budgetMinutes) => save({ stages: settings.stages.map((s, j) => (j === i ? { ...s, budgetMinutes } : s)) });
-  const addStage = () => {
-    const last = settings.stages[settings.stages.length - 1];
-    save({ stages: [...settings.stages, { tier: last ? last.tier + 1 : 0, budgetMinutes: last ? last.budgetMinutes * 2 : 30 }] });
-  };
-  const removeStage = () => save({ stages: settings.stages.slice(0, -1) });
-
-  const setPoint = (i, patch) => save({ paceCurve: settings.paceCurve.map((p, j) => (j === i ? { ...p, ...patch } : p)) });
-  const addPoint = () => {
-    const last = settings.paceCurve[settings.paceCurve.length - 1];
-    const level = last ? Math.min(last.level + 10, 120) : 1;
-    if (settings.paceCurve.some((p) => p.level === level)) return;
-    save({ paceCurve: [...settings.paceCurve, { level, minutesPerLevel: last ? last.minutesPerLevel * 2 : 1 }] });
-  };
-  const removePoint = (i) => save({ paceCurve: settings.paceCurve.filter((_, j) => j !== i) });
+  const setRule = (patch) => save({ paceRule: { ...settings.paceRule, ...patch } });
+  const setBounds = (patch) => save({ profileBounds: { ...settings.profileBounds, ...patch } });
+  const setBudget = (i, kind, who, v) => save({
+    boostBudget: settings.boostBudget.map((row, j) => (j === i ? { ...row, [kind]: { ...row[kind], [who]: v } } : row)),
+  });
 
   return (
     <div className="space-y-5">
@@ -52,42 +46,47 @@ export default function LedgerSettings() {
         </button>
       </div>
 
-      <Card title="Stages" help="How long, from a new game, the target player should take to finish each stage.">
-        <table className="w-full" style={{ borderCollapse: 'collapse' }}>
+      <Card title="Stages" help="When a new game should have finished each stage at the curve's player (Maxed). Not set by hand: each stage is done when the pace curve reaches the level the next tier opens at (Tiers, below), the last at 99.">
+        <table className="w-full" style={{ borderCollapse: 'collapse' }} data-stages>
           <thead>
             <tr>
               <th style={{ ...head, textAlign: 'left' }}>Stage</th>
-              <th style={{ ...head, textAlign: 'right', width: 160 }}>Done by (minutes)</th>
+              <th style={{ ...head, textAlign: 'right', width: 110 }}>Ends at level</th>
               <th style={{ ...head, textAlign: 'left', width: 120 }}>From start</th>
               <th style={{ ...head, textAlign: 'left', width: 120 }}>This stage</th>
-              <th style={{ ...head, width: 30 }} />
             </tr>
           </thead>
           <tbody>
             {settings.stages.map((stage, i) => (
-              <tr key={stage.tier}>
+              <tr key={stage.tier} data-stage-budget={stage.tier}>
                 <td style={cell}>{tierLabel(stage.tier)}</td>
-                <td style={{ ...cell, textAlign: 'right' }}>
-                  <NumberInput value={stage.budgetMinutes} min={1} onCommit={(v) => setStage(i, v)} label={`Budget for ${tierLabel(stage.tier)}`} />
-                </td>
+                <td style={{ ...cell, textAlign: 'right', color: 'var(--color-text-secondary)' }}>{stage.endsAt}</td>
                 <td style={{ ...cell, color: 'var(--color-text-secondary)' }}>{formatMinutes(stage.budgetMinutes)}</td>
                 <td style={{ ...cell, color: 'var(--color-text-muted)' }}>
                   {formatMinutes(stage.budgetMinutes - (i > 0 ? settings.stages[i - 1].budgetMinutes : 0))}
-                </td>
-                <td style={cell}>
-                  {i === settings.stages.length - 1 && (
-                    <IconButton onClick={removeStage} label={`Remove ${tierLabel(stage.tier)}`}><Trash2 size={12} /></IconButton>
-                  )}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        <AddButton onClick={addStage}>Add a stage</AddButton>
         <div className="flex items-center gap-2 mt-3 text-[11px]" style={{ color: 'var(--color-text-secondary)' }}>
           A stage is off its budget beyond ±
           <NumberInput value={settings.tolerancePct} min={0} onCommit={(v) => save({ tolerancePct: v })} label="Tolerance in percent" width={60} />
           %.
+        </div>
+      </Card>
+
+      <Card title="Tiers" help="The level each tier opens at: the ladder (iron 20, silver 30, mythril 40, gold 50, adamantine 60, darkmetal 80), copper in two stages. A world place whose main material is planned for a later tier than its ring asks this level in its line's skill to settle, where the ring's price asks less.">
+        <div className="flex flex-wrap items-center gap-3 text-[11px]" style={{ color: 'var(--color-text-secondary)' }} data-tier-levels>
+          {settings.tierLevels.map((p, i) => (
+            <span key={p.tier} className="flex items-center gap-1">
+              {tierLabel(p.tier)}:
+              <NumberInput
+                value={p.level} min={1} whole width={56} label={`Opening level of ${tierLabel(p.tier)}`}
+                onCommit={(v) => save({ tierLevels: settings.tierLevels.map((q, j) => (j === i ? { ...q, level: v } : q)) })}
+              />
+            </span>
+          ))}
         </div>
       </Card>
 
@@ -103,36 +102,36 @@ export default function LedgerSettings() {
         </div>
       </Card>
 
-      <Card title="Pace curve" help="The target time one level should take, at a few levels; between two points it grows steadily. A wait longer than the wall factor times the curve is a wall.">
-        <table className="w-full" style={{ borderCollapse: 'collapse' }}>
+      <Card title="Pace curve" help="One rule for the whole game (BALANCE_RULES section 1): level 1 takes the first minutes, each level after a steady step longer, the step kept within the owner's range. It describes the curve's player, Maxed. A wait longer than the wall factor times the curve is a wall.">
+        <div className="flex flex-wrap items-center gap-2 text-[11px]" style={{ color: 'var(--color-text-secondary)' }} data-pace-rule>
+          Level 1 takes
+          <NumberInput value={settings.paceRule.startMinutes} min={0.1} onCommit={(v) => setRule({ startMinutes: v })} label="Minutes at level 1" width={60} />
+          minutes; each level after takes
+          <NumberInput value={settings.paceRule.stepPct} min={0} onCommit={(v) => setRule({ stepPct: v })} label="Step in percent" width={60} />
+          % longer, within the range
+          <NumberInput value={settings.paceRule.minPct} min={0.1} onCommit={(v) => setRule({ minPct: v })} label="Step from, percent" width={60} />
+          to
+          <NumberInput value={settings.paceRule.maxPct} min={0.1} onCommit={(v) => setRule({ maxPct: v })} label="Step to, percent" width={60} />
+          %.
+        </div>
+        <table className="w-full mt-3" style={{ borderCollapse: 'collapse' }}>
           <thead>
             <tr>
               <th style={{ ...head, textAlign: 'right', width: 90 }}>Level</th>
-              <th style={{ ...head, textAlign: 'right', width: 160 }}>Minutes per level</th>
-              <th style={{ ...head, textAlign: 'left', width: 120 }}>Per level</th>
+              <th style={{ ...head, textAlign: 'left', width: 140 }}>A level takes</th>
               <th style={{ ...head, textAlign: 'left' }}>Reached after</th>
-              <th style={{ ...head, width: 30 }} />
             </tr>
           </thead>
           <tbody>
-            {settings.paceCurve.map((point, i) => (
-              <tr key={point.level}>
-                <td style={{ ...cell, textAlign: 'right' }}>
-                  <NumberInput value={point.level} min={1} whole onCommit={(v) => setPoint(i, { level: v })} label={`Level of point ${i + 1}`} width={60} />
-                </td>
-                <td style={{ ...cell, textAlign: 'right' }}>
-                  <NumberInput value={point.minutesPerLevel} min={0.1} onCommit={(v) => setPoint(i, { minutesPerLevel: v })} label={`Minutes per level at ${point.level}`} />
-                </td>
-                <td style={{ ...cell, color: 'var(--color-text-secondary)' }}>{formatMinutes(point.minutesPerLevel)}</td>
-                <td style={{ ...cell, color: 'var(--color-text-muted)' }}>{formatMinutes(minutesToReach(settings, point.level))}</td>
-                <td style={cell}>
-                  <IconButton onClick={() => removePoint(i)} label={`Remove the point at level ${point.level}`}><Trash2 size={12} /></IconButton>
-                </td>
+            {CURVE_LEVELS.map((level) => (
+              <tr key={level} data-curve-level={level}>
+                <td style={{ ...cell, textAlign: 'right' }}>{level}</td>
+                <td style={{ ...cell, color: 'var(--color-text-secondary)' }}>{formatMinutes(minutesPerLevelAt(settings, level))}</td>
+                <td style={{ ...cell, color: 'var(--color-text-muted)' }}>{formatMinutes(minutesToReach(settings, level))}</td>
               </tr>
             ))}
           </tbody>
         </table>
-        <AddButton onClick={addPoint}>Add a point</AddButton>
         <div className="flex items-center gap-2 mt-3 text-[11px]" style={{ color: 'var(--color-text-secondary)' }}>
           A wall is a wait over
           <NumberInput value={settings.wallFactor} min={1} onCommit={(v) => save({ wallFactor: v })} label="Wall factor" width={60} />
@@ -140,12 +139,16 @@ export default function LedgerSettings() {
         </div>
       </Card>
 
-      <Card title="Profiles" help="The three players the pace is read for. Typical (a sensible investor) is what the curve aims at; Bare (no boosts) and Maxed (every boost) must stay within the bounds.">
+      <Card title="Profiles" help="The three players the pace is read for. Maxed (every boost, the well-optimized player) is what the curve aims at; Typical (a sensible investor) and Bare (no boosts) must stay within their bounds of it.">
         <div className="space-y-2 text-[11px]" style={{ color: 'var(--color-text-secondary)' }}>
-          <div className="flex items-center gap-2">
-            Bare and Maxed stay within
-            <NumberInput value={settings.profileBounds} min={1} onCommit={(v) => save({ profileBounds: v })} label="Profile bounds" width={60} />
-            times the curve, slower or faster.
+          <div className="flex flex-wrap items-center gap-2">
+            Typical takes at most
+            <NumberInput value={settings.profileBounds.typical} min={1} onCommit={(v) => setBounds({ typical: v })} label="Typical bound" width={60} />
+            times the curve, Bare at most
+            <NumberInput value={settings.profileBounds.bare} min={1} onCommit={(v) => setBounds({ bare: v })} label="Bare bound" width={60} />
+            times, and Maxed is never more than
+            <NumberInput value={settings.profileBounds.maxed} min={1} onCommit={(v) => setBounds({ maxed: v })} label="Maxed bound" width={60} />
+            times faster.
           </div>
           <div className="flex items-center gap-2">
             Typical takes a building, a camp, a tool or gear that pays for itself within
@@ -156,6 +159,11 @@ export default function LedgerSettings() {
             and a Guild Hall rank that pays for itself within
             <NumberInput value={settings.hallPaybackHours} min={0.1} onCommit={(v) => save({ hallPaybackHours: v })} label="Guild Hall payback hours" width={60} />
             hours (a rank slower than that is red, and the proposed prices are sized to it).
+          </div>
+          <div className="flex items-center gap-2">
+            A chain is one maker and about
+            <NumberInput value={settings.gatherersPerMaker} min={0.1} onCommit={(v) => save({ gatherersPerMaker: v })} label="Gatherers per maker" width={60} />
+            gatherers (the reference guild): a maker needing more down its chain runs at their share, and is a problem.
           </div>
           <div className="flex items-center gap-2">
             A camp hands one hero
@@ -212,6 +220,38 @@ export default function LedgerSettings() {
             })}
           </tbody>
         </table>
+      </Card>
+
+      <Card title="Boost budget" help="What Typical and Maxed hold at the opening of each tier (BALANCE_RULES section 5), in percent: speed (the cut in work or growth time), XP, yield (more of a work's main output a cycle) and rare finds. Every boost a profile holds on a piece of work is added up by kind and set against its tier's cell; speed and XP climb level by level to the next tier's. A total over its cell is a problem.">
+        <table className="w-full" style={{ borderCollapse: 'collapse' }} data-boost-budget>
+          <thead>
+            <tr>
+              <th style={{ ...head, textAlign: 'left', width: 120 }}>From</th>
+              {BOOST_BUDGET_KINDS.map(({ id, label }) => <th key={id} style={{ ...head, textAlign: 'left' }}>{label}: Typical / Maxed</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {settings.boostBudget.map((row, i) => (
+              <tr key={row.tier}>
+                <td style={cell}>{tierLabel(row.tier)}</td>
+                {BOOST_BUDGET_KINDS.map(({ id, label }) => (
+                  <td key={id} style={cell}>
+                    <span className="flex items-center gap-1">
+                      <NumberInput value={row[id].typical} min={0} onCommit={(v) => setBudget(i, id, 'typical', v)} label={`${label} at Typical from ${tierLabel(row.tier)}`} width={48} />
+                      /
+                      <NumberInput value={row[id].maxed} min={0} onCommit={(v) => setBudget(i, id, 'maxed', v)} label={`${label} at Maxed from ${tierLabel(row.tier)}`} width={48} />
+                    </span>
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="flex items-center gap-2 mt-3 text-[11px]" style={{ color: 'var(--color-text-secondary)' }}>
+          Maxed never cuts work time by more than
+          <NumberInput value={settings.speedCapPct} min={1} onCommit={(v) => save({ speedCapPct: v })} label="Speed cap in percent" width={60} />
+          % (the game caps it at 80 %, so one more Faster Work building always still helps).
+        </div>
       </Card>
 
       <Card title="Coin costs" help="The coin curve: from a stage on, a coin cost (a Shop Token, a Guild Hall rank, settling a ring) asks the coins one hero earns in this many minutes there, and a Guild Hall rank that many times its rank. A later stage earns more an hour, so the same minutes already cost more further out. The balancing preview sets the prices that ask coins to these numbers; which prices ask coins is the content's.">
@@ -304,18 +344,6 @@ function IconButton({ onClick, label, children }) {
       style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--color-text-muted)' }}
     >
       {children}
-    </button>
-  );
-}
-
-function AddButton({ onClick, children }) {
-  return (
-    <button
-      onClick={onClick}
-      className="flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-md text-[11px]"
-      style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--color-text-primary)', border: 'none', cursor: 'pointer' }}
-    >
-      <Plus size={12} /> {children}
     </button>
   );
 }

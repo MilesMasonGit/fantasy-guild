@@ -35,10 +35,12 @@ export const USAGE = `Usage: npm run cms -- <command> [options]
   restore                         Rebuild the workspace from data/ and cms/plan/plan.json (Restore
                                   from Game); the old one is kept in Backups first.
   ledger [--json=<file>]          The ledger's read-out, for the balancer: each skill's pace (levels 1
-                                  to 99, hero and guild time) and each entry's numbers and arrival,
-                                  at Maxed (opt) and Typical (typ), Planned entries marked, and the
-                                  ledger's checks. Reads the workspace, never saves it. --json writes
-                                  the whole read-out; a summary prints either way.
+                                  to 99, hero and guild time) at Maxed (opt), Typical (typ) and Bare
+                                  (bare), each entry's numbers and arrival, Planned entries marked,
+                                  the boost budget and the ledger's checks. Reads the workspace,
+                                  never saves it; a worktree with no workspace of its own reads the
+                                  main checkout's. --json writes the whole read-out; a summary
+                                  prints either way.
 
 Options (every command):
   --workspace=<file>   the workspace (default cms/workspace/workspace.json)
@@ -310,16 +312,42 @@ async function cmdRestore(paths, load, out) {
     return 0;
 }
 
+/**
+ * The main checkout's workspace file for a git worktree (its `.git` a file naming
+ * `<main>/.git/worktrees/<name>`), else null. A worktree holds no workspace of its own.
+ */
+function mainCheckoutWorkspace(root) {
+    let text;
+    try {
+        text = fs.readFileSync(path.join(root, '.git'), 'utf8');
+    } catch {
+        return null;
+    }
+    const m = /^gitdir:\s*(.+?)[\\/]\.git[\\/]worktrees[\\/][^\\/]+\s*$/m.exec(text);
+    return m ? path.join(path.resolve(m[1]), 'cms', 'workspace', WORKSPACE_FILE) : null;
+}
+
 async function cmdLedger(paths, options, load, out) {
     if (options.json === true) throw new CliError('Name the file: --json=<file>.', 2);
+    // Read-only, so a worktree with no workspace of its own reads the main checkout's (never for a command that writes).
+    const asked = typeof options.workspace === 'string' || typeof options.sandbox === 'string';
+    let fromMain = false;
+    if (!asked && !readDisk(paths).exists) {
+        const main = mainCheckoutWorkspace(paths.root);
+        if (main && fs.existsSync(main)) {
+            paths = { ...paths, workspaceFile: main };
+            fromMain = true;
+        }
+    }
     const disk = requireDisk(paths);
+    if (fromMain) out(`This is a worktree with no workspace of its own: reading the main checkout's workspace, ${paths.workspaceFile}.`);
     const { seedStoredWorkspace } = await load('/src/engine/workspaceSeeds.js');
     const { ledgerReadout, readoutText } = await load('/src/engine/ledgerReadout.js');
     // As the page reads it: the stored workspace seeded, nothing recalculated, nothing saved.
     const workspace = { ...disk.workspace, ...seedStoredWorkspace(disk.workspace) };
     const readout = ledgerReadout(workspace);
     readout.workspace = { file: shortPath(paths.root, paths.workspaceFile), revision: disk.revision, savedAt: disk.savedAt ?? null };
-    out(`The ledger of ${shortPath(paths.root, paths.workspaceFile)} (revision ${disk.revision}), worked out in ${(readout.ms / 1000).toFixed(1)} s. opt is the ledger's Maxed player, typ its Typical.`);
+    out(`The ledger of ${shortPath(paths.root, paths.workspaceFile)} (revision ${disk.revision}), worked out in ${(readout.ms / 1000).toFixed(1)} s. opt is the ledger's Maxed player (the curve's), typ its Typical, bare its Bare.`);
     for (const line of readoutText(readout)) out(line);
     if (typeof options.json === 'string') {
         const file = path.resolve(options.json);

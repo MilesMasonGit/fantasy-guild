@@ -6,12 +6,13 @@ import { balanceContent, calmContent } from './fixtures/balanceWorld.js';
 
 /**
  * The ledger's balancing preview (brief 290 L9): XP a cycle, level gates, costs and times, and boost
- * strengths proposed so the Typical profile follows the pace curve, each stage meets its budget and
+ * strengths proposed so the curve's player (Maxed) follows the pace curve, each stage meets its budget and
  * boosts meet their targets; what numbers cannot fix is reported. Nothing is applied: the proposals
  * come back with the pace before and after them. Fixture: `fixtures/balanceWorld.js`.
  */
 
-const CAMP_ONLY = { stages: [{ tier: 0, budgetMinutes: 30 }] };
+// The stages follow the pace rule (brief 880 L3): the Starter Camp is done when the curve reaches level 9, about 30 minutes in.
+const CAMP_ONLY = { tierLevels: [{ tier: 0, level: 1 }, { tier: 1, level: 9 }] };
 const proposalOf = (result, key, field) => result.proposals.find(p => p.key === key && p.field === field) || null;
 const stage = (summary, tier) => summary.stages.find(s => s.tier === tier);
 
@@ -68,9 +69,10 @@ describe('the balancing preview', () => {
 
     it('puts back an XP proposal whose levels another source took over: only numbers that set a level stay', () => {
         const c = balanceContent();
-        // The Tonic carries Alchemy 3 on, too slowly; once both are raised the Herbs carry its levels too.
+        // The Tonic carries Alchemy 3 on, too slowly; once both are raised the Herbs carry its levels too. That
+        // takes a curve that slows faster than the XP table grows: 12 % a level, past the owner's range.
         c.recipes.find(x => x.id === 'recipe_tonic').xp = 2;
-        const r = proposeBalance(c, CAMP_ONLY);
+        const r = proposeBalance(c, { ...CAMP_ONLY, paceRule: { stepPct: 12, maxPct: 12 } });
         expect(proposalOf(r, 'token:token_herbs', 'config.xp')).toBeTruthy();
         expect(proposalOf(r, 'recipe:recipe_tonic', 'xp')).toBeNull();
         expect(r.after.walls.filter(w => w.skill === 'alchemy')).toEqual([]);
@@ -90,14 +92,16 @@ describe('the balancing preview', () => {
 
 describe('what the preview never does', () => {
     it('proposes nothing for a world already on its pace', () => {
-        const r = proposeBalance(calmContent(), { stages: [{ tier: 0, budgetMinutes: 18 }] });
+        // The camp is done 17 minutes in, at the curve's level 6.
+        const r = proposeBalance(calmContent(), { tierLevels: [{ tier: 0, level: 1 }, { tier: 1, level: 6 }] });
         expect(stage(r.before, 0).within).toBe(true);
         expect(r.proposals).toEqual([]);
         expect(r.after.stages).toEqual(r.before.stages);
     });
 
     it('cuts a long wait for one unlock even when its stage is on its budget', () => {
-        const r = proposeBalance(balanceContent(), { stages: [{ tier: 0, budgetMinutes: 600 }] });
+        // A camp of ten hours: the curve reaches level 44 then.
+        const r = proposeBalance(balanceContent(), { tierLevels: [{ tier: 0, level: 1 }, { tier: 1, level: 44 }] });
         expect(r.before.unlockWalls.map(u => u.key)).toContain('token:token_statue');
         expect(proposalOf(r, 'token:token_statue', 'shop.price.0.quantity')?.to).toBeLessThan(5000);
         expect(r.after.unlockWalls.map(u => u.key)).not.toContain('token:token_statue');
@@ -105,9 +109,11 @@ describe('what the preview never does', () => {
 
     it('never proposes a negative, fractional or absurd number, even for a source thousands of times too slow', () => {
         const c = balanceContent();
-        // One Herb an hour: Alchemy about 1600 times slower than the curve. The Elixir is planned for
-        // plane 3, which has no budget, so its Alchemy 12 stays and Alchemy keeps its levels to follow.
+        // One Herb an hour and an hour a brew: Alchemy about 1600 times slower than the curve, its gatherers
+        // no help to the Still. The Elixir is planned for plane 3, which has no budget, so its Alchemy 12
+        // stays and Alchemy keeps its levels to follow.
         c.tokens.token_herbs.config.cycleTimeMs = 3_600_000;
+        for (const recipe of c.recipes) if (recipe.skill === 'alchemy') recipe.durationMs = 3_600_000;
         c.tokens.token_statue.shop.price[0].quantity = 5_000_000;
         c.recipes.find(x => x.id === 'recipe_elixir').plan.tier = 3;
         c.items.item_elixir.plan.tier = 3;

@@ -40,11 +40,48 @@ export const PLAN_STATUSES = Object.freeze([PLAN_STATUS.PLANNED, PLAN_STATUS.DRA
 /** What a record with no plan status is. */
 export const DEFAULT_PLAN_STATUS = PLAN_STATUS.LIVE;
 
-/** The stage time budgets the owner set (about 30 minutes, 1.5 hours, a day); later tiers have none yet. */
-const TIER_BUDGET_MS = Object.freeze({ 0: 30 * 60 * 1000, 1: 90 * 60 * 1000, 2: 24 * 60 * 60 * 1000 });
+/**
+ * The tiers the CMS offers: the ladder's seven rungs, copper in two (the Starter Camp, then ring 1),
+ * iron, silver, mythril, gold, adamantine and darkmetal. A record may hold a later one; {@link tierLabel} names any.
+ */
+export const PLAN_TIERS = Object.freeze([0, 1, 2, 3, 4, 5, 6, 7]);
 
-/** The tiers the CMS offers. A record may hold a later one; {@link tierLabel} names any. */
-export const PLAN_TIERS = Object.freeze([0, 1, 2, 3, 4, 5]);
+/**
+ * The level each tier opens at, the ladder's (BALANCE_RULES: iron 20, silver 30, mythril 40, gold 50,
+ * adamantine 60, darkmetal 80). Copper is two stages: the Starter Camp, then ring 1 from level 10,
+ * about the owner's half hour on the pace curve. The Ledger settings may move them (`tierLevels`).
+ */
+export const PLAN_TIER_LEVELS = Object.freeze([
+    Object.freeze({ tier: 0, level: 1 }), Object.freeze({ tier: 1, level: 10 }), Object.freeze({ tier: 2, level: 20 }),
+    Object.freeze({ tier: 3, level: 30 }), Object.freeze({ tier: 4, level: 40 }), Object.freeze({ tier: 5, level: 50 }),
+    Object.freeze({ tier: 6, level: 60 }), Object.freeze({ tier: 7, level: 80 })
+]);
+
+/**
+ * Tier opening levels as `[{ tier, level }]`, one per tier in tier order, each a whole level from 1
+ * that never falls from one tier to the next; the ladder's ({@link PLAN_TIER_LEVELS}) when none is readable.
+ */
+export function tierLevelsOf(raw) {
+    const byTier = new Map();
+    for (const p of Array.isArray(raw) ? raw : []) {
+        const tier = tierOrNull(p?.tier);
+        const level = Number(p?.level);
+        if (tier !== null && Number.isInteger(level) && level >= 1) byTier.set(tier, { tier, level });
+    }
+    if (!byTier.size) return PLAN_TIER_LEVELS.map(p => ({ ...p }));
+    let top = 1;
+    return [...byTier.values()].sort((a, b) => a.tier - b.tier).map(p => {
+        top = Math.max(top, p.level);
+        return { tier: p.tier, level: top };
+    });
+}
+
+/** The level a tier opens at: its own point, else the last one before it, else 1. */
+export function tierLevelAt(levels, tier) {
+    let out = 1;
+    for (const p of levels) if (p.tier <= tier) out = p.level;
+    return out;
+}
 
 /**
  * The rings an origin may be planned in: the strict rings, which hold all of the game's content.
@@ -95,12 +132,6 @@ export function tierLabel(tier) {
     const t = tierOrNull(tier);
     if (t === null) return PLAN_TEXT.noTier;
     return t === 0 ? PLAN_TEXT.starterCamp : PLAN_TEXT.plane(t);
-}
-
-/** A stage's time budget in milliseconds, or null where the owner has set none. */
-export function tierBudgetMs(tier) {
-    const t = tierOrNull(tier);
-    return t === null ? null : (TIER_BUDGET_MS[t] ?? null);
 }
 
 /** A status the ledger knows, case and spaces forgiven ("Planned" is planned), else null. */

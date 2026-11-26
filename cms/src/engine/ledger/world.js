@@ -1,10 +1,10 @@
 // the ledger meets the world: origins' wedges and rings, a world for a seed read as places, checks F, many worlds swept (pure)
 
-import { PLAN_STATUS, statusOf, planPlaceOf } from '../../../../src/systems/progression/ledger/plan.js';
-import { HOW, buildLedger, computeReach, itemKey, tokenKey, recipeKey, ringKey, isOneOff, spotArrivalRules } from '../../../../src/systems/progression/ledger/engine.js';
+import { PLAN_STATUS, statusOf, planPlaceOf, tierLevelAt, tierLevelsOf } from '../../../../src/systems/progression/ledger/plan.js';
+import { HOW, buildLedger, computeReach, itemKey, tokenKey, recipeKey, ringKey, isOneOff, spotArrivalRules, worldRungs, keyed } from '../../../../src/systems/progression/ledger/engine.js';
 import { groundWaterKinds } from '../../../../src/config/registries/fishingSpots.js';
 import { SEVERITY, ruleIndex, whyNever } from './checks.js';
-import { generateWorld, priceTemplateOf } from '../../../../src/systems/world/generate.js';
+import { generateWorld, priceTemplateOf, ORIGIN_ROLE } from '../../../../src/systems/world/generate.js';
 import { worldFindings, WORLD_CHECK } from '../../../../src/systems/world/checks.js';
 import { cellMat, COMBAT } from '../../../../src/systems/world/cellMat.js';
 import { materialsFromTokens, hallOriginsOf } from '../../../../src/systems/world/materials.js';
@@ -34,10 +34,17 @@ import { stationSkillOf } from '../../../../src/systems/effects/statements.js';
  *   across worlds, per-skill bands (cells offering a skill's new work, heroes it keeps busy) and
  *   price spreads per ring (items and hero time).
  *
+ * - **Levels by rung** (T-294): a cell is of the rung its main origin's material is planned for (the
+ *   engine's `rungs`), never before its ring's first rung: it is settled at that tier, a later rung
+ *   than its ring asking that rung's opening level in its line's skill where the template asks less,
+ *   and its price's goods must be had before its rung (no iron to reach iron, read by rung). An
+ *   origin of a later rung than the cell it stands on (a blend from a neighbouring wedge) is had from
+ *   its own rung, as the main ledger, which places only each wedge's own origins, reads it.
+ *
  * ⚠️ Coverage reads what the inner rings place and make as if every inner cell were settled: whether
  * a cell's price can be paid is the price checks' to say, so one bad price is one finding, not every
  * entry behind it.
- * ⚠️ A ring is a tier: the Hall's cell (the Starter Camp) is tier 0, ring n tier n.
+ * ⚠️ A ring is a tier where the plan sets no rung: the Hall's cell (the Starter Camp) is tier 0, ring n tier n.
  *
  * Pure: reads only what it is handed.
  */
@@ -194,12 +201,12 @@ function wildOriginIds(ledgerWorld, materialsOf, treasures) {
  * What the World plan reads of the content, worked out once for any number of seeds.
  *
  * @param {object} content `{ items, tokens, recipePools | recipes, effects, starterCamp }`, as the ledger takes it
- * @param {{ baseTables: object, ledger?: object }} options the world tables in force (normalised) and,
- *   if already built, the ledger over the same content
+ * @param {{ baseTables: object, ledger?: object, tierLevels?: object[] }} options the world tables in force
+ *   (normalised), if already built the ledger over the same content, else the tier opening levels to build it with
  */
-export function worldContext(content, { baseTables, ledger = null } = {}) {
+export function worldContext(content, { baseTables, ledger = null, tierLevels = null } = {}) {
     if (!baseTables || !Array.isArray(baseTables.lines)) throw new TypeError('worldContext() needs normalised world tables');
-    const base = ledger ?? buildLedger(content);
+    const base = ledger ?? buildLedger(content, { tierLevels });
     const lw = base.world;
     const rawTokens = Object.fromEntries(entriesOf(content.tokens));
     const { tables, moved, unknown } = plannedTables(baseTables, rawTokens);
@@ -236,6 +243,10 @@ export function worldContext(content, { baseTables, ledger = null } = {}) {
         origins.push({ check: WORLD_F.NO_WEDGE, key: tokenKey(id), severity: SEVERITY.WARN, message: WORLD_PLAN_TEXT.noWedge(yields), related: materialsOf(id).map(itemKey) });
     }
 
+    // The rungs of the tables generated from (the plan's places laid on), with the ledger's tier levels.
+    const { rungs, ringRungs } = worldRungs(tables, keyed(content.tokens), keyed(content.items));
+    const levels = tierLevels ? tierLevelsOf(tierLevels) : (base.world.tierLevels || tierLevelsOf(null));
+
     const effort = new Map();
     const effortOf = (itemId) => {
         if (!effort.has(itemId)) effort.set(itemId, lw.items[itemId] ? base.treeOf(itemId).effortMs : 0);
@@ -244,7 +255,7 @@ export function worldContext(content, { baseTables, ledger = null } = {}) {
 
     return {
         content, base, tables, baseTables, moved, unknown, materialsOf, skillOf, hallOrigins,
-        records, nameOf, lineName, kitName, cellName, origins, effortOf,
+        records, nameOf, lineName, kitName, cellName, origins, effortOf, rungs, ringRungs, tierLevels: levels,
         keptRules: lw.rules.filter(r => !SEED_FREE.has(r.how) && !isWedgeArrival(r))
     };
 }
@@ -278,24 +289,56 @@ const ruleOf = (rule) => ({ needs: [], tool: null, gives: [], floor: 0, gates: [
  * ring placing what its mat holds. A one-off find only cells place is kept on the side, as the
  * engine does.
  */
+/**
+ * A strict cell's rung: its main origins' (the engine's `rungs`), never before its ring's first rung
+ * (`ringRungs`), the ring itself where the plan sets none.
+ */
+function rungOfCell(ctx, cell) {
+    const first = ctx.ringRungs.get(cell.ring)?.first ?? cell.ring;
+    const mains = (cell.origins || []).filter(o => o.role === ORIGIN_ROLE.MAIN).map(o => ctx.rungs.get(o.id)).filter(Number.isInteger);
+    return Math.max(first, ...mains);
+}
+
+/** A cell's skill levels, its line's raised to its rung's opening level when the cell is of a later rung than its ring. */
+function gatesOfCell(ctx, cell, rung) {
+    const gates = (cell.requires?.skills || []).map(s => ({ skill: s.skill, level: s.level }));
+    const skill = lineById(ctx.tables, cell.wedge)?.skill;
+    if (rung <= cell.ring || !skill) return gates;
+    const level = tierLevelAt(ctx.tierLevels, rung);
+    const own = gates.find(g => g.skill === skill);
+    if (own) own.level = Math.max(own.level, level);
+    else gates.push({ skill, level });
+    return gates;
+}
+
 function worldReach(ctx, world, mats) {
     const lw = ctx.base.world;
     const rules = ctx.keptRules.map(r => ({ ...r, oneOff: false }));
     const names = new Map(lw.names);
+    const rungs = new Map();
     for (const cell of world.cells) {
         if (cell.ring < 1 || cell.ring > STRICT_RINGS) continue;
         const key = cellKey(cell.id);
         names.set(key, ctx.cellName(cell));
-        const gates = (cell.requires?.skills || []).map(s => ({ skill: s.skill, level: s.level }));
+        const rung = rungOfCell(ctx, cell);
+        rungs.set(cell.id, rung);
+        const gates = gatesOfCell(ctx, cell, rung);
         const needs = lw.ringStars?.has(cell.ring) ? [ringKey(cell.ring)] : [];
-        rules.push(ruleOf({ id: `settle:${cell.id}`, how: HOW.SETTLE, via: null, floor: cell.ring, needs, gates, gives: [{ key, chance: 1 }] }));
+        rules.push(ruleOf({ id: `settle:${cell.id}`, how: HOW.SETTLE, via: null, floor: rung, ring: cell.ring, needs, gates, gives: [{ key, chance: 1 }] }));
         const mat = mats.get(cell.id);
-        const placed = placedTokens(mat);
-        if (placed.length) {
-            rules.push(ruleOf({ id: `world:${cell.id}`, how: HOW.WORLD, via: key, needs: [key], floor: cell.ring, gives: placed.map(t => ({ key: tokenKey(t), chance: 1 })) }));
+        // An origin of a later rung than the cell (a blend from a neighbouring wedge) is had from its own rung, as the main ledger reads it.
+        const byFloor = new Map();
+        for (const t of placedTokens(mat)) {
+            const floor = Math.max(rung, ctx.rungs.get(t) ?? rung);
+            if (!byFloor.has(floor)) byFloor.set(floor, []);
+            byFloor.get(floor).push(t);
+        }
+        for (const [floor, placed] of byFloor) {
+            const id = floor === rung ? `world:${cell.id}` : `world:${cell.id}:${floor}`;
+            rules.push(ruleOf({ id, how: HOW.WORLD, via: key, needs: [key], floor, gives: placed.map(t => ({ key: tokenKey(t), chance: 1 })) }));
         }
         // Fishing spots drift in on the cell's water, by its mat's biome.
-        const ground = { id: key, via: key, needs: [key], floor: cell.ring, biome: mat.biome, waters: groundWaterKinds(mat.water, mat.inland), maybe: false };
+        const ground = { id: key, via: key, needs: [key], floor: rung, biome: mat.biome, waters: groundWaterKinds(mat.water, mat.inland), maybe: false };
         for (const rule of spotArrivalRules(lw, ground)) rules.push(ruleOf(rule));
     }
     const placers = new Map();
@@ -311,7 +354,7 @@ function worldReach(ctx, world, mats) {
         rule.oneOff = isOneOff(lw.tokens[rule.via.slice(6)]) && by.length > 0 && by.every(how => how === HOW.WORLD);
     }
     const world2 = { ...lw, rules, names };
-    return { reach: computeReach(world2), index: ruleIndex(world2), names };
+    return { reach: computeReach(world2), index: ruleIndex(world2), names, rungs };
 }
 
 /** Each generated cell's mat, as settling writes it. */
@@ -331,7 +374,7 @@ function finding(check, message, { cellId = null, key = null, subject, name, rel
 }
 
 /** Every finding of checks F (and the world's other rules) on one world. */
-function checksOn(ctx, world, mats, { reach, index, names }) {
+function checksOn(ctx, world, mats, { reach, index, names, rungs = new Map() }) {
     const out = [];
     const byId = new Map(world.cells.map(c => [c.id, c]));
     const nameOf = (key) => names.get(key) ?? ctx.nameOf(key);
@@ -350,14 +393,15 @@ function checksOn(ctx, world, mats, { reach, index, names }) {
         out.push(finding(check, f.message, { cellId: f.cellId ?? null, key, subject, name: key ? nameOf(key) : subject }));
     }
 
-    // A price slot naming an item: first had at an earlier ring than the cell's.
+    // A price slot naming an item: first had at an earlier tier than the cell's rung (its ring where the plan sets none).
     for (const cell of world.cells) {
         if (cell.ring < 1) continue;
+        const rung = rungs.get(cell.id) ?? cell.ring;
         for (const slot of priceTemplateOf(ctx.tables, cell.ring).items) {
             if (!slot.item) continue;
             const key = itemKey(slot.item);
             const tier = reach.get(key)?.tier;
-            if (Number.isInteger(tier) && tier < cell.ring) continue;
+            if (Number.isInteger(tier) && tier < rung) continue;
             const message = Number.isInteger(tier)
                 ? WORLD_PLAN_TEXT.priceRing(cell.id, nameOf(key), cell.ring, tier)
                 : WORLD_PLAN_TEXT.priceNever(cell.id, nameOf(key));

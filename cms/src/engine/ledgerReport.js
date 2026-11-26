@@ -44,7 +44,8 @@ export function workspaceLedger(state = {}, { sim = null } = {}) {
     const cycleTimeOf = cycleTimes
         ? (rule) => (TIMED.has(rule.how) && rule.via ? cycleTimes.get(parseKey(rule.via).id) ?? null : null)
         : null;
-    return buildLedger(contentOf(state), { cycleTimeOf, steadyPerDay: settingsOf(state.planSettings).steadyFindsPerDay });
+    const settings = settingsOf(state.planSettings);
+    return buildLedger(contentOf(state), { cycleTimeOf, steadyPerDay: settings.steadyFindsPerDay, tierLevels: settings.tierLevels });
 }
 
 const ENTITY_KEY = { Token: tokenKey, Item: itemKey, Recipe: recipeKey };

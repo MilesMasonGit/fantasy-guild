@@ -101,7 +101,7 @@ describe('crowded and empty stretches', () => {
     });
 
     it('reads the curve level after some minutes, with the fraction done', () => {
-        const settings2 = settingsOf({ paceCurve: [{ level: 1, minutesPerLevel: 10 }] });
+        const settings2 = settingsOf({ paceRule: { startMinutes: 10, stepPct: 0, minPct: 0 } });
         expect(curveLevelAt(settings2, 0)).toBe(1);
         expect(curveLevelAt(settings2, 25)).toBeCloseTo(3.5);
         expect(timeTicks(1 / 60, 3).map((t) => t.text)).toEqual(['1 min', '5 min', '15 min', '30 min', '1 h', '2 h']);

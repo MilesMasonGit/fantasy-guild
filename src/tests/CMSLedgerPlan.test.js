@@ -18,7 +18,7 @@ import cmsFileApi from '../../cms/vite-plugin-cms-api.js';
 import { workspaceLedger } from '../../cms/src/engine/ledgerReport';
 import { ledgerWorkspace, withWorld } from './fixtures/ledgerWorld.js';
 import {
-    planOf, isPlanned, withPlan, cleanPlan, tierLabel, tierBudgetMs, PLAN_STATUSES,
+    planOf, isPlanned, withPlan, cleanPlan, tierLabel, PLAN_STATUSES,
 } from '../systems/progression/ledger/plan.js';
 import { sourceCode, setScanTimeout } from './fixtures/sourceScan.js';
 
@@ -91,9 +91,9 @@ describe('the vocabulary', () => {
         expect(withPlan(tiered, { tier: null })).toEqual({ id: 'x' });
     });
 
-    it('names tiers and knows the stage budgets the owner set', () => {
-        expect([0, 1, 2, null].map(tierLabel)).toEqual(['Starter Camp', 'Plane 1', 'Plane 2', 'No tier set']);
-        expect([0, 1, 2, 3].map(tierBudgetMs)).toEqual([30 * 60000, 90 * 60000, 24 * 3600000, null]);
+    // The stage budgets are no longer the plan's: the pace rule sets them (`LedgerCurveTarget.test.js`).
+    it('names tiers', () => {
+        expect([0, 1, 2, 7, null].map(tierLabel)).toEqual(['Starter Camp', 'Plane 1', 'Plane 2', 'Plane 7', 'No tier set']);
     });
 });
 

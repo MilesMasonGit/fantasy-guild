@@ -1,6 +1,7 @@
 // the progression ledger's engines: when each entry is first reachable (reach) and what a made item costs to its origins (tree)
 
-import { isPlanned } from './plan.js';
+import { isPlanned, planOf, tierLabel, tierLevelsOf, tierLevelAt } from './plan.js';
+import { materialsOfToken } from '../../world/materials.js';
 import { chanceText } from '../../../utils/Formatters.js';
 import { normaliseStarterCamp } from '../../../config/starterCampShape.js';
 import { authoredStars, skyWithFallback, HALL_NODE, WISHING_WELL_STAR } from '../../../config/guildUpgrades.js';
@@ -33,7 +34,8 @@ import { coinsOf, shopCoinsOf } from '../../../config/registries/coinCosts.js';
  *   it all takes at the content's own rates, the skills it touches, its depth and its origins.
  *
  * A tier is a stage of the owner's plan, not a game rule: 0 is the Starter Camp, and ring n of the
- * world map is tier n. Everything else follows from what makes what: a thing is reachable at the
+ * world map is tier n, or the later rung its origins' main material is planned for (levels by rung,
+ * {@link worldRules}). Everything else follows from what makes what: a thing is reachable at the
  * lowest tier at which every one of its needs is.
  *
  * **The world map** (given `worldTables`, as the CMS always does): a cell of each wedge at each strict
@@ -172,7 +174,8 @@ export const LEDGER_ENGINE_TEXT = Object.freeze({
                 : n > 0 ? `about 1 in ${Math.round(1 / n)} days` : 'none a day'),
     never: 'never',
     planned: 'planned',
-    wedge: (line, ring) => `${line} ring ${ring}`
+    wedge: (line, ring) => `${line} ring ${ring}`,
+    rungWedge: (line, ring, tier) => `${line} ring ${ring}, ${tier}`
 });
 
 // ── keys ────────────────────────────────────────────────────────────────────────────────────────
@@ -303,9 +306,14 @@ export function isOneOff(def) {
  *   normalised world tables the world is generated from (with the plan's places laid on, as the
  *   World plan reads them), or none to place nothing beyond the start. `hallSky`: the Guild Hall's
  *   authored sky (`data/hallStars.json`'s shape), whose ring stars gate the rings they open.
- * @returns {{ items, tokens, recipes, rules, names, planned, worldTables: object|null, ringStars: Map<number, string[]> }}
+ * @param {{ tierLevels?: {tier, level}[] }} [options]  the level each plan tier opens at (`plan.tierLevelsOf`;
+ *   the ladder's when absent): what a world place of a later rung than its ring asks
+ * @returns {{ items, tokens, recipes, rules, names, planned, worldTables: object|null, ringStars: Map<number, string[]>,
+ *   rungs: Map<string, number>, ringRungs: Map<number, {first, last}>, tierLevels: {tier, level}[] }}
+ *   `rungs` the plan tier of each world origin's main material ({@link rungsOf}); `ringRungs` each
+ *   strict ring's first and last rung among the origins its tables list
  */
-export function buildWorld(content = {}) {
+export function buildWorld(content = {}, { tierLevels = null } = {}) {
     const library = isObject(content.effects) ? content.effects : {};
     const allItems = keyed(content.items);
     const allTokens = keyed(content.tokens);
@@ -585,10 +593,13 @@ export function buildWorld(content = {}) {
 
     const ringStars = hallStarRules(content.hallSky, { add, names, inputsOf });
     const tables = isObject(content.worldTables) && Array.isArray(content.worldTables.lines) ? content.worldTables : null;
+    const levels = tierLevelsOf(tierLevels);
+    const { rungs, ringRungs } = tables ? worldRungs(tables, allTokens, allItems) : { rungs: new Map(), ringRungs: new Map() };
     if (tables) {
         worldRules(tables, {
             add, names, placeable: (id) => !!text(id) && !planned.has(tokenKey(id)),
-            ringNeeds: (ring) => (ringStars.has(ring) ? [ringKey(ring)] : [])
+            ringNeeds: (ring) => (ringStars.has(ring) ? [ringKey(ring)] : []),
+            rungs, ringRungs, levelAt: (tier) => tierLevelAt(levels, tier)
         });
     }
 
@@ -676,7 +687,7 @@ export function buildWorld(content = {}) {
 
     for (const [key, need] of toolNeeds) names.set(key, need.kinds ? need.kinds.join(' or ') : `${need.kind} ${need.minTier}+`);
 
-    return { items, tokens, recipes, rules, names, planned, worldTables: tables, ringStars, spots };
+    return { items, tokens, recipes, rules, names, planned, worldTables: tables, ringStars, spots, rungs, ringRungs, tierLevels: levels };
 }
 
 // ── fishing spots ───────────────────────────────────────────────────────────────────────────────
@@ -862,21 +873,68 @@ function hallStarRules(hallSky, { add, names, inputsOf }) {
 }
 
 /**
+ * The rungs of the world tables' origins: `rungs`, each listed origin's owner's plan tier for its main
+ * material (what its work yields as a matter of course, `world/materials.js`), the latest where it
+ * yields several, else the origin's own plan tier, and an origin with neither left out; `ringRungs`,
+ * each strict ring's first and last rung among the origins its lines list, never before the ring.
+ * The game's own data carries no plan, so there every ring is its one rung, as the game generates it.
+ *
+ * @param {object} tables  normalised world tables
+ * @param {Record<string, object>} tokensById  the records as authored, plan blocks and all
+ * @param {Record<string, object>} itemsById
+ * @returns {{ rungs: Map<string, number>, ringRungs: Map<number, {first: number, last: number}> }}
+ */
+export function worldRungs(tables, tokensById = {}, itemsById = {}) {
+    const rungs = new Map();
+    for (const line of tables.lines) {
+        for (let ring = 1; ring <= STRICT_RINGS; ring++) {
+            for (const o of list(line.origins?.[ring])) {
+                if (rungs.has(o.id) || !isObject(tokensById[o.id])) continue;
+                const own = materialsOfToken(tokensById[o.id]).map(id => planOf(itemsById[id]).tier).filter(Number.isInteger);
+                const tier = own.length ? Math.max(...own) : planOf(tokensById[o.id]).tier;
+                if (Number.isInteger(tier)) rungs.set(o.id, tier);
+            }
+        }
+    }
+    const ringRungs = new Map();
+    for (let ring = 1; ring <= STRICT_RINGS; ring++) {
+        const at = tables.lines.flatMap(line => list(line.origins?.[ring]).map(o => Math.max(ring, rungs.get(o.id) ?? ring)));
+        ringRungs.set(ring, at.length ? { first: Math.min(...at), last: Math.max(...at) } : { first: ring, last: ring });
+    }
+    return { rungs, ringRungs };
+}
+
+/** A world place of a later rung than its ring: the cells of one wedge and ring whose main material is of that rung. */
+export const rungWedgeKey = (line, ring, rung) => `${wedgeKey(line, ring)}:${rung}`;
+
+/**
  * The world map's rules (see the file's head): a settle rule per wedge and strict ring, then what
  * every world places there, then what only some worlds do (`maybe`).
+ *
+ * **Levels by rung** (the ladder, T-294): a ring may hold several rungs (ring 3 mythril to darkmetal).
+ * A ring's place is settled at its first rung (the earliest rung any of its origins is of, never
+ * before the ring) and its template; an origin of a later rung stands on a place of its own
+ * ({@link rungWedgeKey}), settled at that rung, asking the template or the rung's opening level in
+ * the line's skill, whichever is higher, at the template's coins. Its price's goods are the seed's,
+ * which the World plan reads by rung. With no rungs known (the game's data) every ring is one rung,
+ * exactly as before.
  *
  * ⚠️ Which wedge a seed puts a key origin, a camp, an extra or an arrival in is the seed's: it is
  * placed through every wedge that may hold it, those whose tables list work by that ring first, then
  * the likeliest by kit (reach keeps the first of equals), so its path names that wedge's skill. A
  * `specialty` price slot follows the seed's specialty and is left out.
  */
-function worldRules(tables, { add, names, placeable, ringNeeds = () => [] }) {
+function worldRules(tables, { add, names, placeable, ringNeeds = () => [], rungs = new Map(), ringRungs = new Map(), levelAt = () => 1 }) {
     const lines = tables.lines;
     const kits = Array.isArray(tables.kits) ? tables.kits : [];
     const rings = Array.from({ length: STRICT_RINGS }, (_, i) => i + 1);
+    const rungAt = (id, ring) => Math.max(ring, rungs.get(id) ?? ring);
 
+    // Each line's origins of each ring, by the place they stand on: the ring's own, or a later rung's.
+    const standing = new Map();
     for (const ring of rings) {
         const template = tables.prices?.[ring] || {};
+        const first = ringRungs.get(ring).first;
         for (const line of lines) {
             const key = wedgeKey(line.id, ring);
             names.set(key, LEDGER_ENGINE_TEXT.wedge(line.name || line.id, ring));
@@ -885,19 +943,38 @@ function worldRules(tables, { add, names, placeable, ringNeeds = () => [] }) {
                 const skill = slot.skill === SKILL_OF.LINE ? line.skill : slot.skill === SKILL_OF.SPECIALTY ? null : slot.skill;
                 for (const g of gate(skill, slot.level)) top.set(g.skill, Math.max(top.get(g.skill) || 0, g.level));
             }
-            add({
-                id: `settle:${line.id}:${ring}`, how: HOW.SETTLE, via: null, floor: ring,
-                needs: [...(ring > 1 ? [wedgeKey(line.id, ring - 1)] : []), ...ringNeeds(ring)],
-                gates: [...top].map(([skill, level]) => ({ skill, level })),
-                gives: [{ key, chance: 1 }], ...coinsField(coinsOf(template.coins))
-            });
+            const needs = [...(ring > 1 ? [wedgeKey(line.id, ring - 1)] : []), ...ringNeeds(ring)];
+            const settle = (id, give, rung) => {
+                const gates = new Map(top);
+                if (rung > ring) for (const g of gate(line.skill, levelAt(rung))) gates.set(g.skill, Math.max(gates.get(g.skill) || 0, g.level));
+                add({
+                    id, how: HOW.SETTLE, via: null, floor: rung, ring, needs,
+                    gates: [...gates].map(([skill, level]) => ({ skill, level })),
+                    gives: [{ key: give, chance: 1 }], ...coinsField(coinsOf(template.coins))
+                });
+            };
+            settle(`settle:${line.id}:${ring}`, key, first);
+
+            const byRung = new Map([[first, []]]);
+            for (const o of list(line.origins?.[ring])) {
+                const rung = Math.max(first, rungAt(o.id, ring));
+                if (!byRung.has(rung)) byRung.set(rung, []);
+                byRung.get(rung).push(o.id);
+            }
+            standing.set(key, byRung);
+            for (const rung of [...byRung.keys()].filter(r => r > first).sort((a, b) => a - b)) {
+                const rungKey = rungWedgeKey(line.id, ring, rung);
+                names.set(rungKey, LEDGER_ENGINE_TEXT.rungWedge(line.name || line.id, ring, tierLabel(rung)));
+                settle(`settle:${line.id}:${ring}:${rung}`, rungKey, rung);
+            }
         }
     }
 
-    const place = (id, line, ring, typeIds, maybe = false) => {
+    const placeAt = (id, via, floor, typeIds, maybe = false) => {
         const gives = [...new Set(typeIds)].filter(placeable).map(t => (maybe ? { key: tokenKey(t), chance: 1, maybe: true } : { key: tokenKey(t), chance: 1 }));
-        if (gives.length) add({ id, how: HOW.WORLD, via: wedgeKey(line, ring), needs: [wedgeKey(line, ring)], floor: ring, gives });
+        if (gives.length) add({ id, how: HOW.WORLD, via, needs: [via], floor, gives });
     };
+    const place = (id, line, ring, typeIds, maybe = false) => placeAt(id, wedgeKey(line, ring), ring, typeIds, maybe);
     // A kit's share of a line's cells: its lean over the lean's total, or an even share when the line leans to none.
     const shareOf = (line, kitId) => {
         const lean = Object.entries(line.kits || {});
@@ -919,7 +996,11 @@ function worldRules(tables, { add, names, placeable, ringNeeds = () => [] }) {
         for (const line of lines) {
             const ids = (line.origins?.[ring] || []).map(o => o.id);
             for (const id of ids) if (!listedBy.has(id)) listedBy.set(id, ring);
-            place(`world:${line.id}:${ring}`, line.id, ring, ids);
+            const first = ringRungs.get(ring).first;
+            for (const [rung, at] of standing.get(wedgeKey(line.id, ring))) {
+                if (rung === first) place(`world:${line.id}:${ring}`, line.id, ring, at);
+                else placeAt(`world:${line.id}:${ring}:${rung}`, rungWedgeKey(line.id, ring, rung), rung, at);
+            }
         }
     }
     for (const ring of rings) {
@@ -1369,8 +1450,8 @@ export function hubsOf(world) {
  *
  * @returns {{ world, reach, reachOf(key), pathOf(key), findClass(rule, give), hubs(), treeOf(itemId) }}
  */
-export function buildLedger(content, { luckBelow = LUCK_BELOW, steadyPerDay = STEADY_FINDS_PER_DAY, cycleTimeOf = null } = {}) {
-    const world = buildWorld(content);
+export function buildLedger(content, { luckBelow = LUCK_BELOW, steadyPerDay = STEADY_FINDS_PER_DAY, cycleTimeOf = null, tierLevels = null } = {}) {
+    const world = buildWorld(content, { tierLevels });
     const reach = computeReach(world, { luckBelow, steadyPerDay });
     return {
         world,

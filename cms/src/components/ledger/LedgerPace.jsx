@@ -12,7 +12,7 @@ const cell = { padding: '4px 8px', fontSize: 11, borderBottom: '1px solid rgba(2
 const head = { ...cell, fontSize: 9, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-text-muted)' };
 
 /**
- * The Ledger's Pace page: each stage's time at Typical against its budget, the per-skill breakdown
+ * The Ledger's Pace page: each stage's time at Maxed (the curve's player) against its budget, the per-skill breakdown
  * of where XP comes from (the best source at each stage, Bare against Typical and Maxed, and what
  * each kind of boost adds), the hours each stage's top level takes at each profile against the pace
  * curve, the Guild Hall's paybacks, and whether the calculator's calibration stands.
@@ -46,14 +46,14 @@ export default function LedgerPace({ report, onRefresh, onOpen, focusSkill }) {
       </div>
 
       <section className="rounded-xl border bg-[#1a1a1e] border-white/10 p-4 space-y-2" aria-label="Stages">
-        <h3 className={sectionHead}>Stages at Typical</h3>
-        <p className="text-[10px] text-gray-500">When a new game first has everything planned for each stage, at the Typical player's rates, against its budget (red beyond ±{tol} %).</p>
+        <h3 className={sectionHead}>Stages at Maxed</h3>
+        <p className="text-[10px] text-gray-500">When a new game first has everything planned for each stage, at the Maxed player's rates (the curve's player), against its budget: the pace curve's time to the level the next tier opens at (red beyond ±{tol} %).</p>
         <table className="w-full" style={{ borderCollapse: 'collapse' }}>
           <thead>
             <tr>
               <th style={{ ...head, textAlign: 'left', width: 110 }}>Stage</th>
               <th style={{ ...head, textAlign: 'left', width: 100 }}>Budget</th>
-              <th style={{ ...head, textAlign: 'left', width: 120 }}>Typical</th>
+              <th style={{ ...head, textAlign: 'left', width: 120 }}>Maxed</th>
               <th style={{ ...head, textAlign: 'left' }}>Slowest</th>
             </tr>
           </thead>
@@ -178,8 +178,9 @@ const CALIBRATION_TEXT = {
 function ratioColor(minutes, curve, settings) {
   if (!curve) return 'var(--color-text-secondary)';
   const r = minutes / curve;
-  if (!Number.isFinite(r) || r > settings.profileBounds) return 'var(--color-error)';
-  if (r > settings.wallFactor || r < 1 / settings.profileBounds) return 'var(--color-warning)';
+  const bounds = settings.profileBounds;
+  if (!Number.isFinite(r) || r > bounds.bare) return 'var(--color-error)';
+  if (r > settings.wallFactor || r < 1 / bounds.maxed) return 'var(--color-warning)';
   return 'var(--color-text-secondary)';
 }
 
@@ -195,6 +196,7 @@ function SourceCell({ source, onOpen, skill }) {
         <span className="text-gray-500"> (Bare {rateText(source.bareXp)})</span>
       </div>
       {source.fed < 1 && <div style={{ color: 'var(--color-warning)' }}>fed {Math.round(source.fed * 100)} %: short of {source.short}</div>}
+      {source.gatherers > 0.005 && <div className="text-gray-500" data-gatherers>fed by {rateText(source.gatherers)} gatherers down its chain</div>}
       <div data-hall-share style={{ color: hall ? 'var(--color-accent-hover)' : 'var(--color-text-muted)' }}>
         {hall ? `Guild Hall ${gainText(hall.gain)} (${hall.names.join(', ')})` : 'Guild Hall: none at this stage'}
       </div>
