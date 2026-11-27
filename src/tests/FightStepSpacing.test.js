@@ -13,6 +13,8 @@ import * as HeroMotion from '../systems/board/HeroMotion.js';
 import * as EnemyMotion from '../systems/board/EnemyMotion.js';
 import * as FightRoom from '../systems/board/FightRoom.js';
 import * as FixedTokens from '../systems/board/FixedTokens.js';
+import * as Hand from '../systems/board/Hand.js';
+import * as Orders from '../systems/board/Orders.js';
 import * as MatPlacement from '../systems/board/MatPlacement.js';
 import { AudioSystem } from '../systems/core/AudioSystem.js';
 import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
@@ -234,6 +236,100 @@ describe('⭐ a stepping enemy holds its ground', () => {
     });
 });
 
+describe('⭐ a step let go part-way still ends at its spot', () => {
+    /**
+     * A goblin at (800, 500) stepping 160 u up to (800, 340) for h1, past a Token at (690, 420):
+     * 136 u from both ends of the walk, 110 u from its middle. Let go 0.8 s in, at about (800, 428).
+     */
+    function letGoMidWalk() {
+        const enemy = put('fss_goblin', 800, 500);
+        const passed = put('fixture_producer', 690, 420, BoardState.ORIGIN.PLACED);
+        expect(crowdedPairs()).toEqual([]);
+        BoardState.setClaim('h1', { instanceId: enemy.id, typeId: 'fss_goblin', x: 800, y: 500 });
+        BoardState.setStepPlan(enemy.id, { heroId: 'h1', x: 800, y: 340, side: -1, done: false, leftoverMs: 0 });
+        for (let i = 0; i < 8; i++) EnemyMotion.tick(100);
+        expect(EnemyMotion.isWalking(enemy.id)).toBe(true);
+        expect(dist(enemy, passed)).toBeLessThan(128);
+        BoardState.setClaim('h1', null);
+        EnemyMotion.tick(100);
+        return { enemy, passed, spot: { x: 800, y: 340 } };
+    }
+
+    it('the enemy walks on to its spot, the step is forgotten as it arrives, and no fight starts', () => {
+        const { enemy, spot } = letGoMidWalk();
+        expect(FightRoom.stepOf(enemy.id)).toMatchObject({ heroId: null, ...spot, done: false });
+        expect(EnemyMotion.isWalking(enemy.id)).toBe(true);
+        for (let i = 0; i < 30; i++) EnemyMotion.tick(100);
+        expect({ x: enemy.x, y: enemy.y }).toEqual(spot);
+        expect(FightRoom.stepOf(enemy.id)).toBeNull();
+        expect(FightRoom.steppingIds()).toEqual([]);
+        expect(EnemyMotion.bodyOf(enemy.id)).toBeNull();
+        expect(FightRoom.takeLeftover(enemy.id)).toBe(0);
+        expect(BoardCombat.getFight(enemy.id)).toBeFalsy();
+        expect(crowdedPairs()).toEqual([]);
+    });
+
+    it('nothing lands within its spacing of the spot while it finishes the walk', () => {
+        const { enemy, spot } = letGoMidWalk();
+        // 108 u from the spot, 150 u and more from the enemy and the Token it passes.
+        const near = { x: 900, y: 300 };
+        expect(dist(near, enemy)).toBeGreaterThan(128);
+        expect(MatPlacement.isLegal('fixture_producer', near)).toBe(false);
+        expect(MatPlacement.findSpot('fixture_producer', near, { reach: 0 })).toBeNull();
+        const nudged = MatPlacement.findSpot('fixture_producer', near);
+        expect(dist(nudged, spot)).toBeGreaterThanOrEqual(128);
+        const spawned = MatPlacement.forceSpot('fss_goblin', { x: 860, y: 330 }, { fixedIds: FixedTokens.unpushableIds() });
+        expect(spawned).not.toBeNull();
+        expect(spawned.pushed.map(p => p.id)).not.toContain(enemy.id);
+        expect(dist(spawned, spot)).toBeGreaterThanOrEqual(128);
+    });
+
+    it('picked into the hand mid-walk, the step is dropped and nothing stays held', () => {
+        const { enemy } = letGoMidWalk();
+        Hand.setInHand(enemy.id, true);
+        try {
+            EnemyMotion.tick(100);
+            expect(FightRoom.stepOf(enemy.id)).toBeNull();
+            EnemyMotion.tick(100);
+            expect(EnemyMotion.bodyOf(enemy.id)).toBeNull();
+        } finally {
+            Hand.setInHand(enemy.id, false);
+        }
+        expect(MatPlacement.isLegal('fixture_producer', { x: 900, y: 300 })).toBe(true);
+    });
+
+    it('removed mid-walk, the step is dropped', () => {
+        const { enemy } = letGoMidWalk();
+        BoardState.removeToken(enemy.id);
+        EnemyMotion.tick(100);
+        expect(FightRoom.steppingIds()).toEqual([]);
+        expect(MatPlacement.isLegal('fixture_producer', { x: 900, y: 300 })).toBe(true);
+    });
+
+    it('a hero who reaches it meanwhile waits for it to get there, then asks afresh from the spot', () => {
+        const { enemy, spot } = letGoMidWalk();
+        expect(FightRoom.holdsArrival('h2', enemy, -1)).toBe(true);
+        expect(FightRoom.stepOf(enemy.id)).toMatchObject({ heroId: null, ...spot });
+        for (let i = 0; i < 30; i++) EnemyMotion.tick(100);
+        expect({ x: enemy.x, y: enemy.y }).toEqual(spot);
+        // Nothing crowds it there: the fight starts at the spot.
+        expect(FightRoom.holdsArrival('h2', enemy, -1)).toBe(false);
+        expect(FightRoom.stepOf(enemy.id)).toBeNull();
+    });
+
+    it('let go once it is already there, the step is simply forgotten', () => {
+        const enemy = put('fss_goblin', 800, 500);
+        BoardState.setClaim('h1', { instanceId: enemy.id, typeId: 'fss_goblin', x: 800, y: 500 });
+        BoardState.setStepPlan(enemy.id, { heroId: 'h1', x: 800, y: 460, side: -1, done: false, leftoverMs: 0 });
+        for (let i = 0; i < 10; i++) EnemyMotion.tick(100);
+        expect(FightRoom.stepOf(enemy.id)).toMatchObject({ heroId: 'h1', done: true });
+        BoardState.setClaim('h1', null);
+        EnemyMotion.tick(100);
+        expect(FightRoom.stepOf(enemy.id)).toBeNull();
+        expect({ x: enemy.x, y: enemy.y }).toEqual({ x: 800, y: 460 });
+    });
+});
+
 /**
  * The hunt `FightStepFidelity.test.js` plays, at the shipped nudge reach: a camp keeping six
  * goblins (a new one each second while short), three heroes who cannot be beaten hunting it and a
@@ -289,6 +385,56 @@ describe('⭐ an hour of a crowded hunt at the shipped nudge reach', () => {
         expect(FightRoom.stats().stepped).toBeGreaterThan(250);
         expect(pushes).toBeGreaterThan(20);
         expect(pushedWhileStepping).toEqual([]);
+        expect(crowdedAt).toEqual([]);
+    }, 120_000);
+});
+
+describe('⭐ the hunt with its heroes called away mid-step', () => {
+    it('every third step is let go 0.3 s in: each still ends at its spot, and no two standing Tokens are ever closer than their spacing', () => {
+        huntBoard();
+        const seen = new Map();
+        const away = new Map();
+        const letGo = new Map();
+        let picked = 0;
+        let finished = 0;
+        const offSpot = [];
+        const crowdedAt = [];
+        for (let t = 0; t < 10 * 60_000; t += 100) {
+            for (const id of FightRoom.steppingIds()) {
+                const p = FightRoom.stepOf(id);
+                if (p.heroId === null || p.done) continue;
+                const key = `${id}|${p.x}|${p.y}`;
+                if (!seen.has(key)) seen.set(key, { t, pick: picked++ % 3 === 0 });
+                const s = seen.get(key);
+                if (s.pick && t - s.t >= 300 && !away.has(p.heroId)) {
+                    Orders.orderAt(p.heroId, { x: 300, y: 300 });
+                    away.set(p.heroId, t + 4000);
+                }
+            }
+            for (const [heroId, back] of away) {
+                if (t < back) continue;
+                Orders.orderAt(heroId, { x: 800, y: 520 });
+                away.delete(heroId);
+            }
+            GameLoop.runHandlers(100);
+            for (const id of FightRoom.steppingIds()) {
+                const p = FightRoom.stepOf(id);
+                if (p.heroId === null && !letGo.has(id)) letGo.set(id, { x: p.x, y: p.y });
+            }
+            for (const [id, spot] of [...letGo]) {
+                if (FightRoom.stepOf(id)?.heroId === null) continue;
+                const enemy = BoardState.getTokenById(id);
+                if (enemy && enemy.x === spot.x && enemy.y === spot.y) finished++;
+                else offSpot.push(`${id} at ${t} ms`);
+                letGo.delete(id);
+            }
+            if (crowdedAt.length < 3) {
+                const pairs = crowdedPairs();
+                if (pairs.length) crowdedAt.push(`${t} ms: ${pairs.join(', ')}`);
+            }
+        }
+        expect(finished).toBeGreaterThan(20);
+        expect(offSpot).toEqual([]);
         expect(crowdedAt).toEqual([]);
     }, 120_000);
 });

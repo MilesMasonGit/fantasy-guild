@@ -27,8 +27,10 @@ import { standingSpot } from './standing.js';
  * While it steps, the enemy holds its ground and the spot it walks to: no push moves it, and
  * nothing may land within its spacing of that spot (`MatPlacement`, reading the steps from
  * `BoardState.stepPlans`). ⚠️ A step let go part-way (its hero sent elsewhere before the fight
- * starts) leaves the enemy where it got to (`EnemyMotion`), which may be closer than the spacing
- * to a Token it was walking past.
+ * starts) still ends at its spot: the enemy walks on, the spot stays held, and the plan is cleared
+ * as it arrives, with no fight. Stopping where it got to could leave it closer than the spacing to
+ * a Token it was walking past. A hero who reaches it meanwhile waits for it to get there, then
+ * asks afresh from the spot, as any arriving hero does.
  *
  * Who counts: every fight (a hero who has reached an enemy, or a fight stepping aside, at the spot
  * it is stepping to) and every hero standing still. Not a hero walking (they are passing through),
@@ -151,7 +153,7 @@ const isEnemy = (instance) => isEnemyDef(getTokenType(instance?.typeId));
 /**
  * The steps under way on the current board: `enemyId → { heroId, x, y, side, done, leftoverMs }`,
  * the spot the enemy walks to, the side its hero stands on, and once it is there the part of that
- * tick it did not need. Held per board object by `BoardState` (placement reads the spots); written
+ * tick it did not need. `heroId` is null once its hero has let go: the walk finishes, no fight. Held per board object by `BoardState` (placement reads the spots); written
  * only here, through `BoardState.setStepPlan`; never saved.
  */
 const steps = () => BoardState.stepPlans();
@@ -270,7 +272,8 @@ export function holdsArrival(heroId, enemy, side) {
             if (plan.leftoverMs > 0) perBoard(leftoversByBoard).set(enemy.id, plan.leftoverMs);
             return false;
         }
-        // Left over from a hero who has let go of it.
+        // A step let go part-way is still walking to its spot: wait, then ask afresh from there.
+        if (plan.heroId === null && !plan.done) return true;
         BoardState.setStepPlan(enemy.id, null);
     }
     const { to } = planFor(heroId, enemy, side);
@@ -302,6 +305,10 @@ export function steppingIds() {
 export function finishStep(enemyId, leftoverMs = 0) {
     const plan = steps()?.get(enemyId);
     if (!plan) return;
+    if (plan.heroId === null) {
+        BoardState.setStepPlan(enemyId, null);
+        return;
+    }
     plan.leftoverMs = plan.done ? 0 : Math.max(0, Math.round(leftoverMs));
     plan.done = true;
 }
@@ -322,8 +329,9 @@ export function takeLeftover(enemyId) {
 
 /**
  * Forget every step that no longer stands: its enemy gone or in the player's hand, or its hero
- * no longer after it (let go, sent elsewhere) or already fighting it; and a leftover whose enemy is
- * gone. Run by `EnemyMotion` before it walks anyone.
+ * already fighting it; and a leftover whose enemy is gone. A step whose hero is no longer after it
+ * (let go, sent elsewhere) is let go: one still walking keeps its spot until it gets there
+ * ({@link finishStep}), one already there is forgotten. Run by `EnemyMotion` before it walks anyone.
  */
 export function pruneSteps() {
     const left = leftoversByBoard.get(GameState.state?.board);
@@ -333,10 +341,15 @@ export function pruneSteps() {
     const plans = steps();
     if (!plans?.size) return;
     for (const [enemyId, plan] of plans) {
-        if (!BoardState.getTokenById(enemyId) || Hand.isInHand(enemyId)
-            || BoardState.claimOfHero(plan.heroId)?.instanceId !== enemyId
-            || BoardState.heroBodyOf(plan.heroId)?.atWork === enemyId) {
+        if (!BoardState.getTokenById(enemyId) || Hand.isInHand(enemyId)) {
             BoardState.setStepPlan(enemyId, null);
+            continue;
+        }
+        if (plan.heroId === null) continue;
+        if (BoardState.heroBodyOf(plan.heroId)?.atWork === enemyId) {
+            BoardState.setStepPlan(enemyId, null);
+        } else if (BoardState.claimOfHero(plan.heroId)?.instanceId !== enemyId) {
+            BoardState.setStepPlan(enemyId, plan.done ? null : { ...plan, heroId: null, leftoverMs: 0 });
         }
     }
 }

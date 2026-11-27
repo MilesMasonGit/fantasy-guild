@@ -195,7 +195,7 @@ function newBody(instance) {
     return { x: instance.x, y: instance.y, moving: false, facing: -1, from: null, seen: 0 };
 }
 
-/** The walk has ended (arrived, or let go): rebuild the Near neighbourhood at both ends, once. */
+/** The walk has ended (arrived, or its step dropped): rebuild the Near neighbourhood at both ends, once. */
 function endWalk(instance, body) {
     if (!body.from) return;
     const from = body.from;
@@ -275,7 +275,8 @@ export function tick(delta = 0) {
             if (stepAside(instance, body, aside, delta, speed)) changed = true;
         }
     }
-    // Its step over or let go: no body. One let go mid-walk stands where it got to.
+    // Its step over, or dropped (its enemy picked up or gone): no body. One dropped mid-walk stands
+    // where it got to; a step let go by its hero is not dropped but walks on (`FightRoom`).
     for (const [id, body] of map) {
         if (body.seen === stamp) continue;
         if (body.moving) {
