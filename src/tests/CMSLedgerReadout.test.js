@@ -294,12 +294,12 @@ describe('the read-out\'s coins', () => {
         expect(out.coins.curves.everyday[0]).toEqual({ tier: 0, minutes: 5 });
         expect(out.coins.curves.big[0]).toEqual({ tier: 0, minutes: 30 });
         const ring = out.coins.prices.find((p) => p.kind === 'ring' && p.ring === 1);
-        expect(ring).toMatchObject({ curve: 'big', coins: 30, minutes: 30 });
+        expect(ring).toMatchObject({ curve: 'big', coins: 30, minutes: 45 });
         expect(ring.proposed).toBeGreaterThan(0);
         // Only prices that ask coins are listed.
         expect(out.coins.prices.every((p) => p.coins > 0)).toBe(true);
         const text = readoutText(out).join('\n');
-        expect(text).toMatch(/^Coin curves, minutes of one hero's selling from a stage on: everyday Starter Camp 5, Plane 2 9, .*Plane 7 361; big Starter Camp 30, Plane 2 66, .*Plane 7 720\.$/m);
+        expect(text).toMatch(/^Coin curves, minutes of one hero's selling from a stage on: everyday Starter Camp 5, Plane 2 9, .*Plane 7 361; big Starter Camp 30, Plane 1 45, Plane 2 66, .*Plane 7 720\.$/m);
         expect(text).toMatch(/^Coin prices: 1 asks coins \(ring 1\); 1 beyond the tolerance from its curve's proposal\.$/m);
     });
 
