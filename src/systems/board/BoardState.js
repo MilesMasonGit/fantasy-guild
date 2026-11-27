@@ -666,6 +666,44 @@ export function heroBodies() {
 }
 
 /**
+ * The steps enemies are taking to open space before a crowded fight: `enemyId → plan`, the spot
+ * each walks to (`x`, `y`, whole units, fixed for the step) and what `FightRoom`, the only writer,
+ * keeps beside it. Never saved.
+ *
+ * Held here rather than in `FightRoom` because placement reads it: `MatPlacement` keeps each spot
+ * clear for its enemy and pushes no stepping enemy, and `FightRoom` asks `MatPlacement` where a
+ * step may go.
+ */
+const stepPlansByBoard = new WeakMap();
+let stepPlansChanged = 0;
+
+/** The current board's steps under way (`enemyId → plan`), or null with no board. Read only. */
+export function stepPlans() {
+    const b = board();
+    if (!b) return null;
+    let plans = stepPlansByBoard.get(b);
+    if (!plans) {
+        plans = new Map();
+        stepPlansByBoard.set(b, plans);
+    }
+    return plans;
+}
+
+/** Start (or with `null`, end) enemy `enemyId`'s step. For `FightRoom.js` only. */
+export function setStepPlan(enemyId, plan) {
+    const plans = stepPlans();
+    if (!plans || !enemyId) return;
+    if (plan) plans.set(enemyId, plan);
+    else if (!plans.delete(enemyId)) return;
+    stepPlansChanged++;
+}
+
+/** A count of every step started or ended, on any board: a search for room reads the spots. */
+export function stepPlansVersion() {
+    return stepPlansChanged;
+}
+
+/**
  * ⚠️ **Test-only switch: heroes arrive the moment they claim.** Thousands of
  * tests plant a flag and expect the hero to be working at once, as they were
  * before walking existed. `src/tests/setup/instantArrival.js` turns this on for

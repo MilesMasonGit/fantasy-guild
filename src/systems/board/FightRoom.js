@@ -6,6 +6,7 @@ import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { isEnemyDef } from '../../config/registries/enemyProfile.js';
 import * as BoardState from './BoardState.js';
 import * as Hand from './Hand.js';
+import * as MatPlacement from './MatPlacement.js';
 import { standingSpot } from './standing.js';
 
 /**
@@ -18,8 +19,16 @@ import { standingSpot } from './standing.js';
  * What a fight covers is what the screen draws over it at the mat's natural size: both fighters'
  * art and, above them, the two health bars and the fight button between them ({@link fightBox}).
  * A hero covers their art and the bar over it ({@link heroBox}). Two boxes crowd each other when
- * they come within {@link CLEAR_GAP} of each other. Tokens never count: heroes and enemies already
- * stand over them.
+ * they come within {@link CLEAR_GAP} of each other. Tokens never crowd a fight's box (heroes and
+ * enemies already stand over them), but the enemy is a Token: the spot it steps to must be one it
+ * may stand on, by the rules any Token moved there meets (`MatPlacement`: its spacing from every
+ * other Token, the mat, its ground, `Cannot`).
+ *
+ * While it steps, the enemy holds its ground and the spot it walks to: no push moves it, and
+ * nothing may land within its spacing of that spot (`MatPlacement`, reading the steps from
+ * `BoardState.stepPlans`). ⚠️ A step let go part-way (its hero sent elsewhere before the fight
+ * starts) leaves the enemy where it got to (`EnemyMotion`), which may be closer than the spacing
+ * to a Token it was walking past.
  *
  * Who counts: every fight (a hero who has reached an enemy, or a fight stepping aside, at the spot
  * it is stepping to) and every hero standing still. Not a hero walking (they are passing through),
@@ -142,9 +151,10 @@ const isEnemy = (instance) => isEnemyDef(getTokenType(instance?.typeId));
 /**
  * The steps under way on the current board: `enemyId → { heroId, x, y, side, done, leftoverMs }`,
  * the spot the enemy walks to, the side its hero stands on, and once it is there the part of that
- * tick it did not need. Kept per board object, like `EnemyMotion`'s bodies; never saved.
+ * tick it did not need. Held per board object by `BoardState` (placement reads the spots); written
+ * only here, through `BoardState.setStepPlan`; never saved.
  */
-const stepsByBoard = new WeakMap();
+const steps = () => BoardState.stepPlans();
 
 /** `enemyId → ms`: a finished step's leftover, from its hero's arrival to its fight's first tick. */
 const leftoversByBoard = new WeakMap();
@@ -159,8 +169,6 @@ function perBoard(byBoard) {
     }
     return map;
 }
-
-const steps = () => perBoard(stepsByBoard);
 
 /** What the searches have cost and what they found (tests and probes). */
 const counts = { searches: 0, candidates: 0, worst: 0, stepped: 0, walked: 0, farthest: 0 };
@@ -208,7 +216,8 @@ function obstaclesFor(heroId, enemyId) {
  * Whether the fight `heroId` is about to start against `enemy`, on `side`, is crowded, and the
  * spot it steps to: `{ crowded: false, to: null }` when it stands clear (it stays),
  * `{ crowded: true, to: { x, y } }` with the nearest clear spot within reach (whole mat units,
- * the whole box on the mat), or `{ crowded: true, to: null }` when there is none (it stays).
+ * the whole box on the mat, and a spot the enemy may stand on as any Token moved there may), or
+ * `{ crowded: true, to: null }` when there is none (it stays).
  */
 export function planFor(heroId, enemy, side) {
     const obstacles = obstaclesFor(heroId, enemy.id);
@@ -224,13 +233,17 @@ export function planFor(heroId, enemy, side) {
     const y0 = Math.round(enemy.y);
     let tried = 0;
     let to = null;
+    // Read once, at the first spot the fights and heroes leave clear.
+    let mayStand = null;
     for (let k = 0; k < OFFSETS.length; k += 2) {
         const x = x0 + OFFSETS[k];
         const y = y0 + OFFSETS[k + 1];
         tried++;
         boxOf(r, x, y, standingSpot(enemy.typeId, { x, y }, side).x, y, box);
         if (box.left < 0 || box.top < 0 || box.right > w || box.bottom > h) continue;
-        if (!crowdsAny(box, obstacles)) {
+        if (crowdsAny(box, obstacles)) continue;
+        mayStand ??= MatPlacement.spotTester(enemy.typeId, { x: x0, y: y0 }, { excludeId: enemy.id, reach: STEP_REACH });
+        if (mayStand(x, y)) {
             to = { x, y };
             break;
         }
@@ -253,16 +266,16 @@ export function holdsArrival(heroId, enemy, side) {
     if (plan) {
         if (plan.heroId === heroId) {
             if (!plan.done) return true;
-            plans.delete(enemy.id);
+            BoardState.setStepPlan(enemy.id, null);
             if (plan.leftoverMs > 0) perBoard(leftoversByBoard).set(enemy.id, plan.leftoverMs);
             return false;
         }
         // Left over from a hero who has let go of it.
-        plans.delete(enemy.id);
+        BoardState.setStepPlan(enemy.id, null);
     }
     const { to } = planFor(heroId, enemy, side);
     if (!to) return false;
-    plans.set(enemy.id, { heroId, x: to.x, y: to.y, side, done: false, leftoverMs: 0 });
+    BoardState.setStepPlan(enemy.id, { heroId, x: to.x, y: to.y, side, done: false, leftoverMs: 0 });
     const far = Math.sqrt((to.x - enemy.x) ** 2 + (to.y - enemy.y) ** 2);
     counts.stepped++;
     counts.walked += far;
@@ -323,7 +336,7 @@ export function pruneSteps() {
         if (!BoardState.getTokenById(enemyId) || Hand.isInHand(enemyId)
             || BoardState.claimOfHero(plan.heroId)?.instanceId !== enemyId
             || BoardState.heroBodyOf(plan.heroId)?.atWork === enemyId) {
-            plans.delete(enemyId);
+            BoardState.setStepPlan(enemyId, null);
         }
     }
 }
