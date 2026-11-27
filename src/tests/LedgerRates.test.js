@@ -26,6 +26,7 @@ import { registerHallSky } from '../config/registries/hallStarRegistry.js';
 import * as HallRules from '../systems/progression/HallRules.js';
 import * as Respawn from '../systems/board/Respawn.js';
 import * as TimedChanges from '../systems/board/TimedChanges.js';
+import { DRINK_CYCLES } from '../config/loopConstants.js';
 import { xpForLevel } from '../utils/XPCurve.js';
 
 /**
@@ -178,11 +179,11 @@ describe('one hero on a vein: cycle, rest, items and XP an hour', () => {
         expect(bare.items.rt_ore).toBeCloseTo(360);
     });
 
-    it('counts a +10 % XP drink at its average: a 1 XP cycle pays 1.1, and the drink is drunk once every 10 cycles', () => {
+    it('counts a +10 % XP drink at its average: a 1 XP cycle pays 1.1, and a fresh drink once each dose runs out', () => {
         const r = book().rateOf({ token: 'rt_vein' }, { consumables: ['rt_beer'] });
         expect(r.xpPerCycle).toBeCloseTo(1.1);
         expect(r.xp.mining).toBeCloseTo(264);
-        expect(r.inputs.rt_beer).toBeCloseTo(24);
+        expect(r.inputs.rt_beer).toBeCloseTo(240 / DRINK_CYCLES);
         expect(r.factors.find(f => f.id === 'consumable:rt_beer')).toMatchObject({ axes: [EFFECT_TYPES.XP_BONUS] });
     });
 

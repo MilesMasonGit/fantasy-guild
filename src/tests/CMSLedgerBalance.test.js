@@ -141,7 +141,7 @@ describe('the Balancing page', { timeout: 30000 }, () => {
         const levers = [...view.container.querySelectorAll('[data-proposal]')].map(r => r.getAttribute('data-proposal'));
         expect(levers).toEqual(expect.arrayContaining([LEVER.XP, LEVER.GATE, LEVER.COST, LEVER.BOOST]));
         expect(view.getByText('Elixir')).toBeTruthy();
-        expect(view.container.querySelector('[data-cant-fix="content"]').textContent).toMatch(/Mining 30 → 90/);
+        expect(view.container.querySelector('[data-cant-fix="content"]').textContent).toMatch(/Mining 34 → 90/);
         expect(view.getByTestId('balance-counts').textContent).toMatch(/Walls \(a run of levels over twice the curve\): 2 → 1/);
         expect(view.getByTestId('balance-apply').disabled).toBe(true);
 
