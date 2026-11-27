@@ -166,10 +166,12 @@ describe('⭐ a farmer harvests until a roll finishes it, the last cycle sows ag
         expect(field.alert ?? null).toBeNull();
         expect(skipHint(ALERT.GROWING)).toMatch(/growing/);
 
-        // Ripe again: harvested again at once.
+        // Ripe again: harvested again at once, its first harvest not the one that finishes it.
         run(20000);
         expect(Fields.stageOf(field)).toBe(Fields.STAGE.RIPE);
+        const again = finishesAt(field, 2);
         run(1200);
+        again();
         expect(Flags.statusOf('farmer')).toMatchObject({ state: 'working', instanceId: field.id });
         expect(wheat()).toBe(4);
     });
@@ -224,7 +226,9 @@ describe('⭐ a farmer harvests until a roll finishes it, the last cycle sows ag
         expect(Fields.stageOf(a)).toBe(Fields.STAGE.GROWING);
         run(17000);
         expect(Fields.stageOf(b)).toBe(Fields.STAGE.RIPE);
+        const bLasts = finishesAt(b, 2);
         run(1200);
+        bLasts();
         expect(Flags.statusOf('farmer')).toMatchObject({ state: 'working', instanceId: b.id });
     });
 
