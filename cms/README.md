@@ -58,7 +58,9 @@ and `backups/`). Only the project's own `data/` and plan are ever committed.
 
 The change-pack helper `changePackTool.mjs` (`stamp`, `gate`, `world`,
 `balance`, `coins`; `incoming/README.md`) runs beside it and reads the same workspace
-file by default.
+file by default. `balance --out <pack>` writes every proposal; `--levers=<a,b>`
+(`xp`, `cost`, `time`, `boost`, `coins`) keeps only those levers in the pack
+(the printed text and `--json` still show everything; an unknown lever is refused).
 
 **Before writing a change pack**, an agent runs `npm run cms -- validate --data`
 and `npm run cms -- validate` (both should say 0 errors), reads its "before"
