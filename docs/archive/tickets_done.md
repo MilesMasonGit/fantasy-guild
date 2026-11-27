@@ -593,3 +593,4 @@ T-739 — the batch-payback check reads Typical's own drink judgement — 81ca12
 T-735 — the catch-up hour runs without the shipped perks; Bank gap was Clean Felling's 5 % Double Loot luck — ad9aba6bd — 2026-11-27
 T-750 — every bench scenario builds without the shipped perks — 0f41aef72 — 2026-11-27
 T-746 — the CMS audit names a missing required Hall star as Critical — 9158d3fa5 — 2026-11-27
+T-749 — the batch-payback row shows the drink on Typical's finished setup — 03f863be6 — 2026-11-27
