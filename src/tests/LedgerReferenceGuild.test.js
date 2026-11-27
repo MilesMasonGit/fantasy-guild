@@ -6,6 +6,9 @@ import { CHECKS } from '../../cms/src/engine/ledger/checks.js';
 import { settingsOf, heroesAt, chainHeroesAt } from '../../cms/src/engine/ledger/settings.js';
 import { paceContent } from './fixtures/paceWorld.js';
 
+/** These numbers were worked out for a camp of two nodes, the sparse layout; the pace times the dense one by default. */
+const SPARSE = { layout: 'sparse' };
+
 /**
  * ⭐ The ledger times the reference guild (BALANCE_RULES section 8): heroes
  * arrive about one a tier and staff a chain of at most one maker and about two gatherers, each doing
@@ -15,7 +18,7 @@ import { paceContent } from './fixtures/paceWorld.js';
  * building may stand in several.
  */
 
-const paceOf = (content = paceContent(), settings = null) => buildPace(content, buildLedger(content), settings);
+const paceOf = (content = paceContent(), settings = null) => buildPace(content, buildLedger(content), { ...SPARSE, ...settings });
 /** A batch factor every drink meets: Typical drinks what its own weighing takes, as these tests were written for. */
 const ANY_BATCH = { batchPayback: 1e-6 };
 
@@ -42,7 +45,8 @@ describe('the reference guild\'s settings', () => {
         const s = settingsOf(null);
         expect(s.heroesByTier.map(p => [p.tier, p.heroes])).toEqual([[0, 1], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5], [6, 6], [7, 8]]);
         expect(s.layouts).toEqual({ sparse: 2, dense: 5 });
-        expect(s.layout).toBe('sparse');
+        // The pace times the rule's camp, five nodes (the balancer, 2026-11-26); two are the comparison.
+        expect(s.layout).toBe('dense');
         expect(s.sitePlaces).toEqual({ places: 12, buildings: 8, perKind: 4 });
         expect(settingsOf({ campMembers: 3 })).not.toHaveProperty('campMembers');
         expect([0, 1, 2, 6, 7, 9].map(t => heroesAt(s, t))).toEqual([1, 1, 2, 6, 8, 8]);
@@ -51,7 +55,7 @@ describe('the reference guild\'s settings', () => {
         expect(chainHeroesAt(s, 4)).toBeCloseTo(3.2);
         expect(chainHeroesAt(s, 7)).toBeCloseTo(3.2);
         expect(settingsOf({ layouts: { sparse: 3, dense: 1 }, sitePlaces: { buildings: 6, perKind: 9 }, layout: 'x' })).toMatchObject({
-            layouts: { sparse: 3, dense: 3 }, sitePlaces: { buildings: 6, perKind: 6 }, layout: 'sparse'
+            layouts: { sparse: 3, dense: 3 }, sitePlaces: { buildings: 6, perKind: 6 }, layout: 'dense'
         });
         expect(settingsOf({ heroesByTier: [{ tier: 2, heroes: 3 }, { tier: 0, heroes: 0 }] }).heroesByTier).toEqual([{ tier: 2, heroes: 3 }]);
         expect(CHECKS.layout).toMatchObject({ group: 'D' });
@@ -181,6 +185,17 @@ describe('the guild\'s time is spent once', () => {
 });
 
 describe('a camp works the layout\'s nodes', () => {
+    it('⭐ the pace times the dense layout: Maxed\'s camp works five veins, Bare one vein and no camp', () => {
+        const pace = buildPace(paceContent(), buildLedger(paceContent()), null);
+        expect(pace.settings.layout).toBe('dense');
+        expect(pace.rateAt(VEIN, PROFILE.MAXED).setup.camp).toEqual({ id: 'token_mining_camp', members: 5 });
+        expect(pace.rateAt(VEIN, PROFILE.MAXED).rate.cyclesPerHour).toBeCloseTo(1200);
+        expect(pace.rateAt(VEIN, PROFILE.BARE).setup.camp).toBeUndefined();
+        expect(pace.rateAt(VEIN, PROFILE.BARE).rate.cyclesPerHour).toBeCloseTo(240);
+        // The sparse layout is the comparison beside it.
+        expect(pace.layoutSpread()).toMatchObject({ timed: 'dense', other: 'sparse' });
+    });
+
     it('⭐ two veins in the sparse layout, five in the dense, one with no camp', () => {
         const sparse = paceOf();
         const dense = paceOf(paceContent(), { layout: 'dense' });

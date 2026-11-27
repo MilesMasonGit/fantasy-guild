@@ -13,6 +13,9 @@ import { WORLD_FIXTURE_TABLES, WORLD_FIXTURE_RAW, worldWorkspace, contentOf } fr
 import { workspaceBalance, balancePack } from '../../cms/src/engine/ledgerBalance.js';
 import { coinsText } from '../../cms/src/engine/ledgerCoins.js';
 
+/** These numbers were worked out for a camp of two nodes, the sparse layout; the pace times the dense one by default. */
+const SPARSE = { layout: 'sparse' };
+
 /**
  * ⭐ The ledger prices coins (brief 870 C3): an item's coin worth comes from its value; selling, kill
  * coin drops and Hideout thefts are the guild's coin supply; a Shop price, a Guild Hall rank and a
@@ -30,7 +33,7 @@ function coinContent({ values = true } = {}) {
     if (values) for (const [id, v] of Object.entries(VALUES)) c.items[id].value = v;
     return c;
 }
-const paceOf = (c, settings = null) => buildPace(c, buildLedger(c), settings);
+const paceOf = (c, settings = null) => buildPace(c, buildLedger(c), { ...SPARSE, ...settings });
 
 /** A rat nest in the Starter Camp: a rat every 20 s, so 180 kills an hour, each dropping `coinDrop`. */
 function withRats(c, { coinDrop = 10, steal = null } = {}) {
@@ -233,7 +236,7 @@ describe('⭐ coin costs on the timeline: a price that asks coins waits for them
         const ledger = buildLedger(c);
         expect(ledger.world.rules.find(r => r.id === 'settle:ores:1')).toMatchObject({ how: HOW.SETTLE, coins: 500 });
         expect(ledger.world.rules.find(r => r.id === 'settle:ores:2').coins).toBeUndefined();
-        const pace = buildPace(c, ledger, null);
+        const pace = buildPace(c, ledger, SPARSE);
         const supply = pace.coinSupplyOf(PROFILE.TYPICAL, 0).perHour;
         expect(supply).toBeGreaterThan(0);
         const at = pace.pathOf(wedgeKey('ores', 1), PROFILE.TYPICAL);
@@ -463,7 +466,7 @@ describe('⭐ the balance tool sets the coins of a price that asks them', () => 
         tables.prices[3].coins = 9;
         const world = { ...contentOf(ws), worldTables: tables };
         expect(paceOf(world).asksCoins()).toBe(true);
-        expect(proposeBalance(withStall(coinContent(), 0), null, { rounds: 1 }).proposals.filter(p => p.lever === LEVER.COINS)).toEqual([]);
+        expect(proposeBalance(withStall(coinContent(), 0), SPARSE, { rounds: 1 }).proposals.filter(p => p.lever === LEVER.COINS)).toEqual([]);
     });
 
     it('a price asking coins is moved to the curve\'s number; one asking none is left alone', () => {
@@ -471,7 +474,7 @@ describe('⭐ the balance tool sets the coins of a price that asks them', () => 
         c.hallSky = paceHallSky();
         c.hallSky.stars.ph_lore.ranks[1].coins = 5;
         const want = paceOf(structuredClone(c)).coinPrices();
-        const result = proposeBalance(c, null, { rounds: 1 });
+        const result = proposeBalance(c, SPARSE, { rounds: 1 });
         const coins = result.proposals.filter(p => p.lever === LEVER.COINS);
         const stall = coins.find(p => p.id === 'token_stall');
         expect(stall).toMatchObject({ kind: 'token', field: 'shop.coins', from: 1, to: want.find(r => r.id === 'token_stall').proposed });

@@ -66,12 +66,13 @@ describe('the calibration stamp', () => {
 
 describe('the layouts job', () => {
     it('times the layout the workspace’s pace does not, as plain data the Pace page sets beside its own', () => {
+        // The pace times the dense layout; the job times the sparse one beside it.
         const other = runLedgerJobNow('layouts', { workspace: paceWorkspace() });
-        expect(other.layout).toBe('dense');
+        expect(other.layout).toBe('sparse');
         expect(Object.keys(other.skills)).toEqual(expect.arrayContaining(['mining', 'construction']));
         const { pace } = workspaceReport(paceWorkspace());
         const spread = pace.layoutSpread(JSON.parse(JSON.stringify(other)));
-        expect(spread.skills.find((s) => s.skill === 'mining').days.dense.maxed).toBeCloseTo(other.skills.mining.maxed, 9);
+        expect(spread.skills.find((s) => s.skill === 'mining').days.sparse.maxed).toBeCloseTo(other.skills.mining.maxed, 9);
         expect(spread.skills.find((s) => s.skill === 'mining').warn).toBe(true);
     });
 });
@@ -97,7 +98,8 @@ describe('the tab', { timeout: 20000 }, () => {
         globalThis.fetch = vi.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve({}), text: () => Promise.resolve('') }));
         useEntityStore.setState(empty);
         useSimulationStore.setState({ simRows: [] });
-        store().hydrate(paceWorkspace());
+        // The tab's numbers were worked out for a camp of two nodes: the sparse layout (the pace times the dense one by default).
+        store().hydrate({ ...paceWorkspace(), planSettings: { layout: 'sparse' } });
     });
     afterEach(() => {
         cleanup();

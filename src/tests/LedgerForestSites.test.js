@@ -5,6 +5,9 @@ import { buildPace, PROFILE, PACE_TEXT } from '../../cms/src/engine/ledger/pace.
 import { settingsOf } from '../../cms/src/engine/ledger/settings.js';
 import { paceContent } from './fixtures/paceWorld.js';
 
+/** These numbers were worked out for a camp of two nodes, the sparse layout; the pace times the dense one by default. */
+const SPARSE = { layout: 'sparse' };
+
 /**
  * ⭐ A site worked from a spawner (owner, 2026-11-26): a camp at a Forest works the Forest's whole
  * allowance of trees, since a Forest never stands with only two of its trees; one Forest in the sparse
@@ -13,7 +16,7 @@ import { paceContent } from './fixtures/paceWorld.js';
  * eight.
  */
 
-const paceOf = (content, settings = null) => buildPace(content, buildLedger(content), settings);
+const paceOf = (content, settings = null) => buildPace(content, buildLedger(content), { ...SPARSE, ...settings });
 
 const HOUR_MS = 3_600_000;
 const out = (itemId) => ({ itemId, chance: 100, minQty: 1, maxQty: 1 });

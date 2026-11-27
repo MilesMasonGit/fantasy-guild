@@ -19,7 +19,7 @@ import { PLAN_TIER_LEVELS, tierOrNull, tierLevelsOf, tierLevelAt } from '../../.
  *       gatherersPerMaker: 2.2,                      // a full chain is one maker and this many gatherers: a chain's heroes at most
  *       layouts: { sparse: 2, dense: 5 },            // the nodes a camp works in each layout the pace can time
  *       layoutSpawners: { sparse: 1, dense: 1 },     // the spawners a site worked from one stands, each with its whole allowance
- *       layout: 'sparse',                            // the layout the pace times (the other is reported beside it)
+ *       layout: 'dense',                             // the layout the pace times (the other is reported beside it)
  *       sitePlaces: { places: 12, buildings: 8, perKind: 4 }, // places round a node, at most this many for buildings, this many boosting one kind
  *       paybackHours: 2,                             // a sensible investor's boost pays for itself within this
  *       hallPaybackHours: 24,                        // and a Guild Hall rank within this
@@ -144,8 +144,9 @@ const DEFAULT_HEROES_BY_TIER = Object.freeze([[0, 1], [1, 1], [2, 2], [3, 3], [4
 /**
  * The layouts a work site is timed at (BALANCE_RULES sections 2 and 8): how many nodes a camp works.
  * By the rest rule (15 s of work, back in a minute) a hero alone at a node works about a fifth of
- * the time, so dense is the rule's camp, five nodes keeping one hero fully busy, and sparse a thin
- * one of two. Bare has no camp: one node.
+ * the time, so dense is the rule's camp, five nodes keeping one hero fully busy, and the pace times
+ * it for Typical and Maxed (the balancer, 2026-11-26); sparse, a thin camp of two, is the comparison
+ * beside it. Bare has no camp: one node.
  */
 export const LAYOUTS = Object.freeze(['sparse', 'dense']);
 const DEFAULT_LAYOUTS = Object.freeze({ sparse: 2, dense: 5 });
@@ -181,7 +182,7 @@ export const DEFAULT_LEDGER_SETTINGS = Object.freeze({
     gatherersPerMaker: 2.2,
     layouts: DEFAULT_LAYOUTS,
     layoutSpawners: DEFAULT_LAYOUT_SPAWNERS,
-    layout: LAYOUTS[0],
+    layout: 'dense',
     sitePlaces: DEFAULT_SITE_PLACES,
     paybackHours: 2,
     // The owner (2026-10-30): a Guild Hall rank may take about a day to pay for itself.

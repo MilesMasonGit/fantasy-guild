@@ -11,6 +11,9 @@ import { settingsOf, levelAtMinutes, minutesToReach } from '../../cms/src/engine
 import { xpForLevel } from '../utils/XPCurve.js';
 import { paceContent, potionWebContent } from './fixtures/paceWorld.js';
 
+/** These numbers were worked out for a camp of two nodes, the sparse layout; the pace times the dense one by default. */
+const SPARSE = { layout: 'sparse' };
+
 /**
  * The progression ledger's pace (brief 290 L5): every kind of work rated, the three profiles (Bare,
  * Typical by payback, Maxed), supply fed by the gatherers each input needs (brief 880 L3), level tracks, path time and
@@ -21,7 +24,7 @@ import { paceContent, potionWebContent } from './fixtures/paceWorld.js';
 const world = () => {
     const content = paceContent();
     const ledger = buildLedger(content);
-    return { content, ledger, pace: buildPace(content, ledger, null) };
+    return { content, ledger, pace: buildPace(content, ledger, SPARSE) };
 };
 
 describe('the kinds of work the calculator now rates', () => {
@@ -153,7 +156,7 @@ describe('the profiles', () => {
         const content = paceContent();
         const ledger = buildLedger(content);
         // Yield's places have room for it beside the four Mines.
-        const pace = buildPace(content, ledger, { paybackHours: 1000, sitePlaces: { buildings: 8, perKind: 5 } });
+        const pace = buildPace(content, ledger, { ...SPARSE, paybackHours: 1000, sitePlaces: { buildings: 8, perKind: 5 } });
         expect(pace.rateAt({ token: 'token_vein' }, PROFILE.TYPICAL).chosen.map(c => c.id)).toContain('token_statue');
     });
 
@@ -162,7 +165,7 @@ describe('the profiles', () => {
         delete content.tokens.token_still;
         content.starterCamp.tokens = content.starterCamp.tokens.filter(t => t.typeId !== 'token_still');
         const ledger = buildLedger(content);
-        const pace = buildPace(content, ledger, null);
+        const pace = buildPace(content, ledger, SPARSE);
         expect(pace.rateAt({ token: 'token_vein' }, PROFILE.MAXED).chosen.map(c => c.id)).not.toContain('item_beer');
     });
 });
@@ -241,7 +244,7 @@ describe('a loop through the drinks', () => {
     };
     /** A fresh pace for the content, with `first` asked before anything else. */
     const paceAsked = (c, first, settings = null) => {
-        const pace = buildPace(c, buildLedger(c), settings);
+        const pace = buildPace(c, buildLedger(c), { ...SPARSE, ...settings });
         pace.rateAt(first, PROFILE.MAXED);
         return pace;
     };
@@ -311,7 +314,7 @@ describe('a web of potions', () => {
 
     it('is worked out in moments, a hero holding one of the nine potions or the Beer, whichever question is asked first', () => {
         const c = potionWebContent(POTIONS);
-        const pace = buildPace(c, buildLedger(c), null);
+        const pace = buildPace(c, buildLedger(c), SPARSE);
         const maxed = pace.rateAt({ token: 'token_bush_0' }, PROFILE.MAXED);
         // A hero holds one drink-type consumable at a time (owner, 2026-11-26): the best of the Beer and the nine.
         expect(maxed.chosen.filter(x => /^item_(potion_\d|beer)$/.test(x.id))).toHaveLength(1);
@@ -326,7 +329,7 @@ describe('a web of potions', () => {
             expect(row.hours.typical).toBeLessThanOrEqual(row.hours.bare + 1e-9);
         }
 
-        const brewFirst = buildPace(c, buildLedger(c), null);
+        const brewFirst = buildPace(c, buildLedger(c), SPARSE);
         brewFirst.rateAt({ token: 'token_still', recipe: `recipe_potion_${POTIONS - 1}` }, PROFILE.MAXED);
         expect(supplies(brewFirst)).toEqual(supplies(pace));
     }, 10000);
@@ -401,9 +404,9 @@ describe('the shipped content', () => {
     it('shows no Construction wall from the builds\' XP, only where one hero builds and gathers in turn, and the Copper Mine on copper ore, switchable', () => {
         const content = { items: load('items.json'), tokens: load('tokens.json'), recipes: load('tokenRecipes.json'), effects: load('effects.json'), starterCamp: load('starterCamp.json') };
         const ledger = buildLedger(content);
-        const pace = buildPace(content, ledger, null);
+        const pace = buildPace(content, ledger, SPARSE);
         // The ledger fix pack raised the build recipes' XP; the wall the check found before is gone with heroes to spare.
-        const spare = buildPace(content, ledger, { heroesByTier: [{ tier: 0, heroes: 8 }] });
+        const spare = buildPace(content, ledger, { ...SPARSE, heroesByTier: [{ tier: 0, heroes: 8 }] });
         expect(spare.findings().filter(f => f.check === 'wall' && f.key === 'skill:construction')).toEqual([]);
         // With the reference guild's heroes, a Construction wall is only its chain short of heroes.
         for (const run of pace.walls('construction')) expect(run.source.chain).toBeLessThan(1);

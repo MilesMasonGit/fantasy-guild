@@ -3,6 +3,9 @@ import { buildLedger } from '../systems/progression/ledger/engine.js';
 import { buildPace, PROFILE } from '../../cms/src/engine/ledger/pace.js';
 import { paceContent } from './fixtures/paceWorld.js';
 
+/** These numbers were worked out for a camp of two nodes, the sparse layout; the pace times the dense one by default. */
+const SPARSE = { layout: 'sparse' };
+
 /**
  * ⭐ A hero holds one drink-type consumable at a time (owner, 2026-11-26): a drink, a work potion or
  * an elixir, never two. The ledger's Typical takes the best one whose batch pays back, Maxed the
@@ -10,7 +13,7 @@ import { paceContent } from './fixtures/paceWorld.js';
  */
 
 const VEIN = { token: 'token_vein' };
-const paceOf = (content, settings = null) => buildPace(content, buildLedger(content), settings);
+const paceOf = (content, settings = null) => buildPace(content, buildLedger(content), { ...SPARSE, ...settings });
 const provides = (id, type, bucket, value, to, extra = {}) => ({ id: `stm_${id}`, keyword: 'provides', to, reach: 'nearby', payload: { type, bucket, value, ...extra } });
 
 /** The pace world (Beer: +10 % XP on any work) with two mining potions brewed at the Still from Oak Wood: a Small one (+5 % yield) and a Big one (+100 %). */

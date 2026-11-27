@@ -12,6 +12,9 @@ import { FALLBACK_STAR_IDS } from '../config/guildUpgrades.js';
 import { paceContent } from './fixtures/paceWorld.js';
 import { paceHallSky } from './fixtures/paceHallSky.js';
 
+/** These numbers were worked out for a camp of two nodes, the sparse layout; the pace times the dense one by default. */
+const SPARSE = { layout: 'sparse' };
+
 /**
  * The ledger knows the Guild Hall (brief 320 H2): the rate calculator reads every star a setup holds
  * as a switchable factor; Bare holds none, Typical buys a rank when it pays back at Typical, Maxed
@@ -29,7 +32,7 @@ const content = () => {
 };
 const world = (settings = null) => {
     const c = content();
-    return buildPace(c, buildLedger(c), settings);
+    return buildPace(c, buildLedger(c), { ...SPARSE, ...settings });
 };
 const VEIN = { token: 'token_vein' };
 /** A batch factor every drink meets: Typical drinks what its own weighing takes, as these tests were written for. */
@@ -139,7 +142,7 @@ describe('the profiles and the Hall', () => {
         // opens from the Hall, so no other star's way runs through Lore.
         c.hallSky.stars.ph_lore.ranks[0].rules[0].payload.category = 'farming';
         c.hallSky.stars.ph_quick.links = ['hall'];
-        const pace = buildPace(c, buildLedger(c), null);
+        const pace = buildPace(c, buildLedger(c), SPARSE);
         const lore = pace.rateAt(VEIN, PROFILE.TYPICAL, 0).chosen.find(x => x.upgrade === 'ph_lore');
         expect(lore.id).toBe('ph_lore:2');
         expect(lore.price).toBeCloseTo((10 + 20) / 1440);
@@ -156,13 +159,13 @@ describe('the profiles and the Hall', () => {
         const c = content();
         // Rich Seams (no other star opens through it) at 1,200 Copper Ore: about 50 minutes of gathering for half as much ore again.
         c.hallSky.stars.ph_rich.ranks[0].price = [{ itemId: 'item_copper_ore', quantity: 1200 }];
-        const day = buildPace(c, buildLedger(c), null);
+        const day = buildPace(c, buildLedger(c), SPARSE);
         const row = day.hallPaybacks().find(r => r.id === 'ph_rich' && r.rank === 1);
         expect(row.payback).toBeGreaterThan(2);
         expect(row.payback).toBeLessThan(24);
         expect(row.pays).toBe(true);
         expect(day.rateAt(VEIN, PROFILE.TYPICAL, 1).setup.hallRanks.ph_rich).toBe(1);
-        const hours = buildPace(c, buildLedger(c), { hallPaybackHours: 2 });
+        const hours = buildPace(c, buildLedger(c), { ...SPARSE, hallPaybackHours: 2 });
         expect(hours.hallPaybacks().find(r => r.id === 'ph_rich' && r.rank === 1).pays).toBe(false);
         expect(hours.rateAt(VEIN, PROFILE.TYPICAL, 1).setup.hallRanks.ph_rich).toBe(0);
     });
@@ -214,7 +217,7 @@ describe('every rank\'s payback at Typical, and the price the ledger proposes', 
         const c = content();
         // The stages run to Plane 7 on the ladder: a rank set past it is measured there.
         c.hallSky.stars.ph_gold.ranks[0].tier = 9;
-        const pace = buildPace(c, buildLedger(c), null);
+        const pace = buildPace(c, buildLedger(c), SPARSE);
         const gold = rowOf(pace, 'ph_gold', 1);
         expect(gold).toMatchObject({ tier: 9, cap: pace.maxTier });
         expect(pace.maxTier).toBe(7);
@@ -288,7 +291,7 @@ describe('the payback check counts opening a star; a skill that gathers nothing 
         const c = content();
         // Only through the Gold Leaf (100,000 Oak Wood): cheap itself, dear to open.
         addStar(c, 'ph_beyond', 'ph_mining', ['ph_gold'], [{ itemId: 'item_copper_ore', quantity: 5 }], [rule('beyond', 'YIELD', 0.5, 'mining')]);
-        const pace = buildPace(c, buildLedger(c), null);
+        const pace = buildPace(c, buildLedger(c), SPARSE);
         const row = rowOf(pace, 'ph_beyond', 1);
         expect(row.opening.path).toEqual(['ph_gold']);
         expect(row.opening.cost).toBeCloseTo(100000 / pace.supplyOf('item_oak_wood', BEFORE_HALL, 0).perHour);
@@ -314,7 +317,7 @@ describe('the payback check counts opening a star; a skill that gathers nothing 
         // Behind Long Rails (5 Copper Ore), which adds no rate, so Typical never lights it for its own sake.
         addStar(c, 'ph_vein_lore', 'ph_mining', ['ph_rails'], [{ itemId: 'item_copper_ore', quantity: 5 }], [rule('vein_lore', 'XP_BONUS', 0.5, 'mining')]);
         c.hallSky.stars.ph_rails.links = ['hall'];
-        const pace = buildPace(c, buildLedger(c), null);
+        const pace = buildPace(c, buildLedger(c), SPARSE);
         const row = rowOf(pace, 'ph_vein_lore', 1);
         expect(row.opening.path).toEqual(['ph_rails']);
         const perHour = pace.supplyOf('item_copper_ore', BEFORE_HALL, 0).perHour;
@@ -340,7 +343,7 @@ describe('the payback check counts opening a star; a skill that gathers nothing 
         c.recipes.find(r => r.id === 'recipe_beer').xp = 10;
         c.hallSky.constellations.ph_cooking = { id: 'ph_cooking', name: 'Cooking', label: { x: 0, y: 0 }, skill: 'cooking' };
         addStar(c, 'ph_brew', 'ph_cooking', ['hall'], [{ itemId: 'item_oak_wood', quantity: 10 }], [rule('brew', 'XP_BONUS', 0.5, 'cooking')]);
-        const pace = buildPace(c, buildLedger(c), null);
+        const pace = buildPace(c, buildLedger(c), SPARSE);
         // Copper Ore is gathered faster, but Cooking spends Oak Wood (its Beer).
         expect(pace.supplyOf('item_copper_ore', BEFORE_HALL, 0).perHour).toBeGreaterThan(pace.supplyOf('item_oak_wood', BEFORE_HALL, 0).perHour);
         const row = rowOf(pace, 'ph_brew', 1);
@@ -355,7 +358,7 @@ describe('the payback check counts opening a star; a skill that gathers nothing 
             config: { skill: 'cooking', skillRequired: 1, cycleTimeMs: 10000, xp: 1, inputs: [], outputs: [{ itemId: 'item_copper_ore', chance: 100, minQty: 1, maxQty: 1 }] }
         };
         c.starterCamp.tokens.push({ typeId: 'token_pantry', x: 5, y: 0 });
-        const chests = buildPace(c, buildLedger(c), null);
+        const chests = buildPace(c, buildLedger(c), SPARSE);
         expect(chests.workOf({ token: 'token_pantry' })).toBeTruthy();
         expect(rowOf(chests, 'ph_brew', 1).proposed.itemId).toBe('item_oak_wood');
     });
