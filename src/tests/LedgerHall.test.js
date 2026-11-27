@@ -32,6 +32,8 @@ const world = (settings = null) => {
     return buildPace(c, buildLedger(c), settings);
 };
 const VEIN = { token: 'token_vein' };
+/** A batch factor every drink meets: Typical drinks what its own weighing takes, as these tests were written for. */
+const ANY_BATCH = { batchPayback: 1e-6 };
 
 describe('the rate calculator reads a star the setup holds', () => {
     const book = () => buildRateBook(content());
@@ -99,7 +101,7 @@ describe('the profiles and the Hall', () => {
     });
 
     it('Typical buys the ranks that pay back at Typical, opening a star through the cheapest stars before it', () => {
-        const pace = world();
+        const pace = world(ANY_BATCH);
         const typical = pace.rateAt(VEIN, PROFILE.TYPICAL, 0);
         const hall = typical.chosen.filter(c => c.kind === 'hall');
         expect(hall.map(c => c.id)).toEqual(['ph_deep:1', 'ph_lore:2']);
@@ -163,7 +165,6 @@ describe('the profiles and the Hall', () => {
         const hours = buildPace(c, buildLedger(c), { hallPaybackHours: 2 });
         expect(hours.hallPaybacks().find(r => r.id === 'ph_rich' && r.rank === 1).pays).toBe(false);
         expect(hours.rateAt(VEIN, PROFILE.TYPICAL, 1).setup.hallRanks.ph_rich).toBe(0);
-        expect(hours.findings().some(f => f.key === 'hall:ph_rich' && /over the 2 h a Guild Hall rank has to pay for itself/.test(f.message))).toBe(true);
     });
 });
 
@@ -182,13 +183,12 @@ describe('every rank\'s payback at Typical, and the price the ledger proposes', 
         expect(rowOf(pace, 'ph_rich', 1).cap).toBe(1);
     });
 
-    it('a rank that does not pay back is a finding; a star that adds no rate is named, not priced', () => {
+    it('a rank that does not pay back within the day is found over all its work; a star that adds no rate is named, not priced', () => {
         const pace = world();
         expect(rowOf(pace, 'ph_gold', 1)).toMatchObject({ rate: true, pays: false });
         const f = pace.findings();
-        const gold = f.find(x => x.check === 'hall-payback' && x.key === 'hall:ph_gold');
-        expect(gold.message).toMatch(/Gold Leaf rank 1 \(Starter Camp\) costs 100000 Oak Wood \(.* to gather at Typical\) and saves \d+ s an hour on Copper Vein: it pays back in/);
-        expect(f.filter(x => x.check === 'hall-payback')).toHaveLength(1);
+        expect(f.some(x => x.check === 'hall-guild-payback' && x.key === 'hall:ph_gold')).toBe(true);
+        expect(f.some(x => x.check === 'hall-payback')).toBe(false);
         expect(rowOf(pace, 'ph_infirmary', 1)).toMatchObject({ rate: false });
         expect(rowOf(pace, 'ph_rails', 1)).toMatchObject({ rate: false });
         expect(f).toContainEqual(expect.objectContaining({ check: 'unmodelled', key: 'hall:ph_infirmary' }));
@@ -250,7 +250,7 @@ describe('every rank\'s payback at Typical, and the price the ledger proposes', 
 
 describe('the per-skill breakdown shows the Hall\'s share', () => {
     it('at Typical and at Maxed, one name per star at the rank held', () => {
-        const mining = world().breakdown().find(r => r.skill === 'mining');
+        const mining = world(ANY_BATCH).breakdown().find(r => r.skill === 'mining');
         expect(mining.profiles.typical.kinds.hall.names).toEqual(['Lore 2', 'Quick Picks 1', 'Deep Veins 1']);
         expect(mining.profiles.typical.kinds.hall.gain).toBeGreaterThan(1);
         expect(mining.profiles.maxed.kinds.hall.names).toEqual(['Lore 2', 'Quick Picks 1', 'Deep Veins 1', 'Gold Leaf 1']);
@@ -297,7 +297,6 @@ describe('the payback check counts opening a star; a skill that gathers nothing 
         expect(pace.rateAt(VEIN, PROFILE.TYPICAL, 0).setup.hallRanks.ph_beyond).toBe(0);
         // No price can make it pay: opening it alone takes longer.
         expect(row.proposed.why).toMatch(/Gold Leaf/);
-        expect(pace.findings().find(x => x.check === 'hall-payback' && x.key === 'hall:ph_beyond').message).toMatch(/to open it, lighting Gold Leaf/);
     });
 
     it('a star beside one Typical holds for its own sake opens free; one Typical lit only to open it is counted', () => {

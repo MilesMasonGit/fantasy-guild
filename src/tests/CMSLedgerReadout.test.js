@@ -73,7 +73,7 @@ describe('npm run cms -- ledger', () => {
         expect(fs.readdirSync(path.join(dir, 'workspace'))).toEqual(['workspace.json']);
 
         const out = JSON.parse(fs.readFileSync(jsonFile, 'utf8'));
-        expect(out).toMatchObject({ format: 'fantasy-guild-ledger-readout', version: 5, profiles: { opt: 'maxed', typ: 'typical', bare: 'bare' } });
+        expect(out).toMatchObject({ format: 'fantasy-guild-ledger-readout', version: 6, profiles: { opt: 'maxed', typ: 'typical', bare: 'bare' } });
         expect(out.workspace).toMatchObject({ revision: 1 });
         for (const section of ['guild', 'pace', 'rows', 'stages', 'layouts', 'boostBudget', 'ruleChecks', 'checks', 'notes', 'units', 'counts']) expect(out, section).toHaveProperty(section);
 

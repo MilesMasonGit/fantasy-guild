@@ -19,34 +19,75 @@ import { ruleContent } from './fixtures/ruleChecksWorld.js';
 
 const paceOf = (c, settings = null) => buildPace(c, buildLedger(c), settings);
 
-describe("a chain's total XP per raw unit, against its tier's median", () => {
-    it('every link pays its own XP, at its authored numbers, over the raw units the chain takes', () => {
+describe("a chain's XP per hour of the gathering behind it, against its tier's median", () => {
+    it('every link pays its own XP, at its authored numbers, over the hours its raw inputs take to gather', () => {
         const pace = paceOf(ruleContent({ sky: false }));
         const rows = pace.chainXpRows();
         const row = (item) => rows.find(r => r.item === item);
+        // Each raw input at its own Bare source's rate.
+        const perHour = (item) => pace.supplyOf(item, 'bare', 0).perHour;
         // The vein gives 1 to 2 ore a cycle for 1 XP: 2/3 XP an ore; the oak 1 XP a wood.
         expect(row('item_beer')).toMatchObject({ tier: 0, links: 2 });
-        expect(row('item_beer').perRaw).toBeCloseTo(2);
-        expect(row('item_plank').perRaw).toBeCloseTo(2);
-        // Cake: 10 + 2 Mash (3 + 2 ore each): 18.67 XP over 4 ore.
+        expect(row('item_plank').xp).toBeCloseTo(2);
+        expect(row('item_plank').rawHours * perHour('item_oak_wood')).toBeCloseTo(1);
+        expect(row('item_plank').xpPerHour).toBeCloseTo(2 * perHour('item_oak_wood'));
+        // Cake: 30 + 2 Mash (3 + 2 ore each): 38.67 XP over 4 ore's gathering.
         expect(row('item_cake')).toMatchObject({ links: 3 });
-        expect(row('item_cake').xp).toBeCloseTo(10 + 2 * (3 + 2 * 2 / 3));
+        expect(row('item_cake').xp).toBeCloseTo(30 + 2 * (3 + 2 * 2 / 3));
         expect(row('item_cake').raw).toBeCloseTo(4);
+        expect(row('item_cake').rawHours * perHour('item_copper_ore')).toBeCloseTo(4);
+        expect(row('item_cake').xpPerHour).toBeCloseTo(row('item_cake').xp / row('item_cake').rawHours);
         // Mash is spent by Cake: not a chain's end.
         expect(row('item_mash')).toBeUndefined();
-        expect(row('item_cake').median).toBeCloseTo(2);
-        expect(row('item_cake').off).toBeCloseTo((10 + 2 * (3 + 4 / 3)) / 4 / 2 - 1);
+        const median = [...rows.map(r => r.xpPerHour)].sort((x, y) => x - y)[1];
+        expect(row('item_cake').median).toBeCloseTo(median);
+        expect(row('item_cake').off).toBeCloseTo(row('item_cake').xpPerHour / median - 1);
     });
 
-    it('a chain past the tolerance from its median is a finding; one near it is not', () => {
-        const pace = paceOf(ruleContent({ sky: false }));
+    it('a rare drop counts at its find rate', () => {
+        const c = ruleContent({ sky: false });
+        c.items.item_gem = { id: 'item_gem', name: 'Gem', type: 'material', plan: { tier: 0 } };
+        c.items.item_ring = { id: 'item_ring', name: 'Gem Ring', type: 'material', plan: { tier: 0 } };
+        c.tokens.token_vein.rareTable = { chance: 1, entries: [{ itemId: 'item_gem', weight: 1, minQty: 1, maxQty: 1 }] };
+        c.recipes.push({ ...c.recipes.find(r => r.id === 'recipe_plank'), id: 'recipe_ring', name: 'Gem Ring', inputs: [{ itemId: 'item_gem', quantity: 1 }], outputs: [{ itemId: 'item_ring', chance: 100, minQty: 1, maxQty: 1 }] });
+        const pace = paceOf(c);
+        const ring = pace.chainXpRows().find(r => r.item === 'item_ring');
+        const gemPerHour = pace.supplyOf('item_gem', 'bare', 0).perHour;
+        expect(gemPerHour).toBeLessThan(pace.supplyOf('item_copper_ore', 'bare', 0).perHour / 50);
+        expect(ring.rawHours * gemPerHour).toBeCloseTo(1);
+        expect(ring.raw).toBeCloseTo(1);
+    });
+
+    it('past the tolerance is information; beyond twice or half its median, a warning', () => {
+        // The Cake at 30 XP is 93 % over its median, within twice it: information.
+        const info = paceOf(ruleContent({ sky: false })).findings().filter(x => x.check === 'chain-xp');
+        expect(info.map(x => [x.key, x.severity])).toEqual([['item:item_cake', 'info']]);
+        expect(info[0].message).toMatch(/Information: within the warning factor\.$/);
+        // At 60 XP it is over three times it: a warning.
+        const c = ruleContent({ sky: false });
+        c.recipes.find(r => r.id === 'recipe_cake').xp = 60;
+        const pace = paceOf(c);
         const f = pace.findings().filter(x => x.check === 'chain-xp');
-        expect(f.map(x => x.key)).toEqual(['item:item_cake']);
-        expect(f[0].message).toMatch(/Copper Cake \(Starter Camp, a chain of 3 links\) pays 4\.67 XP per raw unit \(18\.67 XP over 4 raw\), 133 % over its tier's median of 2 XP \(±25 %; BALANCE_RULES section 1/);
-        expect(f[0].message).toMatch(/BALANCE_RULES section 1/);
+        const rows = pace.chainXpRows();
+        const past = rows.filter(r => r.off !== null && Math.abs(r.off) > 0.25);
+        expect(past.length).toBeGreaterThan(0);
+        expect(f.map(x => x.key).sort()).toEqual(past.map(r => `item:${r.item}`).sort());
+        expect(settingsOf().chainXpWarnFactor).toBe(2);
+        for (const r of past) {
+            const ratio = r.off + 1;
+            const finding = f.find(x => x.key === `item:${r.item}`);
+            expect([r.item, finding.severity]).toEqual([r.item, ratio > 2 || ratio < 1 / 2 ? 'warn' : 'info']);
+        }
+        const cake = f.find(x => x.key === 'item:item_cake');
+        expect(cake.severity).toBe('warn');
+        expect(cake.message).toMatch(/^Copper Cake \(Starter Camp, a chain of 3 links\) pays 6180 XP an hour of the gathering behind it \(68\.67 XP over 1 min of gathering 4 raw\), 243 % over its tier's median of 1800 XP an hour \(±25 %, a warning beyond 2× either way; BALANCE_RULES section 1/);
+        expect(cake.message).toMatch(/Move a link's XP, or its ingredient counts, toward the median\.$/);
         expect(CHECKS['chain-xp'].group).toBe('D');
-        // A wider tolerance lets it pass.
-        expect(paceOf(ruleContent({ sky: false }), { tolerancePct: 150 }).findings().some(x => x.check === 'chain-xp')).toBe(false);
+        // A wider warning factor makes every one information; a wider tolerance lets them all pass.
+        const wide = paceOf(c, { chainXpWarnFactor: 1000 }).findings().filter(x => x.check === 'chain-xp');
+        expect(wide.length).toBe(f.length);
+        expect(wide.every(x => x.severity === 'info')).toBe(true);
+        expect(paceOf(c, { tolerancePct: 100000 }).findings().some(x => x.check === 'chain-xp')).toBe(false);
     });
 
     it('a tier with fewer than three chains has no median and flags nothing', () => {
@@ -81,6 +122,36 @@ describe("a drink or work potion's batch pays back at least 4x its making", () =
         // A lower factor lets it pass.
         const ratio = pace.batchPaybackRows().find(r => r.item === 'item_beer').ratio;
         expect(paceOf(ruleContent({ sky: false }), { batchPayback: ratio * 0.9 }).findings().some(x => x.check === 'batch-payback')).toBe(false);
+    });
+});
+
+describe('Typical takes a drink or work potion only where its batch pays back', () => {
+    const takes = (pace, row, profile) => (pace.profiles.profileOf(row.work.target, profile, row.cap).setup.consumables || []).includes(row.item);
+    // Three beers a brew: worth its making (Typical's own weighing alone would take it), short of 4x.
+    const threeBeers = () => {
+        const c = ruleContent({ sky: false });
+        const brew = c.recipes.find(r => r.id === 'recipe_beer').outputs[0];
+        brew.minQty = brew.maxQty = 3;
+        return c;
+    };
+
+    it('Typical leaves a drink whose batch pays back under the factor; Maxed still takes it; Bare takes none', () => {
+        const pace = paceOf(threeBeers());
+        const beer = pace.batchPaybackRows().find(r => r.item === 'item_beer');
+        expect(beer.ratio).toBeGreaterThan(1);
+        expect(beer.ratio).toBeLessThan(settingsOf().batchPayback);
+        expect(takes(pace, beer, 'typical')).toBe(false);
+        expect(takes(pace, beer, 'maxed')).toBe(true);
+        expect(takes(pace, beer, 'bare')).toBe(false);
+    });
+
+    it('a factor its batch meets lets Typical take it, by the same measure as the batch-payback check', () => {
+        const ratio = paceOf(threeBeers()).batchPaybackRows().find(r => r.item === 'item_beer').ratio;
+        const low = paceOf(threeBeers(), { batchPayback: ratio * 0.99 });
+        const beer = low.batchPaybackRows().find(r => r.item === 'item_beer');
+        expect(beer.ratio).toBeCloseTo(ratio);
+        expect(takes(low, beer, 'typical')).toBe(true);
+        expect(takes(paceOf(threeBeers(), { batchPayback: ratio * 1.01 }), beer, 'typical')).toBe(false);
     });
 });
 
@@ -127,6 +198,30 @@ describe("a Guild Hall rank's payback over all the work it boosts, on the paybac
         expect(wide.findings().some(x => x.check === 'hall-guild-payback' && x.key === 'hall:ph_gold')).toBe(false);
     });
 
+    it('the one-work, one-day payback check is retired: the payback over all the work is the one', () => {
+        expect(CHECKS['hall-payback']).toBeUndefined();
+        const pace = paceOf(ruleContent(), twoHeroes);
+        expect(pace.findings().some(x => x.check === 'hall-payback')).toBe(false);
+        // The Gold Leaf, a day too slow on its one work, is still found, over all its work.
+        expect(pace.findings().some(x => x.check === 'hall-guild-payback' && x.key === 'hall:ph_gold')).toBe(true);
+    });
+
+    it('a rank whose price cannot be gathered by its stage is a price fault of its own, not a payback', () => {
+        const c = ruleContent();
+        c.items.item_moonstone = { id: 'item_moonstone', name: 'Moonstone', type: 'material', plan: { tier: 0 } };
+        c.hallSky.stars.ph_lore.ranks[0].price = [{ itemId: 'item_moonstone', quantity: 5 }];
+        const pace = paceOf(c, twoHeroes);
+        const f = pace.findings().filter(x => x.key === 'hall:ph_lore');
+        const fault = f.find(x => x.check === 'hall-price-unreachable');
+        expect(fault).toMatchObject({ severity: 'warn' });
+        expect(fault.message).toMatch(/^Lore rank 1 \(Starter Camp\) costs 5 Moonstone, which cannot be gathered by Starter Camp/);
+        expect(CHECKS['hall-price-unreachable'].group).toBe('D');
+        // Its payback is not worked out on a price no one can pay.
+        expect(f.some(x => x.check === 'hall-guild-payback' && /rank 1 /.test(x.message))).toBe(false);
+        // A price that can be gathered is no fault.
+        expect(paceOf(ruleContent(), twoHeroes).findings().some(x => x.check === 'hall-price-unreachable')).toBe(false);
+    });
+
     it('the three checks reach the ledger\'s list as the other pacing checks do', () => {
         const c = ruleContent();
         const ledger = buildLedger(c);
@@ -148,13 +243,14 @@ describe('the read-out and the Ledger page carry them', () => {
         const out = ledgerReadout(workspace(), { layouts: false });
         const rc = out.ruleChecks;
         expect(rc.tolerancePct).toBe(25);
-        expect(rc.chainXp.find(c => c.item === 'item_cake')).toMatchObject({ links: 3, perRaw: 4.667, median: 2, offPct: 133.3, off: true });
-        expect(rc.chainXp.find(c => c.item === 'item_plank')).toMatchObject({ off: false });
+        expect(rc.chainXpWarnFactor).toBe(2);
+        expect(rc.chainXp.find(c => c.item === 'item_cake')).toMatchObject({ links: 3, raw: 4, rawMinutes: 0.667, xpPerHour: 3480, median: 1800, offPct: 93.3, off: true, warn: false });
+        expect(rc.chainXp.find(c => c.item === 'item_plank')).toMatchObject({ off: false, warn: false });
         expect(rc.batches.factor).toBe(4);
         expect(rc.batches.rows.find(b => b.item === 'item_beer')).toMatchObject({ doseCycles: DOSE_LENGTH[DOSE.DRINK], short: true });
         expect(rc.hallGuild.find(h => h.id === 'ph_gold' && h.rank === 1)).toMatchObject({ off: true });
         for (const check of ['chain-xp', 'batch-payback', 'hall-guild-payback']) expect(out.checks.some(x => x.check === check), check).toBe(true);
-        expect(readoutText(out).join('\n')).toMatch(/Rule checks \(±25 %\): 3 chains, 1 off their tier's median XP per raw unit; 1 drink and potion batches, 1 under 4x their making; \d+ Guild Hall ranks over all their work, \d+ slower and \d+ quicker than the payback curve\./);
+        expect(readoutText(out).join('\n')).toMatch(/Rule checks \(±25 %\): 3 chains, 1 off their tier's median XP an hour of gathering \(0 beyond 2x\); 1 drink and potion batches, 1 under 4x their making; \d+ Guild Hall ranks over all their work, \d+ slower and \d+ quicker than the payback curve\./);
     });
 
     it('the Hall paybacks table has the payback over all the work beside the one-work payback', () => {

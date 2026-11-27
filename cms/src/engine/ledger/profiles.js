@@ -263,10 +263,14 @@ function familySpawnerOf(book, def, spawners) {
  *   to gather at Typical before the Hall (a Hall rank's price); Bare's when absent
  * @param {(coins: number, cap: number) => number} [options.hallCoinHours]  hours `coins` take to earn at
  *   Typical before the Hall (a Hall rank's coins); never asked of a rank that asks none
+ * @param {number|null} [options.batchPayback]  Typical (and Typical before the Hall) takes a drink or work
+ *   potion on repeatable work only where its batch saves at least this many times its making
+ *   ({@link batchPaybackOf}); none asked when null
  */
 export function buildProfiles(book, {
     tierOf, unitHours, costHours, horizonHours, hallHorizonHours = horizonHours, inputScale = () => 1, campNodes = DEFAULT_CAMP_NODES,
-    campSpawners = DEFAULT_CAMP_SPAWNERS, sitePlaces = DEFAULT_SITE_PLACES, hallUnitHours = unitHours, hallCoinHours = () => Infinity
+    campSpawners = DEFAULT_CAMP_SPAWNERS, sitePlaces = DEFAULT_SITE_PLACES, hallUnitHours = unitHours, hallCoinHours = () => Infinity,
+    batchPayback = null
 }) {
     const site = { ...DEFAULT_SITE_PLACES, ...sitePlaces };
     const tokenIds = book.tokenIds();
@@ -581,6 +585,16 @@ export function buildProfiles(book, {
         return saves > 1e-9 ? saves : 0;
     }
 
+    /**
+     * Whether a drink or work potion's batch pays back enough for Typical to take it on this work, by
+     * the batch-payback check's measure; a build, a fight or Passive Production is not held to it.
+     */
+    function batchPays(ctx, r0, r1, id, cap) {
+        if (!(batchPayback > 0) || !repeatedByHero(ctx.kind)) return true;
+        const b = batchPaybackOf(r0, r1, id, (item) => unitHours(item, cap));
+        return !b || b.ratio >= batchPayback - 1e-9;
+    }
+
     /** Slots that hold one: a second offer for a full slot replaces nothing and is skipped. */
     function slotFull(chosen, offer) {
         if (!offer.slot) return false;
@@ -611,6 +625,8 @@ export function buildProfiles(book, {
         let rate = profile === PROFILE.BARE ? book.rateOf(target, setup) : book.numbersOf(target, setup);
         let full = profile === PROFILE.BARE ? rate : null;
         let chosen = [];
+        // The drinks and potions Typical would take but for their batch payback: Maxed takes them all the same.
+        const declined = [];
         if (profile !== PROFILE.BARE && rate.ok) {
             const baseXp = Object.values(rate.xp || {}).reduce((a, b) => a + b, 0);
             const pool = offers(ctx, cap).filter(o => profile !== BEFORE_HALL || o.kind !== BOOST_KIND.HALL);
@@ -620,6 +636,14 @@ export function buildProfiles(book, {
                 rate = typical.rate;
                 full = typical.rate;
                 chosen = [...typical.chosen];
+                for (const id of typical.declined) {
+                    const o = pool.find(x => x.kind === BOOST_KIND.CONSUMABLE && x.id === id);
+                    if (!o || slotFull(chosen, o)) continue;
+                    setup = o.apply(setup);
+                    rate = book.numbersOf(target, setup);
+                    full = null;
+                    chosen.push({ kind: o.kind, id: o.id, factor: o.factor, slot: o.slot ?? null });
+                }
                 // Then every boost that lifts the rate whatever it costs, the best of each one-slot kind (a drink, a tool, a hat),
                 // each building in as many places as still lift it and the site has room for,
                 // then every Hall rank in rank order (a rank waits for the one before it), each fed as the guild feeds Typical.
@@ -679,6 +703,10 @@ export function buildProfiles(book, {
                             gain = value(r) - before;
                             // Drunk as it is used, a consumable's cost is already in the rate's inputs: any gain pays at once.
                             price = o.oneOff ? priceOf(o, cap) : 0;
+                            if (gain > 1e-9 && o.kind === BOOST_KIND.CONSUMABLE && !batchPays(ctx, rate, r, o.id, cap)) {
+                                if (!declined.includes(o.id)) declined.push(o.id);
+                                continue;
+                            }
                         }
                         if (!(gain > 1e-9)) continue;
                         const payback = price / gain;
@@ -695,7 +723,7 @@ export function buildProfiles(book, {
             }
         }
         busy.delete(key);
-        const out = { setup, rate: full ?? book.rateOf(target, setup), chosen, context: ctx };
+        const out = { setup, rate: full ?? book.rateOf(target, setup), chosen, declined: declined.filter(id => !chosen.some(c => c.id === id)), context: ctx };
         memo.set(key, out);
         return out;
     }
@@ -776,6 +804,48 @@ export function buildProfiles(book, {
         campNodesOf: (target, layout) => campNodesOf(book, contextOf(target), layout),
         hallTracks: tracks, hallTrack: (id) => trackById.get(id) || null, hallPriceHours, hallRankOn, rankWithin
     };
+}
+
+/** Work a hero repeats, where a batch of drinks or potions is drunk over its cycles: not a build, a fight or Passive Production. */
+export const repeatedByHero = (kind) => kind !== WORK.PASSIVE && kind !== WORK.FIGHT && kind !== WORK.BUILD;
+
+/**
+ * How much better a rate is than another: the larger of its items' worth (each at the hours one
+ * takes) and its XP, as a fraction (0.25 is 25 % better). What it spends is the boost's price, not
+ * its strength, so it is left out.
+ */
+export function gainOf(r0, r1, unitHours) {
+    if (!r0?.ok || !r1?.ok) return 0;
+    const worth = (r) => {
+        let w = 0;
+        for (const [item, n] of Object.entries(r.items || {})) { const h = unitHours(item); if (Number.isFinite(h)) w += n * h; }
+        return w;
+    };
+    const xp = (r) => Object.values(r.xp || {}).reduce((a, b) => a + b, 0);
+    const w0 = worth(r0);
+    const w1 = worth(r1);
+    const items = w0 > 0 ? w1 / w0 - 1 : 0;
+    const x0 = xp(r0);
+    const xpGain = x0 > 0 ? xp(r1) / x0 - 1 : 0;
+    return Math.max(items, xpGain);
+}
+
+/**
+ * A drink or work potion's batch payback on one work (BALANCE_RULES section 5), from the rate
+ * without it to the rate with it: `gain` the work it saves an hour ({@link gainOf}), `doses` what it
+ * spends of it an hour, `unitHours` the hours one takes to make with its ingredients, `spends` the
+ * hours an hour its doses take to make, and `ratio` the one over the other. Null where it spends
+ * none, saves nothing, or cannot be made.
+ */
+export function batchPaybackOf(r0, r1, id, unitHours) {
+    const doses = r1?.boostInputs?.[id] || 0;
+    if (!r0?.ok || !r1?.ok || !(doses > 0)) return null;
+    const unit = unitHours(id);
+    if (!Number.isFinite(unit)) return null;
+    const gain = gainOf(r0, r1, unitHours);
+    if (!(gain > 1e-9)) return null;
+    const spends = doses * unit;
+    return { gain, doses, unitHours: unit, spends, ratio: spends > 0 ? gain / spends : Infinity };
 }
 
 /** A setup with some Hall ranks raised (never lowered). */
