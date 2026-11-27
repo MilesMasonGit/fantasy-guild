@@ -436,7 +436,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         return Infinity;
     };
     profiles = buildProfiles(rates, {
-        tierOf: tierOfKey, unitHours, costHours, hallUnitHours, horizonHours: () => settings.paybackHours, hallHorizonHours: (cap, tier) => paybackHoursAt(tierLevelAt(settings.tierLevels, tier ?? cap)),
+        tierOf: tierOfKey, unitHours, costHours, hallUnitHours, horizonHours: () => settings.paybackHours, hallHorizonHours: () => settings.hallPaybackHours,
         hallCoinHours: (coins, cap) => coinCostHours(coins, BEFORE_HALL, cap),
         batchPayback: settings.batchPayback,
         campNodes: settings.layouts[settings.layout],
