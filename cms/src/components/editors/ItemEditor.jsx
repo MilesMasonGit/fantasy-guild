@@ -3,7 +3,7 @@ import { Settings2, Shield, HelpCircle, Lock, Sparkles } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
 import {
   EQUIP_CATEGORIES, TOOL_KINDS, HAND_CATEGORY, tierValue, SKILLS, COMBAT_SKILL_IDS, weaponStyleOf, authoredWeaponStyles, ATTACK_SPEED_MS, DEFAULT_ATTACK_SPEED, weaponMoteOf,
-  expandBearer, statementsOf, doseKindsOf, DOSE_WHY, noDoseWhy, isSpentCategory,
+  expandBearer, statementsOf, doseKindsOf, isDrinkLike, ONE_DRINK_WHY, DOSE_WHY, noDoseWhy, isSpentCategory,
   DAMAGE_TYPES, DAMAGE_GROUPS, DEFAULT_DAMAGE_TYPE_BY_STYLE, DEFAULT_ARROW_DAMAGE_TYPE, damageTypeLabel, isConsumableCategory,
   isWornGear, BREAK_CHANCE_MAX, catchItemIds, coinWorthOf,
 } from '../../utils/constants';
@@ -270,7 +270,8 @@ function ArrowFields({ item, onChange }) {
  */
 function DoseLine({ item, effects }) {
   if (!isSpentCategory(item.equipSlot)) return null;
-  const kinds = doseKindsOf(item.equipSlot, statementsOf(expandBearer(item, effects || {})));
+  const statements = statementsOf(expandBearer(item, effects || {}));
+  const kinds = doseKindsOf(item.equipSlot, statements);
   return (
     <div className="col-span-2 space-y-1" data-field="dose">
       {kinds.length
@@ -280,6 +281,11 @@ function DoseLine({ item, effects }) {
           </p>
         ))
         : <p data-dose="none" className="text-[10px] text-gray-500 leading-relaxed">{noDoseWhy(item.equipSlot)}</p>}
+      {isDrinkLike(item.equipSlot, statements) && (
+        <p data-dose="one-drink" className="text-[11px] leading-relaxed" style={{ color: 'var(--color-accent-hover)' }}>
+          {ONE_DRINK_WHY}
+        </p>
+      )}
     </div>
   );
 }

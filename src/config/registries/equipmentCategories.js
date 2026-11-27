@@ -18,7 +18,7 @@ export const GRID_SLOT_COUNT = 9;
  * ids, so a new gear type or a new consumable class needs no engine change.
  *
  *   gear        — worn equipment; contributes stats, can be damaged/lost
- *   sustenance  — food & drink, consumed on need (the 25% rule)
+ *   sustenance  — food, eaten on need (the 25% rule), and drink, a work buff
  *   consumable  — potions, elixirs, poisons, bait, arrows, Motes
  */
 export const CATEGORY_KINDS = {
@@ -56,7 +56,16 @@ export const EQUIPMENT_CATEGORY_DEFS = [
 
     // --- Consumables (three classes, only the last is uncapped) ---
     { id: 'food',       label: 'Food',       icon: '🍖', kind: CATEGORY_KINDS.SUSTENANCE, cap: 1 },
-    { id: 'drink',      label: 'Drink',      icon: '🍺', kind: CATEGORY_KINDS.SUSTENANCE, cap: 1 },
+    {
+        id: 'drink',
+        label: 'Drink',
+        icon: '🍺',
+        kind: CATEGORY_KINDS.SUSTENANCE,
+        cap: 1,
+        // ⚠️ One drink always: work potions and elixirs count as this one drink
+        // (`consumableRule.isDrinkLike`), and Loadout Slots never raises it.
+        fixedCap: true
+    },
     {
         id: 'consumable',
         label: 'Consumable',
@@ -93,6 +102,11 @@ export function getCategoryDef(categoryId) {
 /** True when this id names a real, equippable category. */
 export function isEquipCategory(categoryId) {
     return byId().has(categoryId);
+}
+
+/** Whether a guild's Loadout Slots may raise this category's cap: never for Drink. */
+export function isCapFixed(categoryId) {
+    return getCategoryDef(categoryId)?.fixedCap === true;
 }
 
 /** How many of this category a hero may carry. 0 for unknown categories. */

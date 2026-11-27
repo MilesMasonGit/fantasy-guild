@@ -15,6 +15,7 @@ import * as HeroEffects from '../hero/HeroEffects.js';
 import { ENGINE_EVENTS } from '../core/engineEvents.js';
 import { takesCopy, holdsCopy, markHeld, heldCount } from './heldCopies.js';
 import { isWeapon, isOffHand } from '../../config/registries/weaponStyles.js';
+import { isDrinkLike } from '../core/consumableRule.js';
 
 /**
  * Gear, weapons and tools are one copy per hero: equipping one moves it out of the Bank into the
@@ -80,6 +81,23 @@ function rivalHandSlot(hero, itemId) {
     const item = getItem(itemId);
     const rival = handEntries(hero).find(e => e.itemId !== itemId && sameHandKind(getItem(e.itemId), item));
     return rival ? rival.index : null;
+}
+
+/** Whether item `itemId` counts as its hero's one drink: a drink, a work potion or an elixir. */
+function drinkLike(itemId) {
+    const item = getItem(itemId);
+    return !!item && isDrinkLike(item.equipSlot, HeroEffects.itemStatements(itemId));
+}
+
+/**
+ * The slot of the drink, work potion or elixir a hero already carries that `itemId`, another of
+ * them, would sit beside; null when there is none, or when it is dropped right on that one (a swap).
+ */
+function rivalDrinkSlot(hero, itemId, preferredSlot) {
+    if (!drinkLike(itemId)) return null;
+    const grid = getGrid(hero);
+    const slot = grid.findIndex((id, i) => id && id !== itemId && i !== preferredSlot && drinkLike(id));
+    return slot === -1 ? null : slot;
 }
 
 /**
@@ -184,6 +202,12 @@ export function equipItem(heroId, itemId, preferredSlot = null, from = null) {
     // Carrying the same item twice buffs nothing, so refuse rather than waste a slot.
     if (getGrid(hero).includes(itemId)) {
         return { success: false, error: t('equipment.alreadyEquipped', { item: template.name }) };
+    }
+
+    // One drink at a time: a second is refused rather than swapped, unless dropped on the first.
+    const drinkSlot = rivalDrinkSlot(hero, itemId, preferredSlot);
+    if (drinkSlot !== null) {
+        return { success: false, error: t('equipment.oneDrink', { hero: hero.name, item: itemName(getGrid(hero)[drinkSlot]) }) };
     }
 
     const copy = takesCopy(itemId);

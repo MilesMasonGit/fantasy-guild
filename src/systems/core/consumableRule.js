@@ -22,6 +22,9 @@ import { roundByChance, WHOLE_EPSILON } from '../../utils/RNG.js';
  *   effect "for N attacks") is taken like an elixir as a fight starts, but only by a hero holding a
  *   Stealth weapon, and lasts N of its hero's attacks, hit or miss; what is left carries into later
  *   fights, and a fresh one is taken only as a fight starts.
+ * * **One drink at a time** (owner 2026-11-26): drinks, work potions and elixirs are all drinks, and
+ *   a hero carries one of them ({@link isDrinkLike}, checked as an item is equipped). Poisons, bait,
+ *   arrows and Motes give no buff and are not limited.
  *
  * ⚠️ Kept free of the item and effect registries: the CMS imports it, and hands in the statements.
  */
@@ -143,6 +146,22 @@ export function doseKindsOf(categoryId, statements) {
     if (kind === CATEGORY_KINDS.CONSUMABLE && onWork) kinds.push(DOSE.POTION);
     return kinds;
 }
+
+/**
+ * Whether an item counts as its hero's one drink (owner, 2026-11-26): anything in the Drink
+ * category, and a Consumable drunk as a work potion or a fight elixir, whatever its category reads.
+ * A poison, bait, an arrow or a Mote gives no buff and is not one.
+ *
+ * @param {string} categoryId the item's `equipSlot`
+ * @param {object[]} statements the item's statements, expanded from its effect references
+ */
+export function isDrinkLike(categoryId, statements) {
+    if (categoryId === 'drink') return true;
+    return doseKindsOf(categoryId, statements).some(k => k === DOSE.DRINK || k === DOSE.POTION || k === DOSE.ELIXIR);
+}
+
+/** What the CMS says about an item that counts as the one drink a hero carries. */
+export const ONE_DRINK_WHY = 'Counts as the hero\'s one drink: a hero carries one drink, work potion or elixir at a time, and a second is refused until the first comes off.';
 
 /** What the CMS says about each way of being used. */
 export const DOSE_WHY = Object.freeze({

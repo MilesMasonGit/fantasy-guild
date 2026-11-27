@@ -228,6 +228,8 @@ export { isConsumableCategory } from '../../../src/config/registries/equipmentCa
 // How a carried food, drink or potion is used (an elixir's fights, a drink's work cycles, a work potion's one cycle), and that its always-on rules do nothing: the game's own rule and wording.
 export {
   doseKindsOf,
+  isDrinkLike,
+  ONE_DRINK_WHY,
   DOSE_WHY,
   noDoseWhy,
   isSpentCategory,
