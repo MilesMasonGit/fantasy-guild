@@ -30,18 +30,21 @@ None is a wall: the slowest level in any of them is 1.3x the curve. Times are fo
 | Mining | 91-98 | 4.9 days optimized, 9.3 typical on the Fossil Bed | A capstone Token at 95 or later | 2026-11-25 |
 | Tailor | 92-98 | 4.4 days optimized, 8.3 typical on Void Cape | A capstone at 96 or later | 2026-11-25 |
 
-## Early levels with no work of their own (2026-11-27)
+## Early makers run slow with one hero (2026-11-27, corrected the same day)
 
-*Found by the XP corrections (round 2). Each skill below has one starter recipe as its best XP for its
-first 15 or so levels, and that recipe runs about 1.7 times faster once the next station opens, so its XP
-cannot be raised without it out-paying every recipe to about level 40. Times are for a fully boosted hero.*
+*Not missing content, and not for `/content` yet. First listed as early levels with no work of their own;
+the content session pointed out that Smithing, Crafting and Alchemy have a recipe at nearly every level
+from 1 to 16, and the ledger agrees: each pays about the same XP an hour as the starter recipe.*
 
-| Skill | Levels | Today | Best work | Suggestion |
-|---|---|---|---|---|
-| Smithing | 1 to 15 | 2.2 times the curve | Copper Ingot | one or two cheap copper recipes between 5 and 15 that pay their own level |
-| Crafting | 1 to 15 | 1.7 times | Charcoal | the same, between 5 and 15 |
-| Alchemy | 1 to 14 | 1.8 times | Birdwatcher, Elixir of Ironskin | the same, or an early Apothecary boost |
-| Cooking | 1 to 20 | 1.2 times | Shrimp | fine as it is; listed so it is not raised by hand |
+The cause is the guild, not the recipes. In the Starter Camp the reference guild has **one hero**, who
+must gather for the maker as well: Copper Ingot needs about 0.6 of a gatherer, so the smith works at about
+60 % of full pace, and the camp holds fewer boosts than the budget assumes. Together that is the 1.7 to 2.2
+times the curve seen in Smithing 1 to 15, Crafting 1 to 15 and Alchemy 1 to 14. From Plane 1 a second hero
+and the next station close it. Raising any early recipe to cover it makes that recipe the best XP to level
+40 (BALANCE_RULES section 1, the ceiling), so XP is not the lever.
+
+A question for the owner, with the coin reset: accept it (a lone hero cannot run a chain at full pace; the
+Starter Camp is left on a gathering skill at level 10 anyway), or ask `/content` for an early boost.
 
 ## Waiting on something else
 
