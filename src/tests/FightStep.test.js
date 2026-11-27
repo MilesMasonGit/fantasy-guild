@@ -322,30 +322,32 @@ describe('⭐ after a stepped fight', () => {
 
     it('a hero sent to a goblin camp keeps that order through a stepped fight and after the kill', () => {
         const camp = placeAt('fs_goblin_camp', 800, 500);
-        const goblin = placeAt('fs_goblin', 900, 500);
+        // Edges touching its camp, as a camp's spawn lands.
+        const goblin = placeAt('fs_goblin', 928, 500);
         goblin.tether = camp.id;
-        // h2 idles on open ground at (1000, 520), just right of where the fight will be.
-        Orders.orderAt('h2', { x: 928, y: 592 });
+        // h2 idles on open ground at (1028, 520), just right of where the fight will be.
+        Orders.orderAt('h2', { x: 956, y: 592 });
         run(1500);
-        expect(body('h2')).toMatchObject({ x: 1000, y: 520, moving: false });
+        expect(body('h2')).toMatchObject({ x: 1028, y: 520, moving: false });
 
         // h1 is sent to the camp, which hands them its goblin.
         sendFrom('h1', { x: 600, y: 750 }, camp);
         let foughtAt = null;
         runUntil(() => {
             const fight = fightOf('h1');
-            if (fight && !foughtAt) foughtAt = { x: goblin.x, y: goblin.y };
+            if (fight && !foughtAt) foughtAt = { x: goblin.x, y: goblin.y, box: boxOf('h1') };
             return !!foughtAt;
         });
-        // It stepped left, clear of h2.
-        expect(foughtAt.x).toBeLessThan(900);
-        expect(foughtAt.y).toBe(500);
+        // It stepped clear of h2, and no nearer its camp than Tokens may stand.
+        expect(foughtAt).not.toMatchObject({ x: 928, y: 500 });
+        expect(FightRoom.crowds(foughtAt.box, FightRoom.heroBox(body('h2')))).toBe(false);
+        expect(Math.hypot(foughtAt.x - camp.x, foughtAt.y - camp.y)).toBeGreaterThanOrEqual(128);
 
         // The kill; the hero's order is still the camp, waiting for the next.
         runUntil(() => !BoardState.getTokenById(goblin.id), 60000);
         run(1000);
         expect(Flags.pinnedIdOf('h1')).toBe(camp.id);
-        expect(body('h2')).toMatchObject({ x: 1000, y: 520 });
+        expect(body('h2')).toMatchObject({ x: 1028, y: 520 });
         expect(fightOf('h2')).toBeNull();
     });
 });
@@ -397,7 +399,8 @@ describe('⭐ a step costs its fight the same game time at any tick length', () 
 
 describe('⭐ a full mat does not stall', () => {
     it('128 Tokens and eight crowded fights: one search per fight, each bounded, nothing retried', () => {
-        // A lattice of Producers filling the mat (Tokens do not count: only fights and heroes).
+        // A lattice of Producers filling the mat: few spots within reach are ones an enemy may
+        // stand on, so a search may try its whole table.
         let placed = 0;
         for (let y = 80; y < matH() && placed < 120; y += 130) {
             for (let x = 80; x < matW() && placed < 120; x += 130) { placeAt('fixture_producer', x, y); placed++; }
