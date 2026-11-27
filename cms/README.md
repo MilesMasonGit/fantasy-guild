@@ -61,6 +61,13 @@ The change-pack helper `changePackTool.mjs` (`stamp`, `gate`, `world`,
 file by default. `balance --out <pack>` writes every proposal; `--levers=<a,b>`
 (`xp`, `cost`, `time`, `boost`, `coins`) keeps only those levers in the pack
 (the printed text and `--json` still show everything; an unknown lever is refused).
+The XP lever never raises a work so far that, at the Maxed player, it would out-pay the best other
+work at a level another work carries (in the authored content or after the lever's other moves): a
+raise stops one XP under that rate, and never takes a work below its authored number. The early
+levels it then leaves slower than the curve are listed as **levels the XP lever leaves to new
+content** (`gaps` in `--json`: `skill`, `fromLevel`, `toLevel` the first level past them, the work,
+the XP it is held at and the XP it would have needed, `why`): they need a work of their own, not a
+bigger number.
 
 **Before writing a change pack**, an agent runs `npm run cms -- validate --data`
 and `npm run cms -- validate` (both should say 0 errors), reads its "before"

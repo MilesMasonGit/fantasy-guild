@@ -809,6 +809,13 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
      * never takes longer at Maxed than at Typical, nor at Typical than at Bare.
      */
     function bestXp(skill, level, profile, cap) {
+        let best = { xp: 0, work: null };
+        for (const r of rankedXp(skill, level, profile, cap)) if (r.gate <= level && r.xp > best.xp) best = r;
+        return best;
+    }
+
+    /** Every work of a skill rated as {@link bestXp} rates it for a level's band, lowest gate first (some not open at the level). */
+    function rankedXp(skill, level, profile, cap) {
         const band = bandOf(skill, level);
         const key = `${skill}|${profile}|${cap}|${band}`;
         let ranked = bestMemo.get(key);
@@ -830,9 +837,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                 .sort((a, b) => a.gate - b.gate);
             bestMemo.set(key, ranked);
         }
-        let best = { xp: 0, work: null };
-        for (const r of ranked) if (r.gate <= level && r.xp > best.xp) best = r;
-        return best;
+        return ranked;
     }
 
     /** Hours from a new game to a skill level at a profile: the track's cumulative hours. */
@@ -2880,6 +2885,8 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             return heroesOf(work, profile, cap ?? work.tier ?? maxTier, level);
         },
         trackOf,
+        /** Each work of a skill open at a level, at a profile and stage, as the level track rates it: `[{ work, xp, gate, profile, … }]`, XP an hour. */
+        xpSourcesAt: (skill, level, profile = TARGET, cap = maxTier) => rankedXp(skill, level, profile, cap).filter(r => r.gate <= level),
         hoursToLevel,
         levelAtHours,
         walls: (skill) => wallsOf(skill),

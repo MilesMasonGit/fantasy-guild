@@ -107,3 +107,27 @@ export function balanceWorldRaw({ level = 15, coins = 0 } = {}) {
 export function withWorld(content, options = {}) {
     return { ...content, worldTables: normaliseWorldTables(balanceWorldRaw(options)) };
 }
+
+/**
+ * The calm world with Smithing at one Furnace: a Copper Ingot at Smithing 1 (1 XP), far slower than
+ * the curve, a Bronze Ingot at Smithing 10 (`bronzeXp`) and an Iron Ingot at Smithing 30 that only
+ * makes the track reach that far. Every ingot is 10 s from one Ore, so XP a cycle compares directly.
+ * Raised until its own levels are on pace, the Copper Ingot would out-pay the Bronze Ingot at the
+ * Bronze Ingot's levels.
+ */
+export function ceilingContent({ bronzeXp = 3 } = {}) {
+    const c = calmContent();
+    for (const id of ['item_copper_ingot', 'item_bronze_ingot', 'item_iron_ingot']) c.items[id] = { id, name: id, type: 'material', plan: { tier: 0 } };
+    c.tokens.token_furnace = {
+        id: 'token_furnace', name: 'Furnace', uses: null,
+        config: { skill: 'smithing', skillRequired: 1, cycleTimeMs: 10000, xp: 1, inputs: [], outputs: [] },
+        statements: [{ keyword: 'station', payload: { skill: 'smithing', stationKind: 'furnace' } }]
+    };
+    c.starterCamp.tokens.push({ typeId: 'token_furnace', x: 9, y: 0 });
+    const ingot = (id, name, level, xp) => ({
+        id, name, skill: 'smithing', levelRequirement: level, stationKinds: ['furnace'], durationMs: 10000, xp,
+        inputs: [{ itemId: 'item_ore', quantity: 1 }], outputs: [out(id.replace('recipe_', 'item_'))], plan: { tier: 0 }
+    });
+    c.recipes.push(ingot('recipe_copper_ingot', 'Copper Ingot', 1, 1), ingot('recipe_bronze_ingot', 'Bronze Ingot', 10, bronzeXp), ingot('recipe_iron_ingot', 'Iron Ingot', 30, 40));
+    return c;
+}
