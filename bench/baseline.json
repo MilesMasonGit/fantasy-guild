@@ -1,9 +1,9 @@
 {
   "meta": {
-    "commit": "1837bbeb",
-    "branch": "main",
+    "commit": "5b6637af8",
+    "branch": "bench/quiet-retake-1127",
     "dirty": false,
-    "date": "2026-11-14T09:05:02.460Z",
+    "date": "2026-11-27T08:09:21.336Z",
     "node": "v24.11.1",
     "machine": "DESKTOP-IEM8MOS",
     "cpu": "Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz",
@@ -22,702 +22,12 @@
       "acceptWorkChange": null,
       "events": false
     },
-    "note": "Medians of the timing runs, and each scenario's work fingerprint. Re-take on a quiet machine: npm run bench -- --save-baseline",
-    "workChanges": [
-      {
-        "ticket": "brief-480-L4",
-        "commit": "73395fcb",
-        "branch": "feat/limes-lessons",
-        "dirty": false,
-        "date": "2026-11-15T10:34:24.271Z",
-        "node": "v24.11.1",
-        "scenarios": {
-          "S1": [
-            "tokens",
-            "tokensHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S2": [
-            "tokens",
-            "bankItems",
-            "tokensHash",
-            "bankHash",
-            "heroHash"
-          ],
-          "S3": [
-            "tokens",
-            "bankItems",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S5": [
-            "tokens",
-            "tokensHash",
-            "heroHash"
-          ],
-          "S6": [
-            "tokens",
-            "bankItems",
-            "tokensHash",
-            "bankHash"
-          ],
-          "S8": [
-            "tokens",
-            "bankItems",
-            "tokensHash",
-            "bankHash"
-          ],
-          "S8L": [
-            "tokens",
-            "bankItems",
-            "tokensHash",
-            "bankHash"
-          ],
-          "S8F": [
-            "tokens",
-            "bankItems",
-            "tokensHash",
-            "bankHash"
-          ],
-          "C240": [
-            "uses",
-            "bankItems",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "randomDraws"
-          ],
-          "C256": [
-            "bankItems",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ]
-        }
-      },
-      {
-        "ticket": "brief-650-H5",
-        "commit": "40d1015b",
-        "branch": "HEAD",
-        "dirty": false,
-        "date": "2026-11-18T09:02:07.812Z",
-        "node": "v24.11.1",
-        "scenarios": {
-          "S2": [
-            "tokensHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S3": [
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S5": [
-            "heroXp",
-            "sprites",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S6": [
-            "bankItems",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S8": [
-            "bankItems",
-            "tokensHash",
-            "bankHash"
-          ],
-          "S8L": [
-            "bankItems",
-            "tokensHash",
-            "bankHash"
-          ],
-          "S8F": [
-            "bankItems",
-            "tokensHash",
-            "bankHash"
-          ],
-          "C240": [
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "randomDraws"
-          ],
-          "C256": [
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ]
-        }
-      },
-      {
-        "ticket": "brief-670-M3",
-        "commit": "b5a01a62",
-        "branch": "HEAD",
-        "dirty": false,
-        "date": "2026-11-18T21:07:59.569Z",
-        "node": "v24.11.1",
-        "scenarios": {
-          "S7": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "tokensHash",
-            "bankHash",
-            "spriteHash",
-            "randomDraws"
-          ]
-        }
-      },
-      {
-        "ticket": "T-599+T-637+T-304",
-        "commit": "d51cfb7e",
-        "branch": "merge/batch12",
-        "dirty": false,
-        "date": "2026-11-23T11:38:58.555Z",
-        "node": "v24.11.1",
-        "scenarios": {
-          "S1": [
-            "tokens",
-            "tokensHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S2": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S3": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S5": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "heroXp",
-            "sprites",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S6": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S7": [
-            "heroHash",
-            "randomDraws"
-          ],
-          "S8": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S8L": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S8F": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "C240": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "randomDraws"
-          ],
-          "C256": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ]
-        }
-      },
-      {
-        "ticket": "T-673",
-        "commit": "d0f6902a",
-        "branch": "main",
-        "dirty": false,
-        "date": "2026-11-24T22:07:46.236Z",
-        "node": "v24.11.1",
-        "scenarios": {
-          "S1": [
-            "spriteHash"
-          ],
-          "S2": [
-            "spriteHash"
-          ],
-          "S3": [
-            "spriteHash"
-          ],
-          "S5": [
-            "sprites",
-            "spriteHash"
-          ],
-          "S6": [
-            "spriteHash"
-          ],
-          "S7": [
-            "spriteHash"
-          ],
-          "S8": [
-            "spriteHash"
-          ],
-          "S8L": [
-            "spriteHash"
-          ],
-          "S8F": [
-            "spriteHash"
-          ],
-          "C256": [
-            "spriteHash"
-          ]
-        }
-      },
-      {
-        "ticket": "T-684",
-        "commit": "d57fcbac",
-        "branch": "merge/fish-main",
-        "dirty": false,
-        "date": "2026-11-25T08:16:03.323Z",
-        "node": "v24.11.1",
-        "scenarios": {
-          "FS": []
-        }
-      },
-      {
-        "ticket": "T-658",
-        "commit": "9b8bc444",
-        "branch": "merge/next",
-        "dirty": false,
-        "date": "2026-11-25T09:14:35.550Z",
-        "node": "v24.11.1",
-        "scenarios": {
-          "S1": [
-            "heroHash"
-          ],
-          "S2": [
-            "heroHash"
-          ],
-          "S3": [
-            "heroHash"
-          ],
-          "S5": [
-            "heroHash"
-          ],
-          "S6": [
-            "heroHash"
-          ],
-          "S7": [
-            "heroHash"
-          ],
-          "S8": [
-            "heroHash"
-          ],
-          "S8L": [
-            "heroHash"
-          ],
-          "S8F": [
-            "heroHash"
-          ],
-          "C240": [
-            "heroHash"
-          ],
-          "C256": [
-            "heroHash"
-          ],
-          "FS": [
-            "heroHash"
-          ]
-        }
-      },
-      {
-        "ticket": "T-684",
-        "commit": "0bf0e866",
-        "branch": "merge/round",
-        "dirty": false,
-        "date": "2026-11-26T02:54:53.621Z",
-        "node": "v24.11.1",
-        "scenarios": {
-          "FS": [
-            "tokens",
-            "bankItems",
-            "heroXp",
-            "sprites",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ]
-        }
-      },
-      {
-        "ticket": "T-712",
-        "commit": "15ae8769",
-        "branch": "fix/fs-bench-fixture-spots",
-        "dirty": true,
-        "date": "2026-11-26T03:04:39.761Z",
-        "node": "v24.11.1",
-        "scenarios": {
-          "FS": [
-            "tokens",
-            "bankItems",
-            "heroXp",
-            "sprites",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ]
-        }
-      },
-      {
-        "ticket": "T-721",
-        "commit": "ce946e8d",
-        "branch": "merge/spacing",
-        "dirty": false,
-        "date": "2026-11-26T22:13:59.317Z",
-        "node": "v24.11.1",
-        "scenarios": {
-          "S2": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S3": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S4": [
-            "tokens",
-            "uses",
-            "tokensHash",
-            "randomDraws",
-            "rimRadius",
-            "arrivalsLanded",
-            "landingPlaced",
-            "landingNudged",
-            "landingRefused",
-            "positionsAfterArrivals",
-            "positionsAfterDrops",
-            "positionsAfterShrink"
-          ],
-          "S5": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "sprites",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S6": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S7": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S8": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S8L": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S8F": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "C240": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "randomDraws"
-          ],
-          "C256": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "FS": [
-            "tokens",
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ]
-        }
-      },
-      {
-        "ticket": "T-725",
-        "commit": "0c936de29",
-        "branch": "merge/bench-boards",
-        "dirty": false,
-        "date": "2026-11-27T04:10:35.043Z",
-        "node": "v24.11.1",
-        "scenarios": {
-          "S2": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "heroXp",
-            "sprites",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S3": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S5": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "heroXp",
-            "sprites",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S6": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S8": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "heroXp",
-            "sprites",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws",
-            "cycles"
-          ],
-          "S8L": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "heroXp",
-            "sprites",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws",
-            "cycles"
-          ],
-          "S8F": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "heroXp",
-            "sprites",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws",
-            "cycles"
-          ],
-          "C240": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "heroXp",
-            "sprites",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "C256": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "heroXp",
-            "sprites",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ]
-        }
-      }
-    ]
+    "note": "Medians of the timing runs, and each scenario's work fingerprint. Re-take on a quiet machine: npm run bench -- --save-baseline"
   },
   "scenarios": {
     "S1": {
-      "p50": 0.039399999999659485,
-      "p99": 0.12730000000010477,
+      "p50": 0.03739999999970678,
+      "p99": 0.08449999999993452,
       "fingerprint": {
         "tokens": 6,
         "uses": 22942,
@@ -737,8 +47,8 @@
       }
     },
     "S2": {
-      "p50": 0.27700000000004366,
-      "p99": 0.7575000000001637,
+      "p50": 0.3046999999996842,
+      "p99": 0.6670999999996639,
       "fingerprint": {
         "tokens": 100,
         "uses": 124894,
@@ -758,8 +68,8 @@
       }
     },
     "S3": {
-      "p50": 0.7146999999999935,
-      "p99": 1.8722999999999956,
+      "p50": 0.7413000000001375,
+      "p99": 2.009900000000016,
       "fingerprint": {
         "tokens": 302,
         "uses": 706151,
@@ -779,10 +89,10 @@
       }
     },
     "S4": {
-      "arrivalsWorst": 8.302299999999832,
-      "landedP50": 0.34859999999980573,
-      "refusedWorst": 0.9720999999999549,
-      "shrinkMs": 28.34389999999985,
+      "arrivalsWorst": 8.65769999999975,
+      "landedP50": 0.19729999999981374,
+      "refusedWorst": 0.7050999999996748,
+      "shrinkMs": 31.271700000000237,
       "fingerprint": {
         "tokens": 122,
         "uses": 181240,
@@ -813,8 +123,8 @@
       }
     },
     "S5": {
-      "p50": 0.28450000000020736,
-      "p99": 0.8292000000001281,
+      "p50": 0.31959999999980937,
+      "p99": 0.796100000000024,
       "fingerprint": {
         "tokens": 103,
         "uses": 125002,
@@ -834,8 +144,8 @@
       }
     },
     "S6": {
-      "p50": 0.27289999999993597,
-      "p99": 0.6770999999998821,
+      "p50": 0.3083999999998923,
+      "p99": 0.636899999999514,
       "fingerprint": {
         "tokens": 100,
         "uses": 124105,
@@ -856,8 +166,8 @@
       }
     },
     "S7": {
-      "p50": 0.5095000000001164,
-      "p99": 1.0041000000001077,
+      "p50": 0.22490000000016153,
+      "p99": 0.48680000000013024,
       "fingerprint": {
         "tokens": 38,
         "uses": 31291,
@@ -877,7 +187,7 @@
       }
     },
     "S8": {
-      "runMs": 1874.5918000000001,
+      "runMs": 1821.3207000000002,
       "fingerprint": {
         "tokens": 100,
         "uses": 123159,
@@ -944,8 +254,8 @@
       }
     },
     "C240": {
-      "p50": 0.5,
-      "p99": 7.813999999999396,
+      "p50": 0.5423000000000684,
+      "p99": 0.8984999999997854,
       "fingerprint": {
         "tokens": 241,
         "uses": 279738,
@@ -965,8 +275,8 @@
       }
     },
     "C256": {
-      "p50": 0.4988000000003012,
-      "p99": 15.997000000000298,
+      "p50": 0.5851999999995314,
+      "p99": 1.4013000000004467,
       "fingerprint": {
         "tokens": 253,
         "uses": 298862,
@@ -986,8 +296,8 @@
       }
     },
     "FS": {
-      "p50": 0.044800000000122964,
-      "p99": 0.18220000000019354,
+      "p50": 0.06340000000000146,
+      "p99": 0.27910000000019863,
       "fingerprint": {
         "tokens": 9,
         "uses": 0,
