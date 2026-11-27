@@ -591,3 +591,4 @@ T-744 — QA panel button gives the old starting kit — 716c0e852 — 2026-11-2
 T-740 — the built-in Hall star stand-ins retired; a missing required star is a content error — 240551b70 — 2026-11-27
 T-739 — the batch-payback check reads Typical's own drink judgement — 81ca12fb0 — 2026-11-27
 T-735 — the catch-up hour runs without the shipped perks; Bank gap was Clean Felling's 5 % Double Loot luck — ad9aba6bd — 2026-11-27
+T-750 — every bench scenario builds without the shipped perks — 0f41aef72 — 2026-11-27
