@@ -458,6 +458,15 @@ describe('Lifecycle audit — respawn', () => {
             { id: 'token_stone_foundation', field: 'respawn', includes: 'a Foundation never respawns' });
     });
 
+    it('a node that comes back and is still sold at the Shop is warned, refill or regrow', () => {
+        const work = { skill: 'forestry', cycleTimeMs: 12000, inputs: [], outputs: [] };
+        const sold = { price: [{ itemId: 'item_oak_wood', quantity: 2 }], section: 'forestry' };
+        expectOne((w) => { Object.assign(w.tokens.token_copper_vein, { config: work, shop: sold }); },
+            { severity: 'warning', id: 'token_copper_vein', field: 'shop', includes: ['Copper Ore Vein (token_copper_vein)', 'respawns', 'Shop'] });
+        expectOne((w) => { Object.assign(w.tokens.token_birch_tree, { config: work, shop: sold }); },
+            { severity: 'warning', id: 'token_birch_tree', field: 'shop', includes: ['respawns', 'Shop'] });
+    });
+
     it('a refill with a resting sprite is fine; a resting sprite on a regrow is warned (it does nothing)', () => {
         const w = clean();
         w.tokens.token_copper_vein.respawn.restingSprite = 't_vein_stone';

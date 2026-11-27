@@ -65,7 +65,6 @@
 import { DatabaseManager } from '../DatabaseManager.js';
 import { stationSkillOf, stationKindOf } from '../../systems/effects/statements.js';
 import { foundationTierMeets, stationKindOffers } from './tokenConstants.js';
-import { migrateRecipeList } from '../../systems/effects/skillIdMigration.js';
 import { HIDEOUT_KIND } from './crime.js';
 import { LABORATORY_KIND } from './mastery.js';
 
@@ -77,8 +76,7 @@ function loadJsonRecipes() {
         for (const [path, module] of Object.entries(source || {})) {
             try {
                 const data = module.default || module;
-                // ⚠️ `registerRecipePools` must not rename (see `skillIdMigration.js`).
-                if (Array.isArray(data)) all.push(...migrateRecipeList(data));
+                if (Array.isArray(data)) all.push(...data);
             } catch (error) {
                 console.warn(`[RecipeRegistry] Error loading recipes from ${path}:`, error);
             }

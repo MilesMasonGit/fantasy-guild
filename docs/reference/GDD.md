@@ -753,10 +753,7 @@ Explore and the other v1 skills were dropped.
 - A skill level gives no work speed: a cycle takes its authored time whoever works it (owner 2026-10-09, T-125).
 - **Hero level** = the average of all their skills, shown in the hero sheet's
   header (owner 2026-11-21, T-640); it gates nothing.
-- **Content that still says `logging`** (data/ and the CMS workspace, until the
-  owner's next Sync) is read as `forestry` as it loads
-  (`skillIdMigration.js`, to be removed under T-114). Content naming a skill
-  that does not exist, or carrying a retired Promotes rule, is listed by the
+- Content naming a skill that does not exist, or carrying a retired Promotes rule, is listed by the
   boot audit and the CMS Economy Audit.
 
 ### Milestone perks — Built (brief 270 K4); nine authored

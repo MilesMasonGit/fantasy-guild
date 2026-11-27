@@ -2,7 +2,6 @@
 
 import { DatabaseManager } from '../DatabaseManager.js';
 import { migrateAppliesTargets } from '../../systems/effects/effectMigration.js';
-import { migrateSkillIds } from '../../systems/effects/skillIdMigration.js';
 
 /**
  * One entry on its way into the library, in the shape the game runs.
@@ -44,9 +43,8 @@ function loadJsonEffects() {
                 for (const [effectId, entry] of Object.entries(data)) {
                     if (!entry.id) entry.id = effectId;
                 }
-                // ⚠️ Shipped entries only: `registerEffects` must not rename (see `skillIdMigration.js`).
                 for (const [effectId, entry] of Object.entries(data)) {
-                    effects[effectId] = admit(migrateSkillIds(entry));
+                    effects[effectId] = admit(entry);
                 }
             } catch (error) {
                 console.warn(`[EffectRegistry] Error loading effect JSON from ${path}:`, error);

@@ -402,6 +402,9 @@ export function auditLifecycleBlocks({ tokens: tokenInput, items: itemInput, rec
             if ((def.uses === null || def.uses === undefined) && !(Number(def.endChance) > 0)) {
                 warn('respawn', 'respawns but has no chance to run out (and unlimited charges), so it never runs out and never rests (allowed).');
             }
+            if (def.shop && respawnOf(def) && !def.enemy && !def.spawner && !def.foundation) {
+                warn('shop', 'respawns and is still sold at the Shop; a place that comes back is laid by a map, not bought, so take it out of the Shop.');
+            }
         }
 
         // ── field: a station that grows its own crop (`Fields.js`) ──
