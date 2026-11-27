@@ -1,10 +1,10 @@
 {
-  "title": "The number pack, tried on the engine",
+  "title": "Three packs put the live game on the curve",
   "date": "2026-11-26",
-  "summary": "The live number pack has now been run on the engine as it will really be: with the rules' XP and worth curves and the new XP table. The live game moves from 0.26 to 1.4 times the curve to 0.6 to 1.75 times. What is left is that the live game's boosts are about twice what the rules allow, and that making skills are short of gatherers. Nothing is staged.",
+  "summary": "Tried on the engine's test branch with a test copy of the CMS: the number pack, the boosts pack and the ledger's XP corrections together put every skill but Fishing on the curve across the levels its content covers, and walls fall from 22 to 1. Nothing is staged.",
   "checked": [
-    "The combined trial, 2026-11-26, on a test copy of the CMS with the engine's test branch: the live number pack (303 entries), the rules' curves in Recalculate, and the new XP table. Days to 99 for a maxed hero against the curve's 12.6: Farming 7.3, Cooking 7.4, Forestry 8.8, Smithing 13.4, Mining 13.5, Crafting 15.0, Construction 16.9, Alchemy 18.5, Fishing 22.1. Ways out of the first three stages: 13 minutes, 1.3 hours and 3.5 hours, against budgets of 35 minutes, 1.7 and 3.8 hours.",
-    "Why some skills now run ahead: a maxed hero in the live game is 4.4 to 7.6 times faster than one with no boosts, where the rules budget 1.4 to 3. The pack's XP assumes the budget, so Farming, Cooking and Forestry overshoot. The next number work is the boosts themselves (buildings, station upgrades, drinks, perks, Hall stars) brought to the rules' sizes. Making skills still lag where their chain is short of gatherers, 76 live entries got no numbers, and Fishing is slow.",
+    "The three-pack trial, 2026-11-27. Days to 99 for a maxed hero against the curve's 12.6: with no packs 2.4 to 8.4 (far too fast); with the number pack and the boosts pack 19.5 to 39.8 (too slow, because the live game holds fewer boosts than the XP assumes); with the ledger's 66 XP corrections on top: Smithing 12.4, Cooking 12.8, Alchemy 14.2, Mining 14.2, Farming 15.4, Construction 15.8, Crafting 16.0, Forestry 20.8, Fishing 23.8. Within the levels each skill's content covers, pace is 0.96 to 1.07 of the curve for Forestry, Mining, Farming, Crafting and Cooking; Smithing 0.78 to 1.10; Alchemy and Construction run fast early (0.56 to 0.75). The days figures run higher than that because several skills have nothing past level 80 to 90.",
+    "Still off after the three packs: Fishing (too fast to 60, too slow after); a typical hero is 1.6 to 1.8 times behind a maxed one in Cooking and Alchemy, over the 1.45 bound; the first place still asks level 5, so the Starter Camp's way out is 13 minutes; 76 live entries got no numbers.",
     "The ledger now counts heroes (one at the start, eight at the end), spends each hour of work once and times a work site by its building places. With one hero, everything the Starter Camp offers today takes about 7 hours: nine skills and its prices, about 15 hours of work in all. That is information, not a fault, by the ruling on leaving a stage; it is a lot for a first camp.",
     "The ledger's reading of the live game, 2026-11-26 (the 6.25 % curve, a maker held to about 2 gatherers, the new boost budget). Days to 99 for a maxed hero against the curve's 12.6: Cooking 3.8, Alchemy 5.3, Farming 6.6, Forestry 6.8, Construction 7.3, Smithing 7.6, Crafting 9.1, Mining 9.5, Fishing 21.7. So before any number pack the live game is mostly 1.3 to 3.3 times too fast, Cooking most of all, and Fishing is well too slow (it moved from 14.7 with the day's content changes).",
     "Boosts in the live game: 462 pieces of work hold more boost than their tier's budget (it was 883 before the typical player's budget rose to three quarters), most of them speed from station upgrades. A typical hero falls more than 1.45 times behind the curve in Fishing, Farming 20 to 30 and early Forestry.",
@@ -17,6 +17,7 @@
     "The method itself, with two read-only readings of the CMS's simulator and ledger: docs/active/balance_method_review.md. The page is on the curve by construction (XP is worked back from the curve), so it cannot test whether a guild's set-up is realistic; only the ledger or play can."
   ],
   "moved": [
+    "Approved by the owner, 2026-11-27: XP follows the boosts that exist. Numbers reach the game as the number pack, the boosts pack, then the ledger's XP corrections on top; as content adds boosts, the corrections are re-run and XP comes down toward the rule's figure.",
     "Approved by the owner, 2026-11-26: gear is for combat, not work, and tools gate work without speeding it, so neither has a share of the work budget; skill perks may give speed or yield but not XP, because a player doesn't choose their perks.",
     "Approved by the owner, 2026-11-26: a hero has one drink active, and drinks, potions and elixirs all count as drinks; one boost item of another type (such as a scroll, not designed yet) may be held beside it. Poisons, bait, arrows and Motes are not boosts and are not limited. The game allows more than this today, so it is a game change (T-738).",
     "Approved by the owner, 2026-11-26: the first number pack waits for a boosts pack and they land together, followed by one coin reset.",
@@ -54,8 +55,6 @@
     "Cooking, Smithing and Enchanting: none."
   ],
   "waiting": [
-    "On the director, a new ticket (T-736): a writer for the boosts pack, sizing every boost from what it is and its tier, and nodes at 15 seconds of work and a minute's rest in the number pack.",
-    "On the director: the coin fix joined onto the test branch, then the ledger timing Planned work.",
     "On the owner, later, with the pack: the first places should ask level 10 in the skill they name (today the first ore place asks Mining 5, so a player leaves the Starter Camp in 12 to 17 minutes, not about 35).",
     "On the owner: review and Sync the six Planned packs in the CMS (the content session staged the plan on 2026-11-26: 210 entries). They apply cleanly in a test copy.",
     "On the director, briefed and in the queue (brief 900): the ledger timing a real guild and site (building now), the simulator's curves from the balance rules (building now), the two coin curves, and three checks.",
