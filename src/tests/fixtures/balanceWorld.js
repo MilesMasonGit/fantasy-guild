@@ -8,6 +8,9 @@
 // Grove makes the Oak +200 % at Maxed against the buildings' 30 % target; and a Star Vein at
 // Mining 90 (plane 3, no budget) leaves one source, the camp's vein, to carry Mining from 1 to 90.
 
+import { normaliseWorldTables } from '../../config/worldTablesShape.js';
+import { WORLD_FIXTURE_RAW } from './ledgerWorldMap.js';
+
 const out = (itemId, chance = 100, minQty = 1, maxQty = minQty) => ({ itemId, chance, minQty, maxQty });
 const tokenOut = (tokenId) => ({ tokenId, chance: 100, minQty: 1, maxQty: 1 });
 const work = (id, name, skill, level, xp, itemId, extra = {}) => ({
@@ -87,4 +90,20 @@ export function calmContent() {
     c.recipes = c.recipes.filter(r => r.id === 'recipe_tonic');
     c.starterCamp.tokens = c.starterCamp.tokens.filter(t => t.typeId !== 'token_star_vein');
     return c;
+}
+
+/**
+ * World tables for the balance world (the world map fixture's): every ring 1 place, a place of
+ * Plane 1 and so the Starter Camp's way out, asks Forestry `level` (the Oak's skill, on the curve)
+ * and `coins`. The fixture's other lines' Tokens are not in this world.
+ */
+export function balanceWorldRaw({ level = 15, coins = 0 } = {}) {
+    const raw = structuredClone(WORLD_FIXTURE_RAW);
+    raw.prices[1] = { ...raw.prices[1], skills: [{ skill: 'forestry', level }], ...(coins > 0 ? { coins } : {}) };
+    return raw;
+}
+
+/** The balance world with {@link balanceWorldRaw}'s tables, as the ledger takes them. */
+export function withWorld(content, options = {}) {
+    return { ...content, worldTables: normaliseWorldTables(balanceWorldRaw(options)) };
 }

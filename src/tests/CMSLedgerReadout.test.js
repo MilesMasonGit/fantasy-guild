@@ -262,6 +262,11 @@ describe('the read-out\'s stages', () => {
         const out = ledgerReadout(ws, { layouts: false });
         const camp = out.stages[0];
         expect(camp.gate).toMatchObject({ place: 'wedge:ores:1', name: 'Ores ring 1', ring: 1, coins: 30, asks: [{ skill: 'mining', level: 3 }], complete: true });
+        // ⭐ Fully timed, and still a floor while its goods price (the world seed's) is not counted: every way out says so.
+        for (const s of out.stages.filter((x) => x.gate)) {
+            expect(s.gate.floor).toBe(true);
+            expect(s.gate.floorWhy).toEqual(["its goods price (the world seed's) is not counted"]);
+        }
         expect(camp.minutes).toBe(camp.gate.minutes);
         expect(camp.gate.minutes).toBeCloseTo(camp.gate.levelMinutes + camp.gate.priceMinutes, 2);
         expect(camp.gate.asks[0].minutes).toBeCloseTo(camp.gate.levelMinutes, 2);
@@ -273,7 +278,8 @@ describe('the read-out\'s stages', () => {
         // The fixture's world holds no place of Plane 4.
         expect(out.stages[3]).toMatchObject({ gate: null, minutes: null, offPct: null, gateWhy: 'no place of Plane 4 to settle' });
         const text = readoutText(out).join('\n');
-        expect(text).toMatch(/^Starter Camp \| .+: Ores ring 1, mining 3 \+ 30 coins \| .+ \| 1 \| .+, \d+ \(\d+\)/m);
+        expect(text).toMatch(/^Starter Camp \| .+: Ores ring 1, mining 3 \+ 30 coins, a floor \(its goods price \(the world seed's\) is not counted\) \| .+ \| 1 \| .+, \d+ \(\d+\)/m);
+        expect(out.notes.join(' ')).toMatch(/every way out is a floor while its goods are not counted/);
         expect(text).toMatch(/^Plane 3 \| no place of Plane 4 to settle \|/m);
     });
 });
