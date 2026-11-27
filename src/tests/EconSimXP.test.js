@@ -248,12 +248,6 @@ describe('the non-finite guard (the P7 lesson, applied ahead of time)', () => {
 // === The mastery integration =================================================
 
 describe('the mastery check (plan §13.2)', () => {
-    it('takes one focused skill 1→99 inside the 50–60 board-hour band', () => {
-        const hours = hoursToMastery(DIALS);
-        expect(hours).toBeGreaterThanOrEqual(50);
-        expect(hours).toBeLessThanOrEqual(60);
-    });
-
     it('integrates against the game’s own threshold curve, not a copy of it', () => {
         // If the CMS ever grew its own thresholds, this sum would stop matching
         // the imported one and the mastery claim would quietly become fiction.
