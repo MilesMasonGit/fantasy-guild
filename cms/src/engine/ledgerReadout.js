@@ -24,7 +24,7 @@ import { MAX_SKILL_LEVEL } from '../../../src/utils/XPCurve.js';
  */
 
 export const READOUT_FORMAT = 'fantasy-guild-ledger-readout';
-export const READOUT_VERSION = 4;
+export const READOUT_VERSION = 5;
 
 /** The solver's players and the ledger profiles they are read at. */
 export const READOUT_PROFILES = Object.freeze({ opt: PROFILE.MAXED, typ: PROFILE.TYPICAL, bare: PROFILE.BARE });
@@ -49,6 +49,7 @@ export const NOTES = Object.freeze([
     'Arrivals (arriveOpt, arriveTyp) are minutes from a new game along the ledger\'s path; null when never reached, and for Planned entries (the ledger times nothing Planned).',
     'The solver\'s curve is its own dials; curve here is the CMS pace rule (Ledger settings) at that level, and the stages\' budgets follow from it.',
     'boostBudget lists the budget\'s cells by tier and, under over, every total a profile holds over its cell (the boost-budget check).',
+    'ruleChecks holds the three checks the balance rules promise, with the rows behind their findings: chainXp, each chain\'s total XP per raw unit (every link at its authored XP, Bare and no perks, over the raw units it takes; a chain ends at an item no station spends) against its tier\'s median (null with fewer than three chains), off past the tolerance (the chain-xp check, BALANCE_RULES section 1); batches, each drink and work potion\'s batch payback on the repeatable work it pays back best on at Typical (the work it saves an hour over the hours an hour its doses take to make, ingredients included, at the game\'s dose length: doseCycles), short under factor (the batch-payback check, section 5); hallGuild, each Guild Hall rank\'s payback counting every boosted work the reference guild\'s heroes can work at once, against the payback curve (1 hour x 24^(L / 80) at the level its tier opens at), off past the tolerance either way (the hall-guild-payback check, section 5).',
     'coins holds the two coin curves (BALANCE_RULES section 7, Ledger settings, minutes of one hero\'s selling from a stage on: everyday for a Shop Token or a Foundation, one level\'s time; big for settling a place or a Guild Hall star, half the payback curve) and every price that asks coins with its curve, its minutes there, the income it is earned at (perHour) and the coins the curve proposes; off marks one beyond the tolerance from it.',
 ]);
 
@@ -238,6 +239,33 @@ function coinsOf(pace) {
     return { curves, prices };
 }
 
+/** The rows behind the three rule checks (BALANCE_RULES sections 1 and 5), in the read-out's units. */
+function ruleChecksOf(pace) {
+    const tolPct = pace.settings.tolerancePct;
+    const past = (off) => off !== null && Number.isFinite(off) && Math.abs(off) * 100 > tolPct + 1e-9;
+    const pct = (off) => (off === null ? null : Number.isFinite(off) ? round(off * 100, 1) : null);
+    const factor = pace.settings.batchPayback;
+    return {
+        tolerancePct: tolPct,
+        chainXp: pace.chainXpRows().map((c) => ({
+            item: c.item, name: c.name, tier: c.tier, links: c.links, xp: round(c.xp, 2), raw: round(c.raw, 3), perRaw: round(c.perRaw, 3),
+            median: c.median === null ? null : round(c.median, 3), offPct: pct(c.off), off: past(c.off),
+        })),
+        batches: {
+            factor,
+            rows: pace.batchPaybackRows().map((b) => ({
+                item: b.item, name: b.name, tier: b.tier, work: pace.workName(b.work), doseCycles: round(b.doseCycles, 2), gain: round(b.gain, 4),
+                dosesPerHour: round(b.doses, 3), unitMinutes: minutes(b.unitHours), ratio: Number.isFinite(b.ratio) ? round(b.ratio, 2) : null, short: b.ratio < factor - 1e-9,
+            })),
+        },
+        hallGuild: pace.hallGuildPaybacks().map((h) => ({
+            id: h.id, name: h.name, rank: h.rank, tier: h.tier, level: h.level, heroes: h.heroes, works: h.works, counted: h.counted,
+            gain: round(h.gain, 4), oneWork: round(h.oneWork, 4), costMinutes: minutes(h.cost), paybackMinutes: minutes(h.payback), curveMinutes: minutes(h.curve),
+            offPct: pct(h.off), off: h.cost > 0 && (!Number.isFinite(h.off) || past(h.off)),
+        })),
+    };
+}
+
 /**
  * The read-out of a workspace (the collections, as the CMS's store holds them).
  * @param {object} state
@@ -326,6 +354,7 @@ export function ledgerReadout(state = {}, { report = null, layouts = true } = {}
         layouts: layoutsOf(pace, layouts),
         boostBudget: budgetOf(pace),
         coins: coinsOf(pace),
+        ruleChecks: ruleChecksOf(pace),
         checks,
         counts: {
             skills: Object.keys(skills).length, rows: rows.length, planned: rows.filter((x) => x.planned).length,
@@ -376,6 +405,14 @@ export function readoutText(out) {
             const off = asking.filter((p) => p.off).length;
             lines.push(`Coin prices: ${asking.length} ask${asking.length === 1 ? 's' : ''} coins (${kinds}); ${off} beyond the tolerance from ${off === 1 ? 'its' : 'their'} curve's proposal.`);
         }
+    }
+    const rc = out.ruleChecks;
+    if (rc) {
+        const chainsOff = rc.chainXp.filter((c) => c.off).length;
+        const short = rc.batches.rows.filter((b) => b.short).length;
+        const slow = rc.hallGuild.filter((h) => h.off && !(h.offPct < 0)).length;
+        const quick = rc.hallGuild.filter((h) => h.off && h.offPct < 0).length;
+        lines.push('', `Rule checks (±${rc.tolerancePct} %): ${rc.chainXp.length} chains, ${chainsOff} off their tier's median XP per raw unit; ${rc.batches.rows.length} drink and potion batches, ${short} under ${rc.batches.factor}x their making; ${rc.hallGuild.length} Guild Hall ranks over all their work, ${slow} slower and ${quick} quicker than the payback curve.`);
     }
     const sev = Object.entries(out.counts.bySeverity).map(([k, n]) => `${n} ${k}`).join(', ') || 'none';
     lines.push('', `${out.counts.rows} entries (${out.counts.planned} Planned, marked), ${out.counts.checks} checks: ${sev}.`);

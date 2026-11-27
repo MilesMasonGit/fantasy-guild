@@ -122,11 +122,16 @@ export function choiceText(pace, ledger, chosen) {
  * The Guild Hall's ranks for the Pace page and the Guild Hall page: every rank that adds a rate,
  * with its tier, price, the hours that price takes to gather at Typical, what opening a closed star
  * costs on the way (`openingText`), what it saves an hour and where, its payback (red when over the
- * payback time) and the proposed price. `byStar` groups them.
+ * payback time) and the proposed price. `byStar` groups them. Beside it, its payback over all the work
+ * it boosts on the payback curve (`guild`: `{ text, curveText, off }`, the hall-guild-payback check's
+ * numbers; `off` true past the tolerance either way), null where it is not worked out.
  */
 export function hallRows(pace) {
+  const guild = new Map(pace.hallGuildPaybacks().map((g) => [`${g.id}|${g.rank}`, g]));
+  const tol = pace.settings.tolerancePct / 100;
   return pace.hallPaybacks().map((r) => ({
     ...r,
+    guild: guildText(guild.get(`${r.id}|${r.rank}`), tol),
     workText: r.work ? pace.workName(r.work) : null,
     savesText: r.rate ? (r.enabler ? 'the only source of what it pays' : r.gain > 0 ? PACE_TEXT.saves(r.gain) : 'nothing at its tier') : null,
     paybackText: r.rate ? (r.enabler ? 'an enabler' : PACE_TEXT.short(r.payback)) : null,
@@ -140,6 +145,18 @@ export function hallRows(pace) {
       budgetText: r.budgetHours === null ? null : PACE_TEXT.hours(r.budgetHours),
     } : {}),
   }));
+}
+
+/** A rank's payback over all the work it boosts, in words, or null. */
+function guildText(g, tol) {
+  if (!g) return null;
+  const works = g.counted < g.works ? `${g.counted} of ${g.works} works` : `${g.works} ${g.works === 1 ? 'work' : 'works'}`;
+  return {
+    text: `${PACE_TEXT.short(g.payback)} on ${works}`,
+    curveText: `curve ${PACE_TEXT.hours(g.curve)}`,
+    off: g.cost > 0 && Math.abs(g.off) > tol + 1e-9,
+    slow: g.off > 0,
+  };
 }
 
 /** One star's rows by rank, `{ [rank]: row }`. */

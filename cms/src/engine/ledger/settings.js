@@ -23,6 +23,7 @@ import { PLAN_TIER_LEVELS, tierOrNull, tierLevelsOf, tierLevelAt } from '../../.
  *       sitePlaces: { places: 12, buildings: 8, perKind: 4 }, // places round a node, at most this many for buildings, this many boosting one kind
  *       paybackHours: 2,                             // a sensible investor's boost pays for itself within this
  *       hallPaybackHours: 24,                        // and a Guild Hall rank within this
+ *       batchPayback: 4,                             // a drink or work potion's batch saves at least this many times its making
  *       steadyFindsPerDay: 1,                        // a rare find on repeatable work this often a day is a steady source
  *       coinCurve: [{ tier, minutes }],              // an everyday coin cost asks one hero's coins earned in this long, from a stage on
  *       bigCoinCurve: [{ tier, minutes }],           // and a big one this long
@@ -184,6 +185,8 @@ export const DEFAULT_LEDGER_SETTINGS = Object.freeze({
     paybackHours: 2,
     // The owner (2026-10-30): a Guild Hall rank may take about a day to pay for itself.
     hallPaybackHours: 24,
+    // BALANCE_RULES section 5: a batch of drinks or work potions saves at least four times the hero time it took to make, ingredients included.
+    batchPayback: 4,
     // The owner (2026-11-07): a low rate on repeatable work is still steady. ⚠️ Matches the engine's STEADY_FINDS_PER_DAY (pinned by a test).
     steadyFindsPerDay: 1,
     coinCurve: DEFAULT_COIN_CURVE,
@@ -244,11 +247,22 @@ export function settingsOf(raw) {
         sitePlaces: sitePlacesOf(src.sitePlaces),
         paybackHours: positive(src.paybackHours, d.paybackHours),
         hallPaybackHours: positive(src.hallPaybackHours, d.hallPaybackHours),
+        batchPayback: positive(src.batchPayback, d.batchPayback),
         steadyFindsPerDay: positive(src.steadyFindsPerDay, d.steadyFindsPerDay),
         coinCurve: Array.isArray(src.coinCurve) ? coinCurveOf(src.coinCurve) : clone(d.coinCurve),
         bigCoinCurve: Array.isArray(src.bigCoinCurve) ? coinCurveOf(src.bigCoinCurve) : clone(d.bigCoinCurve),
         rulesVersion: RULES_VERSIONS.some((r) => r.id === src.rulesVersion) ? src.rulesVersion : d.rulesVersion,
     };
+}
+
+/**
+ * The payback curve (BALANCE_RULES section 5): the hours an upgrade bought at level L takes to earn
+ * back its price, 1 hour x 24^(L / 80): an hour at the start, a day at 80. The big coin curve is
+ * half of it, written out as points (`DEFAULT_BIG_COIN_CURVE`).
+ */
+export function paybackHoursAt(level) {
+    const L = Number.isFinite(Number(level)) ? Math.max(0, Number(level)) : 0;
+    return 24 ** (L / 80);
 }
 
 /** The pace rule with each number sane: the step within its range, the range never upside down. */
