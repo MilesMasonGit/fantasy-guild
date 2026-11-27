@@ -11,6 +11,7 @@ import { paceContent } from './fixtures/paceWorld.js';
 import { paceHallSky } from './fixtures/paceHallSky.js';
 import { WORLD_FIXTURE_TABLES, WORLD_FIXTURE_RAW, worldWorkspace, contentOf } from './fixtures/ledgerWorldMap.js';
 import { workspaceBalance, balancePack } from '../../cms/src/engine/ledgerBalance.js';
+import { coinsText } from '../../cms/src/engine/ledgerCoins.js';
 
 /**
  * ⭐ The ledger prices coins (brief 870 C3): an item's coin worth comes from its value; selling, kill
@@ -286,14 +287,16 @@ describe('⭐ proposed coin costs: two curves by kind of purchase (BALANCE_RULES
         }
     });
 
-    it('the big curve by default: half the payback curve, 1 hour x 24^(L/80), copper at its start', () => {
+    it('the big curve by default: half the payback curve, 1 hour x 24^(L/80) at each tier opening level, copper at its start', () => {
         expect(DEFAULT_LEDGER_SETTINGS.bigCoinCurve).toEqual([
-            { tier: 0, minutes: 30 }, { tier: 2, minutes: 66 }, { tier: 3, minutes: 99 }, { tier: 4, minutes: 147 },
+            { tier: 0, minutes: 30 }, { tier: 1, minutes: 45 }, { tier: 2, minutes: 66 }, { tier: 3, minutes: 99 }, { tier: 4, minutes: 147 },
             { tier: 5, minutes: 219 }, { tier: 6, minutes: 325 }, { tier: 7, minutes: 720 }
         ]);
+        // ⚠️ Every tier its own point, Plane 1 at level 10's 45 min, not copper's 30: a tier left out would take the one before.
         const s = settingsOf(null);
+        expect(s.bigCoinCurve.map(p => p.tier)).toEqual(s.tierLevels.map(t => t.tier));
         for (const { tier, level } of s.tierLevels) {
-            const L = tier <= 1 ? 0 : level;
+            const L = tier === 0 ? 0 : level;
             expect(coinMinutesAt(s, tier, COIN_CURVE.BIG), `tier ${tier}`).toBe(Math.round(30 * 24 ** (L / 80)));
         }
     });
@@ -359,6 +362,91 @@ describe('⭐ proposed coin costs: two curves by kind of purchase (BALANCE_RULES
         const dry = paceOf(withStall(coinContent({ values: false }), 0)).coinPrices().find(r => r.id === 'token_stall');
         expect(dry.proposed).toBeNull();
         expect(dry.why).toMatch(/earns/);
+    });
+});
+
+describe("⭐ a coin price is set by a worker's selling only: kills and thefts time a way out, never a price", () => {
+    /** The Starter Camp with the stall, the Hall, a rat nest dropping 50 coins a kill (9000 an hour) and a Hideout stealing 20 a theft (9000), both past any selling. */
+    const rich = (c = withStall(coinContent(), 0)) => {
+        c.hallSky = paceHallSky();
+        return withHideout(withRats(c, { coinDrop: 50, steal: { crimeLevel: 1, coins: 20 } }));
+    };
+    const plain = () => {
+        const c = withStall(coinContent(), 0);
+        c.hallSky = paceHallSky();
+        return c;
+    };
+
+    it('the selling supply: the best sold work at the moment, never a fight or a theft', () => {
+        const pace = paceOf(rich());
+        const all = pace.coinSupplyOf(PROFILE.TYPICAL, 0);
+        const sell = pace.sellingSupplyOf(PROFILE.TYPICAL, 0);
+        const base = paceOf(plain()).coinSupplyOf(PROFILE.TYPICAL, 0);
+        expect(all.perHour).toBeGreaterThan(sell.perHour);
+        expect(sell).toMatchObject({ perHour: expect.closeTo(base.perHour, 6), theft: null });
+        expect(sell.work.target).toEqual(base.work.target);
+        expect(pace.coinSourcesOf(PROFILE.TYPICAL, 0).some(src => src.theft)).toBe(true);
+        expect(pace.coinSourcesOf(PROFILE.TYPICAL, 0).some(src => src.work?.target.token === 'token_rat')).toBe(true);
+        // At the moment of purchase: at the start only level-1 work is sold.
+        expect(pace.sellingSupplyOf(PROFILE.TYPICAL, 0, 0).perHour).toBeCloseTo(paceOf(plain()).coinSupplyOf(PROFILE.TYPICAL, 0, 0).perHour, 6);
+    });
+
+    it('every proposal is the selling income: a Shop Token, a Guild Hall rank, as if no enemy dropped coins and no Hideout stole', () => {
+        const rows = paceOf(rich()).coinPrices();
+        const was = paceOf(plain()).coinPrices();
+        expect(rows.length).toBe(was.length);
+        for (const r of rows) {
+            const w = was.find(x => x.kind === r.kind && x.id === r.id && x.rank === r.rank);
+            expect(r, `${r.kind} ${r.id} ${r.rank ?? ''}`).toMatchObject({ perHour: expect.closeTo(w.perHour, 6), proposed: w.proposed, source: w.source });
+        }
+        expect(rows.every(r => !/thefts|Rat/.test(r.source || ''))).toBe(true);
+    });
+
+    it('nothing sold earns: no proposal, though kills pay', () => {
+        const c = withRats(withStall(coinContent({ values: false }), 0), { coinDrop: 10 });
+        const pace = paceOf(c);
+        expect(pace.coinSupplyOf(PROFILE.TYPICAL, 0).perHour).toBeGreaterThan(0);
+        const row = pace.coinPrices().find(r => r.id === 'token_stall');
+        expect(row.proposed).toBeNull();
+        expect(row.why).toMatch(/sell/);
+    });
+
+    it('kills still pay a price on the timeline: a stall asking 2880 is had sooner with a rat dropping coins', () => {
+        const sold = paceOf(withStall(coinContent(), 2880)).pathOf(tokenKey('token_stall'), PROFILE.BARE).own;
+        const killed = paceOf(withRats(withStall(coinContent(), 2880), { coinDrop: 10 })).pathOf(tokenKey('token_stall'), PROFILE.BARE).own;
+        expect(sold).toBeCloseTo(2880 / 1440);
+        expect(killed).toBeCloseTo(2880 / 1800);
+    });
+});
+
+describe("⭐ the coins tool: kills and thefts an hour per enemy and hoarding camp, beside a worker's selling", () => {
+    const rich = () => withHideout(withRats(withStall(coinContent(), 0), { coinDrop: 10, steal: { crimeLevel: 1, coins: 6 } }));
+
+    it("an enemy: the kills an hour it assumes, the coins they make, and half a worker's selling a kill", () => {
+        const pace = paceOf(rich());
+        const rat = pace.coinDrops().find(d => d.id === 'token_rat');
+        const sell = pace.sellingSupplyOf(PROFILE.TYPICAL, 0, 0).perHour;
+        expect(rat).toMatchObject({ killsPerHour: expect.closeTo(180, 6), coinsPerHour: expect.closeTo(1800, 6), sellingPerHour: expect.closeTo(sell, 6) });
+        expect(rat.halfSellingPerKill).toBe(Math.round(sell / 2 / 180));
+    });
+
+    it("a hoarding camp: each Hideout's thefts an hour from it, less those caught, the coins they make, and half a worker's selling a theft", () => {
+        const pace = paceOf(rich());
+        const rows = pace.coinThefts();
+        expect(rows).toHaveLength(1);
+        const sell = pace.sellingSupplyOf(PROFILE.TYPICAL, 0, 0).perHour;
+        expect(rows[0]).toMatchObject({ camp: 'token_rat_nest', enemy: 'token_rat', hideout: 'token_hideout', tier: 0, thefts: expect.closeTo(450, 6), coins: 6, perHour: expect.closeTo(2700, 6), sellingPerHour: expect.closeTo(sell, 6) });
+        expect(rows[0].halfSellingPerTheft).toBe(Math.round(sell / 2 / 450));
+        expect(rows[0].campName).toBe('Rat Nest');
+        expect(paceOf(withStall(coinContent(), 0)).coinThefts()).toEqual([]);
+    });
+
+    it('the tool prints both, and its result carries them', () => {
+        const c = rich();
+        const pace = paceOf(c);
+        const text = coinsText({ supply: [], prices: [], drops: pace.coinDrops(), thefts: pace.coinThefts(), worth: { priced: 0, pinned: 0, inPlay: true }, ms: 0 });
+        expect(text).toMatch(/Rat \(level 1\): 10 now.*180 kills an hour.*1800 coins an hour/);
+        expect(text).toMatch(/Rat Nest.*Hideout.*450 thefts an hour.*6 coins.*2700 coins an hour/);
     });
 });
 
