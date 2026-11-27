@@ -49,13 +49,13 @@ function hallWorkspace() {
 describe('the report reads the workspace\'s sky', () => {
     it('the pace prices every star and finds the rank that does not pay back', () => {
         const { pace, findings } = workspaceReport(hallWorkspace());
-        expect(pace.hallPaybacks().filter(r => !r.builtIn).map(r => `${r.id}|${r.rank}`)).toEqual([
+        expect(pace.hallPaybacks().map(r => `${r.id}|${r.rank}`)).toEqual([
             'ph_lore|1', 'ph_lore|2', 'ph_quick|1', 'ph_deep|1', 'ph_gold|1', 'ph_rich|1', 'ph_rails|1', 'ph_spring|1', 'ph_spring|2', 'ph_infirmary|1'
         ]);
         expect(findings.filter(f => f.check === 'hall-guild-payback' && f.severity === 'warn').map(f => f.key)).toContain('hall:ph_gold');
         expect(workspacePace(hallWorkspace()).hallPaybacks().length).toBe(pace.hallPaybacks().length);
-        // A workspace with no sky prices only the built-in tracks.
-        expect(workspaceReport(paceWorkspace()).pace.hallPaybacks().every(r => r.builtIn)).toBe(true);
+        // A workspace with no sky has no Hall to price.
+        expect(workspaceReport(paceWorkspace()).pace.hallPaybacks()).toEqual([]);
     });
 });
 

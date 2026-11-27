@@ -32,13 +32,14 @@ import { registerTokenTypes, tokenStartingUses } from '../config/registries/toke
 import { registerItems, ITEMS } from '../config/registries/itemRegistry.js';
 import { TOKENS } from '../config/registries/tokenRegistry.js';
 import { registerHallSky } from '../config/registries/hallStarRegistry.js';
+import { withRequiredThree, REQUIRED_THREE_IDS } from './fixtures/hallSky.js';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
 import { rehydrateHero } from '../systems/hero/logic/HeroRehydration.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { STANDARD_REACH_U } from '../config/registries/reachRegistry.js';
 import {
-    GUILD_UPGRADES, CONSTELLATIONS, FALLBACK_STAR_IDS, HALL_NODE, getUpgradeDef, isUpgradeAccessible,
+    GUILD_UPGRADES, CONSTELLATIONS, REQUIRED_STAR_IDS, HALL_NODE, getUpgradeDef, isUpgradeAccessible,
     authoredStars, skyVersion, setHallSky
 } from '../config/guildUpgrades.js';
 import { normaliseHallSky, hallStarsFile } from '../config/hallStars.js';
@@ -128,10 +129,10 @@ const provides = (type, value, { bucket = 'percentage', category, to } = {}) => 
 });
 const ore = (n) => [{ itemId: 'fixture_copper_ore', quantity: n }];
 
-/** The test sky: a Mining constellation off the Hall, and one star of every other kind. */
+/** The test sky: a Mining constellation off the Hall, and one star of every other kind, beside the three the game reads by id. */
 function testSky() {
     const rank = (price, rules, lines = [], tier = 1) => ({ tier, price, rules, lines });
-    return {
+    return withRequiredThree({
         constellations: { mining: { id: 'mining', name: 'Mining', label: { x: 1.1, y: -0.6 }, skill: 'mining' } },
         stars: {
             m_xp: { id: 'm_xp', constellation: 'mining', name: 'Lore', node: { x: 0.7, y: -0.2 }, links: [HALL_NODE], ranks: [
@@ -164,7 +165,7 @@ function testSky() {
                 rank(ore(5), [provides(EFFECT_TYPES.LOADOUT_SLOTS, 1, { bucket: 'flat', category: 'food' })])
             ] }
         }
-    };
+    });
 }
 
 function makeHero(id) {
@@ -210,27 +211,27 @@ afterEach(() => {
     HallRules.apply({});
 });
 
-describe('the sky holds authored stars beside the stand-ins', () => {
-    it('adds the authored constellations and stars after the stand-ins the file lacks, in the file\'s order', () => {
+describe('the sky holds the authored stars', () => {
+    it('adds the authored constellations and stars in the file\'s order', () => {
         expect(GUILD_UPGRADES.slice(0, 3).map(u => u.id)).toEqual(['bank_tabs', 'roster_size', 'wishing_well']);
         expect(authoredStars().map(s => s.id)).toEqual([
-            ...FALLBACK_STAR_IDS, 'm_xp', 'm_yield', 'm_speed', 'm_rest', 'm_camp', 'f_regrow', 'w_ore', 'h_infirmary', 'h_food'
+            ...REQUIRED_THREE_IDS, 'm_xp', 'm_yield', 'm_speed', 'm_rest', 'm_camp', 'f_regrow', 'w_ore', 'h_infirmary', 'h_food'
         ]);
         expect(CONSTELLATIONS.map(c => c.id)).toEqual(['hearth', 'vault', 'well', 'mining']);
         const def = getUpgradeDef('m_xp');
         expect(def).toMatchObject({ authored: true, maxRank: 2, constellation: 'mining', prices: [ore(5), ore(10)] });
     });
 
-    it('replaces exactly what it put in, leaves other tracks alone, and an authored star takes its stand-in\'s place', () => {
+    it('replaces exactly what it put in, leaves other tracks alone, and stands in for no star the file lacks', () => {
         const before = skyVersion();
         const other = { id: 'test_track', constellation: 'vault', name: 'Test', node: { x: -1, y: 0 }, links: [HALL_NODE], maxRank: 1, prices: [[]] };
         GUILD_UPGRADES.push(other);
         try {
             const put = registerHallSky({ stars: { bank_tabs: { id: 'bank_tabs', name: 'Authored Tabs', links: [HALL_NODE], ranks: [{ price: [] }] }, solo: { id: 'solo', constellation: 'vault', links: [HALL_NODE], ranks: [{ price: [] }] } } });
-            expect(put.stars.map(s => s.id)).toEqual(['roster_size', 'wishing_well', 'bank_tabs', 'solo']);
+            expect(put.stars.map(s => s.id)).toEqual(['bank_tabs', 'solo']);
             expect(GUILD_UPGRADES.filter(u => u.id === 'bank_tabs')).toHaveLength(1);
             expect(getUpgradeDef('bank_tabs')).toMatchObject({ name: 'Authored Tabs', authored: true, maxRank: 1 });
-            expect(getUpgradeDef('roster_size')).toMatchObject({ name: 'Bunk Beds', fallback: true });
+            expect(getUpgradeDef('roster_size')).toBeNull();
             expect(GUILD_UPGRADES).toContain(other);
             expect(getUpgradeDef('m_xp')).toBeNull();
             expect(skyVersion()).toBeGreaterThan(before);
@@ -520,7 +521,7 @@ describe('the retired Compass: an old save drops its ranks and loads', () => {
         const old = { progress: { guildUpgrades: { roster_size: 2, token_cap: 4, cartography_slots: 2, notice_board: 3, bank_tabs: 1 } } };
         const loaded = migrateState(old, GAME_VERSION);
         expect(loaded.progress.guildUpgrades).toEqual({ roster_size: 2, bank_tabs: 1 });
-        expect(FALLBACK_STAR_IDS).toEqual(['bank_tabs', 'roster_size', 'wishing_well']);
+        expect(REQUIRED_STAR_IDS).toEqual(['bank_tabs', 'roster_size', 'wishing_well']);
         expect(CONSTELLATIONS.map(c => c.id)).not.toContain('compass');
     });
 });
@@ -538,7 +539,7 @@ describe('a star in words, and the audit', () => {
     });
 
     it('finds nothing wrong with the QA fixture sky, and in the test sky only its retired Camp Reach star, to delete', () => {
-        expect(hallStarFindings({ sky: qaHallSky(), items: ITEMS, tokens: TOKENS })).toEqual([]);
+        expect(hallStarFindings({ sky: withRequiredThree(qaHallSky()), items: ITEMS, tokens: TOKENS })).toEqual([]);
         expect(hallStarFindings({ sky: testSky(), items: ITEMS, tokens: TOKENS }).map(f => `${f.entityId}: ${f.message}`)).toEqual([
             'm_camp: carries only Camp Reach rules, retired: every camp works the one standard reach, so the star gives nothing. Delete the star in the CMS.'
         ]);
@@ -546,7 +547,7 @@ describe('a star in words, and the audit', () => {
 
     it('names a retired rule beside live ones by itself, and never calls a ring star first rank empty', () => {
         const findings = hallStarFindings({
-            sky: { stars: {
+            sky: { constellations: { well: { id: 'well', name: 'The Well' } }, stars: {
                 mixed: { id: 'mixed', constellation: 'well', links: [HALL_NODE], ranks: [{ price: ore(5), rules: [
                     provides(EFFECT_TYPES.XP_BONUS, 0.1, { category: 'mining' }),
                     provides(EFFECT_TYPES.CAMP_REACH, 0.5, { to: { mode: 'id', value: CAMP } })
@@ -582,11 +583,10 @@ describe('a star in words, and the audit', () => {
 });
 
 describe('with no authored sky', () => {
-    it('holds only the stand-ins for Bunk Beds, Bank Tabs and the Wishing Well', () => {
+    it('holds no star: nothing stands in for Bunk Beds, Bank Tabs and the Wishing Well', () => {
         setHallSky(null);
-        expect(GUILD_UPGRADES.map(u => u.id)).toEqual(['bank_tabs', 'roster_size', 'wishing_well']);
-        expect(GUILD_UPGRADES.every(u => u.fallback === true && !u.authored)).toBe(true);
-        expect(CONSTELLATIONS.map(c => c.id)).toEqual(['hearth', 'vault', 'well']);
-        expect(authoredStars().map(s => s.id)).toEqual(FALLBACK_STAR_IDS);
+        expect(GUILD_UPGRADES).toEqual([]);
+        expect(CONSTELLATIONS).toEqual([]);
+        expect(authoredStars()).toEqual([]);
     });
 });

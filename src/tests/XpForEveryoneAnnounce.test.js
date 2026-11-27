@@ -41,6 +41,7 @@ import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { KEYWORD } from '../systems/effects/statements.js';
 import { registerHallSky } from '../config/registries/hallStarRegistry.js';
+import { withRequiredThree } from './fixtures/hallSky.js';
 import { HALL_NODE } from '../config/guildUpgrades.js';
 import { HERO_SKILL_IDS } from '../config/registries/skillRegistry.js';
 import { levelFromXp } from '../utils/XPCurve.js';
@@ -73,13 +74,13 @@ const REACHED = levelFromXp(GIFT);
 const giftRule = { id: 'stm_xfe_announce', keyword: KEYWORD.PROVIDES,
     payload: { type: EFFECT_TYPES.XP_FOR_EVERYONE, bucket: 'flat', value: GIFT },
     chargeDelta: 0, to: { mode: 'all', value: '' }, reach: 'nearby', target: null, when: null, upkeep: null };
-const SKY = {
+const SKY = withRequiredThree({
     constellations: { hearth_x: { id: 'hearth_x', name: 'Hearth X', label: { x: 0, y: -1 } } },
     stars: {
         xp_all: { id: 'xp_all', constellation: 'hearth_x', name: 'Fresh Recruits', node: { x: 0, y: -0.7 }, links: [HALL_NODE],
             ranks: [{ tier: 1, price: [{ itemId: ORE, quantity: 5 }], rules: [giftRule], lines: [] }] }
     }
-};
+});
 
 /** A guild of `n` fresh heroes (every skill at level 1, no XP), nothing shown yet. */
 function fresh(n = 3) {

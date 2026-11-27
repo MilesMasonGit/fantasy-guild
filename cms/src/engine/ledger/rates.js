@@ -16,8 +16,7 @@ import { spotOf, arrivesByItself, spotRateOf } from '../../../../src/config/regi
 import { normaliseEventTable, isRunnable } from '../../../../src/config/eventTable.js';
 import { lureOf, baitSavingOf, baitSpent, fishLevel, fishCycleMs, fishBait, fishXp } from '../../../../src/config/registries/fishRules.js';
 import { rareTableOf, rareEntryChances } from '../../../../src/config/registries/rareTables.js';
-import { skyWithFallback } from '../../../../src/config/guildUpgrades.js';
-import { rankOf } from '../../../../src/config/hallStars.js';
+import { normaliseHallSky, rankOf } from '../../../../src/config/hallStars.js';
 import { hallRulesOf } from '../../../../src/systems/progression/hallModifiers.js';
 import { flooredWorkTime, floorSpeedUp, passiveLapMs } from '../../../../src/systems/board/workTime.js';
 import { ownCycleCost } from '../../../../src/systems/board/cycleCharges.js';
@@ -258,8 +257,7 @@ export function buildRateBook(content = {}) {
         return expanded.get(id);
     };
 
-    // The game's stand-ins for Bunk Beds, Bank Tabs and the Wishing Well count where the sky lacks them.
-    const sky = skyWithFallback(isObject(content.hallSky) ? content.hallSky : {});
+    const sky = normaliseHallSky(isObject(content.hallSky) ? content.hallSky : {});
     const stars = sky.stars;
     const starsById = new Map(stars.map(s => [s.id, s]));
     const hall = { stars, constellations: sky.constellations, star: (id) => starsById.get(id) || null, byRanks: new WeakMap(), byKey: keeper(PARTS_KEPT), ids: 0 };

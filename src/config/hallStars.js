@@ -8,9 +8,8 @@ import { coinsOf } from './registries/coinCosts.js';
 /**
  * The sky's authored part: constellations and their stars, written only by the CMS's Sync to Game.
  * Bunk Beds (`roster_size`), Bank Tabs (`bank_tabs`) and the Wishing Well (`wishing_well`) are stars
- * here like the rest; the game gives a hero a Bunk Beds rank and a Bank tab a Bank Tabs rank by id,
- * and holds stand-ins for the three and their constellations while the file lacks them
- * (`guildUpgrades.FALLBACK_SKY`).
+ * here like the rest; the game gives a hero a Bunk Beds rank and a Bank tab a Bank Tabs rank by id;
+ * the boot audit refuses a sky that lacks one of the three.
  *
  * ```
  * {

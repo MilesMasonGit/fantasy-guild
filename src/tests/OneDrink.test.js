@@ -188,7 +188,7 @@ describe('the Loadout Slots star never adds a drink', () => {
             chargeDelta: 0, to: { mode: 'all', value: '' }, reach: 'board', target: null, when: null, upkeep: null
         });
         const sky = (rules) => ({
-            constellations: {},
+            constellations: { hearth: { id: 'hearth', name: 'The Hearth' } },
             stars: {
                 od_star: {
                     id: 'od_star', constellation: 'hearth', name: 'Cellar', node: { x: 0, y: -2.6 }, links: [HALL_NODE],

@@ -9,6 +9,7 @@
 
 import { ledgerWorkspace } from './ledgerWorld.js';
 import { normaliseWorldTables } from '../../config/worldTablesShape.js';
+import { withRequiredThree } from './hallSky.js';
 
 export const LINE_SKILL = Object.freeze({ ores: 'mining', trees: 'forestry', crops: 'farming', herbs: 'alchemy', waters: 'fishing', arcane: 'magic' });
 
@@ -77,7 +78,9 @@ export function worldWorkspace() {
             };
         }
     }
-    Object.assign(ws, ringStarSky());
+    const sky = withRequiredThree({ constellations: ringStarSky().hallConstellations, stars: ringStarSky().hallStars });
+    ws.hallConstellations = sky.constellations;
+    ws.hallStars = sky.stars;
     return ws;
 }
 

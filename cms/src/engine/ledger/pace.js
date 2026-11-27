@@ -1946,7 +1946,6 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             rows.push(propose({ kind: 'shop', id, name: nameOf(tokenKey(id)), coins: shopCoinsOf(def) }, COIN_CURVE.EVERYDAY, PROFILE.TYPICAL, tier, tier, start));
         }
         for (const track of profiles.hallTracks) {
-            if (track.builtIn) continue;
             for (let rank = 1; rank <= track.maxRank; rank++) {
                 const tier = track.tier(rank) ?? priceTierOf(track.price(rank));
                 rows.push(propose({ kind: 'hall', id: track.id, name: track.name, rank, coins: track.coins(rank) }, COIN_CURVE.BIG, BEFORE_HALL, tier, tier, null));
@@ -2120,7 +2119,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
 
     let hallMemo = null;
     /**
-     * Every Guild Hall rank, stand-in and authored: its tier, price, the hours that price takes to
+     * Every Guild Hall rank: its tier, price, the hours that price takes to
      * gather at Typical (before the Hall), the hours it saves an hour on the work it pays back soonest
      * on and its payback there (`gain`, `work`, `payback`: information), its payback over all the work
      * it boosts on the payback curve ({@link guildPaybackOf}: `guildGain`, `guildPayback`, `curve`),
@@ -2140,10 +2139,10 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                 const tier = track.tier(rank);
                 const cap = Math.min(maxTier, tier ?? priceTierOf(price));
                 const base = {
-                    id: track.id, name: track.name, rank, builtIn: track.builtIn, tier, cap, price, ...(coins > 0 ? { coins } : {}),
+                    id: track.id, name: track.name, rank, tier, cap, price, ...(coins > 0 ? { coins } : {}),
                     priceText: priceWords(price, coins), priceHours: profiles.hallPriceHours(price, cap, coins)
                 };
-                const ring = !track.builtIn && rank === 1 ? ringOfStar(track.star) : null;
+                const ring = rank === 1 ? ringOfStar(track.star) : null;
                 if (ring !== null) {
                     rows.push({ ...base, rate: false, what: PACE_TEXT.opensRing(ring), ...ringRowOf(track, ring) });
                     continue;
@@ -2160,10 +2159,10 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                 const row = { ...base, rate: true, enabler, gain, work, opening, payback };
                 if (!enabler) Object.assign(row, guildPaybackOf(row));
                 row.pays = enabler || cost === 0 || withinCurve(row.guildPayback, row.curve);
-                if (!track.builtIn) row.proposed = proposePrice(track, rank, row);
+                row.proposed = proposePrice(track, rank, row);
                 rows.push(row);
             }
-            if (!track.builtIn) neverCheaper(rows.filter(r => r.id === track.id));
+            neverCheaper(rows.filter(r => r.id === track.id));
         }
         hallMemo = rows;
         return rows;

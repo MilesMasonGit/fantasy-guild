@@ -26,6 +26,8 @@ import { announce } from '../ui/components/board/dropOnMat.js';
 import { equipBubbleOf, clearEquipBubbles } from '../ui/components/dock/equipBubbles.js';
 import { equipOrAnnounce } from '../ui/components/dock/dockEquip.js';
 import { DEFAULT_MAX_STACK } from '../config/registries/itemRegistry.js';
+import { setHallSky } from '../config/guildUpgrades.js';
+import { withRequiredThree } from './fixtures/hallSky.js';
 
 /**
  * Where every event goes (the owner's audit, concept_notifications.md): items to one stub each,
@@ -47,6 +49,8 @@ let toasts;
 let offToasts;
 
 beforeEach(() => {
+    // Nothing here loads the star registry, so the file puts in the Bank Tabs and Bunk Beds it announces.
+    setHallSky(withRequiredThree());
     GameState.initNew();
     ItemStubs.reset();
     Banners.reset();

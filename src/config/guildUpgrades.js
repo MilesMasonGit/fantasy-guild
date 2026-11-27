@@ -104,108 +104,15 @@ export const HALL_NODE = 'hall';
  *
  * Each upgrade carries `prices`: one entry per rank, where `prices[n - 1]` is
  * what rank n costs, as a list of `{ itemId, quantity }`. An empty list is
- * free. A star carries a price per rank (`hallStars.js`); the fallback stand-ins use a
- * placeholder (rank n costs 10·n Oak Wood).
+ * free. A star carries a price per rank (`hallStars.js`).
  */
-export const PLACEHOLDER_PRICE_ITEM = 'item_oak_wood';
-export const PLACEHOLDER_PRICE_PER_RANK = 10;
 
-/**
- * Build a placeholder price list: rank n costs `perRank·n` of `itemId`.
- * `freeFirstRank` makes rank 1 cost nothing — used by Bunk Beds (a new game
- * holds rank 1 already, for the hero made on the new-game screen) and the
- * Wishing Well.
- */
-export function placeholderPrices(maxRank, {
-    itemId = PLACEHOLDER_PRICE_ITEM,
-    perRank = PLACEHOLDER_PRICE_PER_RANK,
-    freeFirstRank = false
-} = {}) {
-    return Array.from({ length: maxRank }, (_, i) => {
-        const rank = i + 1;
-        if (freeFirstRank && rank === 1) return [];
-        return [{ itemId, quantity: perRank * rank }];
-    });
-}
-
-/** A stand-in star's ranks: placeholder prices, no rules, and `lines(rank)` paid each lap. */
-function fallbackRanks(maxRank, priceOptions = {}, lines = () => []) {
-    return placeholderPrices(maxRank, priceOptions).map((price, i) => ({ price, rules: [], lines: lines(i + 1) }));
-}
-
-/**
- * ⚠️ Stand-ins for Bunk Beds, Bank Tabs and the Wishing Well with their constellations, in
- * `data/hallStars.json`'s shape, kept only until the owner Syncs the three as authored stars. Each goes
- * into the sky while the data lacks a star or constellation of its id ({@link skyWithFallback}), and
- * the boot audit warns while one does (`hallStarRule.hallFallbackFindings`). They are the sky the game
- * held before the three were authored, so a guild plays the same on them.
- */
-export const FALLBACK_SKY = Object.freeze({
-    constellations: {
-        hearth: { id: 'hearth', name: 'The Hearth', label: { x: 0, y: -0.8 } },
-        vault: { id: 'vault', name: 'The Vault', label: { x: -0.72, y: 0.3 } },
-        well: { id: 'well', name: 'The Well', label: { x: 0, y: 0.8 } }
-    },
-    stars: {
-        [BANK_TABS_STAR]: {
-            id: BANK_TABS_STAR,
-            constellation: 'vault',
-            name: 'Bank Tabs',
-            description: `Unlock another Bank tab: ${BANK_TAB_SLOTS} more kinds of items in storage.`,
-            node: { x: -0.5, y: 0 },
-            links: [HALL_NODE],
-            outline: 'i_key_gold',
-            ranks: fallbackRanks(RANKS_BY_ID[BANK_TABS_STAR])
-        },
-        [ROSTER_STAR]: {
-            id: ROSTER_STAR,
-            constellation: 'hearth',
-            name: 'Bunk Beds',
-            description: 'Expand guild sleeping quarters to recruit new heroes and increase roster capacity.',
-            node: { x: 0, y: -0.5 },
-            links: [HALL_NODE],
-            outline: 't_bunk_bed',
-            ranks: fallbackRanks(RANKS_BY_ID[ROSTER_STAR], { freeFirstRank: true })
-        },
-        [WISHING_WELL_STAR]: {
-            id: WISHING_WELL_STAR,
-            constellation: 'well',
-            name: 'Wishing Well',
-            description: 'The Guild Hall draws fresh Water as Passive Production every lap. No hero needed.',
-            node: { x: 0, y: 0.5 },
-            links: [HALL_NODE],
-            outline: 'i_water',
-            ranks: fallbackRanks(10, { freeFirstRank: true }, rank => [{ itemId: 'item_water', quantity: 10 * rank }])
-        }
-    }
-});
-
-const FALLBACK = normaliseHallSky(FALLBACK_SKY);
-
-/** The stand-ins' star ids, in the fallback's order. */
-export const FALLBACK_STAR_IDS = Object.freeze(FALLBACK.stars.map(s => s.id));
-/** The stand-ins' constellation ids. */
-export const FALLBACK_CONSTELLATION_IDS = Object.freeze(FALLBACK.constellations.map(c => c.id));
-
-/**
- * A sky (`data/hallStars.json`'s shape, or a fixture), normalised, with the fallback's stars and
- * constellations put in where it lacks one of their ids: the stand-ins first, in the fallback's order
- * and marked `fallback: true`, then the sky's own, in its order. The game's sky and the progression
- * ledger both read the sky this way.
- */
-export function skyWithFallback(sky) {
-    const { constellations, stars } = normaliseHallSky(sky || {});
-    const haveC = new Set(constellations.map(c => c.id));
-    const haveS = new Set(stars.map(s => s.id));
-    return {
-        constellations: [...FALLBACK.constellations.filter(c => !haveC.has(c.id)).map(c => ({ ...c, fallback: true })), ...constellations],
-        stars: [...FALLBACK.stars.filter(s => !haveS.has(s.id)).map(s => ({ ...s, fallback: true })), ...stars]
-    };
-}
+/** The three stars the game knows by id: the sky must hold each, and the boot audit refuses one that is missing. */
+export const REQUIRED_STAR_IDS = Object.freeze([BANK_TABS_STAR, ROSTER_STAR, WISHING_WELL_STAR]);
 
 /**
  * A star as an upgrade track: what the sky, the details panel and the purchase read. `star` is its
- * normalised record; `authored: true` marks one from the data, `fallback: true` a stand-in. Its labels
+ * normalised record; `authored: true` marks one from the data. Its labels
  * say what a Bunk Beds or Bank Tabs rank gives by id ({@link rankEffectLabel}), then
  * `describeRank(star, rank)`, which the game hands in (this module cannot name items), or the rank
  * alone.
@@ -232,7 +139,7 @@ export function upgradeDefOfStar(star, describeRank = null) {
         statLabel: label,
         nextStatLabel: rank => label(rank + 1),
         sprite: star.sprite || UPGRADE_SPRITES.star,
-        ...(star.fallback ? { fallback: true } : { authored: true }),
+        authored: true,
         star
     };
 }
@@ -240,13 +147,12 @@ export function upgradeDefOfStar(star, describeRank = null) {
 /**
  * The sky's constellations: each upgrade names one in `constellation`. `label` is where the name
  * sits, in the same unit space as a node's `node`. A constellation is finished when every star in it
- * is lit (rank 1 or more). Put in by {@link setHallSky}: the stand-ins the data lacks first, then the
- * authored ones. ⚠️ A live list: readers keep the array, so it is changed in place.
+ * is lit (rank 1 or more). Put in by {@link setHallSky}. ⚠️ A live list: readers keep the array, so it is changed in place.
  */
 export const CONSTELLATIONS = [];
 
 /**
- * Every upgrade track: the stars put in by {@link setHallSky} (stand-ins first), whose ranks carry
+ * Every upgrade track: the stars put in by {@link setHallSky}, whose ranks carry
  * rules and Passive Production lines (`hallStars.js`), Bunk Beds and Bank Tabs giving a hero or a tab
  * a rank by id besides. ⚠️ A live list, changed in place, like {@link CONSTELLATIONS}: a test may put
  * its own track in too.
@@ -268,13 +174,12 @@ export function skyVersion() {
 
 /**
  * Put the sky in: `sky` is `data/hallStars.json` (or a fixture) in the file's shape, or already
- * normalised, with the fallback's stand-ins where it lacks their ids ({@link skyWithFallback}).
- * Replaces whatever the last call put in; anything else in the live lists (a test's own track) stays,
- * and a star or constellation taking its id is left out. Stand-ins go first, the authored after.
+ * normalised. Replaces whatever the last call put in; anything else in the live lists (a test's own
+ * track) stays, and a star or constellation taking its id is left out.
  *
  * @param {object|null} sky
  * @param {{ describeRank?: (star: object, rank: number) => string }} [options]
- * @returns {{ constellations: object[], stars: object[] }} what went in, stand-ins included
+ * @returns {{ constellations: object[], stars: object[] }} what went in
  */
 export function setHallSky(sky, { describeRank = null } = {}) {
     for (const def of skyDefs) {
@@ -285,26 +190,20 @@ export function setHallSky(sky, { describeRank = null } = {}) {
         const i = CONSTELLATIONS.indexOf(c);
         if (i !== -1) CONSTELLATIONS.splice(i, 1);
     }
-    const { constellations, stars } = skyWithFallback(sky);
+    const { constellations, stars } = normaliseHallSky(sky || {});
     skyConstellations = constellations.filter(c => !CONSTELLATIONS.some(o => o.id === c.id));
     skyDefs = stars
         .filter(s => !GUILD_UPGRADES.some(o => o.id === s.id))
         .map(s => upgradeDefOfStar(s, describeRank));
-    const fallbackFirst = (list) => [list.filter(x => x.fallback), list.filter(x => !x.fallback)];
-    const [standInC, authoredC] = fallbackFirst(skyConstellations);
-    const [standInS, authoredS] = fallbackFirst(skyDefs);
-    CONSTELLATIONS.unshift(...standInC);
-    CONSTELLATIONS.push(...authoredC);
-    GUILD_UPGRADES.unshift(...standInS);
-    GUILD_UPGRADES.push(...authoredS);
+    CONSTELLATIONS.push(...skyConstellations);
+    GUILD_UPGRADES.push(...skyDefs);
     skyStarList = Object.freeze(skyDefs.map(d => d.star));
     skyChanges += 1;
     return { constellations: [...skyConstellations], stars: [...skyStarList] };
 }
 
 /**
- * The stars in the sky now, as their normalised records (one frozen list until the sky changes): the
- * authored ones and any stand-in the data still lacks.
+ * The stars in the sky now, as their normalised records (one frozen list until the sky changes).
  */
 export function authoredStars() {
     return skyStarList;
@@ -321,7 +220,7 @@ export function getUpgradeDef(id) {
     return GUILD_UPGRADES.find(u => u.id === id) || null;
 }
 
-// The stand-ins hold the sky until `hallStarRegistry.js` puts the authored one in.
+// Empty until `hallStarRegistry.js` puts the authored sky in.
 setHallSky(null);
 
 /**

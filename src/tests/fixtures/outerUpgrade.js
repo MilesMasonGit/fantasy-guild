@@ -1,5 +1,6 @@
 import { beforeEach, afterEach } from 'vitest';
-import { GUILD_UPGRADES, UPGRADE_SPRITES, placeholderPrices } from '../../config/guildUpgrades.js';
+import { GUILD_UPGRADES, UPGRADE_SPRITES } from '../../config/guildUpgrades.js';
+import { placeholderPrices } from './hallSky.js';
 
 /**
  * A test-only star beyond Bank Tabs. Every shipped upgrade links to the Hall, so the web's

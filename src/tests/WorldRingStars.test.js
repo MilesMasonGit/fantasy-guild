@@ -12,7 +12,7 @@ import { SETTLE_TEXT } from '../systems/world/Settling.js';
 import { CELL_STATE } from '../systems/world/frontier.js';
 import { ringLock, ringStarsOf, ringOfStar } from '../systems/world/ringStars.js';
 import { normaliseStar, normaliseHallSky } from '../config/hallStars.js';
-import { getUpgradeDef, getUpgradePrice, authoredStars, skyWithFallback } from '../config/guildUpgrades.js';
+import { getUpgradeDef, getUpgradePrice, authoredStars } from '../config/guildUpgrades.js';
 import { registerHallSky, authoredHallSky } from '../config/registries/hallStarRegistry.js';
 import { installRingStars, meetFrontierPrices, stockSettleCoins } from './fixtures/worldQa.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
@@ -202,7 +202,7 @@ describe('the ring stars ship in the sky, and the QA panel\'s ring-star button l
         const before = authoredStars().length;
         expect(installRingStars()).toEqual({ success: false, reason: 'The sky has its ring stars already' });
         expect(authoredStars().length).toBe(before);
-        expect(before).toBe(skyWithFallback(authoredHallSky()).stars.length);
+        expect(before).toBe(normaliseHallSky(authoredHallSky()).stars.length);
 
         const { next } = ringTwoFrontier();
         expect(World.ringLockOf(next).stars[0].name).toBe('Charted Roads');

@@ -1,7 +1,7 @@
 // Bunk Beds, Bank Tabs and the Wishing Well as authored stars, with their constellations, beside the
 // shipped sky: `data/hallStars.json` as it reads once the content agent's three-star pack is Synced.
 // ⚠️ Never written to `data/`: a test fixture. Its numbers are its own (Water 12 a rank, prices in
-// Copper Ore and Oak Wood), so a test can tell the authored stars from the game's stand-ins.
+// Copper Ore and Oak Wood), so a test can tell them from the stars of `hallSky.js` (10 a rank).
 
 import { authoredHallSky, registerHallSky } from '../../config/registries/hallStarRegistry.js';
 import { GuildUpgradeManager } from '../../systems/progression/GuildUpgradeManager.js';

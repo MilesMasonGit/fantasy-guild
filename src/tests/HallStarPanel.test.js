@@ -14,6 +14,7 @@ import { getUpgradeDef, GUILD_UPGRADES } from '../config/guildUpgrades.js';
 import { normaliseStar } from '../config/hallStars.js';
 import { registerHallSky } from '../config/registries/hallStarRegistry.js';
 import { qaHallSky } from './fixtures/qaHallSky.js';
+import { withRequiredThree } from './fixtures/hallSky.js';
 import { starSentence, starAmount } from '../systems/progression/hallStarText.js';
 import { outlineSpriteName, outlineSrc, edgeCells } from '../ui/components/board/hallStarOutline.js';
 import { GuildHallEffectsList } from '../ui/components/board/GuildHallEffectsPopover.jsx';
@@ -29,7 +30,7 @@ beforeEach(() => {
     GameState.state.heroes = [];
     GameState.state.progress.guildUpgrades = {};
     InventoryManager.init();
-    registerHallSky(qaHallSky());
+    registerHallSky(withRequiredThree(qaHallSky()));
     GuildUpgradeManager.recompute();
 });
 
