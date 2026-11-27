@@ -1,7 +1,7 @@
 /**
  * Economic simulator: the dials the passes read. Every pass stays a pure function: dials arrive as a plain argument and the defaults below are the whole list. Nothing here touches a store or a file: `useGlobalStore` holds the developer's turned copy under `simDials` and `recalculateEconomy` hands it in.
  * ⚠️ The one dial no pass reads is `skillMasteryHours`: it is an expectation, not an input, so turning it does not move the curve (see `PaceDials`).
- * ⚠️ `rulebook` switches the earn curves and the purpose factors from the pins below to the balance rules (`../balanceRules.js`, which the ledger reads too): XP an hour and worth an hour doubling every 20 levels, the moderate purpose tilt, XP over the optimized boost factor, the guard over a tier. Off by default; with it on, a stored dial set's pins and factors are dropped.
+ * ⚠️ `rulebook` switches the earn curves and the purpose factors from the pins below to the balance rules (`../balanceRules.js`, which the ledger reads too): XP an hour and worth an hour doubling every 20 levels, the moderate purpose tilt, XP over the optimized boost factor, the guard over a tier. Off in the simulator's own defaults (its unit tests pin the old curves); on wherever a workspace's stored dials are read (`workspaceDials`). With it on, a stored dial set's pins and factors are dropped.
  */
 
 import { worthAnHourAt, goodsTilt } from '../balanceRules.js';
@@ -90,6 +90,14 @@ export const DEFAULT_DIALS = Object.freeze({
     /** Downcycling's one number. Developer-set and strictly under 100%: at or above it, breaking a thing down and rebuilding it would duplicate gold, so `normaliseDials` refuses it. */
     downcycleRecoveryRatio: 0.5,
 });
+
+/**
+ * The dials a workspace runs with: its stored set, with the rulebook on. Recalculate (and the Sync it runs), the Pace dials panel and the command line all read the stored dials through here.
+ * ⚠️ A stored `rulebook: false` is a snapshot of the old default, written out by the globals store, never a choice: no panel ever set it. It must not turn the rule off, so it is overwritten here rather than honoured.
+ */
+export function workspaceDials(stored) {
+    return { ...(stored || {}), rulebook: true };
+}
 
 /**
  * Validate and fill in a dial set. Pure; returns a new frozen object.

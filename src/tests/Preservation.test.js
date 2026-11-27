@@ -804,11 +804,11 @@ describe('drinks, work potions and fight elixirs', () => {
         expect(consumed.find(p => p.itemId === COFFEE)?.preserved).toBeUndefined();
     });
 
-    it('a work potion drunk every cycle is kept by a Potion rule, not by a Drink one', () => {
+    it('a work potion\'s fresh dose is kept by a Potion rule, not by a Drink one', () => {
         InventoryManager.addItem(TEA, 10);
         minerOn('pv_potion_keep', [TEA]);
         run(3200);
-        expect(consumed.filter(p => p.itemId === TEA).length).toBeGreaterThanOrEqual(3);
+        expect(consumed.filter(p => p.itemId === TEA)).toEqual([expect.objectContaining({ dose: 'potion', preserved: true })]);
         expect(InventoryManager.getItemCount(TEA)).toBe(10);
 
         GameState.initNew();
@@ -818,7 +818,7 @@ describe('drinks, work potions and fight elixirs', () => {
         InventoryManager.addItem(TEA, 10);
         minerOn('pv_drink_keep', [TEA]);
         run(3200);
-        expect(InventoryManager.getItemCount(TEA)).toBeLessThanOrEqual(7);
+        expect(InventoryManager.getItemCount(TEA)).toBe(9);
     });
 
     it('a fight elixir\'s fresh dose starts without taking one, read beside the enemy', () => {

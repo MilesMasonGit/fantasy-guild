@@ -108,7 +108,7 @@ describe("a drink or work potion's batch pays back at least 4x its making", () =
         expect(beer.unitHours).toBeCloseTo(pace.heroHoursOf('item_beer', 'bare', beer.cap));
         expect(beer.spends).toBeCloseTo(beer.doses * beer.unitHours);
         expect(beer.ratio).toBeCloseTo(beer.gain / beer.spends);
-        // +10 % XP for ten cycles of a 3 s vein, for a 10 s brew of one 4 s oak: well short of 4x.
+        // +10 % XP for a dose's cycles of a 3 s vein, for a 10 s brew of one 4 s oak: short of 4x.
         expect(beer.ratio).toBeLessThan(settingsOf().batchPayback);
         expect(settingsOf().batchPayback).toBe(4);
     });
@@ -117,7 +117,7 @@ describe("a drink or work potion's batch pays back at least 4x its making", () =
         const pace = paceOf(ruleContent({ sky: false }));
         const f = pace.findings().filter(x => x.check === 'batch-payback');
         expect(f.map(x => x.key)).toEqual(['item:item_beer']);
-        expect(f[0].message).toMatch(/^Beer: a dose lasts 10 cycles of /);
+        expect(f[0].message).toMatch(new RegExp(`^Beer: a dose lasts ${DOSE_LENGTH[DOSE.DRINK]} cycles of `));
         expect(f[0].message).toMatch(/under the 4× a batch must pay back \(BALANCE_RULES section 5/);
         // A lower factor lets it pass.
         const ratio = pace.batchPaybackRows().find(r => r.item === 'item_beer').ratio;
@@ -127,16 +127,16 @@ describe("a drink or work potion's batch pays back at least 4x its making", () =
 
 describe('Typical takes a drink or work potion only where its batch pays back', () => {
     const takes = (pace, row, profile) => (pace.profiles.profileOf(row.work.target, profile, row.cap).setup.consumables || []).includes(row.item);
-    // Three beers a brew: worth its making (Typical's own weighing alone would take it), short of 4x.
-    const threeBeers = () => {
+    // Two beers a brew: worth its making (Typical's own weighing alone would take it), short of 4x.
+    const twoBeers = () => {
         const c = ruleContent({ sky: false });
         const brew = c.recipes.find(r => r.id === 'recipe_beer').outputs[0];
-        brew.minQty = brew.maxQty = 3;
+        brew.minQty = brew.maxQty = 2;
         return c;
     };
 
     it('Typical leaves a drink whose batch pays back under the factor; Maxed still takes it; Bare takes none', () => {
-        const pace = paceOf(threeBeers());
+        const pace = paceOf(twoBeers());
         const beer = pace.batchPaybackRows().find(r => r.item === 'item_beer');
         expect(beer.ratio).toBeGreaterThan(1);
         expect(beer.ratio).toBeLessThan(settingsOf().batchPayback);
@@ -146,12 +146,12 @@ describe('Typical takes a drink or work potion only where its batch pays back', 
     });
 
     it('a factor its batch meets lets Typical take it, by the same measure as the batch-payback check', () => {
-        const ratio = paceOf(threeBeers()).batchPaybackRows().find(r => r.item === 'item_beer').ratio;
-        const low = paceOf(threeBeers(), { batchPayback: ratio * 0.99 });
+        const ratio = paceOf(twoBeers()).batchPaybackRows().find(r => r.item === 'item_beer').ratio;
+        const low = paceOf(twoBeers(), { batchPayback: ratio * 0.99 });
         const beer = low.batchPaybackRows().find(r => r.item === 'item_beer');
         expect(beer.ratio).toBeCloseTo(ratio);
         expect(takes(low, beer, 'typical')).toBe(true);
-        expect(takes(paceOf(threeBeers(), { batchPayback: ratio * 1.01 }), beer, 'typical')).toBe(false);
+        expect(takes(paceOf(twoBeers(), { batchPayback: ratio * 1.01 }), beer, 'typical')).toBe(false);
     });
 });
 

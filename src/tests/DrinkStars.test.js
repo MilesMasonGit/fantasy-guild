@@ -40,6 +40,12 @@ import { hallStarFindings } from '../systems/core/hallStarRule.js';
 import { tagExplanation } from '../ui/components/drawer/itemTags.js';
 import { gearEffects } from '../ui/components/dock/heroCombatStats.js';
 
+// ⚠️ These tests are about the stars, not the base lengths: they hold the base at a drink's 10 cycles
+// and a work potion's 1, so the star arithmetic stays readable. The base lengths themselves are
+// pinned in DoseLength.test.js and WorkConsumables.test.js.
+vi.mock('../config/loopConstants.js', async (importOriginal) => ({
+    ...(await importOriginal()), DRINK_CYCLES: 10, WORK_POTION_CYCLES: 1
+}));
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
     getQueue: vi.fn(() => [])

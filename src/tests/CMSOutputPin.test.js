@@ -9,7 +9,7 @@ import { syncFiles } from '../../cms/src/engine/recipeSync';
 import { adaptToken, adaptRecipe, adaptCorpus } from '../../cms/src/engine/sim/fieldAdapter.js';
 import { runTempoPass } from '../../cms/src/engine/sim/tempoPass.js';
 import { runTuningPass } from '../../cms/src/engine/sim/tuningPass.js';
-import { normaliseDials } from '../../cms/src/engine/sim/dials.js';
+import { normaliseDials, workspaceDials } from '../../cms/src/engine/sim/dials.js';
 import { applyTokenResults, applyRecipePoolResults } from '../../cms/src/engine/sim/writeBack.js';
 import { recalculateWorkspace } from '../../cms/src/engine/recalculate.js';
 import SupplyChainLayout from '../../cms/src/components/layout/SupplyChainLayout.jsx';
@@ -49,7 +49,8 @@ const tok = (id, outputs, sim = TAGS) => ({ id, name: id, uses: null, sim, confi
 
 /**
  * Two sources Recalculate tunes: Fx Press (a second source of Fx Bar) has its count of 5 cut to 3
- * by the quantity lever, and Fx Seedy its Seed chance of 50 cut to 30 by the chance lever.
+ * by the quantity lever, and Fx Seedy its Seed chance of 90 cut to 30 by the chance lever. Both are tuned
+ * as the CMS runs, with the rulebook on (`workspaceDials`).
  */
 function pinWorkspace({ pin = false } = {}) {
     const pinned = (sim) => (pin ? { ...sim, outputsPinned: true } : sim);
@@ -62,7 +63,7 @@ function pinWorkspace({ pin = false } = {}) {
         tokens: {
             fx_vein: tok('fx_vein', [o('fx_ore', 1, 1, 100, { anchor: true })]),
             fx_seedbed: tok('fx_seedbed', [o('fx_seed', 1, 1, 100, { anchor: true })]),
-            fx_seedy: tok('fx_seedy', [o('fx_ore', 1, 1, 10), o('fx_seed', 1, 1, 50)], pinned(TAGS)),
+            fx_seedy: tok('fx_seedy', [o('fx_ore', 1, 1, 70), o('fx_seed', 1, 1, 90)], pinned(TAGS)),
             fx_furnace: {
                 id: 'fx_furnace', name: 'Fx Furnace', uses: null,
                 config: { skill: 'smithing', skillRequired: 1, cycleTimeMs: 3000, xp: 1, inputs: [], outputs: [] },
@@ -99,7 +100,7 @@ describe('the adapter', () => {
 });
 
 describe('the TUNE pass', () => {
-    const tuned = (ws) => recalculateWorkspace(ws, {}).report.sim.tunings;
+    const tuned = (ws) => recalculateWorkspace(ws, workspaceDials({})).report.sim.tunings;
 
     it('moves an unpinned count and chance: the fixture has teeth', () => {
         const tunings = tuned(pinWorkspace());
@@ -131,14 +132,14 @@ describe('the TUNE pass', () => {
     it('says the outputs are pinned on an Info row, and raises no refusal when every lever is pinned', () => {
         const ws = pinWorkspace({ pin: true });
         ws.recipePools.smithing[1].sim = { ...ws.recipePools.smithing[1].sim, timePinned: true };
-        const { report } = recalculateWorkspace(ws, {});
+        const { report } = recalculateWorkspace(ws, workspaceDials({}));
         const rows = report.sim.rows.filter((r) => r.entityId === 'fx_press');
         const row = rows.find((r) => r.code === 'outputs-pinned');
         expect(row).toMatchObject({ severity: 'info', entityId: 'fx_press' });
         expect(row.message).toMatch(/Fx Press/);
         expect(rows.some((r) => r.code === 'levers-exhausted' || r.code === 'correction-too-large')).toBe(false);
         expect(report.sim.tunings.get('fx_press').lever).toBe('none');
-        expect(recalculateWorkspace(pinWorkspace(), {}).report.sim.rows.some((r) => r.code === 'outputs-pinned')).toBe(false);
+        expect(recalculateWorkspace(pinWorkspace(), workspaceDials({})).report.sim.rows.some((r) => r.code === 'outputs-pinned')).toBe(false);
     });
 });
 
@@ -170,7 +171,7 @@ describe('through Recalculate and Sync', () => {
         const files = syncPayload();
         expect(pressOf(files).outputs).toEqual([o('fx_bar', 5, 5)]);
         expect(pressOf(files).sim).toEqual({ tempo: 'medium', purpose: 'iph', outputsPinned: true });
-        expect(files['tokens.json'].fx_seedy.config.outputs).toEqual([o('fx_ore', 1, 1, 10), o('fx_seed', 1, 1, 50)]);
+        expect(files['tokens.json'].fx_seedy.config.outputs).toEqual([o('fx_ore', 1, 1, 70), o('fx_seed', 1, 1, 90)]);
         expect(files['tokens.json'].fx_seedy.sim).toEqual({ ...TAGS, outputsPinned: true });
     });
 
@@ -178,7 +179,7 @@ describe('through Recalculate and Sync', () => {
         store().hydrate(pinWorkspace());
         const files = syncPayload();
         expect(pressOf(files).outputs[0].minQty).not.toBe(5);
-        expect(files['tokens.json'].fx_seedy.config.outputs[1].chance).not.toBe(50);
+        expect(files['tokens.json'].fx_seedy.config.outputs[1].chance).not.toBe(90);
     });
 
     it('stays put on a second Recalculate', () => {
@@ -191,10 +192,10 @@ describe('through Recalculate and Sync', () => {
 
     it('hands the outputs back to the levers when the pin is cleared', () => {
         store().hydrate(pinWorkspace({ pin: true }));
-        expect(syncPayload()['tokens.json'].fx_seedy.config.outputs[1].chance).toBe(50);
+        expect(syncPayload()['tokens.json'].fx_seedy.config.outputs[1].chance).toBe(90);
         store().updateToken('fx_seedy', { sim: { ...store().tokens.fx_seedy.sim, outputsPinned: undefined } });
         const files = syncPayload();
-        expect(files['tokens.json'].fx_seedy.config.outputs[1].chance).not.toBe(50);
+        expect(files['tokens.json'].fx_seedy.config.outputs[1].chance).not.toBe(90);
         expect(files['tokens.json'].fx_seedy.sim).toEqual(TAGS);
     });
 });

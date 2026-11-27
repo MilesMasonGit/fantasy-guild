@@ -52,11 +52,11 @@ describe('one drink-type consumable at a time', () => {
     });
 
     it('⭐ Maxed swaps Typical\'s dose for a better one its batch keeps from Typical', () => {
-        // A 12 s brew: the Big Draught's batch saves about half its making, the Beer's 0.86 of it. At 0.8
-        // only the Beer passes, so Typical holds the Beer and Maxed the Big Draught in its place.
+        // A 5 min brew: on the vein the Big Draught's batch pays back about 1.2x its making, the Beer's
+        // about 2.7x. At 2x only the Beer passes, so Typical holds the Beer and Maxed the Big Draught in its place.
         const c = doseContent();
-        c.recipes.find(r => r.id === 'recipe_big_draught').durationMs = 12000;
-        const pace = paceOf(c, { batchPayback: 0.8 });
+        c.recipes.find(r => r.id === 'recipe_big_draught').durationMs = 300000;
+        const pace = paceOf(c, { batchPayback: 2 });
         expect(dosesOf(pace.rateAt(VEIN, PROFILE.TYPICAL))).toEqual(['item_beer']);
         expect(dosesOf(pace.rateAt(VEIN, PROFILE.MAXED))).toEqual(['item_big_draught']);
         expect(pace.rateAt(VEIN, PROFILE.MAXED).chosen.filter(x => DOSES.has(x.id)).map(x => x.id)).toEqual(['item_big_draught']);

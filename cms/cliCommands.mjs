@@ -78,10 +78,13 @@ export const USAGE = `Usage: npm run cms -- <command> [options]
                                   fits no source or mixes kinds is listed (and written to
                                   --unclear, else <id>-unclear.txt beside the pack), never guessed. Written to --out (never into
                                   cms/incoming/); reads the workspace, never saves it.
-  recalc [--all]                  Recalculate (the economic simulator) on the workspace and save it.
-  sync [--confirm-removals] [--no-commit]
+  recalc [--all] [--rulebook]     Recalculate (the economic simulator) on the workspace and save it.
+                                  The rulebook (the balance rules' curves, BALANCE_RULES sections 1
+                                  and 7) is on by default; --rulebook is still accepted and changes
+                                  nothing. The workspace's stored dials stay as they are.
+  sync [--confirm-removals] [--no-commit] [--rulebook]
                                   Recalculate, then write data/ exactly as Sync to Game does, and
-                                  commit only the files it wrote.
+                                  commit only the files it wrote. --rulebook as for recalc (on by default).
   restore                         Rebuild the workspace from data/ and cms/plan/plan.json (Restore
                                   from Game); the old one is kept in Backups first.
   ledger [--json=<file>] [--one-layout] [--with-planned]
@@ -186,10 +189,14 @@ const counts = (ws) => {
     return `${plural(Object.keys(ws.items || {}).length, 'item')}, ${plural(Object.keys(ws.tokens || {}).length, 'Token')}, ${plural(recipes, 'recipe')}, ${plural(Object.keys(ws.effects || {}).length, 'effect')}`;
 };
 
-/** The workspace's dials as the CMS's globals store holds them: every default, with the stored ones over it. */
+/**
+ * The workspace's dials as the CMS's Recalculate reads them: every default, with the stored ones
+ * over it, through `workspaceDials` (the rulebook on, whatever was stored; never saved).
+ */
 async function dialsFor(load, disk) {
     const { DEFAULT_GLOBALS } = await load('/src/utils/constants.js');
-    return { ...DEFAULT_GLOBALS.simDials, ...(disk.simDials || {}) };
+    const { workspaceDials } = await load('/src/engine/sim/dials.js');
+    return workspaceDials({ ...DEFAULT_GLOBALS.simDials, ...(disk.simDials || {}) });
 }
 
 /** Run Recalculate on the stored workspace, as the page would after loading it. */
@@ -301,7 +308,7 @@ async function cmdRecalc(paths, options, load, out) {
     const disk = requireDisk(paths);
     const { workspace, report } = await recalculated(load, disk);
     const saved = save(paths, disk, workspace, 'cli: recalc');
-    out(`Recalculated ${shortPath(paths.root, paths.workspaceFile)}, now revision ${saved.revision}: ${counts(workspace)}.`);
+    out(`Recalculated ${shortPath(paths.root, paths.workspaceFile)} with the rulebook on, now revision ${saved.revision}: ${counts(workspace)}.`);
     for (const line of auditLines(report, { all: options.all === true })) out(line);
     return 0;
 }
@@ -313,7 +320,7 @@ async function cmdSync(paths, options, load, out) {
     // As the page does it: Recalculate first, and the workspace keeps the result whatever the Sync then does.
     const { workspace, report } = await recalculated(load, disk);
     const saved = save(paths, disk, workspace, 'cli: sync');
-    out(`Recalculated ${shortPath(paths.root, paths.workspaceFile)}, now revision ${saved.revision}: ${counts(workspace)}.`);
+    out(`Recalculated ${shortPath(paths.root, paths.workspaceFile)} with the rulebook on, now revision ${saved.revision}: ${counts(workspace)}.`);
     out(auditLines(report)[0]);
 
     const { [PLAN_SYNC_KEY]: plan, [RENAMES_SYNC_KEY]: renames, ...files } = syncFiles(balancedForSync(workspace, report));

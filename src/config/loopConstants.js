@@ -69,10 +69,16 @@ export const ELIXIR_FIGHTS = 10;
 
 /**
  * How many work cycles one drink lasts. One number for every drink, never per item, like
- * `ELIXIR_FIGHTS`: a drink is drunk as a work cycle starts and works for this many cycles.
- * A placeholder until the owner says otherwise.
+ * `ELIXIR_FIGHTS`: a drink is drunk as a work cycle starts and works for this many cycles
+ * (BALANCE_RULES section 5).
  */
-export const DRINK_CYCLES = 10;
+export const DRINK_CYCLES = 25;
+
+/**
+ * How many work cycles of its own skill one work potion lasts. One number for every work potion,
+ * the same as a drink's (BALANCE_RULES section 5).
+ */
+export const WORK_POTION_CYCLES = 25;
 
 /**
  * The most that stacked speed-ups may cut from a time: 0.8 means a time never falls below a fifth

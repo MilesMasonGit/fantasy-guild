@@ -1,4 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+
+// ⚠️ The drink and potion loops below are built on a drink's 10 cycles and a work potion's 1 (a
+// potion spent each brew is what makes it cost more than it gives); they test the ledger's loop
+// solving, not the dose lengths, which DoseLength.test.js pins.
+vi.mock('../config/loopConstants.js', async (importOriginal) => ({
+    ...(await importOriginal()), DRINK_CYCLES: 10, WORK_POTION_CYCLES: 1
+}));
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';

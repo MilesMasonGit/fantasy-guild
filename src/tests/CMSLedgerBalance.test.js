@@ -72,7 +72,7 @@ describe('the preview over a workspace', () => {
         expect(cantFixGroups(result.cantFix).map(g => g.cause)).toContain('content');
         const text = balanceText(result);
         // The way out before and after, what the budget times; the full content beside it.
-        expect(text).toMatch(/^- Starter Camp: 1 h 10 min \(\+133 %\) → 1 h 10 min \(\+133 %\) against 30 min, OUT \(.+ ring 1: Forestry 15, a floor\); full content \d+ min$/m);
+        expect(text).toMatch(/^- Starter Camp: 1 h 7 min \(\+125 %\) → 1 h 7 min \(\+125 %\) against 30 min, OUT \(.+ ring 1: Forestry 15, a floor\); full content \d+ min$/m);
         expect(text).toMatch(/ring 1's settle level Forestry 15 → about \d+/);
         expect(text).toMatch(/Numbers to change: \d+/);
     });
@@ -166,7 +166,7 @@ describe('the Balancing page', { timeout: 30000 }, () => {
         // The camp's way out, not its content: off its budget before and after, its settle level suggested.
         const camp = view.container.querySelector('[data-balance-stage="0"]');
         expect(camp.getAttribute('data-within')).toBe('no');
-        expect(camp.querySelector('[data-balance-before]').textContent).toBe('1 h 10 min (+133 %)*');
+        expect(camp.querySelector('[data-balance-before]').textContent).toBe('1 h 7 min (+125 %)*');
         expect(camp.querySelector('[data-balance-way-out]').textContent).toMatch(/ring 1: Forestry 15$/);
         expect(camp.querySelector('[data-balance-content]').textContent).toMatch(/^\d+ min, \d+ entries: Elixir/);
         expect(view.container.querySelector('[data-cant-fix="world"]').textContent).toMatch(/settle level Forestry 15 → about \d+ .*A suggestion only/);
@@ -174,7 +174,7 @@ describe('the Balancing page', { timeout: 30000 }, () => {
         expect(levers).toEqual(expect.arrayContaining([LEVER.XP, LEVER.COST, LEVER.BOOST]));
         expect(levers).not.toContain('gate');
         expect(view.getByText('Gold Statue')).toBeTruthy();
-        expect(view.container.querySelector('[data-cant-fix="content"]').textContent).toMatch(/Mining 30 → 90/);
+        expect(view.container.querySelector('[data-cant-fix="content"]').textContent).toMatch(/Mining 34 → 90/);
         expect(view.getByTestId('balance-counts').textContent).toMatch(/Walls \(a run of levels over twice the curve\): 2 → 1/);
         expect(view.getByTestId('balance-apply').disabled).toBe(true);
 

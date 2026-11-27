@@ -63,11 +63,11 @@ describe('XPCurve', () => {
             }
         });
 
-        it('keeps the curve itself where it is (literals taken 2026-09-30)', () => {
-            expect([2, 10, 50, 98, 99].map(xpForLevel)).toEqual([83, 1154, 101333, 11805606, 13034431]);
-            expect(levelFromXp(101333)).toBe(50);
-            expect(levelFromXp(101332)).toBe(49);
-            expect(levelFromXp(13034430)).toBe(98);
+        it('keeps the curve itself where it is (the balance rules table)', () => {
+            expect([2, 10, 50, 98, 99].map(xpForLevel)).toEqual([83, 1127, 87649, 8571820, 9428820]);
+            expect(levelFromXp(87649)).toBe(50);
+            expect(levelFromXp(87648)).toBe(49);
+            expect(levelFromXp(9428819)).toBe(98);
         });
 
         it('clamps to 1 at or below zero and to 99 far above the top', () => {

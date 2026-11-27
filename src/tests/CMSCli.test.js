@@ -108,19 +108,46 @@ describe('restore, recalc and sync', () => {
         expect(r.out).toMatch(/Audit: \d+ critical, \d+ warnings?, \d+ info\./);
         const after = wsOf(dir);
         expect(after).toMatchObject({ revision: before.revision + 1, savedBy: 'cli: recalc' });
-        const expected = recalculateWorkspace(seedStoredWorkspace(before.workspace), { ...DEFAULT_GLOBALS.simDials, ...(before.simDials || {}) }).workspace;
+        const expected = recalculateWorkspace(seedStoredWorkspace(before.workspace), { ...DEFAULT_GLOBALS.simDials, ...(before.simDials || {}), rulebook: true }).workspace;
         expect(JSON.stringify(after.workspace.items)).toBe(JSON.stringify(expected.items));
         expect(JSON.stringify(after.workspace.tokens)).toBe(JSON.stringify(expected.tokens));
     });
 
-    it('sync writes data/ as the last Sync to Game did: today\'s files come back byte for byte', async () => {
+    it('recalc runs with the rulebook on over a stored rulebook: false, leaving the stored dials alone', async () => {
+        const own = sandbox();
+        expect((await cms(own, 'restore')).code).toBe(0);
+        const restored = wsOf(own);
+        const stored = { ...DEFAULT_GLOBALS.simDials, rulebook: false, xphPins: { 1: 700, 99: 837000 } };
+        saveWorkspaceFile(path.join(own, 'workspace', 'workspace.json'), restored.workspace, { baseRevision: restored.revision, simDials: stored });
+        const before = wsOf(own);
+        expect(before.simDials).toMatchObject({ rulebook: false, xphPins: stored.xphPins });
+        const r = await cms(own, 'recalc');
+        expect(r.code, r.err).toBe(0);
+        const after = wsOf(own);
+        const on = recalculateWorkspace(seedStoredWorkspace(before.workspace), { ...before.simDials, rulebook: true }).workspace;
+        const off = recalculateWorkspace(seedStoredWorkspace(before.workspace), before.simDials).workspace;
+        expect(JSON.stringify(on.recipePools)).not.toBe(JSON.stringify(off.recipePools));
+        expect(JSON.stringify(after.workspace.recipePools)).toBe(JSON.stringify(on.recipePools));
+        expect(after.simDials).toEqual(before.simDials);
+
+        // --rulebook is still accepted, and changes nothing.
+        const again = await cms(own, 'recalc', '--rulebook');
+        expect(again.code, again.err).toBe(0);
+        expect(JSON.stringify(wsOf(own).workspace.recipePools)).toBe(JSON.stringify(after.workspace.recipePools));
+    });
+
+    it('sync writes data/ as Sync to Game does: what the rulebook does not reprice comes back byte for byte, and a second sync changes nothing', async () => {
         const r = await cms(dir, 'sync');
         expect(r.code, r.err).toBe(0);
         expect(r.out).toMatch(/Not committed: data folder overridden/);
         // As loaded: what the next Sync rewrites by itself (`shippedAsLoaded.js`); byte for byte otherwise.
-        for (const name of fs.readdirSync(path.join(root, 'data')).filter((f) => f.endsWith('.json'))) {
-            expect(textOf(path.join(dir, 'data', name)), name).toBe(asLoaded(name, textOf(path.join(root, 'data', name))));
-        }
+        // ⚠️ The three files of XP and values differ while data/ was last synced with the rulebook off: Sync now reprices them by the rules.
+        const names = fs.readdirSync(path.join(root, 'data')).filter((f) => f.endsWith('.json'));
+        const differ = names.filter((name) => textOf(path.join(dir, 'data', name)) !== asLoaded(name, textOf(path.join(root, 'data', name))));
+        expect(differ.filter((name) => !['items.json', 'tokens.json', 'tokenRecipes.json'].includes(name))).toEqual([]);
+        const first = Object.fromEntries(names.map((name) => [name, textOf(path.join(dir, 'data', name))]));
+        expect((await cms(dir, 'sync')).code).toBe(0);
+        for (const name of names) expect(textOf(path.join(dir, 'data', name)), name).toBe(first[name]);
         expect(textOf(path.join(dir, 'plan', 'plan.json'))).toBe(textOf(path.join(root, 'cms', 'plan', 'plan.json')));
     });
 

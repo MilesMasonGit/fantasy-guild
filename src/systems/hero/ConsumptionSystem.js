@@ -21,8 +21,8 @@ import { getHeroCombatStyle } from '../combat/CombatFormulas.js';
  *
  * Below the HP threshold a hero eats from the food slot. Drinks never heal, in a fight or out:
  * an equipped drink is left alone (`tryEat`); drinks are work buffs, drunk as a work cycle starts
- * and lasting `DRINK_CYCLES` cycles, and a work potion is drunk for each cycle of its skill
- * (`startWorkDoses`).
+ * and lasting `DRINK_CYCLES` cycles, and a work potion is drunk as a cycle of its skill starts and
+ * lasts `WORK_POTION_CYCLES` of them (`startWorkDoses`).
  * Elixirs are drunk as a fight starts and last `ELIXIR_FIGHTS` fights (`startFightElixirs`).
  * Poisons are taken as a fight starts by a hero with a Stealth weapon and last the attacks their
  * rule names, carried into later fights (`startFightPoisons`, `countPoisonAttack`).
@@ -148,7 +148,7 @@ export function poisonAttacksOfItem(itemId) {
 
 /**
  * How many of its moments a dose of `dose` (`consumableRule.DOSE`) lasts now, on average: its own
- * length (`DOSE_LENGTH`: a drink's work cycles, a work potion's one, an elixir's fights) made longer
+ * length (`DOSE_LENGTH`: a drink's work cycles, a work potion's cycles, an elixir's fights) made longer
  * by the guild's Long-lasting Brews for that kind of dose (a Hall star), unrounded, never below one.
  * Draws nothing: what the game shows ({@link doseLengthText}).
  */
@@ -341,7 +341,7 @@ export function workDoseKindOf(itemId) {
 
 /**
  * How many work cycles one of this item lasts when its hero starts work now: a drink's
- * `DRINK_CYCLES`, a work potion's 1, either made longer by Long-lasting Brews (on average, unrounded:
+ * `DRINK_CYCLES`, a work potion's `WORK_POTION_CYCLES`, either made longer by Long-lasting Brews (on average, unrounded:
  * {@link doseLength}); 0 for anything else. Draws nothing.
  */
 export function workDoseOf(itemId) {
@@ -352,9 +352,9 @@ export function workDoseOf(itemId) {
 /**
  * A work cycle of `skill` is starting: count it on every equipped drink and work potion whose work
  * rules fire on it, and drink a fresh one of each whose dose has run out. A drink lasts
- * `DRINK_CYCLES` cycles and a work potion one, either longer with Long-lasting Brews
- * ({@link rollDoseLength}); the count left is saved on the hero (`hero.drinkCycles`), for a potion only
- * once one lasts more than its cycle. One with no dose left and none in the Bank sits this cycle
+ * `DRINK_CYCLES` cycles and a work potion `WORK_POTION_CYCLES` of its skill, either longer with
+ * Long-lasting Brews ({@link rollDoseLength}); the count left is saved on the hero
+ * (`hero.drinkCycles`), for a potion only once one lasts more than its cycle. One with no dose left and none in the Bank sits this cycle
  * out. An item whose work rules all name another skill is kept for its own skill's work. A
  * Preservation hit at `instanceId` (the Token whose cycle starts) starts the fresh dose without
  * taking one from the Bank.

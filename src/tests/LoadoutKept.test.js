@@ -28,6 +28,7 @@ import * as EquipmentManager from '../systems/equipment/EquipmentManager.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { xpForLevel } from '../utils/XPCurve.js';
 import { withoutShippedPerks } from './fixtures/noPerks.js';
+import { WORK_POTION_CYCLES } from '../config/loopConstants.js';
 
 withoutShippedPerks();
 
@@ -388,9 +389,13 @@ describe('mid-run: the work time follows the loadout at once', () => {
         hero.equipment[0] = 'lk_nest_potion';
         InventoryManager.addItem('lk_nest_potion', 2);
         placeTree();
-        untilCycles(4);
+        const nests = () => SpriteLayer.countOnBoard('lk_nest') + InventoryManager.getItemCount('lk_nest');
+        untilCycles(2 * WORK_POTION_CYCLES);
+        const whileDosed = nests();
+        expect(whileDosed).toBeGreaterThanOrEqual(2 * WORK_POTION_CYCLES);
+        untilCycles(2);
         expect(InventoryManager.getItemCount('lk_nest_potion')).toBe(0);
-        expect(SpriteLayer.countOnBoard('lk_nest') + InventoryManager.getItemCount('lk_nest')).toBe(2);
+        expect(nests()).toBe(whileDosed);
         expect(ids(HeroEffects.loadoutStatements(hero))).toEqual([]);
     });
 
