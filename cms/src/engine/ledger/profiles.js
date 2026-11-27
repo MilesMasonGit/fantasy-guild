@@ -597,13 +597,16 @@ export function buildProfiles(book, {
     }
 
     /**
-     * Whether a drink or work potion's batch pays back enough for Typical to take it on this work, by
-     * the batch-payback check's measure; a build, a fight or Passive Production is not held to it.
+     * A drink or work potion's batch payback on this work as Typical weighs it, from the setup it holds
+     * to the same with the dose ({@link batchPaybackOf}); null where it is not held to it (a build, a
+     * fight or Passive Production) or there is none. Each one goes in `judged`, the last for a dose
+     * standing: the batch-payback check reads these, so the check and Typical never measure apart.
      */
-    function batchPays(ctx, r0, r1, id, cap) {
-        if (!(batchPayback > 0) || !repeatedByHero(ctx.kind)) return true;
+    function judgeBatch(ctx, r0, r1, id, cap, judged) {
+        if (!(batchPayback > 0) || !repeatedByHero(ctx.kind)) return null;
         const b = batchPaybackOf(r0, r1, id, (item) => unitHours(item, cap));
-        return !b || b.ratio >= batchPayback - 1e-9;
+        if (b) judged.set(id, b);
+        return b;
     }
 
     /** Slots that hold one: a second offer for a full slot replaces nothing and is skipped. */
@@ -638,6 +641,7 @@ export function buildProfiles(book, {
         let chosen = [];
         // The drinks and potions Typical would take but for their batch payback: Maxed takes them all the same.
         const declined = [];
+        const judged = new Map();
         if (profile !== PROFILE.BARE && rate.ok) {
             const baseXp = Object.values(rate.xp || {}).reduce((a, b) => a + b, 0);
             const pool = offers(ctx, cap).filter(o => profile !== BEFORE_HALL || o.kind !== BOOST_KIND.HALL);
@@ -742,7 +746,8 @@ export function buildProfiles(book, {
                             gain = value(r) - before;
                             // Drunk as it is used, a consumable's cost is already in the rate's inputs: any gain pays at once.
                             price = o.oneOff ? priceOf(o, cap) : 0;
-                            if (gain > 1e-9 && o.kind === BOOST_KIND.CONSUMABLE && !batchPays(ctx, rate, r, o.id, cap)) {
+                            const batch = o.kind === BOOST_KIND.CONSUMABLE ? judgeBatch(ctx, rate, r, o.id, cap, judged) : null;
+                            if (gain > 1e-9 && batch && batch.ratio < batchPayback - 1e-9) {
                                 if (!declined.includes(o.id)) declined.push(o.id);
                                 continue;
                             }
@@ -762,7 +767,7 @@ export function buildProfiles(book, {
             }
         }
         busy.delete(key);
-        const out = { setup, rate: full ?? book.rateOf(target, setup), chosen, declined: declined.filter(id => !chosen.some(c => c.id === id)), context: ctx };
+        const out = { setup, rate: full ?? book.rateOf(target, setup), chosen, declined: declined.filter(id => !chosen.some(c => c.id === id)), batches: judged, context: ctx };
         memo.set(key, out);
         return out;
     }
@@ -872,9 +877,9 @@ export function gainOf(r0, r1, unitHours) {
 /**
  * A drink or work potion's batch payback on one work (BALANCE_RULES section 5), from the rate
  * without it to the rate with it: `gain` the work it saves an hour ({@link gainOf}), `doses` what it
- * spends of it an hour, `unitHours` the hours one takes to make with its ingredients, `spends` the
- * hours an hour its doses take to make, and `ratio` the one over the other. Null where it spends
- * none, saves nothing, or cannot be made.
+ * spends of it an hour, `doseCycles` the cycles one lasts, `unitHours` the hours one takes to make
+ * with its ingredients, `spends` the hours an hour its doses take to make, and `ratio` the one over
+ * the other. Null where it spends none, saves nothing, or cannot be made.
  */
 export function batchPaybackOf(r0, r1, id, unitHours) {
     const doses = r1?.boostInputs?.[id] || 0;
@@ -884,7 +889,7 @@ export function batchPaybackOf(r0, r1, id, unitHours) {
     const gain = gainOf(r0, r1, unitHours);
     if (!(gain > 1e-9)) return null;
     const spends = doses * unit;
-    return { gain, doses, unitHours: unit, spends, ratio: spends > 0 ? gain / spends : Infinity };
+    return { gain, doses, doseCycles: r1.cyclesPerHour / doses, unitHours: unit, spends, ratio: spends > 0 ? gain / spends : Infinity };
 }
 
 /** A setup with some Hall ranks raised (never lowered). */
