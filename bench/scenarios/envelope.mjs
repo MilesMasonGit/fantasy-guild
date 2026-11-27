@@ -17,16 +17,15 @@
 // (`bench/browser/scenes.mjs`: floor<N>, notify<N>).
 //
 // Drawing bench only (`?stress=heroes16` …); the engine bench runs none of these. The layout is
-// S2's (`realistic.mjs`'s `buildBoard`), copied and parameterised here rather than changed there,
-// so the engine bench's boards and their recorded work cannot move.
+// S2's (`realistic.mjs`, `layoutSlots`, squeezed) on the cap board's mat (`cap.mjs`, `capMat`: S2's
+// up to the base cap); the heroes are planted here rather than in `buildBoard`, so a change to
+// these boards moves no engine bench board.
 
-import { capPlaced, SPAWNS } from './cap.mjs';
-import { pinMat, REFERENCE_STEPS } from './referenceMat.mjs';
+import { capPlaced, capMat, SPAWNS, BASE_CAP } from './cap.mjs';
+import { pinMat } from './referenceMat.mjs';
+import { layoutSlots, hallCell } from './realistic.mjs';
 import { registerTokenTypes } from '../../src/config/registries/tokenRegistry.js';
 
-const BASE_CAP = 128;
-const STEP = 160;
-const MARGIN = 80;
 const BRUTES_PER_CAMP = 4;
 
 // Registered here, not in `fixtures.mjs`, so no other scenario's work changes.
@@ -124,21 +123,15 @@ export function fightPlaced(n) {
  * while heroes are left, the rest on producers spread across the list.
  */
 function buildEnvelope({ fixtures, setMatTuning }, { placed, cap = BASE_CAP, heroes: heroCount = 8, fighters = 0 }) {
-    const { placeAt, makeHeroes, orderAt, lattice } = fixtures;
+    const { placeAt, makeHeroes, orderAt } = fixtures;
     setMatTuning('tokenCap', cap);
-    const matSteps = REFERENCE_STEPS;
-    const { w, h } = pinMat(setMatTuning, matSteps);
-    const hall = { x: MARGIN + STEP * Math.floor((matSteps - 1) / 2), y: MARGIN + STEP * Math.floor((Math.floor((h - 2 * MARGIN) / STEP)) / 2) };
+    const mat = capMat(cap);
+    const { w, h } = pinMat(setMatTuning, mat.steps, mat.aspect);
+    const hall = hallCell(w, h);
     fixtures.settings.set('gameplay.autoCollectLoot', true);
     placeAt('bench_hall', hall.x, hall.y);
 
-    const cells = lattice(w, h, STEP, MARGIN).filter(p => Math.hypot(p.x - hall.x, p.y - hall.y) > 170);
-    const col = (p) => Math.round((p.x - MARGIN) / STEP);
-    const row = (p) => Math.round((p.y - MARGIN) / STEP);
-    const even = cells.filter(p => (col(p) + row(p)) % 2 === 0);
-    const odd = cells.filter(p => (col(p) + row(p)) % 2 === 1).reverse();
-    const slots = [...even, ...odd];
-    if (placed.length > slots.length) throw new Error(`envelope board: ${placed.length} placed Tokens but only ${slots.length} cells`);
+    const { slots } = layoutSlots(fixtures, { w, h, hall, list: placed, squeeze: true });
     const tokens = placed.map((typeId, i) => placeAt(typeId, slots[i].x, slots[i].y));
     fixtures.inventory.addItem('item_coal', 4, 'bench');
     fixtures.prefillSpawners();

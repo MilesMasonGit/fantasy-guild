@@ -33,6 +33,7 @@ import { EquipmentManager } from '../../src/systems/equipment/EquipmentManager.j
 import * as StationRecipe from '../../src/systems/board/StationRecipe.js';
 import * as SpriteLayer from '../../src/systems/board/SpriteLayer.js';
 import * as BoardState from '../../src/systems/board/BoardState.js';
+import * as MatPlacement from '../../src/systems/board/MatPlacement.js';
 import * as TileModifiers from '../../src/systems/board/TileModifiers.js';
 import * as Orders from '../../src/systems/board/Orders.js';
 import * as SpawnerSystem from '../../src/systems/board/SpawnerSystem.js';
@@ -192,6 +193,9 @@ export async function runSetup({ id, seed = 1, hours = 8, root, trace = false })
     const heroes = [];
     const ctx = {
         place: (typeId, x, y) => {
+            // The game's spacing, which `placeAt` (as `BoardState.addToken`) does not check.
+            const crowded = BoardState.tokens().find(t => Math.hypot(t.x - x, t.y - y) < MatPlacement.minGap(typeId, t.typeId));
+            if (crowded) throw new Error(`${typeId} at ${x},${y} stands closer to ${crowded.typeId} than the spacing allows (${MatPlacement.minGap(typeId, crowded.typeId)} u)`);
             const placed = placeAt(typeId, x, y);
             if (!placed) throw new Error(`${typeId} found no room at ${x},${y}`);
             return placed;
