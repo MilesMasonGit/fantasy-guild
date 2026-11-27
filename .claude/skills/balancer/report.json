@@ -17,6 +17,7 @@
     "The method itself, with two read-only readings of the CMS's simulator and ledger: docs/active/balance_method_review.md. The page is on the curve by construction (XP is worked back from the curve), so it cannot test whether a guild's set-up is realistic; only the ledger or play can."
   ],
   "moved": [
+    "Approved by the owner, 2026-11-26: gear is for combat, not work, and tools gate work without speeding it, so neither has a share of the work budget; skill perks may give speed or yield but not XP, because a player doesn't choose their perks.",
     "Approved by the owner, 2026-11-26: a hero has one drink active, and drinks, potions and elixirs all count as drinks; one boost item of another type (such as a scroll, not designed yet) may be held beside it. Poisons, bait, arrows and Motes are not boosts and are not limited. The game allows more than this today, so it is a game change (T-738).",
     "Approved by the owner, 2026-11-26: the first number pack waits for a boosts pack and they land together, followed by one coin reset.",
     "Approved by the owner, 2026-11-26, the boost budget counting only what a hero can hold at once: four Faster Work buildings or station upgrade steps at 5 % each, skill perks 15 %, Guild Hall stars 10 % (small steps), and one consumable in all, a speed drink at 15 %: 60 % off work time late in the game, the same total as before. XP: four More XP buildings at 2.5 % and Hall stars 10 %. Yield: Double Output buildings at +50 % each, up to four.",
@@ -63,6 +64,7 @@
     "On the director, with the first number pack: the new XP table (9.4 million XP to 99) and the 25-cycle dose for drinks and potions.",
     "On the balancer: Construction once its repeatable work is planned, and re-checking the gaps as the content session fills them.",
     "On the content session: packs for Crime, Summoning, Faith and the enemies, then the fifteen gaps; purpose leanings, the Arrowheads levels and Construction's repeatable work.",
-    "Open, for the content session: late-game yield beyond buildings. The budget counts on camp variants and perks for about as much yield again as the four Double Output buildings; until content has that, late makers need more than 2 gatherers."
+    "Open, for the content session: late-game yield beyond buildings. The budget counts on camp variants and perks for about as much yield again as the four Double Output buildings; until content has that, late makers need more than 2 gatherers.",
+    "For the content session: the 13 tools and pieces of gear that boost work today and the XP perks need other effects; Mining, Crafting and Construction each have only one speed perk, a third of what the budget expects."
   ]
 }
