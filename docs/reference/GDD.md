@@ -129,7 +129,8 @@ levels, their milestone perks and Guild Hall upgrades.
   growing back moves nothing and no tree drifts out of reach. With no such spot in reach it
   plants nothing and waits, by the no-room rule (§3 Spawners). *(`EffectActions.js`)*
 - **A player drop never pushes anything.** Arrivals (spawns, growth, builds)
-  may push **spawned** Tokens aside; **placed Tokens are never pushed**.
+  may push **spawned** Tokens aside; **placed Tokens are never pushed**, nor an
+  enemy stepping to open space before its fight (§6, Fights).
 - **Fixed Tokens** can't be dragged or pushed: a map's node, a Starter Camp
   fixture, a landmark, a planted Token (spawned into a growth chain), and every
   copy of a type marked **Stays where it stands** (`staysPut`, a box in the CMS
@@ -1456,7 +1457,12 @@ Their resistances, weaknesses and moves are authored (the combat content pack).
   hero covers their art and their bar; two closer than 8 u crowd. Fights
   count (a fight stepping aside, at the spot it is going to) and heroes
   standing still; Tokens do not, nor a hero walking past, nor one waiting for
-  the same enemy. It is decided once, as the hero arrives: a fight never moves
+  the same enemy. But the enemy is a Token: the spot it steps to must be one
+  it may stand on, a full spacing (128 u) from every other Token and on ground
+  it may stand on, or the fight starts where it stands. While it steps nothing
+  pushes it, and nothing lands within its spacing of the spot it is going to;
+  a step let go part-way (its hero sent elsewhere first) leaves the enemy where
+  it got to. It is decided once, as the hero arrives: a fight never moves
   once begun, and the next kill of the same enemy fights where it stands. The
   enemy walks at its full speed (90 u/s), so a step delays the first swing by
   its length at that speed, at most about 1.8 s; the QA crowd's steps are

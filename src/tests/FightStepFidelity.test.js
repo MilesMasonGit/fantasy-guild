@@ -69,8 +69,11 @@ function buildBoard() {
     stream.state = 11;
     resetMatTuning();
     // ⚠️ With Tokens edges touching, the camp often has no free place within the shipped nudge
-    // reach, and its spawn then pushes, sometimes an enemy part-way through its step, which moves
-    // that fight. A wider reach lands every spawn in free room, so only the steps are measured.
+    // reach, and its spawn then pushes. A stepping enemy is never pushed, but one whose hero
+    // arrives in the same tick can be, just before its step is planned: the step then starts from
+    // where the push left it, not from where this test saw it a tick earlier. A wider reach lands
+    // every spawn in free room, so only the steps are measured (`FightStepSpacing.test.js` plays
+    // the hour at the shipped reach).
     setMatTuning('nudgeReach', 400);
     GameState.initNew();
     InventoryManager.init();

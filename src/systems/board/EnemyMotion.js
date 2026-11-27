@@ -15,7 +15,7 @@ import { stepToward } from './walking.js';
  * Enemies stand still. An enemy stays where it was spawned, placed or dropped: it never strolls,
  * never walks back to its camp, and stays put when its camp is moved. It moves only to step to open
  * space before a crowded fight starts (`FightRoom`), at Enemy walk speed (Mat Tuner), and then stays
- * where it stepped.
+ * where it stepped. While it steps nothing pushes it (`MatPlacement`).
  *
  * The tether: `instance.tether` is the spawner's instance id, written by `SpawnerSystem` when it
  * spawns an enemy, and saved with the Token. It says which camp an enemy belongs to (a hero sent to
@@ -214,7 +214,8 @@ let tickStamp = 0;
  * @returns {boolean} whether anything the screen draws changed
  */
 function stepAside(instance, body, aside, delta, speed) {
-    // Moved by something else since the last step (a push): walk on from where it now stands.
+    // Moved by something else since the last step (no push moves a stepping enemy, but a mat
+    // shrinking under it does): walk on from where it now stands.
     if (Math.round(body.x) !== Math.round(instance.x) || Math.round(body.y) !== Math.round(instance.y)) {
         body.x = instance.x;
         body.y = instance.y;

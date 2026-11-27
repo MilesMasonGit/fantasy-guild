@@ -236,6 +236,19 @@ function contextFor(typeId, point, { excludeId = null, plan = null, reach = nudg
         if (!cannotMatters && d2 <= cannotSpanSq && hasCannot(other.typeId)) cannotMatters = true;
     }
 
+    // An enemy stepping to open space will stand at its spot within the second: nothing may take
+    // that room meanwhile, or the two would end closer than their spacing.
+    const steps = BoardState.stepPlans();
+    if (steps?.size) {
+        for (const [id, spot] of steps) {
+            if (id === excludeId) continue;
+            const enemy = BoardState.getTokenById(id);
+            if (!enemy || distanceSq(point, spot) > blockSpanSq) continue;
+            const gap = minGap(typeId, enemy.typeId);
+            neighbours.push({ id, x: spot.x, y: spot.y, gapSq: gap * gap });
+        }
+    }
+
     const buckets = bucketNeighbours(neighbours, largestGap);
     // `siteOf`: a Foundation set to build stands under its build's site rules, and its own ground
     // as well when it has one (`GroundRules.siteRulesFor`).
@@ -342,15 +355,16 @@ function legalIn(typeId, point, ctx) {
  *
  * A spawner with nowhere to land, a Foundation with no room to build and a recipe whose Token has
  * nowhere to go all ask the same failing question every tick until room appears. A search reads
- * only the board (which Tokens, where: `BoardState`'s membership counter and move journal), the Mat
- * Tuner (any change bumps `tuningGeneration`), the Token registry (`registryVersion`), the recipe
- * list (a Foundation's room is its largest build) and the ground (`GroundRules.groundVersion`).
- * While all five are exactly as they were, the same question has the same answer, so a remembered
- * failure is returned without searching again.
+ * only the board (which Tokens, where: `BoardState`'s membership counter and move journal; and the
+ * spots enemies are stepping to, `BoardState.stepPlansVersion`), the Mat Tuner (any change bumps
+ * `tuningGeneration`), the Token registry (`registryVersion`), the recipe list (a Foundation's room
+ * is its largest build) and the ground (`GroundRules.groundVersion`). While all of them are exactly
+ * as they were, the same question has the same answer, so a remembered failure is returned without
+ * searching again.
  *
  * Only failures are remembered (a success is acted on at once and changes the board), and never for
  * a search that consulted a `Cannot` rule or was given a `plan` (a projected board): those read
- * more than the five above. Any change at all forgets everything, so this is exact. A move
+ * more than the above. Any change at all forgets everything, so this is exact. A move
  * anywhere forgets: a fallback search reaches far across the mat, so keying by region would rarely
  * keep anything.
  */
@@ -360,9 +374,9 @@ let failedSearches = { tokens: null, stamp: '', keys: new Set() };
 
 /**
  * Everything a search for room reads, as it is now: `{ tokens, stamp }`, the same while no Token has
- * arrived, left or moved and the Mat Tuner (the mat's size included), the Token registry, the
- * recipe list and the ground are as they were. A search that found no room finds none again until
- * it changes: the failure memo below.
+ * arrived, left or moved, no enemy has started or ended a step, and the Mat Tuner (the mat's size
+ * included), the Token registry, the recipe list and the ground are as they were. A search that
+ * found no room finds none again until it changes: the failure memo below.
  */
 export function roomVersion() {
     if (!tuningWatched) {
@@ -370,7 +384,7 @@ export function roomVersion() {
         onMatTuningChanged(() => { tuningGeneration++; });
     }
     const { tokens, version } = BoardState.membershipVersion();
-    return { tokens, stamp: `${version}|${BoardState.moveCount()}|${tuningGeneration}|${registryVersion()}|${listRecipes().length}|${GroundRules.groundVersion()}` };
+    return { tokens, stamp: `${version}|${BoardState.moveCount()}|${tuningGeneration}|${registryVersion()}|${listRecipes().length}|${GroundRules.groundVersion()}|${BoardState.stepPlansVersion()}` };
 }
 
 /** The failure memo for the board as it is now, emptied if anything changed. */
@@ -416,17 +430,9 @@ export function findSpot(typeId, point, options = {}) {
     }
 
     // `candidatesAround`'s walk, inlined: the same candidates in the same order, each put through
-    // the same four tests `legalIn` makes (mat edge, crowding, the ground, then `Cannot`), but on
-    // bare coordinates, so a search that fails allocates nothing per candidate. A point object is
-    // made only for a candidate that gets as far as `Cannot`. `whyRefused` still walks the generator.
-    const { r, w, h } = ctx.bounds;
-    const ground = ctx.ground;
-    const near = ctx.near;
-    const at = (x, y) => x >= r && y >= r && x <= w - r && y <= h - r
-        && clearAt(x, y, ctx)
-        && (ground === null || GroundRules.allowsAt(ground, x, y))
-        && (near === null || SiteRules.nearMetAt(near.anchors, x, y, near.radius))
-        && (!ctx.cannotMatters || legalIn(typeId, { x, y }, ctx));
+    // the same four tests `legalIn` makes, on bare coordinates (`legalAt`). `whyRefused` still walks
+    // the generator.
+    const at = legalAt(typeId, ctx);
 
     if (at(point.x, point.y)) return { x: point.x, y: point.y, nudge: 0 };
     for (let d = RING_STEP; d <= ctx.reach; d += RING_STEP) {
@@ -438,6 +444,40 @@ export function findSpot(typeId, point, options = {}) {
     }
     if (memo && !ctx.cannotMatters) memo.add(key);
     return null;
+}
+
+/**
+ * The four tests `legalIn` makes (mat edge, crowding, the ground, then `Cannot`), on bare
+ * coordinates, so a search that fails allocates nothing per candidate. A point object is made only
+ * for a candidate that gets as far as `Cannot`.
+ */
+function legalAt(typeId, ctx) {
+    const { r, w, h } = ctx.bounds;
+    const ground = ctx.ground;
+    const near = ctx.near;
+    return (x, y) => x >= r && y >= r && x <= w - r && y <= h - r
+        && clearAt(x, y, ctx)
+        && (ground === null || GroundRules.allowsAt(ground, x, y))
+        && (near === null || SiteRules.nearMetAt(near.anchors, x, y, near.radius))
+        && (!ctx.cannotMatters || legalIn(typeId, { x, y }, ctx));
+}
+
+/**
+ * Whether a Token of `typeId` may stand at `(x, y)`, for a search that tries its own candidates in
+ * its own order (a fight's step to open space, `FightRoom`): the rules {@link isLegal} asks, with
+ * what is near `point` read once. Exact for any candidate within `reach` of `point`; one further out
+ * may be passed wrongly.
+ *
+ * @param {object} [options]
+ * @param {string} [options.excludeId] a Token to ignore — itself, when moving
+ * @param {number} [options.reach] how far from `point` the candidates lie
+ * @returns {(x: number, y: number) => boolean}
+ */
+export function spotTester(typeId, point, { excludeId = null, reach = 0 } = {}) {
+    if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) return () => false;
+    const ctx = contextFor(typeId, point, { excludeId, reach });
+    if ((ctx.ground && ctx.ground.allowed === 0) || ctx.near?.anchors.length === 0) return () => false;
+    return legalAt(typeId, ctx);
 }
 
 /** Grid spacing of the whole-mat search, in mat units. */
@@ -532,7 +572,7 @@ const PUSH_MARGIN = 0.5;
  * @param {object} [options]
  * @param {string} [options.excludeId] a Token to ignore — the one being replaced
  * @param {string[]} [options.fixedIds] Tokens that must not be pushed. Landmarks never are, named
- * here or not.
+ * here or not, nor an enemy stepping to open space (`BoardState.stepPlans`), whose spot is held too.
  * @param {boolean} [options.inPlace] the Token already stands at `point` (a transform, a build):
  * `point` is taken as it is, not rounded to whole units.
  * @returns {{x: number, y: number, pushed: {id: string, x: number, y: number}[]}|null}
@@ -717,12 +757,22 @@ function relax(typeId, at, excludeId, fixedIds) {
     // expression, hoisted; still read live, so a Mat Tuner change takes effect on the very next
     // push).
     const factor = 1 - matTuning('overlapPct') / 100;
+    const steps = BoardState.stepPlans();
+    const stepping = steps?.size ? steps : null;
     const bodies = BoardState.tokens()
         .filter(t => t.id !== excludeId && Number.isFinite(t.x) && Number.isFinite(t.y))
         .map(t => ({
             id: t.id, typeId: t.typeId, x: t.x, y: t.y, x0: t.x, y0: t.y,
-            h: hitRadiusOf(t.typeId), fixed: fixedIds.has(t.id) || isLandmarkType(t.typeId)
+            h: hitRadiusOf(t.typeId), fixed: fixedIds.has(t.id) || isLandmarkType(t.typeId) || !!stepping?.has(t.id)
         }));
+    // A stepping enemy holds where it stands and the spot it walks to: a fixed body at each.
+    if (stepping) {
+        for (const [id, spot] of stepping) {
+            const enemy = id === excludeId ? null : BoardState.getTokenById(id);
+            if (!enemy) continue;
+            bodies.push({ id: null, typeId: enemy.typeId, x: spot.x, y: spot.y, x0: spot.x, y0: spot.y, h: hitRadiusOf(enemy.typeId), fixed: true });
+        }
+    }
     const newcomer = { id: null, typeId, x: at.x, y: at.y, h: hitRadiusOf(typeId), fixed: true };
     bodies.push(newcomer);
 
