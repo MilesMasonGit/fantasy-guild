@@ -1699,7 +1699,137 @@
     "tags": [
       "Material"
     ],
-    "coinWorth": 85
+    "coinWorth": 85,
+    "use": {
+      "drops": [
+        {
+          "itemId": "item_wheat_seed",
+          "chance": 100,
+          "minQty": 1,
+          "maxQty": 2
+        },
+        {
+          "itemId": "item_oak_seedling",
+          "chance": 40,
+          "minQty": 1,
+          "maxQty": 1
+        },
+        {
+          "itemId": "item_apple_seed",
+          "chance": 30,
+          "minQty": 1,
+          "maxQty": 1
+        },
+        {
+          "itemId": "item_lavender_seed",
+          "chance": 25,
+          "minQty": 1,
+          "maxQty": 1
+        },
+        {
+          "itemId": "item_potato_seed",
+          "chance": 100,
+          "minQty": 1,
+          "maxQty": 2
+        },
+        {
+          "itemId": "item_carrot_seed",
+          "chance": 25,
+          "minQty": 1,
+          "maxQty": 1
+        },
+        {
+          "itemId": "item_onion_seed",
+          "chance": 25,
+          "minQty": 1,
+          "maxQty": 1
+        },
+        {
+          "itemId": "item_celery_seed",
+          "chance": 25,
+          "minQty": 1,
+          "maxQty": 1
+        },
+        {
+          "itemId": "item_leek_seed",
+          "chance": 25,
+          "minQty": 1,
+          "maxQty": 1
+        },
+        {
+          "itemId": "item_turnip_seed",
+          "chance": 10,
+          "minQty": 1,
+          "maxQty": 1
+        },
+        {
+          "itemId": "item_cabbage_seed",
+          "chance": 10,
+          "minQty": 1,
+          "maxQty": 1
+        },
+        {
+          "itemId": "item_garlic_seed",
+          "chance": 10,
+          "minQty": 1,
+          "maxQty": 1
+        },
+        {
+          "itemId": "item_tomato_seed",
+          "chance": 10,
+          "minQty": 1,
+          "maxQty": 1
+        },
+        {
+          "itemId": "item_corn_seed",
+          "chance": 10,
+          "minQty": 1,
+          "maxQty": 1
+        },
+        {
+          "itemId": "item_emberroot_seed",
+          "chance": 10,
+          "minQty": 1,
+          "maxQty": 1
+        },
+        {
+          "itemId": "item_voidcap_seed",
+          "chance": 10,
+          "minQty": 1,
+          "maxQty": 1
+        },
+        {
+          "itemId": "item_mint_seed",
+          "chance": 25,
+          "minQty": 1,
+          "maxQty": 1
+        },
+        {
+          "itemId": "item_rose_seed",
+          "chance": 10,
+          "minQty": 1,
+          "maxQty": 1
+        },
+        {
+          "itemId": "item_mandrake_seed",
+          "chance": 10,
+          "minQty": 1,
+          "maxQty": 1
+        },
+        {
+          "itemId": "item_moonpetal_seed",
+          "chance": 10,
+          "minQty": 1,
+          "maxQty": 1
+        },
+        {
+          "itemId": "item_starflower_seed",
+          "chance": 10,
+          "minQty": 1,
+          "maxQty": 1
+        }
+      ]
+    }
   },
   "item_honey": {
     "name": "Honey",
