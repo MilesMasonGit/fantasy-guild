@@ -589,3 +589,4 @@ T-614 — Dropped: events stay biome-free (owner 2026-11-27) — - — 2026-11-2
 T-726 — a stepping enemy keeps the 128 u spacing and cannot be pushed while it steps — 716c0e852 — 2026-11-27
 T-744 — QA panel button gives the old starting kit — 716c0e852 — 2026-11-27
 T-740 — the built-in Hall star stand-ins retired; a missing required star is a content error — 240551b70 — 2026-11-27
+T-739 — the batch-payback check reads Typical's own drink judgement — 81ca12fb0 — 2026-11-27
