@@ -26,7 +26,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-757**
+**Next free number: T-758**
 
 ---
 
@@ -46,6 +46,7 @@ here.
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
+| T-757 | P2 | open | *For: director (engineer).* **Recalculate writes a chance back to what the author wrote**: the simulator prices an output's authored `baseChance` (`cms/src/engine/sim/fieldAdapter.js`), but `deriveOutput` in `writeBack.js` keeps the stored `chance` unless a tuning lever moves it (quantity does return to `baseQty`). After the scarcity fix (T-755) nine seed chances the old split had tuned stay tuned with nothing tuning them: Cabbage, Celery, Garlic, Mandrake, Rose, Tomato and Turnip Seeds in their crops, Grape Seed on the Grapevine, Mint Seed at 10 % against 30 % authored. The game rolls the old chances while the simulator prices the authored ones. Return chance to `baseChance` when no lever moves it, as quantity does. | T-755 engineer 2026-11-27 |
 | T-755 | P2 | open | *For: director (engineer).* **A rare drop is worth more in proportion, not squared** (owner, 2026-11-27; BALANCE_RULES section 7). `splitByScarcity` in `cms/src/engine/sim/pricingPass.js` weights each anchored output by 1 / abundance and then divides its slice by abundance again, so a drop 10 times rarer is worth 100 times a piece (a Bird Nest at 85 is about 60 % of a woodcutter's coins and lifts a worker's selling from 3,900 an hour in the Starter Camp to 13,000 in Plane 1). Wanted: every anchored output carries an **equal slice** of the cycle's worth, and a piece is worth its slice over its abundance, so 10 times rarer is 10 times the worth; the same for a Use's drops. Also say what happens to the coins a common output cannot hold because worths are whole coins with a floor of 1 (today the floor adds worth on top of the target). Then the owner Recalculates, and the balancer builds the coin reset pack on the new incomes: **the coin reset waits on this**. | BAL |
 | T-756 | P2 | open | *For: director.* **The second ring of places asks level 20, the first level 10** (owner, 2026-11-27 and 2026-11-26; BALANCE_RULES section 8). Today ring 1 asks level 5 and ring 2 level 15, so the Starter Camp's way out comes at 13 minutes against a budget of 35 and Plane 1's at 1 h 07 against 1 h 44. The balancer could not find these levels as a CMS record a pack can edit: if they are world settings a pack can carry, say which record and the balancer puts them in the coin reset pack; if they live in code or the world generator, change them there. | BAL |
 | T-754 | P3 | open | *For: director (engineer).* **Recalculate never offers a source that deadlocks the price walk**: today the "would out-rank Apple Tree" card for Apple Seed, if accepted, blocks 169 rows and leaves 78 more items with no value, because Apple Tree anchors the Bird Nest and waits on Apple Seed while the seed's new source (Search, later the Nest's Use) waits on the Nest. The election should neither offer nor keep a source that needs an item whose anchor co-produces the drop. Until then: don't accept that card. | T-751 engineer 2026-11-27 |
