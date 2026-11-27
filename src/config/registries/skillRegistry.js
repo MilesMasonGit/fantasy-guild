@@ -21,9 +21,7 @@
  * ⚠️ The one exception is words: a new skill also needs its hero-sheet line under `skillPurpose`
  * in `src/i18n/en.json` (a test fails until it has one).
  *
- * ⚠️ Renaming an id strands every piece of content naming the old one. A rename also needs an
- * entry in `skillIdMigration.js`, which rewrites the old id in `data/` and in the CMS workspace as
- * they load. A dropped id is listed by the boot audit and the CMS Economy Audit
+ * ⚠️ Renaming an id strands every piece of content naming the old one. A dropped id is listed by the boot audit and the CMS Economy Audit
  * (`unknownRefRule.js`), and an older save's levels in it are dropped on load.
  */
 

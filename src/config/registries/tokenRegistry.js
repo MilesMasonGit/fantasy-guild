@@ -27,7 +27,6 @@ import { resolveSpritePath } from '../../utils/AssetManager.js';
 import { EFFECTS } from './effectRegistry.js';
 import { expandBearer } from '../../systems/effects/effectLibrary.js';
 import { migrateAppliesTargets } from '../../systems/effects/effectMigration.js';
-import { migrateSkillIds } from '../../systems/effects/skillIdMigration.js';
 import { STANDS_ON_CHOICES } from '../../systems/atlas/TerrainMap.js';
 import { neverWearsOut, ENEMY_USES } from '../../systems/core/wearRule.js';
 import { RETIRED_WATER_TOKENS } from './fishingSpots.js';
@@ -51,9 +50,7 @@ function loadJsonTokens() {
                     // Library references become the statements the game runs on, once, here, so everything downstream keeps reading `def.statements`.
                     // Inline statements lose the retired enemy flag here;
                     // library statements already lost it in `effectRegistry`.
-                    // ⚠️ Renamed skill ids are rewritten here and NOT in `registerTokenTypes`
-                    // (see `skillIdMigration.js`).
-                    tokens[typeId] = expandBearer(migrateAppliesTargets(migrateSkillIds(def)), EFFECTS);
+                    tokens[typeId] = expandBearer(migrateAppliesTargets(def), EFFECTS);
                 }
             } catch (error) {
                 console.warn(`[TokenRegistry] Error loading token JSON from ${path}:`, error);

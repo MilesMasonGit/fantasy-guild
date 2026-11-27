@@ -4,23 +4,18 @@ import path from 'path';
 import { familyOf } from '../systems/board/SpawnerSystem.js';
 import { auditLifecycleBlocks } from '../systems/core/lifecycleAudit.js';
 import { SKILLS } from '../config/registries/skillRegistry.js';
-import { migrateSkillIdsIn, migrateRecipeList } from '../systems/effects/skillIdMigration.js';
 import { expandBearer } from '../systems/effects/effectLibrary.js';
 
 /**
- * Token Lifecycle slices 7.0 and 7.1 — the Forestry (formerly Logging) chain,
- * pinned from the SHIPPED data (authored through the CMS, never by hand).
- *
- * ⚠️ Read through the skill-id migration, exactly as the game's loaders read
- * it, so these pass both before and after the owner's Sync writes `forestry`
- * over `logging` in `data/`.
+ * The Forestry chain, pinned from the SHIPPED data (authored through the CMS,
+ * never by hand).
  */
 
 const DATA = path.resolve(__dirname, '../../data');
 const read = (f) => JSON.parse(fs.readFileSync(path.join(DATA, f), 'utf8'));
-const tokens = migrateSkillIdsIn(read('tokens.json'));
-const items = migrateSkillIdsIn(read('items.json'));
-const recipes = migrateRecipeList(read('tokenRecipes.json'));
+const tokens = read('tokens.json');
+const items = read('items.json');
+const recipes = read('tokenRecipes.json');
 // Expanded for the audit, as the game and the CMS Economy Audit read them (a station's rules live
 // in the effect library).
 const effects = read('effects.json');

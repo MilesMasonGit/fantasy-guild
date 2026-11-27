@@ -1,20 +1,15 @@
-import { migrateSkillIdsIn, migrateRecipeList } from '../../systems/effects/skillIdMigration.js';
 import { STANDARD_REACH_U } from '../../config/registries/reachRegistry.js';
 import { workspaceWorldFrom } from '../../../cms/src/engine/worldTables.js';
 
 /**
- * A `data/` file's text as the CMS holds it once loaded and synced: retired skill ids
- * renamed (`skillIdMigration.js`). So a sync differs from `data/` by exactly those and
- * nothing else.
- *
- * And a camp's description naming the reach its block once carried, as the next Recalculate
- * rewrites it: every camp works the one standard reach (brief 560 R1).
- *
- * And the world tables with the biome table the CMS seeds a record without one with (today's values),
+ * A `data/` file's text as the CMS holds it once loaded and synced, so a sync differs from
+ * `data/` by exactly these and nothing else: a camp's description naming the reach its block
+ * once carried, as the next Recalculate rewrites it (every camp works the one standard reach);
+ * and the world tables with the biome table the CMS seeds a record without one with (today's values),
  * its kits' retired Stone dropped.
  *
  * Byte-identical to the file whenever there is nothing to change, which is the case once
- * the owner's next Sync has written the new ids into `data/`.
+ * the owner's next Sync has written them into `data/`.
  */
 
 /** A camp's description with its old authored reach, as the next Recalculate rewrites it to the standard reach. */
@@ -32,10 +27,7 @@ function describeStandardReach(tokens) {
 }
 
 const MIGRATIONS = {
-    'tokens.json': (tokens) => describeStandardReach(migrateSkillIdsIn(tokens)),
-    'items.json': (items) => migrateSkillIdsIn(items),
-    'effects.json': (effects) => migrateSkillIdsIn(effects),
-    'tokenRecipes.json': migrateRecipeList,
+    'tokens.json': describeStandardReach,
     'world.json': workspaceWorldFrom
 };
 

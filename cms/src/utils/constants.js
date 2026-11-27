@@ -90,7 +90,6 @@ export {
   migrateAppliesTargetsIn,
   provisionalName,
 } from '../../../src/systems/effects/effectMigration.js';
-export { migrateSkillIdsIn, migrateRecipePools } from '../../../src/systems/effects/skillIdMigration.js';
 // A renamed library effect (the Poison status is Venom): the same pure functions the game's loaders call.
 
 // When a rule spends its Token's charges. Same extensibility rule as TRIGGER_EVENTS: adding a moment in the game puts it in the editor's picker with no CMS change.
