@@ -250,13 +250,12 @@ Felling, a 5 % Double Loot: about 77 of the hour's 1,533 producer cycles came in
 all of it Oak Wood. That alone moved the Bank by −0.94, −0.34, −1.61, +0.13 and +1.00 % on seeds
 1–5 and by 0.74 % (one standard deviation) over seeds 1–30, 5 of them outside ±1 %, while cycles,
 kills, hero XP, each hero's cycles and the loot left on the floor matched on every seed and the
-Double Loot hit rate was 5.0 % in both. So the S8 rows build without the shipped perks; the luck
+Double Loot hit rate was 5.0 % in both. So every scenario builds without the shipped perks (`buildScenario` in `bench/lib/harness.mjs` strips them before any board is made, so a new scenario gets it too; S8's own call stays for the test that builds it alone); the luck
 left is the bench's own Yield Buff on one passive (a 5 % chance of a second Oak Wood on 120
 cycles): 0.09 % over seeds 1–30, none outside. The old board read only −0.58 to +0.16 % on seeds
 1–5 by the same luck: its steps and ticks happened to share more of their dice (their Double Loot
 counts correlated 0.44, the rebuilt board's 0.14), and over seeds 1–20 one seed in twenty was
-outside ±1 %. ⚠ The other scenarios' heroes still hold the shipped perks, so a perk edit in the
-CMS moves their work.
+outside ±1 %. A perk edit in the CMS moves no scenario's work (T-750; `BenchNoPerks.test.js`).
 
 Proven to bite (2026-10-08): a catch-up that skipped the game clock left 40 loot stacks on the
 floor and 68 fewer items in the Bank than S8L (identity failed, exit 2); without the work

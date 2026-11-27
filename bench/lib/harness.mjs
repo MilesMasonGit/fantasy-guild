@@ -19,6 +19,7 @@ import * as BoardState from '../../src/systems/board/BoardState.js';
 import * as NotificationSystem from '../../src/systems/core/NotificationSystem.js';
 import { setMatTuning } from '../../src/config/matTuning.js';
 import { logger } from '../../src/utils/Logger.js';
+import { withoutShippedPerks } from '../../src/tests/fixtures/noPerks.js';
 import * as fixtures from '../fixtures.mjs';
 import { summarise } from './stats.mjs';
 import { fingerprint } from './fingerprint.mjs';
@@ -253,6 +254,16 @@ function structureSizes() {
 // ---------------------------------------------------------------------------
 
 /**
+ * Every scenario's board is built here, so none of its heroes ever holds a shipped skill perk.
+ * ⚠️ Perks are content (`data/skillPerks.json`): a CMS edit of one would otherwise move every
+ * scenario's work fingerprint, and a rolling perk (Double Loot) makes the Bank a dice roll.
+ */
+export async function buildScenario(scenario, ctx) {
+    withoutShippedPerks();
+    await scenario.build(ctx);
+}
+
+/**
  * @param {object} opts
  * @param {object} opts.scenario   the scenario module's default export
  * @param {'timing'|'profile'} opts.mode
@@ -267,7 +278,7 @@ export async function run(opts) {
     boot(seed, { events });
 
     const ctx = { fixtures, setMatTuning, tickOnce, runTicks, now, heapMb };
-    await scenario.build(ctx);
+    await buildScenario(scenario, ctx);
     announceReady();
     const buildMs = now() - t0;
 
