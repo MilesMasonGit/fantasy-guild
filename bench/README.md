@@ -193,7 +193,7 @@ timings from one machine mean nothing on another.
 | S5 | Rebuild storm | S2 plus one board-reach aura: every kill and every respawn changes a neighbourhood, and each change rebuilds every Token's modifiers (0.020 whole-mat rebuilds a tick; 0.025 before the boards were rebuilt for the 128 u spacing, 0.034 before brief 500, 0.001 between brief 500 and the hunt) | 500 + 1,500 |
 | S6 | Long idle | S2, 30 game-minutes with a checkpoint every 5 (`--long`: 8 game-hours, every 30) — heap after GC and the size of every runtime structure the bench can see | 1,000 + 18,000 |
 | S7 | Waiting for room | 8-step mat packed with placed passives until not even a tree fits within 800 u of the two waiters: a **Forest under its cap with nowhere to spawn**, and a **Foundation building a 2×2 station with no room to stand**, a builder pinned to it. The Foundation re-runs its placement search every tick (CR3-201); the Forest searches once each 5 s interval, when its clock comes round, and misses that spawn (a spawner with no room waits a whole interval for its next try). Its own types and recipe are registered inside the scenario, so no other scenario's work changes. Added to `baseline.json` on its own (`meta.addedScenarios`). | 300 + 1,500 |
-| S8 | Catch-up hour | S2, warmed up as S2 is (1,000 ticks), every hero then healed to full (the warm-up's back-to-back fights leave the two hunters at 5–9 HP of 35, where one knocked out by chance takes half the hour's kills with it), **saved and loaded** as a player's slot is, then one game-hour of the game's own catch-up (`CatchUp.run`): 1000 ms steps, the game clock, the bus quiet, toasts and sounds off, slices with yields. The virtual wall clock stands still through it, as the real one nearly does. The hour has 240 Tokens depleted, every one a goblin killed (printed: `240 Tokens depleted, 240 of them kills`; before brief 500 about 53, after it 2). | 1,000 + 3,600 steps |
+| S8 | Catch-up hour | S2 **without the shipped skill perks** (the tests' `withoutShippedPerks`, before the heroes are made: a perk that rolls makes the Bank a dice roll the fidelity gate cannot judge; see [the catch-up gates](#the-catch-up-gates-s8-s8l-s8f)), warmed up as S2 is (1,000 ticks), every hero then healed to full (the warm-up's back-to-back fights leave the two hunters at 5–9 HP of 35, where one knocked out by chance takes half the hour's kills with it), **saved and loaded** as a player's slot is, then one game-hour of the game's own catch-up (`CatchUp.run`): 1000 ms steps, the game clock, the bus quiet, toasts and sounds off, slices with yields. The virtual wall clock stands still through it, as the real one nearly does. The hour has 240 Tokens depleted, every one a goblin killed (printed: `240 Tokens depleted, 240 of them kills`; before brief 500 about 53, after it 2). | 1,000 + 3,600 steps |
 | S8L | Same hour, plain 1000 ms steps | The same save and load, then 3,600 × `GameLoop.runHandlers(1000)` with the virtual clock moving, as live play's would. The reference S8 must equal. | 1,000 + 3,600 steps |
 | S8F | Same hour, 100 ms ticks | The same save and load, then 36,000 ticks of 100 ms: the fidelity reference. Run once. | 1,000 + 36,000 |
 | C240 | Cap 240, at the cap | S2's mix (89 placed, S2's share and order: `scenarios/cap.mjs`, `capPlaced`) on the cap mat, 20 steps at 0.68 (3200 × 2176 u), which holds about 250 of it, with the Token cap at 240: the board reaches its cap as built and stays there, the spawners held by it (cheap). Same 8 heroes and flags as S2; at the cap a killed goblin's place goes to a tree (a Forest tries every 5 s, a camp every 30 s), so the hunters wait: no kills in the measured window. | 1,000 + 3,000 |
@@ -238,8 +238,25 @@ through (the baseline is then left alone).
   must be within **±1 %** of S8F's 100 ms ticks, or within one for a count too small to judge
   in percent. 1000 ms steps can never equal 100 ms ticks exactly (fewer random draws), so this is
   a tolerance, not a fingerprint. The hour's 240 depletions are goblin kills paced by the camps'
-  30 s respawns, so steps and ticks kill the same number (seeds 1–5: 240 and 240); the Bank is
-  the closest field, +0.70 % on seed 1 and −0.11 to +0.75 % on seeds 2–5 (T-324).
+  30 s respawns, so steps and ticks kill the same number (seeds 1–5: 240 and 240); hero XP and
+  cycles are exact too, and the Bank is the closest field: +0.16, −0.03, +0.08, +0.05 and +0.05 %
+  on seeds 1–5, at most 0.19 % on seeds 1–30 (T-735). When the gate fails it lists the Bank by
+  item where steps and ticks differ.
+
+**No luck in the hour (T-735).** Steps and ticks draw the same random numbers in a different order,
+so whatever chance decides comes out as two independent samples, and their gap is luck, not a
+step-size difference. With the shipped perks the bench heroes (Forestry 30) held Forestry's Clean
+Felling, a 5 % Double Loot: about 77 of the hour's 1,533 producer cycles came in doubled, ±11,
+all of it Oak Wood. That alone moved the Bank by −0.94, −0.34, −1.61, +0.13 and +1.00 % on seeds
+1–5 and by 0.74 % (one standard deviation) over seeds 1–30, 5 of them outside ±1 %, while cycles,
+kills, hero XP, each hero's cycles and the loot left on the floor matched on every seed and the
+Double Loot hit rate was 5.0 % in both. So the S8 rows build without the shipped perks; the luck
+left is the bench's own Yield Buff on one passive (a 5 % chance of a second Oak Wood on 120
+cycles): 0.09 % over seeds 1–30, none outside. The old board read only −0.58 to +0.16 % on seeds
+1–5 by the same luck: its steps and ticks happened to share more of their dice (their Double Loot
+counts correlated 0.44, the rebuilt board's 0.14), and over seeds 1–20 one seed in twenty was
+outside ±1 %. ⚠ The other scenarios' heroes still hold the shipped perks, so a perk edit in the
+CMS moves their work.
 
 Proven to bite (2026-10-08): a catch-up that skipped the game clock left 40 loot stacks on the
 floor and 68 fewer items in the Bank than S8L (identity failed, exit 2); without the work

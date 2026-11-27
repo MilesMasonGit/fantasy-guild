@@ -187,7 +187,8 @@ function aggregateCatchUp(runs) {
     return {
         runMs: median(runs.map(r => r.custom.runMs)),
         steps: runs[0].custom.steps,
-        gains: runs[0].custom.gains
+        gains: runs[0].custom.gains,
+        bankByItem: runs[0].custom.bankByItem
     };
 }
 
@@ -359,7 +360,14 @@ function catchUpGates(rows) {
             const allowed = Math.max(Math.abs(ticks[field]) * FIDELITY_TOLERANCE, 1);
             return { field, ticks: ticks[field], steps: steps[field], change: ticks[field] ? diff / ticks[field] : 0, ok: Math.abs(diff) <= allowed };
         });
-        out.fidelity = { ok: fields.every(x => x.ok), fields };
+        // Which items moved, so a failing gate names them: luck on one item reads like a step-size bias.
+        const stepItems = byId.S8L.custom.bankByItem || {};
+        const tickItems = byId.S8F.custom.bankByItem || {};
+        const items = [...new Set([...Object.keys(tickItems), ...Object.keys(stepItems)])]
+            .map(itemId => ({ itemId, ticks: tickItems[itemId] || 0, steps: stepItems[itemId] || 0 }))
+            .filter(x => x.ticks !== x.steps)
+            .sort((a, b) => Math.abs(b.steps - b.ticks) - Math.abs(a.steps - a.ticks));
+        out.fidelity = { ok: fields.every(x => x.ok), fields, items };
         if (!out.fidelity.ok) out.failed = true;
     }
     return out;
@@ -381,6 +389,12 @@ function printCatchUpGates(gates) {
         for (const x of gates.fidelity.fields) {
             const pct = `${x.change >= 0 ? '+' : ''}${(x.change * 100).toFixed(2)} %`;
             console.log(`          ${x.field.padEnd(10)} ticks ${String(x.ticks).padStart(8)}  steps ${String(x.steps).padStart(8)}  ${pct.padStart(9)}  ${x.ok ? 'ok' : 'FAIL'}`);
+        }
+        if (!gates.fidelity.ok && gates.fidelity.items.length) {
+            console.log('          the Bank by item, where steps and ticks differ:');
+            for (const x of gates.fidelity.items) {
+                console.log(`            ${x.itemId.padEnd(28)} ticks ${String(x.ticks).padStart(8)}  steps ${String(x.steps).padStart(8)}  ${x.steps - x.ticks >= 0 ? '+' : ''}${x.steps - x.ticks}`);
+            }
         }
     }
 }
