@@ -34,6 +34,7 @@ const fixtureWorkspace = () => ({
     items: {
         item_ore: { id: 'item_ore', name: 'Ore', type: 'material', plan: live(0) },
         item_pickaxe: { id: 'item_pickaxe', name: 'Pickaxe', type: 'tool', equipSlot: 'hand', effects: [ref('eff_tool')], plan: live(0) },
+        item_topaz_ring: { id: 'item_topaz_ring', name: 'Topaz Ring', type: 'armor', equipSlot: 'trinket', effects: [ref('eff_ring_gems')], plan: live(3) },
         item_tea: { id: 'item_tea', name: 'Tea', type: 'drink', equipSlot: 'drink', effects: [ref('eff_tea')], plan: live(3) },
         item_coffee: { id: 'item_coffee', name: 'Coffee', type: 'drink', equipSlot: 'drink', effects: [ref('eff_coffee')], plan: live(7) },
         item_bounty: { id: 'item_bounty', name: 'Bounty Potion', type: 'potion', equipSlot: 'consumable', effects: [ref('eff_bounty')], plan: live(2) },
@@ -87,6 +88,7 @@ const fixtureWorkspace = () => ({
         eff_camp_speed: effect('eff_camp_speed', provides('WORK_TIME', 'percentage', -0.1, { category: 'smithing' })),
         eff_camp_rest: effect('eff_camp_rest', provides('GROW_TIME', 'percentage', -0.2, { category: 'mining' })),
         eff_study: effect('eff_study', provides('XP_BONUS', 'percentage', 0.1, { reach: 'self' })),
+        eff_ring_gems: effect('eff_ring_gems', { keyword: 'grants', payload: { type: 'BONUS_DROP', itemId: 'item_ore', quantity: 1 }, to: { mode: 'all', value: '' }, reach: 'nearby', when: null }),
         eff_bonus: effect('eff_bonus', { keyword: 'grants', payload: { type: 'BONUS_DROP', itemId: 'item_ore', quantity: 1 }, to: { mode: 'all', value: '' }, reach: 'nearby', when: null }),
         eff_mastery: effect('eff_mastery', provides('WORK_TIME', 'percentage', -0.05, { reach: 'self' })),
         eff_great_luck: effect('eff_great_luck', applies('st_great_luck')),
@@ -182,6 +184,17 @@ describe('pack boosts: the rule\'s numbers', () => {
         expect(effectValue(result.pack, 'eff_step')).toBe(-0.05);
     });
 
+    it('sizes a station\'s own XP or yield step as one building of that kind', () => {
+        expect(effectValue(result.pack, 'eff_station_loot')).toBe(50);
+        expect(effectValue(result.pack, 'eff_study')).toBe(0.025);
+    });
+
+    it('sizes a camp variant\'s own boost as one building of its kind', () => {
+        expect(effectValue(result.pack, 'eff_camp')).toBe(50);
+        expect(effectValue(result.pack, 'eff_camp_speed')).toBe(-0.05);
+        expect(effectValue(result.pack, 'eff_camp_rest')).toBe(-0.1);
+    });
+
     it('sizes skill perks to a quarter of the tier\'s speed total, reached by darkmetal', () => {
         // Level 10 is copper's row (20 % maxed): 5 %. Level 85 is darkmetal's (60 %): 15 % in all, so 10 % more.
         expect(effectValue(result.pack, 'eff_perk_early')).toBe(-0.05);
@@ -235,6 +248,14 @@ describe('pack boosts: the rule\'s numbers', () => {
         const skipped = result.skipped.map((s) => s.where).join('\n');
         expect(skipped).toContain('eff_old');
         expect(skipped).toContain('eff_orphan');
+        // Left unsized on purpose, and out of the budget check: world events, bonus drops, mastery.
+        const reasonOf = (id) => result.skipped.find((x) => x.where.includes(id))?.reason;
+        expect(reasonOf('eff_rain')).toMatch(/world event/);
+        expect(reasonOf('eff_bonus')).toMatch(/bonus drop/);
+        expect(reasonOf('st_nest')).toMatch(/bonus drop/);
+        expect(reasonOf('eff_ring_gems')).toMatch(/bonus drop/);
+        expect(reasonOf('eff_mastery')).toMatch(/mastery/);
+        for (const id of ['eff_rain', 'eff_bonus', 'st_nest', 'eff_ring_gems', 'eff_mastery']) expect(result.unclear.some((u) => u.where.includes(id))).toBe(false);
         const all = [...result.filled, ...result.unclear, ...result.skipped].map((x) => x.where).join('\n');
         expect(all).not.toContain('st_valor');
         expect(all).not.toContain('star_lap');

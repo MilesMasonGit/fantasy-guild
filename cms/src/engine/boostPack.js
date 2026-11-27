@@ -59,6 +59,13 @@ const consumableYieldAt = (tier) => {
     return table[Math.min(Math.max(0, tier), table.length - 1)];
 };
 
+/** What the budget leaves unsized and out of its check (the balancer, 2026-11-26): skipped, not unclear. */
+const UNSIZED = Object.freeze({
+    event: 'a world event\'s Token: left unsized, and out of the boost budget check',
+    bonus: 'a bonus drop of named items: left unsized, and out of the boost budget check',
+    mastery: 'a mastery track\'s rank: left unsized (the ledger rates no mastery)',
+});
+
 /** The axes the pack sizes: the kind each moves, the bucket the rule's number is written in, and its sign. */
 const AXIS = Object.freeze({
     WORK_TIME: { kind: 'speed', bucket: 'percentage', sign: -1, label: 'work time' },
@@ -73,7 +80,7 @@ const AXIS = Object.freeze({
 });
 
 export const KIND_TEXT = Object.freeze({ speed: 'speed', regrow: 'regrowth', xp: 'XP', yield: 'yield', rare: 'rare finds', coin: 'coins', finds: 'bonus drops' });
-export const SOURCE_TEXT = Object.freeze({ building: 'a placed building', station: 'a station\'s own upgrade', perk: 'a skill perk', hall: 'a Guild Hall star', consumable: 'the one consumable' });
+export const SOURCE_TEXT = Object.freeze({ building: 'a placed building', camp: 'a camp variant', station: 'a station\'s own upgrade', perk: 'a skill perk', hall: 'a Guild Hall star', consumable: 'the one consumable' });
 
 const isObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
 const list = (v) => (Array.isArray(v) ? v.filter(Boolean) : []);
@@ -135,7 +142,7 @@ function growthKindOf(statement, bearer, workspace) {
 
 /** The kind a statement moves (growth told apart), or `{ unclear }` for a bucket or shape the rule's number cannot be written in. */
 function kindOf(statement, axis, bearer, workspace) {
-    if (axis.kind === 'finds') return { unclear: 'a bonus drop of named items: no rule sizes it' };
+    if (axis.kind === 'finds') return { skip: UNSIZED.bonus };
     if (statement?.when?.event) return { unclear: `a ${axis.label} rule that waits on a moment (${statement.when.event}): the rule sizes always-on boosts` };
     if ((statement?.payload?.bucket || 'flat') !== axis.bucket) return { unclear: `${axis.label} as a ${statement?.payload?.bucket || 'flat'} amount: the rule's number is a ${axis.bucket}` };
     if (axis.kind === 'growth') return growthKindOf(statement, bearer, workspace);
@@ -203,6 +210,7 @@ export function writeBoostPack(workspace, { id, createdAt = new Date().toISOStri
         // A station's own steps are speed alone: its other rules on itself are unclear by themselves, and leave its steps be.
         const mixed = kinds.size > 1 && source !== 'station' ? `${bearer} moves more than one kind (${[...kinds].map((k) => KIND_TEXT[k]).join(' and ')}): ${SOURCE_TEXT[source]} boosts one` : null;
         for (const r of rows) {
+            if (r.skip) { r.claim.outcomes.push({ bearer, skip: r.skip }); continue; }
             if (r.unclear) { r.claim.outcomes.push({ bearer, source, unclear: r.unclear }); continue; }
             if (mixed) { r.claim.outcomes.push({ bearer, source, unclear: mixed }); continue; }
             const pct = sizeOf(r.kind, r);
@@ -220,16 +228,17 @@ export function writeBoostPack(workspace, { id, createdAt = new Date().toISOStri
         const bearer = bearerName('token', def, tokenId);
         const parked = statusOf(def) === PLAN_STATUS.PARKED;
         const refs = list(def.effects).filter((r) => effects[r.effectId]);
-        const rows = { building: [], station: [] };
+        const rows = { building: [], station: [], camp: [] };
         for (const ref of refs) {
             for (const { statement, index, axis } of countedOf(ref.effectId)) {
                 const claim = effectClaim(ref.effectId, index);
                 if (parked) { claim.outcomes.push({ bearer, skip: 'its bearer is Parked' }); continue; }
                 if (isObject(def.enemy)) { claim.outcomes.push({ bearer, skip: 'an enemy\'s rule (combat numbers are not this pack\'s)' }); continue; }
-                if (eventTokens.has(tokenId) || list(def.tags).includes('Event')) { claim.outcomes.push({ bearer, unclear: `${def.name || tokenId} is a world event's Token, not a placed building` }); continue; }
+                if (eventTokens.has(tokenId) || list(def.tags).includes('Event')) { claim.outcomes.push({ bearer, skip: UNSIZED.event }); continue; }
                 const reach = reachOf(statement);
                 const kind = kindOf(statement, axis, def, workspace);
-                const row = isObject(kind) ? { claim, unclear: kind.unclear } : { claim, kind, scale: wholeScale(ref.scale) };
+                const row = isObject(kind) ? { claim, ...kind } : { claim, kind, scale: wholeScale(ref.scale) };
+                if (row.skip) { claim.outcomes.push({ bearer, skip: row.skip }); continue; }
                 if (reach === REACH.SELF) {
                     if (def.tokenType !== 'station') { claim.outcomes.push({ bearer, unclear: `a ${def.tokenType || 'Token'}'s rule on itself: not a station's own upgrade` }); continue; }
                     rows.station.push(row);
@@ -238,7 +247,7 @@ export function writeBoostPack(workspace, { id, createdAt = new Date().toISOStri
                 } else if (reach === REACH.BOARD) {
                     claim.outcomes.push({ bearer, unclear: 'a Token\'s rule on the whole board: not a placed building\'s reach' });
                 } else if (campOf(def)) {
-                    claim.outcomes.push({ bearer, unclear: 'a camp variant\'s own rule: the budget gives camps no size of their own (yield\'s "rest" only)' });
+                    rows.camp.push(row);
                 } else if (isObject(def.spawner)) {
                     claim.outcomes.push({ bearer, unclear: 'a spawner\'s own rule on its family: not a placed building' });
                 } else if (def.tokenType === 'buff' || def.tokenType === 'station') {
@@ -249,13 +258,16 @@ export function writeBoostPack(workspace, { id, createdAt = new Date().toISOStri
             }
         }
         settle(rows.building, bearer, 'building', (kind) => BOOST_RULE.building[kind]);
-        settle(rows.station, bearer, 'station', (kind, r) => (kind === 'speed'
-            ? BOOST_RULE.stationStep * r.scale
-            : { unclear: `a station's own ${KIND_TEXT[kind]}: the rule sizes a station's own upgrade only in work time steps` }));
+        // A camp variant stands in the camp's place: one building's worth of its kind.
+        settle(rows.camp, bearer, 'camp', (kind) => (kind === 'coin' ? { unclear: 'a camp\'s coin find: coins come from the coin building' } : BOOST_RULE.building[kind]));
+        // A station's own step: 5 % of work time, or one building's worth of XP or yield, a step a scale.
+        settle(rows.station, bearer, 'station', (kind, r) => (kind === 'speed' ? BOOST_RULE.stationStep * r.scale
+            : kind === 'xp' || kind === 'yield' ? BOOST_RULE.building[kind] * r.scale
+                : { unclear: `a station's own ${KIND_TEXT[kind]}: a station's own step is sized in work time, XP or yield` }));
         for (const r of list(def.mastery?.ranks)) {
             if (!effects[r?.effectId]) continue;
             for (const { index } of countedOf(r.effectId)) {
-                effectClaim(r.effectId, index).outcomes.push(parked ? { bearer, skip: 'its bearer is Parked' } : { bearer, unclear: 'a mastery track\'s rank: not one of the sources the rule sizes' });
+                effectClaim(r.effectId, index).outcomes.push({ bearer, skip: parked ? 'its bearer is Parked' : UNSIZED.mastery });
             }
         }
         for (const move of list(def.enemy?.moves)) {
@@ -273,9 +285,10 @@ export function writeBoostPack(workspace, { id, createdAt = new Date().toISOStri
         const consumable = def.equipSlot === 'drink' || def.equipSlot === 'consumable';
         const rows = [];
         for (const ref of list(def.effects).filter((r) => effects[r.effectId])) {
-            for (const { index } of countedOf(ref.effectId)) {
+            for (const { index, axis } of countedOf(ref.effectId)) {
                 const claim = effectClaim(ref.effectId, index);
                 if (parked) { claim.outcomes.push({ bearer, skip: 'its bearer is Parked' }); continue; }
+                if (axis.kind === 'finds') { claim.outcomes.push({ bearer, skip: UNSIZED.bonus }); continue; }
                 const what = consumable ? 'a drink or potion\'s own always-on rule (not what it applies when drunk)'
                     : def.type === 'tool' ? 'a tool\'s own boost: tools are not one of the sources the rule sizes'
                         : def.equipSlot === 'food' ? 'food\'s own boost: food is not one of the sources the rule sizes'
@@ -292,7 +305,7 @@ export function writeBoostPack(workspace, { id, createdAt = new Date().toISOStri
                     const claim = effectClaim(appliedId, index);
                     if (parked) { claim.outcomes.push({ bearer, skip: 'its bearer is Parked' }); continue; }
                     const kind = kindOf(statement, axis, null, workspace);
-                    rows.push(isObject(kind) ? { claim, unclear: kind.unclear } : { claim, kind, scale });
+                    rows.push(isObject(kind) ? { claim, ...kind } : { claim, kind, scale });
                 }
             }
         }
@@ -326,7 +339,7 @@ export function writeBoostPack(workspace, { id, createdAt = new Date().toISOStri
             const rows = countedOf(perk.effectId).map(({ statement, index, axis }) => {
                 const kind = kindOf(statement, axis, null, workspace);
                 const claim = effectClaim(perk.effectId, index);
-                return isObject(kind) ? { claim, unclear: kind.unclear } : { claim, kind, scale: wholeScale(perk.scale) };
+                return isObject(kind) ? { claim, ...kind } : { claim, kind, scale: wholeScale(perk.scale) };
             });
             const kinds = new Set(rows.filter((r) => typeof r.kind === 'string').map((r) => r.kind));
             if (kinds.size === 1 && kinds.has('speed')) speed.push({ perk, bearer, rows });
@@ -365,7 +378,7 @@ export function writeBoostPack(workspace, { id, createdAt = new Date().toISOStri
                     where: `hallStar ${starId} rank ${r + 1} rule ${j + 1}`,
                 }));
                 const kind = kindOf(statement, axis, null, workspace);
-                rows.push(isObject(kind) ? { claim, unclear: kind.unclear } : { claim, kind, step: (r + 1) / ranks.length });
+                rows.push(isObject(kind) ? { claim, ...kind } : { claim, kind, step: (r + 1) / ranks.length });
             });
         });
         settle(rows, bearer, 'hall', (kind, row) => (kind === 'coin' ? { unclear: 'a star cannot carry coin find' } : BOOST_RULE.hallStar * row.step));
