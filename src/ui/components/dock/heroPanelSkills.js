@@ -1,7 +1,7 @@
 import { getSkill, heroSheetSkillIds } from '../../../config/registries/skillRegistry.js';
 import { getXpProgress, xpForLevel, MAX_SKILL_LEVEL } from '../../../utils/XPCurve.js';
 import { t } from '../../../i18n/index.js';
-import { countdownText } from '../../../utils/Formatters.js';
+import { countdownText, formatCompact } from '../../../utils/Formatters.js';
 
 /** How many skills stand in one column of the hero drawer's grid. */
 export const SKILLS_PER_COLUMN = 4;
@@ -32,7 +32,16 @@ export function heroSkillList(hero) {
 /** `25/99`: the panel's level text. */
 export const skillLevelText = (level) => `${Math.max(1, Math.floor(level || 1))}/${MAX_SKILL_LEVEL}`;
 
-const n = (v) => Math.max(0, Math.floor(v || 0)).toLocaleString('en-US');
+/**
+ * An XP number as the sheet writes it: in full below a million (`857,000`), shorthand from there
+ * (`9.42m`), never below zero.
+ */
+export function xpNumberText(v) {
+    const whole = Math.max(0, Math.floor(v || 0));
+    return whole < 1e6 ? whole.toLocaleString('en-US') : formatCompact(whole, 2);
+}
+
+const n = xpNumberText;
 
 /** The XP bar's fill (0..1) and its hover text, `1,154 / 1,500 XP`; at the top level, the total. */
 export function skillXpView(xp) {
@@ -43,7 +52,7 @@ export function skillXpView(xp) {
     }
     return {
         fill: prog.progress,
-        title: `${n(prog.currentXp)} / ${Math.round(prog.nextLevelXp).toLocaleString('en-US')} XP`
+        title: `${n(prog.currentXp)} / ${n(Math.round(prog.nextLevelXp))} XP`
     };
 }
 
@@ -68,7 +77,7 @@ export function skillDetail(xp, ratePerHour = 0) {
     const left = Math.max(0, xpForLevel(prog.level + 1) - total);
     const rate = Number(ratePerHour) > 0 ? Number(ratePerHour) : 0;
     return {
-        level: `${n(prog.currentXp)} / ${span.toLocaleString('en-US')}`,
+        level: `${n(prog.currentXp)} / ${n(span)}`,
         toNext: n(left),
         nextLevel: skillLevelText(prog.level + 1),
         total: n(total),

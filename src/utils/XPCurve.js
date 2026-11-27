@@ -1,12 +1,26 @@
 // XP Curve
 
-/**
- * XP Curve utilities for skill leveling
- * Uses an exponential curve similar to RuneScape's.
- */
-
 /** The top level of every skill: the sheet writes levels out of it ("25/99"). */
 export const MAX_SKILL_LEVEL = 99;
+
+/**
+ * The pace curve (BALANCE_RULES section 1): level 1 takes 3 minutes and each level after it
+ * `PACE_STEP_PCT` % longer, for a well-optimized player.
+ *
+ * ⚠️ The CMS ledger's default pace rule (`cms/src/engine/ledger/settings.js`) holds the same two
+ * numbers; a test pins them equal, so move both together.
+ */
+export const PACE_START_MINUTES = 3;
+export const PACE_STEP_PCT = 6.25;
+
+/** The XP an hour work unlocked at level 1 pays; it doubles every 20 levels. */
+export const XP_HOUR_AT_1 = 1660;
+
+/** XP from `level` to the next: that level's XP an hour times the curve's minutes for it. */
+function xpToNext(level) {
+    const minutes = PACE_START_MINUTES * (1 + PACE_STEP_PCT / 100) ** (level - 1);
+    return Math.round(XP_HOUR_AT_1 * 2 ** ((level - 1) / 20) * minutes / 60);
+}
 
 /**
  * Calculate the total XP required to reach a given level
@@ -15,13 +29,11 @@ export const MAX_SKILL_LEVEL = 99;
  */
 export function xpForLevel(level) {
     if (level <= 1) return 0;
-    if (level > 99) level = 99;
+    if (level > MAX_SKILL_LEVEL) level = MAX_SKILL_LEVEL;
 
     let total = 0;
-    for (let i = 1; i < level; i++) {
-        total += Math.floor(i + 300 * Math.pow(2, i / 7));
-    }
-    return Math.floor(total / 4);
+    for (let i = 1; i < level; i++) total += xpToNext(i);
+    return total;
 }
 
 /**

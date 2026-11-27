@@ -1,7 +1,7 @@
 // Food, drinks and potions act only through their moment and their dose.
 
 import { getCategoryDef, CATEGORY_KINDS } from '../../config/registries/equipmentCategories.js';
-import { ELIXIR_FIGHTS, DRINK_CYCLES } from '../../config/loopConstants.js';
+import { ELIXIR_FIGHTS, DRINK_CYCLES, WORK_POTION_CYCLES } from '../../config/loopConstants.js';
 import { roundByChance, WHOLE_EPSILON } from '../../utils/RNG.js';
 
 /**
@@ -14,8 +14,8 @@ import { roundByChance, WHOLE_EPSILON } from '../../utils/RNG.js';
  *   lasts `ELIXIR_FIGHTS` fights.
  * * **A drink** (the Drink category, with a rule on a work moment) is drunk as a work cycle starts and
  *   lasts `DRINK_CYCLES` work cycles.
- * * **A work potion** (a Consumable with a rule on a work moment) is spent only when a cycle of its
- *   own skill starts, for that cycle: one potion, one cycle.
+ * * **A work potion** (a Consumable with a rule on a work moment) is drunk only when a cycle of its
+ *   own skill starts and lasts `WORK_POTION_CYCLES` cycles of that skill.
  * * **Nothing acts by sitting in the Bank**: an always-on rule (no moment) on a food, drink or
  *   potion does nothing. A shared item acts only through its moment and its dose.
  * * **A poison** (owner 2026-11-21, brief 750 S3: a Consumable whose fight-start rule applies its
@@ -89,7 +89,7 @@ export function poisonAttacksOf(statements) {
 export const DOSE_LENGTH = Object.freeze({
     [DOSE.ELIXIR]: ELIXIR_FIGHTS,
     [DOSE.DRINK]: DRINK_CYCLES,
-    [DOSE.POTION]: 1
+    [DOSE.POTION]: WORK_POTION_CYCLES
 });
 
 /**
@@ -148,7 +148,7 @@ export function doseKindsOf(categoryId, statements) {
 export const DOSE_WHY = Object.freeze({
     [DOSE.ELIXIR]: `An elixir: one is drunk from the Bank as a fight starts and lasts ${ELIXIR_FIGHTS} fights (one number for every elixir). Its fight-start rules work from that dose.`,
     [DOSE.DRINK]: `A drink: one is drunk from the Bank as a work cycle starts and lasts ${DRINK_CYCLES} work cycles (one number for every drink). Its On Work Start rules work from that dose; a rule naming a skill counts only that skill's cycles.`,
-    [DOSE.POTION]: 'A work potion: one is drunk from the Bank each time a work cycle of its skill starts, for that cycle. The hero keeps it while doing other work.',
+    [DOSE.POTION]: `A work potion: one is drunk from the Bank as a work cycle of its skill starts and lasts ${WORK_POTION_CYCLES} cycles of that skill (one number for every work potion). The hero keeps it while doing other work.`,
     [DOSE.POISON]: 'A poison: one is taken from the Bank as a fight starts, only by a hero holding a Stealth weapon, and lasts the attacks its rule names (for N attacks), hit or miss. What is left carries into later fights; a fresh one is taken only as a fight starts.'
 });
 
