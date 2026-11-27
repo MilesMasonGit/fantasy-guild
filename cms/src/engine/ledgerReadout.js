@@ -1,6 +1,6 @@
 import { workspaceReport } from './ledgerReport.js';
 import { ledgerRows } from './ledgerRows.js';
-import { PROFILE } from './ledger/pace.js';
+import { PROFILE, PACE_TEXT } from './ledger/pace.js';
 import { minutesPerLevelAt, boostBudgetAt, chainHeroesAt } from './ledger/settings.js';
 import { COMBAT, parseKey } from '../../../src/systems/progression/ledger/engine.js';
 import { PLAN_STATUS, tierLabel } from '../../../src/systems/progression/ledger/plan.js';
@@ -40,7 +40,7 @@ export const NOTES = Object.freeze([
     'Times are hero-work hours turned to minutes: heroes work around the clock. A skill\'s levels are one hero\'s climb on its chain; a stage and an arrival also wait for the guild\'s heroes to do all the work on the way (heroes, stages).',
     'heroes lists the reference guild\'s heroes by stage (BALANCE_RULES section 8: about one a tier, a Ledger setting), each arriving as the curve reaches its tier, and the heroes one chain has there (chainHeroes: the guild\'s, at most one maker and gatherersPerMaker gatherers).',
     'gatherers and brewers (per level and profile) are the heroes a level\'s work needs besides its maker to run in full: the gatherers down its chain and the brewers of the drinks and potions its boosts spend (each with their own gatherers), at the same profile\'s setup. chain is the share of its full pace the level runs at: the chain\'s heroes over the heroes it needs, each doing its share of everything in turn, at most 1. guild is the hero-hours the level takes: its hours times the chain\'s heroes at work, the lesser of what it needs and what it has.',
-    'A stage\'s minutes are its way out (owner, 2026-11-26: leaving a stage means settling the next place), what its budget times (offPct): gate is the soonest of the next stage\'s places, its level in the one or two skills it asks (asks, each by its own hero: levelMinutes) then its settle price (coins, earned from then: priceMinutes), along pathMinutes, and no sooner than the stage\'s heroes can put in that work (heroMinutes at workMinutes; byWork says they set it). needs lists what else settling it needs (the place before, the ring\'s star) at their arrivals, as information. A place\'s goods are the world seed\'s, which the ledger does not hold: the price is its coins. gateWhy says why a stage has no way out (the last stage; no place of the next tier).',
+    'A stage\'s minutes are its way out (owner, 2026-11-26: leaving a stage means settling the next place), what its budget times (offPct): gate is the soonest of the next stage\'s places, its level in the one or two skills it asks (asks, each by its own hero: levelMinutes) then its settle price (coins, earned from then: priceMinutes), along pathMinutes, and no sooner than the stage\'s heroes can put in that work (heroMinutes at workMinutes; byWork says they set it). needs lists what else settling it needs (the place before, the ring\'s star) at their arrivals, as information. A place\'s goods are the world seed\'s, which the ledger does not hold: the price is its coins, so every way out is a floor while its goods are not counted (floor, with its reasons in floorWhy; a level trained by fights, which are not timed, is another). gateWhy says why a stage has no way out (the last stage; no place of the next tier).',
     'A stage\'s content is its full content, information only and held to no budget: the later of its slowest entry\'s arrival and the time the guild\'s heroes take to put in all the work planned for it and the stages before (workMinutes, from heroMinutes of hero time: each level and each price once); pathMinutes is the slowest entry\'s path with every skill levelled side by side, and byWork says the heroes set it. An entry\'s arrival is likewise the later of its path and its own path\'s work.',
     'layouts times each skill\'s days to 99 at both layouts (a camp working the sparse or the dense layout\'s nodes; a site worked from a spawner, a Forest, an Orchard or a Quarry, the whole allowance of each of the layout\'s layoutSpawners: Ledger settings; the pace and everything else here is the timed one) and warns where they differ past the tolerance; nodesOff lists the nodes the dense layout makes past the tolerance more of (the layout check), with each layout\'s nodes.',
     'site (per entry with a work, at opt and typ) is the buildings its profile stands round the work in its site\'s places (BALANCE_RULES section 5: sitePlaces.places round the node, of which its camp, other nodes and spawners take taken; room is what they leave, at most sitePlaces.buildings, at most sitePlaces.perKind boosting one kind), each with its copies and the kinds it boosts, and the camp it works from with the nodes that hands it and the spawners they stand for.',
@@ -184,6 +184,7 @@ function gateText(g) {
         asks: g.asks.map((a) => ({ skill: a.skill, level: a.level, minutes: a.hours === null ? null : minutes(a.hours) })), coins: g.coins,
         minutes: minutes(g.hours), levelMinutes: minutes(g.levelHours), priceMinutes: minutes(g.priceHours), pathMinutes: minutes(g.pathHours),
         workMinutes: minutes(g.workHours), heroMinutes: minutes(g.heroHours), byWork: g.byWork, complete: g.complete,
+        floor: g.floor.length > 0, floorWhy: g.floor.map((f) => PACE_TEXT.wayOutFloor[f]),
         needs: g.needs.map((n) => ({ key: n.key, name: n.name, minutes: minutes(n.hours) })),
     };
 }
@@ -327,7 +328,7 @@ export function readoutText(out) {
     for (const s of out.stages) {
         const g = s.gate;
         const asks = g ? [...g.asks.map((a) => `${a.skill} ${a.level}`), ...(g.coins > 0 ? [`${g.coins} coins`] : [])].join(' + ') : '';
-        const way = g ? `${fmtMin(g.minutes)}${s.offPct === null ? '' : ` (${s.offPct > 0 ? '+' : ''}${s.offPct} %)`}: ${g.name}, ${asks}${g.byWork ? ', its heroes set it' : ''}${g.complete ? '' : ', a floor'}` : s.gateWhy;
+        const way = g ? `${fmtMin(g.minutes)}${s.offPct === null ? '' : ` (${s.offPct > 0 ? '+' : ''}${s.offPct} %)`}: ${g.name}, ${asks}${g.byWork ? ', its heroes set it' : ''}${g.floor ? `, a floor (${g.floorWhy.join('; ')})` : ''}` : s.gateWhy;
         const c = s.content;
         const content = c.entries ? `${fmtMin(c.minutes)}, ${c.entries} (${c.untimed})${c.workMinutes !== undefined ? `, ${fmtMin(c.workMinutes)}${c.byWork ? ' (sets it)' : ''}` : ''}` : 'nothing planned';
         lines.push(`${s.label} | ${way} | ${fmtMin(s.budgetMinutes)} | ${s.heroes} | ${content}`);

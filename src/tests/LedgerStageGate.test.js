@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
 import { buildLedger, wedgeKey, ringKey } from '../systems/progression/ledger/engine.js';
-import { buildPace, PROFILE } from '../../cms/src/engine/ledger/pace.js';
+import { buildPace, PROFILE, WAY_OUT_FLOOR } from '../../cms/src/engine/ledger/pace.js';
 import { normaliseWorldTables } from '../config/worldTablesShape.js';
 import { WORLD_FIXTURE_RAW, worldWorkspace, contentOf, LINE_SKILL } from './fixtures/ledgerWorldMap.js';
 
@@ -124,6 +124,7 @@ describe('the way out of a stage', () => {
         const [f] = stageFindings(pace, 0);
         expect(f).toBeTruthy();
         expect(f.message).toMatch(new RegExp(`^Starter Camp's way out, settling .+ ring 1 \\(${g.asks[0].skill[0].toUpperCase()}${g.asks[0].skill.slice(1)} 3 and 30 coins\\), is had .+ into a new game at Maxed, \\d+ % over its budget of .+ \\(±25 %\\)\\.`));
+        expect(f.message).toMatch(/ A floor: its goods price \(the world seed's\) is not counted\. /);
         expect(f.message).toMatch(/Its full content \(\d+ entries, had .+ in\) is information, not held to the budget\./);
         expect(f.related).toEqual([g.place]);
     });
@@ -137,6 +138,21 @@ describe('the way out of a stage', () => {
         const [f] = stageFindings(pace, 3);
         expect(f).toMatchObject({ severity: 'info' });
         expect(f.message).toMatch(/^Plane 3 has no place of Plane 4 to settle, so its way out is not timed against its budget of .+\. Its full content \(\d+ entries, had .+ in\) is information\.$/);
+    });
+
+    it('⭐ is a floor while a place\'s goods price is not counted: every way out says so, a level fights train besides', () => {
+        const pace = paceOf(gateWorld());
+        const outs = pace.settings.stages.map(s => pace.gateOf(s.tier)).filter(g => g.place);
+        expect(outs.length).toBeGreaterThan(1);
+        for (const g of outs) expect(g.floor).toEqual([WAY_OUT_FLOOR.GOODS]);
+        // Fully timed, yet a floor: the seed's goods are not in the settle rule.
+        expect(pace.gateOf(0).complete).toBe(true);
+        const fight = paceOf(gateWorld({ skills: [{ skill: 'line', level: 3 }, { skill: 'combat', level: 2 }] })).gateOf(0);
+        expect(fight.asks).toContainEqual({ skill: 'combat', level: 2, hours: null });
+        expect(fight.floor).toEqual([WAY_OUT_FLOOR.GOODS, WAY_OUT_FLOOR.FIGHTS]);
+        expect(fight.complete).toBe(false);
+        // No way out, no floor.
+        expect(pace.gateOf(3)).toMatchObject({ place: null, floor: [] });
     });
 
     it('lists what settling the place needs besides its level and price, as information', () => {

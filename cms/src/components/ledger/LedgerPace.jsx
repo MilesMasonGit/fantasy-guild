@@ -51,7 +51,7 @@ export default function LedgerPace({ report, onRefresh, onOpen, focusSkill }) {
       <section className="rounded-xl border bg-[#1a1a1e] border-white/10 p-4 space-y-2" aria-label="Stages">
         <h3 className={sectionHead}>Stages at Maxed</h3>
         <p className="text-[10px] text-gray-500">
-          Leaving a stage means settling the next place: one hero reaches the level it asks in its one or two skills and pays its price. The way out is the soonest of the next stage's places at the Maxed player's rates (the curve's player), timed with the stage's heroes (about one a tier), against the budget: the pace curve's time to the level the next tier opens at (red beyond ±{tol} %). A place's goods are the world seed's, so its price here is its coins. The full content is everything planned for the stage, information only: it is done over the following hours, alongside the new place.
+          Leaving a stage means settling the next place: one hero reaches the level it asks in its one or two skills and pays its price. The way out is the soonest of the next stage's places at the Maxed player's rates (the curve's player), timed with the stage's heroes (about one a tier), against the budget: the pace curve's time to the level the next tier opens at (red beyond ±{tol} %). A place's goods are the world seed's, so its price here is its coins and every way out is a floor until they are counted. The full content is everything planned for the stage, information only: it is done over the following hours, alongside the new place.
         </p>
         <table className="w-full" style={{ borderCollapse: 'collapse' }}>
           <thead>
@@ -77,9 +77,12 @@ export default function LedgerPace({ report, onRefresh, onOpen, focusSkill }) {
                     {g.place ? (
                       <>
                         <div style={{ color: red ? 'var(--color-error)' : 'var(--color-success)' }} data-stage-hours>
-                          {hoursText(g.hours)}{Number.isFinite(off) ? ` (${off >= 0 ? '+' : ''}${Math.round(off * 100)} %)` : ''}{g.complete ? '' : '*'}
+                          {hoursText(g.hours)}{Number.isFinite(off) ? ` (${off >= 0 ? '+' : ''}${Math.round(off * 100)} %)` : ''}{g.floor.length ? '*' : ''}
                         </div>
                         <div>{g.name}: {wayOutAsks(g)}</div>
+                        {g.floor.length > 0 && (
+                          <div className="text-gray-500" data-stage-floor>* a floor: {g.floor.map((f) => PACE_TEXT.wayOutFloor[f]).join('; ')}</div>
+                        )}
                         <div className="text-gray-500" style={{ fontWeight: g.byWork ? 700 : 400 }}>
                           their work {hoursText(g.workHours)}{g.byWork ? ' (sets it)' : ''}; side by side {hoursText(g.pathHours)}
                         </div>
@@ -112,7 +115,7 @@ export default function LedgerPace({ report, onRefresh, onOpen, focusSkill }) {
             })}
           </tbody>
         </table>
-        <p className="text-[10px] text-gray-500">* a floor: a level asked is a fighting style's, or some entries or steps are not timed (never reached, or a step the calculator cannot time).</p>
+        <p className="text-[10px] text-gray-500">* a floor, the real time later: a way out whose place's goods price (the world seed's) is not counted, or whose level asked is a fighting style's; full content with some entries or steps not timed (never reached, or a step the calculator cannot time).</p>
       </section>
 
       <Layouts pace={pace} onOpen={onOpen} />

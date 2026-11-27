@@ -4,19 +4,20 @@ import { Scale, Play, Lock } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { workspaceContent } from '../../stores/useLedgerWatchStore';
 import { runLedgerJob } from '../../engine/ledgerJobsClient';
-import { sortedProposals, changeText, cantFixGroups, BALANCE_TEXT, LEVER } from '../../engine/ledgerBalance';
+import { sortedProposals, changeText, cantFixGroups, wayOutText, noWayOutText, BALANCE_TEXT, LEVER } from '../../engine/ledgerBalance';
 import { PACE_TEXT, formatMinutes } from '../../engine/ledgerPace';
 
 const sectionHead = 'text-[10px] font-black uppercase tracking-wider text-gray-400';
 const cell = { padding: '4px 8px', fontSize: 11, borderBottom: '1px solid rgba(255,255,255,0.04)', verticalAlign: 'top' };
 const head = { ...cell, fontSize: 9, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-text-muted)' };
-const LEVER_ORDER = [LEVER.XP, LEVER.GATE, LEVER.COST, LEVER.TIME, LEVER.BOOST];
+const LEVER_ORDER = [LEVER.XP, LEVER.COST, LEVER.TIME, LEVER.BOOST, LEVER.COINS];
 
 /**
  * The Ledger's Balancing page: on request, the numbers the content would need for the
- * Maxed player (the curve's) to follow the pace curve, each stage to meet its budget and boosts their targets
- * (XP a cycle, level gates, costs and times, boost strengths), the stages and walls before and
- * after them, and what numbers alone cannot fix. A preview: nothing is applied, and Apply stays
+ * Maxed player (the curve's) to follow the pace curve and boosts their targets (XP a cycle, costs
+ * and times, boost strengths, coins), each stage's way out and the walls before and after them, and
+ * what numbers alone cannot fix: a way out off its budget comes with the settle level or coins the
+ * world tables would need, as a suggestion. A preview: nothing is applied, and Apply stays
  * locked until the owner has seen the calculator agree with real play.
  */
 export default function LedgerBalance({ onOpen }) {
@@ -46,11 +47,13 @@ export default function LedgerBalance({ onOpen }) {
           <div>
             <h3 className="text-sm font-bold text-white flex items-center gap-2"><Scale size={14} style={{ color: 'var(--color-accent)' }} /> Balancing preview</h3>
             <p className="text-[11px] text-gray-500 mt-1 max-w-3xl">
-              The numbers the content would need for the Maxed player (the curve's) to follow the pace curve, each stage to meet its budget
-              and each boost its target: XP a cycle, level gates, costs and times, and boost strengths, worked out with the
-              Ledger&apos;s own rate calculator. A preview only: nothing in the workspace changes. Guild Hall prices and strengths
-              wait for their own pass, and gates the world tables set are left alone. An XP number taken as a change pack is
-              pinned on its entry, so Recalculate and Sync keep it.
+              The numbers the content would need for the Maxed player (the curve&apos;s) to follow the pace curve and each boost
+              its target: XP a cycle, costs and times, boost strengths and coins, worked out with the Ledger&apos;s own rate
+              calculator. A preview only: nothing in the workspace changes. A stage is timed by its way out, settling the next
+              place; its full content is information, held to no budget. A way out off its budget is the world tables&apos; to
+              move: below, the settle level or ring&apos;s coins that would bring it there, as a suggestion. Guild Hall prices and
+              strengths wait for their own pass. An XP number taken as a change pack is pinned on its entry, so Recalculate
+              and Sync keep it.
             </p>
           </div>
           <div className="flex gap-2 flex-shrink-0">
@@ -96,13 +99,15 @@ export default function LedgerBalance({ onOpen }) {
   );
 }
 
-const stageColor = (s) => (s.hours === null ? 'var(--color-text-muted)' : s.within ? 'var(--color-success)' : 'var(--color-error)');
-const stageText = (s) => (s.hours === null ? 'nothing planned' : `${PACE_TEXT.hours(s.hours)} (${s.offPct >= 0 ? '+' : ''}${Math.round(s.offPct)} %)`);
+const stageColor = (s) => (!s.place ? 'var(--color-text-muted)' : s.within ? 'var(--color-success)' : 'var(--color-error)');
+const stageText = (s) => (!s.place ? noWayOutText(s) : Number.isFinite(s.hours) && s.offPct !== null
+  ? `${PACE_TEXT.hours(s.hours)} (${s.offPct >= 0 ? '+' : ''}${Math.round(s.offPct)} %)${s.floor.length ? '*' : ''}`
+  : 'never');
 
 function Stages({ result }) {
   return (
     <section className="rounded-xl border bg-[#1a1a1e] border-white/10 p-4 space-y-2" aria-label="Stages before and after">
-      <h3 className={sectionHead}>Stages at Maxed, before and after</h3>
+      <h3 className={sectionHead}>Way out of each stage at Maxed, before and after</h3>
       <table className="w-full" style={{ borderCollapse: 'collapse' }}>
         <thead>
           <tr>
@@ -110,7 +115,8 @@ function Stages({ result }) {
             <th style={{ ...head, textAlign: 'left', width: 90 }}>Budget</th>
             <th style={{ ...head, textAlign: 'left', width: 150 }}>Before</th>
             <th style={{ ...head, textAlign: 'left', width: 150 }}>After</th>
-            <th style={{ ...head, textAlign: 'left' }}>Slowest after</th>
+            <th style={{ ...head, textAlign: 'left', width: 220 }}>Way out after</th>
+            <th style={{ ...head, textAlign: 'left' }}>Full content after (information)</th>
           </tr>
         </thead>
         <tbody>
@@ -120,14 +126,18 @@ function Stages({ result }) {
               <tr key={a.tier} data-balance-stage={a.tier} data-within={a.within ? 'yes' : 'no'}>
                 <td style={cell}>{a.label}</td>
                 <td style={{ ...cell, color: 'var(--color-text-muted)' }}>{formatMinutes(a.budgetMinutes)}</td>
-                <td style={{ ...cell, color: stageColor(b) }}>{stageText(b)}</td>
-                <td style={{ ...cell, color: stageColor(a), fontWeight: 700 }}>{stageText(a)}</td>
-                <td style={{ ...cell, color: 'var(--color-text-secondary)' }}>{a.slowest.map((x) => `${x.name} ${PACE_TEXT.hours(x.hours)}`).join(', ')}</td>
+                <td style={{ ...cell, color: stageColor(b) }} data-balance-before>{stageText(b)}</td>
+                <td style={{ ...cell, color: stageColor(a), fontWeight: 700 }} data-balance-after>{stageText(a)}</td>
+                <td style={{ ...cell, color: 'var(--color-text-secondary)' }} data-balance-way-out>{a.place ? wayOutText(a) : ''}</td>
+                <td style={{ ...cell, color: 'var(--color-text-muted)' }} data-balance-content>
+                  {a.content.entries ? `${PACE_TEXT.hours(a.content.hours)}, ${a.content.entries} ${a.content.entries === 1 ? 'entry' : 'entries'}${a.content.slowest.length ? `: ${a.content.slowest.map((x) => `${x.name} ${PACE_TEXT.hours(x.hours)}`).join(', ')}` : ''}` : 'nothing planned'}
+                </td>
               </tr>
             );
           })}
         </tbody>
       </table>
+      <p className="text-[10px] text-gray-500">* a floor, the real way out later: a place&apos;s goods price (the world seed&apos;s) is not counted, nor the levels fights train.</p>
     </section>
   );
 }
@@ -173,7 +183,7 @@ function Proposals({ result, onOpen }) {
           {LEVER_ORDER.filter((l) => count(l)).map((l) => <option key={l} value={l}>{BALANCE_TEXT.lever[l]} ({count(l)})</option>)}
         </select>
       </div>
-      {!result.proposals.length && <p className="text-[11px] text-gray-500">Nothing to change: every stage, level and boost is within its tolerance, or out for a reason listed below.</p>}
+      {!result.proposals.length && <p className="text-[11px] text-gray-500">Nothing to change: every level and boost is within its tolerance, or out for a reason listed below.</p>}
       {rows.length > 0 && (
         <table className="w-full" style={{ borderCollapse: 'collapse' }}>
           <thead>
@@ -205,7 +215,7 @@ function CantFix({ result, onOpen }) {
   return (
     <section className="rounded-xl border bg-[#1a1a1e] border-white/10 p-4 space-y-3" aria-label="What numbers cannot fix">
       <h3 className={sectionHead}>What numbers alone cannot fix ({result.cantFix.length})</h3>
-      {!groups.length && <p className="text-[11px]" style={{ color: 'var(--color-success)' }}>Nothing: the numbers above bring every stage, level and boost on.</p>}
+      {!groups.length && <p className="text-[11px]" style={{ color: 'var(--color-success)' }}>Nothing: every way out is on its budget, and the numbers above bring every level and boost on.</p>}
       {groups.map((g) => (
         <details key={g.cause} open={g.cause !== 'hall' && g.cause !== 'luck'} data-cant-fix={g.cause}>
           <summary className="text-[11px] font-bold cursor-pointer" style={{ color: 'var(--color-text-primary)' }}>{g.label} ({g.rows.length})</summary>

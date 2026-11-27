@@ -15,11 +15,11 @@ import { workspaceBalance, balancePack, balanceText, sortedProposals, changeText
 import { runLedgerJobNow } from '../../cms/src/engine/ledgerJobs.js';
 import { currentValue, fingerprint, validatePack } from '../../cms/src/engine/changePacks.js';
 import { proposeBalance, LEVER } from '../../cms/src/engine/ledger/balance.js';
-import { balanceContent } from './fixtures/balanceWorld.js';
+import { balanceContent, balanceWorldRaw, withWorld } from './fixtures/balanceWorld.js';
 
 /**
  * The balancing preview in the CMS (brief 290 L9): the Ledger's Balancing page works the preview
- * out on request and shows stages and walls before and after, the proposed numbers and what numbers
+ * out on request and shows each stage's way out and the walls before and after, the proposed numbers and what numbers
  * cannot fix, with Apply locked; the proposals as a change pack the CMS never writes; the agents'
  * `changePackTool.mjs balance`, which never writes into the inbox. The store never persists here
  * (TESTING, "The CMS").
@@ -39,13 +39,13 @@ afterAll(() => {
     expect(localStorage.getItem(WORKSPACE_KEY)).toBe(storedBefore);
 });
 
-/** The balance fixture as the CMS workspace holds it: recipes in pools by skill, the camp's budget only. */
+/** The balance fixture as the CMS workspace holds it: recipes in pools by skill, the camp's budget only, its way out asking Forestry 15. */
 function balanceWorkspace() {
     const c = balanceContent();
     const recipePools = {};
     for (const r of c.recipes) (recipePools[r.skill] ||= []).push(r);
     return {
-        items: c.items, tokens: c.tokens, effects: c.effects, recipePools, starterCamp: c.starterCamp, skillPerks: null,
+        items: c.items, tokens: c.tokens, effects: c.effects, recipePools, starterCamp: c.starterCamp, skillPerks: null, world: balanceWorldRaw({ level: 15 }),
         // The camp is done when the pace rule reaches level 9, about 30 minutes in, with eight
         // heroes from the start so a stage is its slowest path, the levers' measure.
         planSettings: { tierLevels: [{ tier: 0, level: 1 }, { tier: 1, level: 9 }], heroesByTier: [{ tier: 0, heroes: 8 }] }
@@ -56,7 +56,7 @@ describe('the preview over a workspace', () => {
     it('is the proposer over the workspace\'s content and settings, and a job the ledger\'s Worker runs', () => {
         const ws = balanceWorkspace();
         const result = workspaceBalance(ws);
-        const direct = proposeBalance(balanceContent(), ws.planSettings);
+        const direct = proposeBalance(withWorld(balanceContent(), { level: 15 }), ws.planSettings);
         expect(result.proposals.map(p => `${p.key}|${p.field}|${p.to}`).sort()).toEqual(direct.proposals.map(p => `${p.key}|${p.field}|${p.to}`).sort());
         expect(runLedgerJobNow('balance', { workspace: ws }).proposals.length).toBe(result.proposals.length);
         expect(ws).toEqual(balanceWorkspace());
@@ -71,7 +71,9 @@ describe('the preview over a workspace', () => {
         expect(changeText({ from: 12, to: 8 })).toBe('12 → 8 (1.5× down)');
         expect(cantFixGroups(result.cantFix).map(g => g.cause)).toContain('content');
         const text = balanceText(result);
-        expect(text).toMatch(/Starter Camp: 1 h 33 min \(\+209 %\) → \d+ min .*within/);
+        // The way out before and after, what the budget times; the full content beside it.
+        expect(text).toMatch(/^- Starter Camp: 1 h 10 min \(\+133 %\) → 1 h 10 min \(\+133 %\) against 30 min, OUT \(.+ ring 1: Forestry 15, a floor\); full content \d+ min$/m);
+        expect(text).toMatch(/ring 1's settle level Forestry 15 → about \d+/);
         expect(text).toMatch(/Numbers to change: \d+/);
     });
 });
@@ -90,9 +92,11 @@ describe('the proposals as a change pack', () => {
             expect(e).toMatchObject({ op: 'edit', fingerprint: fingerprint(current) });
             for (const p of result.proposals.filter(x => x.kind === e.kind && x.id === e.id)) expect(e.note).toContain(`${p.from} → ${p.to}`);
         }
-        const elixir = pack.entries.find(e => e.id === 'recipe_elixir');
-        expect(elixir.value).toMatchObject({ skill: 'alchemy', name: 'Elixir', inputs: [{ itemId: 'item_herb', quantity: 2 }] });
-        expect(elixir.value.levelRequirement).toBeLessThan(12);
+        const statue = pack.entries.find(e => e.id === 'token_statue');
+        expect(statue.value).toMatchObject({ name: 'Gold Statue', plan: { tier: 0 } });
+        expect(statue.value.shop.price[0].quantity).toBeLessThan(5000);
+        // A way out is the world tables' to move: the pack never writes a settle level.
+        expect(pack.entries.filter(e => e.kind === 'world')).toEqual([]);
         expect(pack.intent.stages).toEqual([expect.objectContaining({ tier: 0, move: 'faster' })]);
         // Made in memory: the workspace is as it was.
         expect(ws).toEqual(balanceWorkspace());
@@ -137,16 +141,23 @@ describe('the Balancing page', { timeout: 30000 }, () => {
         fireEvent.click(view.getByTestId('balance-run'));
         await waitFor(() => expect(view.container.querySelector('[data-balance-stage="0"]')).toBeTruthy(), { timeout: 20000 });
 
-        expect(view.container.querySelector('[data-balance-stage="0"]').getAttribute('data-within')).toBe('yes');
+        // The camp's way out, not its content: off its budget before and after, its settle level suggested.
+        const camp = view.container.querySelector('[data-balance-stage="0"]');
+        expect(camp.getAttribute('data-within')).toBe('no');
+        expect(camp.querySelector('[data-balance-before]').textContent).toBe('1 h 10 min (+133 %)*');
+        expect(camp.querySelector('[data-balance-way-out]').textContent).toMatch(/ring 1: Forestry 15$/);
+        expect(camp.querySelector('[data-balance-content]').textContent).toMatch(/^\d+ min, \d+ entries: Elixir/);
+        expect(view.container.querySelector('[data-cant-fix="world"]').textContent).toMatch(/settle level Forestry 15 → about \d+ .*A suggestion only/);
         const levers = [...view.container.querySelectorAll('[data-proposal]')].map(r => r.getAttribute('data-proposal'));
-        expect(levers).toEqual(expect.arrayContaining([LEVER.XP, LEVER.GATE, LEVER.COST, LEVER.BOOST]));
-        expect(view.getByText('Elixir')).toBeTruthy();
+        expect(levers).toEqual(expect.arrayContaining([LEVER.XP, LEVER.COST, LEVER.BOOST]));
+        expect(levers).not.toContain('gate');
+        expect(view.getByText('Gold Statue')).toBeTruthy();
         expect(view.container.querySelector('[data-cant-fix="content"]').textContent).toMatch(/Mining 30 → 90/);
         expect(view.getByTestId('balance-counts').textContent).toMatch(/Walls \(a run of levels over twice the curve\): 2 → 1/);
         expect(view.getByTestId('balance-apply').disabled).toBe(true);
 
         // A name opens the entry's page; nothing in the workspace changed.
-        fireEvent.click(view.getByText('Elixir'));
+        fireEvent.click(view.getByText('Gold Statue'));
         expect(view.getByText(/Back/)).toBeTruthy();
         expect(JSON.stringify(['items', 'tokens', 'effects', 'recipePools'].map(k => useEntityStore.getState()[k]))).toBe(before);
     });
