@@ -3,7 +3,7 @@
 import { buildRateBook, LIFECYCLE, WORK } from './rates.js';
 import { buildProfiles, targetKey, PROFILE, PROFILES, PROFILE_TEXT, BOOST_KIND, BOOST_KIND_TEXT, boostKindOf, BEFORE_HALL, pickKindOf, RARE_FIND_KINDS } from './profiles.js';
 import { starAddsRate } from './hall.js';
-import { settingsOf, minutesPerLevelAt, minutesToReach, formatMinutes, levelAtMinutes, coinMinutesAt, COIN_CURVE, boostBudgetAt, BOOST_BUDGET_KINDS, heroesAt, chainHeroesAt } from './settings.js';
+import { settingsOf, minutesPerLevelAt, minutesToReach, formatMinutes, levelAtMinutes, coinMinutesAt, COIN_CURVE, boostBudgetAt, BOOST_BUDGET_KINDS, heroesAt, chainHeroesAt, paybackHoursAt } from './settings.js';
 import { ledgerCoinWorth } from './coins.js';
 import { HOW, COMBAT, LUCK_BELOW, parseKey, itemKey, tokenKey, recipeKey, wedgeKey, starKey, spotPoolKey, LEDGER_ENGINE_TEXT } from '../../../../src/systems/progression/ledger/engine.js';
 import { spotOf } from '../../../../src/config/registries/fishingSpots.js';
@@ -55,7 +55,10 @@ import { shopCoinsOf, enemyCoinDropOf } from '../../../../src/config/registries/
  * - **Checks D**: walls (a level far slower than the pace curve), a long wait for one unlock, a
  *   stage's time against its budget, Typical, Bare and Maxed out of their bounds, a Guild Hall rank
  *   slow to pay back, a boost off its target strength, boosts held over the boost budget, a coin
- *   price nothing earns, and what the calculator cannot read.
+ *   price nothing earns, and what the calculator cannot read; and three the balance rules promise
+ *   (sections 1 and 5): a chain's XP per raw unit far off its tier's median, a drink or work
+ *   potion's batch paying back under its factor, and a Hall rank off the payback curve over all the
+ *   work it boosts.
  * - **The Guild Hall**: every rank's payback at Typical (the hours to gather its price against the
  *   hours it saves an hour on the work it pays best on, at the tier the owner gave it), and a
  *   proposed price for it (a preview: brief 290's rule, until the calculator is seen to agree with
@@ -115,6 +118,9 @@ export const PACE_TEXT = Object.freeze({
     /** A count of a named thing: "1 Oak Forest", "2 Quarries". */
     count: (n, name) => `${n} ${n === 1 ? name : /[^aeiou]y$/i.test(name) ? `${name.slice(0, -1)}ies` : /(s|x|ch|sh)$/i.test(name) ? `${name}es` : `${name}s`}`,
     rate: (n) => (n >= 100 ? `${Math.round(n)}` : n >= 10 ? n.toFixed(1) : n.toFixed(2)),
+    /** A number to two places, no trailing zeros: "4.67", "2". */
+    figure: (n) => `${Math.round(n * 100) / 100}`,
+    pieces: (n) => (n === 1 ? 'one piece of work' : `${n} pieces of work`),
     earning: (n) => `earning ${n} ${n === 1 ? 'coin' : 'coins'}`,
     noCoins: 'nothing earns its coins by then',
     coinSupply: (name, coins, stage) => `${name} asks ${coins} ${coins === 1 ? 'coin' : 'coins'}, but nothing the guild has by ${stage} earns coins: give what its work makes a coin worth (a value), an enemy a Coin drop or a steal table coins.`,
@@ -157,6 +163,14 @@ export function ringBudgetTier(ring, ringRungs = null) {
 }
 const list = (v) => (Array.isArray(v) ? v.filter(Boolean) : []);
 const sum = (xs) => xs.reduce((a, b) => a + b, 0);
+
+/** The fewest chains a tier needs for its median to say anything (the chain XP check). */
+const CHAIN_MEDIAN_MIN = 3;
+const medianOf = (xs) => {
+    const s = [...xs].sort((a, b) => a - b);
+    const mid = Math.floor(s.length / 2);
+    return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+};
 
 /** A boost-strength target at a tier, in percent: the last point at or before it, else null. */
 export function boostTargetAt(settings, kind, tier) {
@@ -1658,6 +1672,36 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             add('hall-payback', `hall:${row.id}`, `${row.name} rank ${row.rank} (${stageWords(row)}) costs ${row.priceText} (${PACE_TEXT.short(row.priceHours)} to gather at Typical${opened}) ${savesWords(row)}: it pays back in ${PACE_TEXT.hours(row.payback)}, over the ${PACE_TEXT.hours(settings.hallPaybackHours)} a Guild Hall rank has to pay for itself.`, { name: row.name });
         }
 
+        // A Guild Hall rank over all the work it boosts, on the payback curve: slow is a warning, far quicker information.
+        const tol = settings.tolerancePct / 100;
+        for (const h of hallGuildPaybacks()) {
+            // A free rank (a new guild's) has no price to pay back.
+            if (h.cost === 0 || !(Math.abs(h.off) > tol + 1e-9)) continue;
+            const slow = h.off > 0;
+            const over = !Number.isFinite(h.payback) ? 'never within' : h.off >= 1 ? `${PACE_TEXT.times(h.off + 1)}` : `${Math.round(Math.abs(h.off) * 100)} % ${slow ? 'over' : 'under'}`;
+            const across = h.id === ROSTER_STAR ? 'as another hero' : `over all the work it boosts (${PACE_TEXT.pieces(h.works)}, the ${h.counted} best for the guild's ${PACE_TEXT.heroes(h.heroes)})`;
+            const remedy = slow ? 'Lower its price or raise what it gives' : 'It is cheap for what it gives: raise its price, or let it be if it is a first step';
+            add('hall-guild-payback', `hall:${h.id}`, `${h.name} rank ${h.rank} (${stageWords(h.row)}) ${Number.isFinite(h.cost) ? `costs ${PACE_TEXT.short(h.cost)} at Typical` : 'costs what Typical cannot gather by then'} and saves ${PACE_TEXT.saves(h.gain)} ${across}: it pays back in ${PACE_TEXT.hours(h.payback)}, ${over} the payback curve's ${PACE_TEXT.hours(h.curve)} at level ${h.level} (±${settings.tolerancePct} %; BALANCE_RULES section 5: payback is 1 hour × 24^(L / 80) and counts all the work a star boosts). ${remedy}.`, {
+                name: h.name, severity: slow ? 'warn' : 'info'
+            });
+        }
+
+        // A drink or work potion whose batch saves less than the rules' factor of its making.
+        for (const b of batchPaybackRows()) {
+            if (!(b.ratio < settings.batchPayback - 1e-9)) continue;
+            add('batch-payback', itemKey(b.item), `${b.name}: a dose lasts ${PACE_TEXT.figure(b.doseCycles)} cycles of ${workName(b.work)} and saves ${PACE_TEXT.saves(b.gain)} of it at Typical, where its doses take ${PACE_TEXT.saves(b.spends)} of hero time to make, ingredients included: it pays back ${PACE_TEXT.times(b.ratio)} its making, under the ${settings.batchPayback}× a batch must pay back (BALANCE_RULES section 5: a batch saves at least four times the time it took to make). Make it stronger, make more of it a craft, or ask less of its recipe.`, {
+                severity: 'warn', name: b.name, related: [b.work.entry]
+            });
+        }
+
+        // A chain paying far more or less XP per raw unit than its tier's others.
+        for (const c of chainXpRows()) {
+            if (c.off === null || !(Math.abs(c.off) > tol + 1e-9)) continue;
+            add('chain-xp', itemKey(c.item), `${c.name} (${tierLabel(c.tier)}, a chain of ${c.links} links) pays ${PACE_TEXT.figure(c.perRaw)} XP per raw unit (${PACE_TEXT.figure(c.xp)} XP over ${PACE_TEXT.figure(c.raw)} raw), ${Math.round(Math.abs(c.off) * 100)} % ${c.off > 0 ? 'over' : 'under'} its tier's median of ${PACE_TEXT.figure(c.median)} XP (±${settings.tolerancePct} %; BALANCE_RULES section 1: each link of a chain pays its own XP, so a tier's chains pay about alike for what they take from the ground). Move a link's XP, or its ingredient counts, toward the median.`, {
+                severity: 'warn', name: c.name
+            });
+        }
+
         for (const g of boostGroups()) {
             const lifted = g.works;
             const shown = lifted.slice(0, 4).map(w => `${workName(w.work)} +${Math.round(w.gain * 100)} %`).join(', ');
@@ -2419,6 +2463,187 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         return rows;
     }
 
+    // ── three checks the balance rules promise (sections 1 and 5) ─────────────────────────────
+    const isStation = (work) => rates.workKindOf(work.target).kind === WORK.STATION;
+    /** A work's rate at its authored numbers: Bare, its milestone perks left out. */
+    const authoredRate = (work, cap) => rates.numbersOf(work.target, { ...profiles.bareSetup(profiles.contextOf(work.target), cap), perks: false });
+
+    let chainMemo = null;
+    /**
+     * Every chain's total XP per raw unit (BALANCE_RULES section 1: each link pays its own XP, so ore
+     * to ingot to dagger pays three times). A chain ends at an item a station makes that no live
+     * station recipe spends; its XP is every link's for one of it, each link at its authored XP (one
+     * action at Bare, no perks), over the raw units it takes: what gathering, a water, a field or
+     * anything but a station gives, each counted once. Each item comes from its best source at Bare
+     * at the end's stage. Beside each, the median of its tier's chains (by the end's tier) and how far
+     * off it is, null where a tier has fewer than {@link CHAIN_MEDIAN_MIN} chains. A chain through a
+     * loop is left out. `[{ item, name, tier, cap, xp, raw, perRaw, links, median, off }]`, by tier then name.
+     */
+    function chainXpRows() {
+        if (chainMemo) return chainMemo;
+        indexMakers();
+        const spent = new Set();
+        for (const work of works) {
+            if (work.tier === null || !counted(work.entry) || !isStation(work)) continue;
+            for (const input of list(rates.recipes[work.target.recipe]?.inputs)) if (input?.itemId) spent.add(input.itemId);
+        }
+        const memo = new Map();
+        const chainOf = (itemId, cap, stack) => {
+            const key = `${itemId}|${cap}`;
+            if (memo.has(key)) return memo.get(key);
+            if (stack.has(itemId)) return null;
+            const work = supplyOf(itemId, PROFILE.BARE, cap).work;
+            let out = null;
+            if (!work || !isStation(work)) {
+                const r = work ? authoredRate(work, cap) : null;
+                const made = r?.ok ? sum(Object.values(r.items || {})) : 0;
+                out = { xp: made > 0 ? sum(Object.values(r.xp || {})) / made : 0, raw: 1, links: work ? 1 : 0 };
+            } else {
+                const r = authoredRate(work, cap);
+                const made = r?.ok ? r.items?.[itemId] || 0 : 0;
+                if (made > 0) {
+                    stack.add(itemId);
+                    let xp = sum(Object.values(r.xp || {})) / made;
+                    let raw = 0;
+                    let links = 0;
+                    let whole = true;
+                    for (const [input, n] of Object.entries(r.inputs || {})) {
+                        const c = chainOf(input, cap, stack);
+                        if (!c) { whole = false; break; }
+                        xp += (n / made) * c.xp;
+                        raw += (n / made) * c.raw;
+                        links = Math.max(links, c.links);
+                    }
+                    stack.delete(itemId);
+                    if (whole && raw > 0) out = { xp, raw, links: links + 1 };
+                }
+            }
+            memo.set(key, out);
+            return out;
+        };
+        const rows = [];
+        const ends = new Set();
+        for (const work of works) {
+            if (work.tier === null || !counted(work.entry) || !isStation(work)) continue;
+            for (const o of list(rates.recipes[work.target.recipe]?.outputs)) if (o?.itemId && !spent.has(o.itemId)) ends.add(o.itemId);
+        }
+        for (const itemId of ends) {
+            const key = itemKey(itemId);
+            const cap = tierOfKey(key);
+            const tier = effTier(key);
+            if (cap === null || tier === null || !counted(key)) continue;
+            const c = chainOf(itemId, cap, new Set());
+            if (!c || c.links < 2) continue;
+            rows.push({ item: itemId, name: nameOf(key), tier, cap, xp: c.xp, raw: c.raw, perRaw: c.xp / c.raw, links: c.links, median: null, off: null });
+        }
+        const byTier = new Map();
+        for (const row of rows) {
+            if (!byTier.has(row.tier)) byTier.set(row.tier, []);
+            byTier.get(row.tier).push(row);
+        }
+        for (const group of byTier.values()) {
+            if (group.length < CHAIN_MEDIAN_MIN) continue;
+            const median = medianOf(group.map(r => r.perRaw));
+            for (const row of group) {
+                row.median = median;
+                row.off = median > 0 ? row.perRaw / median - 1 : null;
+            }
+        }
+        rows.sort((a, b) => a.tier - b.tier || a.name.localeCompare(b.name));
+        chainMemo = rows;
+        return rows;
+    }
+
+    let batchMemo = null;
+    /**
+     * Every drink and work potion's batch payback (BALANCE_RULES section 5: a batch saves at least
+     * `settings.batchPayback` times the hero time it took to make, ingredients included), on the work
+     * it pays back best on: that work's Typical setup at the stage both are had, the consumable added
+     * (any other in its one-holder slot taken off), against the same without it. `gain` is the work it
+     * saves an hour (as a boost's strength is read: the larger of its items' worth and its XP), `doses`
+     * what it spends of it an hour at the game's dose length (the rate calculator reads it from
+     * `consumableRule.js`), `doseCycles` the cycles one lasts, `unitHours` the hero-hours one takes to
+     * make with its ingredients, `spends` the hours an hour its doses take to make, and `ratio` the
+     * one over the other. A craft's batch is so many doses for so many times one's making, so the
+     * ratio is the batch's. `[{ item, name, tier, cap, work, gain, doses, doseCycles, unitHours, spends, ratio }]`, by name.
+     */
+    function batchPaybackRows() {
+        if (batchMemo) return batchMemo;
+        const best = new Map();
+        for (const work of works) {
+            if (work.tier === null || !counted(work.entry)) continue;
+            const ctx = profiles.contextOf(work.target);
+            // A build is done once and Passive Production is no hero's: a batch is drunk over repeatable work.
+            if (!ctx.consumables.length || ctx.kind === WORK.PASSIVE || ctx.kind === WORK.FIGHT || ctx.kind === WORK.BUILD) continue;
+            for (const id of ctx.consumables) {
+                const key = itemKey(id);
+                const tier = tierOfKey(key);
+                if (tier === null || !counted(key)) continue;
+                const cap = Math.max(work.tier, tier);
+                const offers = profiles.offers(ctx, cap).filter(o => o.kind === BOOST_KIND.CONSUMABLE);
+                const offer = offers.find(o => o.id === id);
+                if (!offer) continue;
+                const mates = new Set(offers.filter(o => o.id === id || (offer.slot && o.slot === offer.slot)).map(o => o.id));
+                const typical = profiles.profileOf(work.target, PROFILE.TYPICAL, cap).setup;
+                const base = { ...typical, consumables: list(typical.consumables).filter(c => !mates.has(c)) };
+                const r0 = rates.rateOf(work.target, base);
+                const r1 = rates.rateOf(work.target, offer.apply(base));
+                const doses = r1?.boostInputs?.[id] || 0;
+                if (!r0?.ok || !r1?.ok || !(doses > 0)) continue;
+                const unit = unitHours(id, cap);
+                if (!Number.isFinite(unit)) continue;
+                const gain = gainOf(r0, r1, (item) => unitHours(item, cap));
+                if (!(gain > 1e-9)) continue;
+                const spends = doses * unit;
+                const ratio = spends > 0 ? gain / spends : Infinity;
+                const prev = best.get(id);
+                if (!prev || ratio > prev.ratio) {
+                    best.set(id, { item: id, name: nameOf(key), tier: effTier(key) ?? tier, cap, work, gain, doses, doseCycles: r1.cyclesPerHour / doses, unitHours: unit, spends, ratio });
+                }
+            }
+        }
+        batchMemo = [...best.values()].sort((a, b) => a.name.localeCompare(b.name));
+        return batchMemo;
+    }
+
+    let hallGuildMemo = null;
+    /**
+     * Every Guild Hall rank's payback over all the work it boosts (BALANCE_RULES section 5: for a
+     * star that boosts the whole guild, payback counts all the work it boosts, not one hero's), on
+     * the payback curve ({@link paybackHoursAt}, at the level its tier opens at). What it saves is the
+     * hours an hour each boosted work open by its stage saves at Typical (as `hallPaybacks` measures
+     * one), the most-saving ones added, one per hero the reference guild has there (`heroes`): no
+     * more work runs at once than the guild has heroes. Its cost is `hallPaybacks`'s: the price at
+     * Typical before the Hall and the stars lit to open it. A Bunk Beds rank is another hero, an hour
+     * of work an hour. Ranks that add no rate and enablers are left out.
+     * `[{ id, name, rank, tier, cap, level, heroes, works, counted, gain, oneWork, cost, payback, curve, off, row }]`.
+     */
+    function hallGuildPaybacks() {
+        if (hallGuildMemo) return hallGuildMemo;
+        const rows = [];
+        for (const row of hallPaybacks()) {
+            if (row.rate === false || row.enabler) continue;
+            const heroes = heroesAt(settings, row.cap);
+            const saves = row.id === ROSTER_STAR ? [1] : hallWorksOf(row.id)
+                .filter(w => w.tier <= row.cap)
+                .map(w => profiles.hallRankOn(w.target, row.cap, row.id, row.rank)?.saves || 0)
+                .filter(s => s > 0 && Number.isFinite(s))
+                .sort((a, b) => b - a);
+            const worked = Math.min(heroes, saves.length);
+            const gain = sum(saves.slice(0, worked));
+            const cost = row.priceHours + row.opening.cost;
+            const payback = cost === 0 ? 0 : gain > 0 ? cost / gain : Infinity;
+            const level = tierLevelAt(settings.tierLevels, row.tier ?? row.cap);
+            const curve = paybackHoursAt(level);
+            rows.push({
+                id: row.id, name: row.name, rank: row.rank, tier: row.tier, cap: row.cap, level, heroes, works: saves.length, counted: worked,
+                gain, oneWork: row.gain, cost, payback, curve, off: payback / curve - 1, row
+            });
+        }
+        hallGuildMemo = rows;
+        return rows;
+    }
+
     // ── the boost budget ───────────────────────────────────────────────────────────────────────
     /** A level held within a tier's span on the ladder: from the level the tier opens at to before the next tier's. */
     const levelInTier = (tier, level) => {
@@ -2614,6 +2839,9 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         },
         ringOpensAt,
         hallPaybacks,
+        hallGuildPaybacks,
+        chainXpRows,
+        batchPaybackRows,
         hallName,
         effTier,
         boostRows,

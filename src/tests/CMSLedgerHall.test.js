@@ -72,7 +72,7 @@ describe('the change-pack gate reads the sky', () => {
         };
         const gate = runGate(workspace, pack, workspaceSnapshot);
         expect(gate.errors || []).toEqual([]);
-        expect(gate.diff.added.map(f => `${f.check}|${f.key}`)).toEqual(['hall-payback|hall:ph_gold_two']);
+        expect(gate.diff.added.map(f => `${f.check}|${f.key}`)).toEqual(['hall-guild-payback|hall:ph_gold_two', 'hall-payback|hall:ph_gold_two']);
         // The stars already there are in both sides: the Gold Leaf already in the workspace adds nothing.
         expect(gate.before.findings.some(f => f.key === 'hall:ph_gold')).toBe(true);
         useEntityStore.setState(empty);
@@ -112,6 +112,9 @@ describe('the Ledger tab', { timeout: 20000 }, () => {
         const gold = row('ph_gold|1');
         expect(gold.getAttribute('data-hall-pays')).toBe('no');
         expect(gold.querySelector('[data-hall-payback]').style.color).toBe('var(--color-error)');
+        // Beside it, its payback over all the work it boosts against the payback curve: red, far slower.
+        expect(gold.querySelector('[data-hall-guild]').textContent).toMatch(/ on 1 work \(curve 1 h 2 min\)$/);
+        expect(gold.querySelector('[data-hall-guild]').style.color).toBe('var(--color-error)');
         expect(row('ph_spring|2').querySelector('[data-hall-proposed]').textContent).toBe('no tier set');
         // A star that adds no rate has no payback row; it is listed under Problems.
         expect(row('ph_infirmary|1')).toBeNull();
