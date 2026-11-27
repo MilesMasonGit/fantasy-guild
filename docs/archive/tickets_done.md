@@ -585,3 +585,4 @@ T-737 — Nodes at 15 s and 60 s back (900 B7) — 1046c9dab — 2026-11-26
 T-738 — One drink at a time (910 W1) — bcf54de90 — 2026-11-26
 T-150 — Built then superseded by the owner's job-flag pick — 0b26987f1 — 2026-10-29
 T-361 — Moot: superseded by T-710 (effect clock retired) — 9e803ef5e — 2026-11-25
+T-614 — Dropped: events stay biome-free (owner 2026-11-27) — - — 2026-11-27
