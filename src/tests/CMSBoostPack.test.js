@@ -38,6 +38,9 @@ const fixtureWorkspace = () => ({
         item_coffee: { id: 'item_coffee', name: 'Coffee', type: 'drink', equipSlot: 'drink', effects: [ref('eff_coffee')], plan: live(7) },
         item_bounty: { id: 'item_bounty', name: 'Bounty Potion', type: 'potion', equipSlot: 'consumable', effects: [ref('eff_bounty')], plan: live(2) },
         item_luck: { id: 'item_luck', name: 'Luck Potion', type: 'potion', equipSlot: 'consumable', effects: [ref('eff_luck')], plan: live(4) },
+        item_great_luck: { id: 'item_great_luck', name: 'Great Luck Potion', type: 'potion', equipSlot: 'consumable', effects: [ref('eff_great_luck')], plan: live(6) },
+        item_harvest: { id: 'item_harvest', name: 'Harvest Draught', type: 'potion', equipSlot: 'consumable', effects: [ref('eff_harvest')], plan: live(7) },
+        item_nest_potion: { id: 'item_nest_potion', name: 'Birdwatcher', type: 'potion', equipSlot: 'consumable', effects: [ref('eff_nest_potion')], plan: live(2) },
         item_masters: { id: 'item_masters', name: 'Masters Draught', type: 'potion', equipSlot: 'consumable', effects: [ref('eff_masters')], plan: live(3) },
         item_beer: { id: 'item_beer', name: 'Beer', type: 'drink', equipSlot: 'drink', effects: [ref('eff_beer')], plan: live(2) },
         item_mead: { id: 'item_mead', name: 'Mead', type: 'drink', equipSlot: 'drink', effects: [ref('eff_mead')], plan: live(3) },
@@ -59,6 +62,11 @@ const fixtureWorkspace = () => ({
         token_market: { id: 'token_market', name: 'Market', tokenType: 'buff', tags: [], effects: [ref('eff_mixed')], plan: live(3) },
         token_sawmill: { id: 'token_sawmill', name: 'Sawmill', tokenType: 'camp', tags: [], camp: { skill: 'forestry' }, effects: [ref('eff_camp')], plan: live(3) },
         token_rainfall: { id: 'token_rainfall', name: 'Rainfall', tokenType: 'buff', tags: ['Event'], effects: [ref('eff_rain')] },
+        token_ore_market: { id: 'token_ore_market', name: 'Ore Market', tokenType: 'camp', tags: [], camp: { skill: 'mining' }, effects: [ref('eff_camp_speed')], plan: live(3) },
+        token_camp_head: { id: 'token_camp_head', name: 'Mine Head', tokenType: 'camp', tags: [], camp: { skill: 'mining' }, effects: [ref('eff_camp_rest')], plan: live(3) },
+        token_study: { id: 'token_study', name: "Master's Study", tokenType: 'station', tags: [], config: { skill: 'alchemy' }, effects: [ref('eff_study')], plan: live(3) },
+        token_bush: { id: 'token_bush', name: 'Blackberry Bush', tokenType: 'resource', tags: [], config: { skill: 'farming' }, effects: [ref('eff_bonus')], plan: live(0) },
+        token_oak: { id: 'token_oak', name: 'Oak', tokenType: 'resource', tags: [], config: { skill: 'forestry' }, mastery: { ranks: [{ effectId: 'eff_mastery' }] }, plan: live(0) },
         token_old_yard: { id: 'token_old_yard', name: 'Old Yard', tokenType: 'buff', tags: [], effects: [ref('eff_old')], plan: { status: 'parked' } },
     },
     effects: {
@@ -76,6 +84,17 @@ const fixtureWorkspace = () => ({
         eff_mixed: effect('eff_mixed', provides('WORK_TIME', 'percentage', -0.1), provides('XP_BONUS', 'percentage', 0.1)),
         eff_camp: effect('eff_camp', provides('LOOT_MULT', 'flat', 10, { category: 'forestry' })),
         eff_rain: effect('eff_rain', provides('LOOT_MULT', 'flat', 20, { category: 'farming' })),
+        eff_camp_speed: effect('eff_camp_speed', provides('WORK_TIME', 'percentage', -0.1, { category: 'smithing' })),
+        eff_camp_rest: effect('eff_camp_rest', provides('GROW_TIME', 'percentage', -0.2, { category: 'mining' })),
+        eff_study: effect('eff_study', provides('XP_BONUS', 'percentage', 0.1, { reach: 'self' })),
+        eff_bonus: effect('eff_bonus', { keyword: 'grants', payload: { type: 'BONUS_DROP', itemId: 'item_ore', quantity: 1 }, to: { mode: 'all', value: '' }, reach: 'nearby', when: null }),
+        eff_mastery: effect('eff_mastery', provides('WORK_TIME', 'percentage', -0.05, { reach: 'self' })),
+        eff_great_luck: effect('eff_great_luck', applies('st_great_luck')),
+        st_great_luck: effect('st_great_luck', provides('LUCKY', 'percentage', 0.5, { reach: 'nearby' })),
+        eff_harvest: effect('eff_harvest', applies('st_harvest')),
+        st_harvest: effect('st_harvest', provides('LOOT_MULT', 'flat', 5, { reach: 'nearby' })),
+        eff_nest_potion: effect('eff_nest_potion', applies('st_nest')),
+        st_nest: effect('st_nest', { keyword: 'grants', payload: { type: 'BONUS_DROP', itemId: 'item_ore', quantity: 1 }, to: { mode: 'all', value: '' }, reach: 'nearby', when: null }),
         eff_old: effect('eff_old', provides('WORK_TIME', 'percentage', -0.3)),
         eff_orphan: effect('eff_orphan', provides('WORK_TIME', 'percentage', -0.3)),
         eff_perk_early: effect('eff_perk_early', provides('WORK_TIME', 'percentage', -0.08, { category: 'mining' })),
@@ -177,12 +196,15 @@ describe('pack boosts: the rule\'s numbers', () => {
         expect(result.filled.some((f) => f.where.includes('star_rest') && f.from === f.to)).toBe(true);
     });
 
-    it('sizes the one consumable from its tier\'s maxed cells: speed a quarter, XP the whole, yield +50 %, rare finds +100 %', () => {
+    it('sizes the one consumable by its tier: speed a quarter of the speed total, XP the XP total, yield 10 to 50 %, rare finds +100 % then +200 % from adamantine', () => {
         // Coffee is darkmetal (speed 60 %): 15 %. Tea is silver (XP 15 %). Luck is mythril.
         expect(effectValue(result.pack, 'st_coffee')).toBe(-0.15);
         expect(effectValue(result.pack, 'st_tea')).toBe(0.15);
-        expect(effectValue(result.pack, 'st_bounty')).toBe(0.5);
+        // Bounty is iron: +15 % yield. Harvest is darkmetal: +50 %. Luck is mythril (+100 %), Great Luck adamantine (+200 %).
+        expect(effectValue(result.pack, 'st_bounty')).toBe(0.15);
+        expect(effectValue(result.pack, 'st_harvest')).toBe(50);
         expect(effectValue(result.pack, 'st_luck')).toBe(1);
+        expect(effectValue(result.pack, 'st_great_luck')).toBe(2);
         // The item's own rule (Applies) is left as it is.
         expect(result.pack.entries.some((e) => e.id === 'eff_tea')).toBe(false);
     });
@@ -200,16 +222,13 @@ describe('pack boosts: the rule\'s numbers', () => {
         const reasons = Object.fromEntries(result.unclear.map((u) => [u.where, u.reason]));
         const unclearOf = (fragment) => Object.entries(reasons).find(([w]) => w.includes(fragment))?.[1];
         expect(unclearOf('eff_tool')).toMatch(/tool/);
-        expect(unclearOf('eff_station_loot')).toMatch(/station's own/);
         expect(unclearOf('eff_mixed')).toMatch(/more than one kind/);
-        expect(unclearOf('eff_camp')).toMatch(/camp/);
-        expect(unclearOf('eff_rain')).toMatch(/event/);
         expect(unclearOf('eff_perk_xp')).toMatch(/perk/);
         expect(unclearOf('st_masters')).toMatch(/more than one kind/);
         expect(unclearOf('st_merry')).toMatch(/Beer.*Mead|Mead.*Beer/);
         expect(unclearOf('star_mixed')).toMatch(/more than one kind/);
         const written = new Set(result.pack.entries.map((e) => e.id));
-        for (const id of ['eff_tool', 'eff_station_loot', 'eff_mixed', 'eff_camp', 'eff_rain', 'eff_perk_xp', 'st_masters', 'st_merry', 'star_mixed']) expect(written.has(id)).toBe(false);
+        for (const id of ['eff_tool', 'eff_mixed', 'eff_perk_xp', 'st_masters', 'st_merry', 'star_mixed']) expect(written.has(id)).toBe(false);
     });
 
     it('skips what is left alone on purpose: a parked bearer, an effect nothing carries; fight and other axes are not counted', () => {

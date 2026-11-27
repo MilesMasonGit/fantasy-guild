@@ -14,8 +14,8 @@
  * - **Guild Hall stars**: a star's ranks reach 10 % of its kind at its top rank, in even steps (a
  *   rank holds its whole value, as `hallModifiers` reads it);
  * - **the one consumable** (a drink or a work potion: what it applies at a work moment): a speed
- *   drink a quarter of its tier's speed total, an XP drink its tier's XP total, a yield potion +50 %,
- *   a rare-finds potion +100 %.
+ *   drink a quarter of its tier's speed total, an XP drink its tier's XP total, a yield potion by its
+ *   tier (+10 % at copper to +50 % at darkmetal), a rare-finds potion +100 %, +200 % from adamantine.
  * Tier totals are the ledger's boost budget, the Maxed cell of the row the tier falls in
  * (`settings.boostBudget`, from the workspace's plan settings). An item's tier is its plan's tier,
  * else the tier the ledger first reaches it at (`options.tierOf`), as the ledger's budget check reads it.
@@ -45,8 +45,19 @@ export const BOOST_RULE = Object.freeze({
     stationStep: 5,
     perkShare: 0.25,
     hallStar: 10,
-    consumable: Object.freeze({ speedShare: 0.25, xpShare: 1, yield: 50, rare: 100 }),
+    // Yield and rare finds by plan tier (the balancer, 2026-11-26): copper (tiers 0 and 1) to darkmetal; rare +200 % from adamantine (owner, 2026-11-07).
+    consumable: Object.freeze({
+        speedShare: 0.25, xpShare: 1,
+        yieldByTier: Object.freeze([10, 10, 15, 20, 25, 30, 40, 50]),
+        rare: 100, rareLate: 200, rareLateTier: 6,
+    }),
 });
+
+/** A yield drink or potion's size at a plan tier, the last tier's past the table. */
+const consumableYieldAt = (tier) => {
+    const table = BOOST_RULE.consumable.yieldByTier;
+    return table[Math.min(Math.max(0, tier), table.length - 1)];
+};
 
 /** The axes the pack sizes: the kind each moves, the bucket the rule's number is written in, and its sign. */
 const AXIS = Object.freeze({
@@ -299,8 +310,8 @@ export function writeBoostPack(workspace, { id, createdAt = new Date().toISOStri
         settle(rows, bearer, 'consumable', (kind) => {
             if (kind === 'speed') return BOOST_RULE.consumable.speedShare * row.speed.maxed;
             if (kind === 'xp') return BOOST_RULE.consumable.xpShare * row.xp.maxed;
-            if (kind === 'yield') return BOOST_RULE.consumable.yield;
-            if (kind === 'rare') return BOOST_RULE.consumable.rare;
+            if (kind === 'yield') return consumableYieldAt(tier);
+            if (kind === 'rare') return tier >= BOOST_RULE.consumable.rareLateTier ? BOOST_RULE.consumable.rareLate : BOOST_RULE.consumable.rare;
             return { unclear: `a consumable's ${KIND_TEXT[kind]}: the one consumable is sized for speed, XP, yield or rare finds` };
         }, { tier });
     }

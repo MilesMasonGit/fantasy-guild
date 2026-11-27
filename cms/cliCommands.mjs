@@ -69,7 +69,7 @@ export const USAGE = `Usage: npm run cms -- <command> [options]
                                   skill's speed perks a quarter of the tier's speed total; a Guild
                                   Hall star 10 % of its kind over its ranks; the one consumable
                                   (a speed drink a quarter of its tier's speed total, an XP one the
-                                  tier's XP total, yield +50 %, rare finds +100 %). Tier totals are
+                                  tier's XP total, yield +10 to +50 % by tier, rare +100 or +200 %). Tier totals are
                                   the ledger's boost budget (Maxed). Only the number moves. What
                                   fits no source or mixes kinds is listed (and written to
                                   --unclear, else <id>-unclear.txt beside the pack), never guessed. Written to --out (never into
