@@ -16,6 +16,8 @@ import { paceContent } from './fixtures/paceWorld.js';
  */
 
 const paceOf = (content = paceContent(), settings = null) => buildPace(content, buildLedger(content), settings);
+/** A batch factor every drink meets: Typical drinks what its own weighing takes, as these tests were written for. */
+const ANY_BATCH = { batchPayback: 1e-6 };
 
 const provides = (id, type, bucket, value, to, extra = {}) => ({ id: `stm_${id}`, keyword: 'provides', to, reach: 'nearby', payload: { type, bucket, value, ...extra } });
 const building = (id, name, statements) => ({ id, name, tokenType: 'buff', uses: null, requiresHero: false, config: null, statements });
@@ -85,7 +87,7 @@ describe('heroes staff the chain', () => {
 
     it('⭐ counts the brewers of a work\'s drinks among its chain\'s heroes: a boost\'s goods are spent once', () => {
         // Typical drinks Beer at the vein; its brewer at the Still and two fifths of a forester per Still are the chain's.
-        const pace = paceOf(paceContent(), { heroesByTier: [{ tier: 0, heroes: 8 }] });
+        const pace = paceOf(paceContent(), { ...ANY_BATCH, heroesByTier: [{ tier: 0, heroes: 8 }] });
         const vein = pace.rateAt(VEIN, PROFILE.TYPICAL);
         expect(vein.chosen.map(c => c.id)).toContain('item_beer');
         const staff = pace.staffingOf(VEIN, PROFILE.TYPICAL);

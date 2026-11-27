@@ -1,7 +1,7 @@
 // the progression ledger's pace: supply, level times and path time at each profile, and checks D
 
 import { buildRateBook, LIFECYCLE, WORK } from './rates.js';
-import { buildProfiles, targetKey, PROFILE, PROFILES, PROFILE_TEXT, BOOST_KIND, BOOST_KIND_TEXT, boostKindOf, BEFORE_HALL, pickKindOf, RARE_FIND_KINDS } from './profiles.js';
+import { buildProfiles, targetKey, PROFILE, PROFILES, PROFILE_TEXT, BOOST_KIND, BOOST_KIND_TEXT, boostKindOf, BEFORE_HALL, pickKindOf, RARE_FIND_KINDS, gainOf, batchPaybackOf, repeatedByHero } from './profiles.js';
 import { starAddsRate } from './hall.js';
 import { settingsOf, minutesPerLevelAt, minutesToReach, formatMinutes, levelAtMinutes, coinMinutesAt, COIN_CURVE, boostBudgetAt, BOOST_BUDGET_KINDS, heroesAt, chainHeroesAt, paybackHoursAt } from './settings.js';
 import { ledgerCoinWorth } from './coins.js';
@@ -438,6 +438,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     profiles = buildProfiles(rates, {
         tierOf: tierOfKey, unitHours, costHours, hallUnitHours, horizonHours: () => settings.paybackHours, hallHorizonHours: () => settings.hallPaybackHours,
         hallCoinHours: (coins, cap) => coinCostHours(coins, BEFORE_HALL, cap),
+        batchPayback: settings.batchPayback,
         campNodes: settings.layouts[settings.layout],
         campSpawners: settings.layoutSpawners[settings.layout],
         sitePlaces: settings.sitePlaces,
@@ -1661,27 +1662,28 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             });
         }
 
-        // Guild Hall ranks: each must pay for itself, at Typical.
+        // Guild Hall ranks: one that adds no rate is named; one whose price its stage cannot gather is a price fault.
         for (const row of hallPaybacks()) {
-            if (row.rate === false) {
-                if (row.rank === 1 && !row.ring) add('unmodelled', `hall:${row.id}`, `${row.name}: what it gives (${row.what}) is not a rate, so its payback is not worked out.`, { name: row.name });
-                continue;
-            }
-            if (row.enabler || row.pays) continue;
-            const opened = row.opening.path.length ? `, and ${PACE_TEXT.short(row.opening.cost)} to open it, ${openingWords(row.opening)}` : '';
-            add('hall-payback', `hall:${row.id}`, `${row.name} rank ${row.rank} (${stageWords(row)}) costs ${row.priceText} (${PACE_TEXT.short(row.priceHours)} to gather at Typical${opened}) ${savesWords(row)}: it pays back in ${PACE_TEXT.hours(row.payback)}, over the ${PACE_TEXT.hours(settings.hallPaybackHours)} a Guild Hall rank has to pay for itself.`, { name: row.name });
+            if (row.rate === false && row.rank === 1 && !row.ring) add('unmodelled', `hall:${row.id}`, `${row.name}: what it gives (${row.what}) is not a rate, so its payback is not worked out.`, { name: row.name });
+            if (Number.isFinite(row.priceHours)) continue;
+            const missing = row.price.filter(p => !Number.isFinite(hallUnitHours(p.itemId, row.cap))).map(p => nameOf(itemKey(p.itemId)));
+            const coins = row.coins > 0 && !Number.isFinite(rankCoinHours(row)) ? [PACE_TEXT.coins(row.coins)] : [];
+            const what = [...missing, ...coins].join(' and ');
+            add('hall-price-unreachable', `hall:${row.id}`, `${row.name} rank ${row.rank} (${stageWords(row)}) costs ${row.priceText}, which cannot be gathered by ${tierLabel(row.cap)} at Typical${what ? ` (${what} is not had by then)` : ''}: no one can buy it there, so its payback is not worked out. Price it in what its stage gathers, or set it at the stage its price is first had.`, {
+                severity: 'warn', name: row.name
+            });
         }
 
         // A Guild Hall rank over all the work it boosts, on the payback curve: slow is a warning, far quicker information.
         const tol = settings.tolerancePct / 100;
         for (const h of hallGuildPaybacks()) {
-            // A free rank (a new guild's) has no price to pay back.
-            if (h.cost === 0 || !(Math.abs(h.off) > tol + 1e-9)) continue;
+            // A free rank (a new guild's) has no price to pay back; one no one can pay is a price fault, above.
+            if (h.cost === 0 || !Number.isFinite(h.row.priceHours) || !(Math.abs(h.off) > tol + 1e-9)) continue;
             const slow = h.off > 0;
             const over = !Number.isFinite(h.payback) ? 'never within' : h.off >= 1 ? `${PACE_TEXT.times(h.off + 1)}` : `${Math.round(Math.abs(h.off) * 100)} % ${slow ? 'over' : 'under'}`;
             const across = h.id === ROSTER_STAR ? 'as another hero' : `over all the work it boosts (${PACE_TEXT.pieces(h.works)}, the ${h.counted} best for the guild's ${PACE_TEXT.heroes(h.heroes)})`;
             const remedy = slow ? 'Lower its price or raise what it gives' : 'It is cheap for what it gives: raise its price, or let it be if it is a first step';
-            add('hall-guild-payback', `hall:${h.id}`, `${h.name} rank ${h.rank} (${stageWords(h.row)}) ${Number.isFinite(h.cost) ? `costs ${PACE_TEXT.short(h.cost)} at Typical` : 'costs what Typical cannot gather by then'} and saves ${PACE_TEXT.saves(h.gain)} ${across}: it pays back in ${PACE_TEXT.hours(h.payback)}, ${over} the payback curve's ${PACE_TEXT.hours(h.curve)} at level ${h.level} (±${settings.tolerancePct} %; BALANCE_RULES section 5: payback is 1 hour × 24^(L / 80) and counts all the work a star boosts). ${remedy}.`, {
+            add('hall-guild-payback', `hall:${h.id}`, `${h.name} rank ${h.rank} (${stageWords(h.row)}) ${Number.isFinite(h.cost) ? `costs ${PACE_TEXT.short(h.cost)} at Typical` : 'is behind stars Typical cannot light by then'} and saves ${PACE_TEXT.saves(h.gain)} ${across}: it pays back in ${PACE_TEXT.hours(h.payback)}, ${over} the payback curve's ${PACE_TEXT.hours(h.curve)} at level ${h.level} (±${settings.tolerancePct} %; BALANCE_RULES section 5: payback is 1 hour × 24^(L / 80) and counts all the work a star boosts). ${remedy}.`, {
                 name: h.name, severity: slow ? 'warn' : 'info'
             });
         }
@@ -1694,11 +1696,14 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             });
         }
 
-        // A chain paying far more or less XP per raw unit than its tier's others.
+        // A chain paying more or less XP an hour of its gathering than its tier's others: far off is a warning.
+        const warnAt = settings.chainXpWarnFactor;
         for (const c of chainXpRows()) {
             if (c.off === null || !(Math.abs(c.off) > tol + 1e-9)) continue;
-            add('chain-xp', itemKey(c.item), `${c.name} (${tierLabel(c.tier)}, a chain of ${c.links} links) pays ${PACE_TEXT.figure(c.perRaw)} XP per raw unit (${PACE_TEXT.figure(c.xp)} XP over ${PACE_TEXT.figure(c.raw)} raw), ${Math.round(Math.abs(c.off) * 100)} % ${c.off > 0 ? 'over' : 'under'} its tier's median of ${PACE_TEXT.figure(c.median)} XP (±${settings.tolerancePct} %; BALANCE_RULES section 1: each link of a chain pays its own XP, so a tier's chains pay about alike for what they take from the ground). Move a link's XP, or its ingredient counts, toward the median.`, {
-                severity: 'warn', name: c.name
+            const ratio = c.off + 1;
+            const far = ratio > warnAt + 1e-9 || ratio < 1 / warnAt - 1e-9;
+            add('chain-xp', itemKey(c.item), `${c.name} (${tierLabel(c.tier)}, a chain of ${c.links} links) pays ${PACE_TEXT.figure(c.xpPerHour)} XP an hour of the gathering behind it (${PACE_TEXT.figure(c.xp)} XP over ${PACE_TEXT.short(c.rawHours)} of gathering ${PACE_TEXT.figure(c.raw)} raw), ${Math.round(Math.abs(c.off) * 100)} % ${c.off > 0 ? 'over' : 'under'} its tier's median of ${PACE_TEXT.figure(c.median)} XP an hour (±${settings.tolerancePct} %, a warning beyond ${warnAt}× either way; BALANCE_RULES section 1: each link of a chain pays its own XP, so a tier's chains pay about alike for the time they take from the ground). ${far ? "Move a link's XP, or its ingredient counts, toward the median." : 'Information: within the warning factor.'}`, {
+                severity: far ? 'warn' : 'info', name: c.name
             });
         }
 
@@ -2068,11 +2073,6 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         : tierLabel(row.tier ?? row.cap));
     /** The stars lit to open a star, in words: "lighting Gold Leaf and Lore". */
     const openingWords = (opening) => `lighting ${opening.path.map(id => hallName(id)).join(' and ')}`;
-    const savesWords = (row) => {
-        if (!(row.gain > 0)) return 'and saves no time at its tier (no work it reaches is open by then)';
-        const on = row.work ? ` on ${workName(row.work)}` : '';
-        return `and saves ${PACE_TEXT.saves(row.gain)}${on}`;
-    };
 
     /** The Hall's works: each piece of work a track's ranks may move (its context lists the track). */
     const hallWorksMemo = new Map();
@@ -2470,14 +2470,17 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
 
     let chainMemo = null;
     /**
-     * Every chain's total XP per raw unit (BALANCE_RULES section 1: each link pays its own XP, so ore
-     * to ingot to dagger pays three times). A chain ends at an item a station makes that no live
-     * station recipe spends; its XP is every link's for one of it, each link at its authored XP (one
-     * action at Bare, no perks), over the raw units it takes: what gathering, a water, a field or
-     * anything but a station gives, each counted once. Each item comes from its best source at Bare
-     * at the end's stage. Beside each, the median of its tier's chains (by the end's tier) and how far
-     * off it is, null where a tier has fewer than {@link CHAIN_MEDIAN_MIN} chains. A chain through a
-     * loop is left out. `[{ item, name, tier, cap, xp, raw, perRaw, links, median, off }]`, by tier then name.
+     * Every chain's total XP per hour of the gathering behind it (BALANCE_RULES section 1: each link
+     * pays its own XP, so ore to ingot to dagger pays three times). A chain ends at an item a station
+     * makes that no live station recipe spends; its XP is every link's for one of it, each link at its
+     * authored XP (one action at Bare, no perks), over the hours its raw inputs take to gather: what
+     * gathering, a water, a field or anything but a station gives, each at its own Bare source's rate
+     * (a rare drop at its find rate; one in stock is free). Each item comes from its best source at
+     * Bare at the end's stage; a raw input with no source by then leaves the chain out. Beside each,
+     * the median of its tier's chains (by the end's tier) and how far off it is, null where a tier has
+     * fewer than {@link CHAIN_MEDIAN_MIN} chains. A chain through a loop is left out.
+     * `[{ item, name, tier, cap, xp, raw, rawHours, xpPerHour, links, median, off }]`, `raw` its raw
+     * units, by tier then name.
      */
     function chainXpRows() {
         if (chainMemo) return chainMemo;
@@ -2492,12 +2495,14 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             const key = `${itemId}|${cap}`;
             if (memo.has(key)) return memo.get(key);
             if (stack.has(itemId)) return null;
-            const work = supplyOf(itemId, PROFILE.BARE, cap).work;
+            const source = supplyOf(itemId, PROFILE.BARE, cap);
+            const work = source.work;
             let out = null;
             if (!work || !isStation(work)) {
+                const hours = source.perHour === Infinity ? 0 : source.perHour > 0 ? 1 / source.perHour : null;
                 const r = work ? authoredRate(work, cap) : null;
                 const made = r?.ok ? sum(Object.values(r.items || {})) : 0;
-                out = { xp: made > 0 ? sum(Object.values(r.xp || {})) / made : 0, raw: 1, links: work ? 1 : 0 };
+                if (hours !== null) out = { xp: made > 0 ? sum(Object.values(r.xp || {})) / made : 0, raw: 1, hours, links: work ? 1 : 0 };
             } else {
                 const r = authoredRate(work, cap);
                 const made = r?.ok ? r.items?.[itemId] || 0 : 0;
@@ -2505,6 +2510,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                     stack.add(itemId);
                     let xp = sum(Object.values(r.xp || {})) / made;
                     let raw = 0;
+                    let hours = 0;
                     let links = 0;
                     let whole = true;
                     for (const [input, n] of Object.entries(r.inputs || {})) {
@@ -2512,10 +2518,11 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                         if (!c) { whole = false; break; }
                         xp += (n / made) * c.xp;
                         raw += (n / made) * c.raw;
+                        hours += (n / made) * c.hours;
                         links = Math.max(links, c.links);
                     }
                     stack.delete(itemId);
-                    if (whole && raw > 0) out = { xp, raw, links: links + 1 };
+                    if (whole && hours > 0) out = { xp, raw, hours, links: links + 1 };
                 }
             }
             memo.set(key, out);
@@ -2534,7 +2541,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             if (cap === null || tier === null || !counted(key)) continue;
             const c = chainOf(itemId, cap, new Set());
             if (!c || c.links < 2) continue;
-            rows.push({ item: itemId, name: nameOf(key), tier, cap, xp: c.xp, raw: c.raw, perRaw: c.xp / c.raw, links: c.links, median: null, off: null });
+            rows.push({ item: itemId, name: nameOf(key), tier, cap, xp: c.xp, raw: c.raw, rawHours: c.hours, xpPerHour: c.xp / c.hours, links: c.links, median: null, off: null });
         }
         const byTier = new Map();
         for (const row of rows) {
@@ -2543,10 +2550,10 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         }
         for (const group of byTier.values()) {
             if (group.length < CHAIN_MEDIAN_MIN) continue;
-            const median = medianOf(group.map(r => r.perRaw));
+            const median = medianOf(group.map(r => r.xpPerHour));
             for (const row of group) {
                 row.median = median;
-                row.off = median > 0 ? row.perRaw / median - 1 : null;
+                row.off = median > 0 ? row.xpPerHour / median - 1 : null;
             }
         }
         rows.sort((a, b) => a.tier - b.tier || a.name.localeCompare(b.name));
@@ -2574,7 +2581,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             if (work.tier === null || !counted(work.entry)) continue;
             const ctx = profiles.contextOf(work.target);
             // A build is done once and Passive Production is no hero's: a batch is drunk over repeatable work.
-            if (!ctx.consumables.length || ctx.kind === WORK.PASSIVE || ctx.kind === WORK.FIGHT || ctx.kind === WORK.BUILD) continue;
+            if (!ctx.consumables.length || !repeatedByHero(ctx.kind)) continue;
             for (const id of ctx.consumables) {
                 const key = itemKey(id);
                 const tier = tierOfKey(key);
@@ -2586,19 +2593,12 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                 const mates = new Set(offers.filter(o => o.id === id || (offer.slot && o.slot === offer.slot)).map(o => o.id));
                 const typical = profiles.profileOf(work.target, PROFILE.TYPICAL, cap).setup;
                 const base = { ...typical, consumables: list(typical.consumables).filter(c => !mates.has(c)) };
-                const r0 = rates.rateOf(work.target, base);
                 const r1 = rates.rateOf(work.target, offer.apply(base));
-                const doses = r1?.boostInputs?.[id] || 0;
-                if (!r0?.ok || !r1?.ok || !(doses > 0)) continue;
-                const unit = unitHours(id, cap);
-                if (!Number.isFinite(unit)) continue;
-                const gain = gainOf(r0, r1, (item) => unitHours(item, cap));
-                if (!(gain > 1e-9)) continue;
-                const spends = doses * unit;
-                const ratio = spends > 0 ? gain / spends : Infinity;
+                const b = batchPaybackOf(rates.rateOf(work.target, base), r1, id, (item) => unitHours(item, cap));
+                if (!b) continue;
                 const prev = best.get(id);
-                if (!prev || ratio > prev.ratio) {
-                    best.set(id, { item: id, name: nameOf(key), tier: effTier(key) ?? tier, cap, work, gain, doses, doseCycles: r1.cyclesPerHour / doses, unitHours: unit, spends, ratio });
+                if (!prev || b.ratio > prev.ratio) {
+                    best.set(id, { item: id, name: nameOf(key), tier: effTier(key) ?? tier, cap, work, ...b, doseCycles: r1.cyclesPerHour / b.doses });
                 }
             }
         }
@@ -2914,27 +2914,6 @@ export function roundUp(n) {
 }
 
 /**
- * How much better a rate is than another: the larger of its items' worth (each at the hours one
- * takes) and its XP, as a fraction (0.25 is 25 % better). What it spends is the boost's price, not
- * its strength, so it is left out.
- */
-export function gainOf(r0, r1, unitHours) {
-    if (!r0?.ok || !r1?.ok) return 0;
-    const worth = (r) => {
-        let w = 0;
-        for (const [item, n] of Object.entries(r.items || {})) { const h = unitHours(item); if (Number.isFinite(h)) w += n * h; }
-        return w;
-    };
-    const xp = (r) => Object.values(r.xp || {}).reduce((a, b) => a + b, 0);
-    const w0 = worth(r0);
-    const w1 = worth(r1);
-    const items = w0 > 0 ? w1 / w0 - 1 : 0;
-    const x0 = xp(r0);
-    const xpGain = x0 > 0 ? xp(r1) / x0 - 1 : 0;
-    return Math.max(items, xpGain);
-}
-
-/**
  * What one rate's boosts add to another's, by the boost budget's kinds, in percent (null where a
  * kind can be read on nothing): speed the cut in work time, or in a node's growth or rest where that
  * is cut more (Farming's growth counts as speed); XP a cycle's XP; yield a cycle's main output (what
@@ -2977,4 +2956,4 @@ export function findsGainOf(r0, r1) {
     return top;
 }
 
-export { PROFILE, PROFILES, PROFILE_TEXT };
+export { PROFILE, PROFILES, PROFILE_TEXT, gainOf };

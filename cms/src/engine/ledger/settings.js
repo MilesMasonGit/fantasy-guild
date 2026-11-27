@@ -24,6 +24,7 @@ import { PLAN_TIER_LEVELS, tierOrNull, tierLevelsOf, tierLevelAt } from '../../.
  *       paybackHours: 2,                             // a sensible investor's boost pays for itself within this
  *       hallPaybackHours: 24,                        // and a Guild Hall rank within this
  *       batchPayback: 4,                             // a drink or work potion's batch saves at least this many times its making
+ *       chainXpWarnFactor: 2,                        // a chain's XP an hour of gathering this many times off its tier's median warns
  *       steadyFindsPerDay: 1,                        // a rare find on repeatable work this often a day is a steady source
  *       coinCurve: [{ tier, minutes }],              // an everyday coin cost asks one hero's coins earned in this long, from a stage on
  *       bigCoinCurve: [{ tier, minutes }],           // and a big one this long
@@ -187,6 +188,8 @@ export const DEFAULT_LEDGER_SETTINGS = Object.freeze({
     hallPaybackHours: 24,
     // BALANCE_RULES section 5: a batch of drinks or work potions saves at least four times the hero time it took to make, ingredients included.
     batchPayback: 4,
+    // The balancer (2026-11-26): a chain's XP an hour of its gathering warns beyond twice or half its tier's median; within, information.
+    chainXpWarnFactor: 2,
     // The owner (2026-11-07): a low rate on repeatable work is still steady. ⚠️ Matches the engine's STEADY_FINDS_PER_DAY (pinned by a test).
     steadyFindsPerDay: 1,
     coinCurve: DEFAULT_COIN_CURVE,
@@ -248,6 +251,7 @@ export function settingsOf(raw) {
         paybackHours: positive(src.paybackHours, d.paybackHours),
         hallPaybackHours: positive(src.hallPaybackHours, d.hallPaybackHours),
         batchPayback: positive(src.batchPayback, d.batchPayback),
+        chainXpWarnFactor: Math.max(1, positive(src.chainXpWarnFactor, d.chainXpWarnFactor)),
         steadyFindsPerDay: positive(src.steadyFindsPerDay, d.steadyFindsPerDay),
         coinCurve: Array.isArray(src.coinCurve) ? coinCurveOf(src.coinCurve) : clone(d.coinCurve),
         bigCoinCurve: Array.isArray(src.bigCoinCurve) ? coinCurveOf(src.bigCoinCurve) : clone(d.bigCoinCurve),
