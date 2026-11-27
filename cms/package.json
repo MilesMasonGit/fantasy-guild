@@ -12,7 +12,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.24.1",
     "@tailwindcss/vite": "^4.3.0",
     "ajv": "^8.20.0",
     "file-saver": "^2.0.5",

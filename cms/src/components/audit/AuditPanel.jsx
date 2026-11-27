@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useSimulationStore } from '../../stores/useSimulationStore';
 import { useEntityStore } from '../../stores/useEntityStore';
-import { ArrowUpDown, Filter, Sparkles, Calculator } from 'lucide-react';
+import { ArrowUpDown, Filter, Calculator } from 'lucide-react';
 import SpriteAuditDashboard from './SpriteAuditDashboard';
 import AnchorElections from '../shared/AnchorElections';
 
@@ -12,7 +12,7 @@ const SEVERITY_COLORS = {
   Info: 'var(--color-info, #3b82f6)',
 };
 
-export default function AuditPanel({ openGenerate }) {
+export default function AuditPanel() {
   const auditResults = useSimulationStore((s) => s.auditResults);
   const lastRun = useSimulationStore((s) => s.lastRunTimestamp);
   const setActiveEntity = useEntityStore((s) => s.setActiveEntity);
@@ -111,7 +111,6 @@ export default function AuditPanel({ openGenerate }) {
           setFilterType={setFilterType}
           toggleSort={toggleSort}
           handleRowClick={handleRowClick}
-          openGenerate={openGenerate}
           lastRun={lastRun}
         />
         </>
@@ -174,7 +173,6 @@ function AuditListView({
   setFilterType,
   toggleSort,
   handleRowClick,
-  openGenerate,
   lastRun,
 }) {
   return (

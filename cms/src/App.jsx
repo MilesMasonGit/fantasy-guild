@@ -29,7 +29,7 @@ function App() {
   useEffect(() => startLedgerWatchIfWorker(), []);
   return (
     <AppShell>
-      {({ currentView, openGenerate, setCurrentView }) => {
+      {({ currentView, setCurrentView }) => {
         if (currentView === 'recipes') return <RecipeEditor />;
         if (currentView === 'progression') return <ProgressionPanel />;
         if (currentView === 'ledger') return <LedgerPanel setCurrentView={setCurrentView} />;
@@ -39,10 +39,10 @@ function App() {
         if (currentView === 'hallStars') return <HallStarsPage />;
         if (currentView === 'events') return <EventsPage />;
         if (currentView === 'sprites') return <SpriteAuditDashboard />;
-        if (currentView === 'audit') return <div className="p-4 h-full"><AuditPanel openGenerate={openGenerate} /></div>;
+        if (currentView === 'audit') return <div className="p-4 h-full"><AuditPanel /></div>;
         return (
           <SupplyChainLayout>
-            <EditorRouter openGenerate={openGenerate} />
+            <EditorRouter />
           </SupplyChainLayout>
         );
       }}
@@ -50,7 +50,7 @@ function App() {
   );
 }
 
-function EditorRouter({ openGenerate }) {
+function EditorRouter() {
   const activeType = useEntityStore((s) => s.activeEntityType);
   const activeId = useEntityStore((s) => s.activeEntityId);
 
@@ -74,7 +74,7 @@ function EditorRouter({ openGenerate }) {
 
   const Editor = EDITOR_MAP[activeType];
   if (!Editor) return <div style={{ color: 'var(--color-text-muted)' }}>Unknown entity type: {activeType}</div>;
-  return <Editor openGenerate={openGenerate} />;
+  return <Editor />;
 }
 
 function Hint({ icon, label }) {

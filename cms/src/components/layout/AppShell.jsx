@@ -9,7 +9,6 @@ const INBOX_POLL_MS = 20000;
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import { WorkspaceBanner } from './WorkspaceStatus';
-import GenerateModal from '../shared/GenerateModal';
 import SettingsModal from '../shared/SettingsModal';
 import FileManagerModal from '../shared/FileManagerModal';
 
@@ -18,8 +17,6 @@ const VIEWS_WITH_SIDEBAR = new Set(['editor', 'sprites']);
 
 export default function AppShell({ children }) {
   const [currentView, setCurrentView] = useState('editor');
-  const [generateOpen, setGenerateOpen] = useState(false);
-  const [generatePrefill, setGeneratePrefill] = useState(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [fileManagerOpen, setFileManagerOpen] = useState(false);
 
@@ -35,17 +32,11 @@ export default function AppShell({ children }) {
     };
   }, []);
 
-  const openGenerate = (prefill = null) => {
-    setGeneratePrefill(prefill);
-    setGenerateOpen(true);
-  };
-
   return (
     <div className="flex flex-col h-screen w-screen" style={{ background: 'var(--color-bg-deep)' }}>
       <TopBar
         onViewChange={setCurrentView}
         currentView={currentView}
-        onOpenGenerate={() => openGenerate()}
         onOpenSettings={() => setSettingsOpen(true)}
         onOpenFileManager={() => setFileManagerOpen(true)}
       />
@@ -53,17 +44,9 @@ export default function AppShell({ children }) {
       <div className="flex flex-1 overflow-hidden">
         {VIEWS_WITH_SIDEBAR.has(currentView) && <Sidebar />}
         <main className="flex-1 overflow-auto p-4">
-          {children({ currentView, openGenerate, setCurrentView })}
+          {children({ currentView, setCurrentView })}
         </main>
       </div>
-
-      {generateOpen && (
-        <GenerateModal
-          isOpen={generateOpen}
-          onClose={() => setGenerateOpen(false)}
-          prefill={generatePrefill}
-        />
-      )}
 
       <SettingsModal 
         isOpen={settingsOpen} 
