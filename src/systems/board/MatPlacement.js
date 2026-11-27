@@ -375,8 +375,8 @@ let failedSearches = { tokens: null, stamp: '', keys: new Set() };
 /**
  * Everything a search for room reads, as it is now: `{ tokens, stamp }`, the same while no Token has
  * arrived, left or moved, no enemy has started or ended a step, and the Mat Tuner (the mat's size
- * included), the Token registry, the recipe list and the ground are as they were. A search that found no room finds none again until
- * it changes: the failure memo below.
+ * included), the Token registry, the recipe list and the ground are as they were. A search that
+ * found no room finds none again until it changes: the failure memo below.
  */
 export function roomVersion() {
     if (!tuningWatched) {
