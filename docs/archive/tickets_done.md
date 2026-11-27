@@ -586,3 +586,6 @@ T-738 — One drink at a time (910 W1) — bcf54de90 — 2026-11-26
 T-150 — Built then superseded by the owner's job-flag pick — 0b26987f1 — 2026-10-29
 T-361 — Moot: superseded by T-710 (effect clock retired) — 9e803ef5e — 2026-11-25
 T-614 — Dropped: events stay biome-free (owner 2026-11-27) — - — 2026-11-27
+T-726 — a stepping enemy keeps the 128 u spacing and cannot be pushed while it steps — 716c0e852 — 2026-11-27
+T-744 — QA panel button gives the old starting kit — 716c0e852 — 2026-11-27
+T-740 — the built-in Hall star stand-ins retired; a missing required star is a content error — 240551b70 — 2026-11-27
