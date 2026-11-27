@@ -5,7 +5,7 @@
     "inputs": [
       {
         "itemId": "item_copper_ore",
-        "quantity": 4
+        "quantity": 2
       },
       {
         "itemId": "item_coal",
@@ -25,20 +25,22 @@
         "variable": false
       }
     ],
-    "xp": 6,
-    "id": "recipe_copper_ingot",
-    "durationMs": 8000,
+    "xp": 3,
+    "durationMs": 8900,
     "levelRequirement": 1,
     "stationChargeCost": 1,
     "sim": {
       "tempo": "fast",
       "purpose": "iph",
-      "xpPinned": true
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
     },
     "skill": "smithing",
     "stationKinds": [
       "furnace"
-    ]
+    ],
+    "id": "recipe_copper_ingot"
   },
   {
     "name": "Copper Pickaxe",
@@ -46,7 +48,7 @@
     "inputs": [
       {
         "itemId": "item_copper_ingot",
-        "quantity": 4
+        "quantity": 2
       },
       {
         "itemId": "item_oak_wood",
@@ -67,19 +69,21 @@
         "variable": false
       }
     ],
-    "xp": 1,
-    "id": "recipe_copper_pickaxe",
-    "durationMs": 8000,
+    "xp": 7,
+    "durationMs": 19200,
     "levelRequirement": 4,
     "stationChargeCost": 1,
     "sim": {
       "tempo": "fast",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
     },
-    "skill": "smithing"
+    "skill": "smithing",
+    "id": "recipe_copper_pickaxe"
   },
   {
-    "id": "recipe_mtozw3la",
     "name": "Copper Woodaxe",
     "skill": "smithing",
     "levelRequirement": 3,
@@ -87,7 +91,7 @@
     "inputs": [
       {
         "itemId": "item_copper_ingot",
-        "quantity": 3
+        "quantity": 2
       },
       {
         "itemId": "item_oak_wood",
@@ -107,16 +111,19 @@
         "variable": false
       }
     ],
-    "durationMs": 16000,
+    "durationMs": 19700,
     "stationChargeCost": 1,
-    "xp": 2,
+    "xp": 7,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_mtozw3la"
   },
   {
-    "id": "recipe_mtp8qjj0",
     "name": "Iron Ingot",
     "skill": "smithing",
     "levelRequirement": 20,
@@ -124,11 +131,11 @@
     "inputs": [
       {
         "itemId": "item_iron_ore",
-        "quantity": 6
+        "quantity": 3
       },
       {
         "itemId": "item_coal",
-        "quantity": 2
+        "quantity": 1
       }
     ],
     "outputs": [
@@ -145,16 +152,19 @@
         "variable": false
       }
     ],
-    "durationMs": 20000,
+    "durationMs": 8800,
     "stationChargeCost": 1,
-    "xp": 8,
+    "xp": 5,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_mtp8qjj0"
   },
   {
-    "id": "recipe_mtp8qjj1",
     "name": "Gold Ingot",
     "skill": "smithing",
     "levelRequirement": 50,
@@ -162,7 +172,7 @@
     "inputs": [
       {
         "itemId": "item_gold_ore",
-        "quantity": 8
+        "quantity": 5
       },
       {
         "itemId": "item_coal",
@@ -182,17 +192,19 @@
         "variable": false
       }
     ],
-    "durationMs": 27000,
+    "durationMs": 11300,
     "stationChargeCost": 1,
-    "xp": 34,
+    "xp": 13,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_mtp8qjj1"
   },
   {
-    "id": "recipe_mtp8qjj2",
     "name": "Silver Ingot",
     "skill": "smithing",
     "levelRequirement": 30,
@@ -200,7 +212,7 @@
     "inputs": [
       {
         "itemId": "item_silver_ore",
-        "quantity": 8
+        "quantity": 3
       },
       {
         "itemId": "item_coal",
@@ -220,19 +232,22 @@
         "variable": false
       }
     ],
-    "durationMs": 23000,
+    "durationMs": 9800,
     "stationChargeCost": 1,
-    "xp": 18,
+    "xp": 7,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
     },
     "stationKinds": [
       "furnace"
-    ]
+    ],
+    "id": "recipe_mtp8qjj2"
   },
   {
-    "id": "recipe_mtp8qjj3",
     "name": "Mythril Ingot",
     "skill": "smithing",
     "levelRequirement": 40,
@@ -240,11 +255,11 @@
     "inputs": [
       {
         "itemId": "item_mythril_ore",
-        "quantity": 10
+        "quantity": 4
       },
       {
         "itemId": "item_coal",
-        "quantity": 4
+        "quantity": 2
       }
     ],
     "outputs": [
@@ -260,17 +275,19 @@
         "variable": false
       }
     ],
-    "durationMs": 25000,
+    "durationMs": 10800,
     "stationChargeCost": 1,
-    "xp": 50,
+    "xp": 10,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_mtp8qjj3"
   },
   {
-    "id": "recipe_mtp8qjj4",
     "name": "Adamantine Ingot",
     "skill": "smithing",
     "levelRequirement": 60,
@@ -278,11 +295,11 @@
     "inputs": [
       {
         "itemId": "item_adamantine_ore",
-        "quantity": 12
+        "quantity": 6
       },
       {
         "itemId": "item_coal",
-        "quantity": 6
+        "quantity": 3
       }
     ],
     "outputs": [
@@ -298,17 +315,19 @@
         "variable": false
       }
     ],
-    "durationMs": 29000,
+    "durationMs": 12100,
     "stationChargeCost": 1,
-    "xp": 89,
+    "xp": 18,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_mtp8qjj4"
   },
   {
-    "id": "recipe_mtp8qjj5",
     "name": "Darkmetal Ingot",
     "skill": "smithing",
     "levelRequirement": 80,
@@ -316,11 +335,11 @@
     "inputs": [
       {
         "itemId": "item_darkmetal_ore",
-        "quantity": 16
+        "quantity": 8
       },
       {
         "itemId": "item_coal",
-        "quantity": 8
+        "quantity": 4
       }
     ],
     "outputs": [
@@ -336,17 +355,19 @@
         "variable": false
       }
     ],
-    "durationMs": 34000,
+    "durationMs": 13900,
     "stationChargeCost": 1,
-    "xp": 375,
+    "xp": 33,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_mtp8qjj5"
   },
   {
-    "id": "recipe_muily2ph",
     "name": "Copper Nails",
     "skill": "smithing",
     "levelRequirement": 5,
@@ -365,24 +386,27 @@
       {
         "itemId": "item_copper_nails",
         "chance": 100,
-        "minQty": 2,
-        "maxQty": 2,
+        "minQty": 5,
+        "maxQty": 5,
         "baseQty": {
-          "min": 2,
-          "max": 2
+          "min": 5,
+          "max": 5
         },
         "variable": false
       }
     ],
-    "durationMs": 6000,
+    "durationMs": 8000,
     "stationChargeCost": 1,
     "xp": 3,
     "sim": {
-      "tempo": "fast"
-    }
+      "tempo": "fast",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_muily2ph"
   },
   {
-    "id": "recipe_copper_dagger",
     "name": "Copper Dagger",
     "skill": "smithing",
     "levelRequirement": 2,
@@ -410,16 +434,19 @@
         "variable": false
       }
     ],
-    "durationMs": 8000,
+    "durationMs": 11600,
     "stationChargeCost": 1,
-    "xp": 1,
+    "xp": 4,
     "sim": {
       "tempo": "fast",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_copper_dagger"
   },
   {
-    "id": "recipe_copper_sword",
     "name": "Copper Sword",
     "skill": "smithing",
     "levelRequirement": 6,
@@ -447,13 +474,17 @@
         "variable": false
       }
     ],
-    "durationMs": 17000,
+    "durationMs": 18100,
     "stationChargeCost": 1,
-    "xp": 2,
+    "xp": 7,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_copper_sword"
   },
   {
     "id": "recipe_copper_bow",
@@ -486,7 +517,7 @@
     ],
     "durationMs": 17000,
     "stationChargeCost": 1,
-    "xp": 2,
+    "xp": 6,
     "sim": {
       "tempo": "medium",
       "purpose": "iph"
@@ -526,7 +557,7 @@
     ],
     "durationMs": 17000,
     "stationChargeCost": 1,
-    "xp": 2,
+    "xp": 6,
     "sim": {
       "tempo": "medium",
       "purpose": "iph"
@@ -536,7 +567,6 @@
     ]
   },
   {
-    "id": "recipe_copper_helmet",
     "requiresContext": [],
     "stationChargeCost": 1,
     "name": "Copper Helmet",
@@ -561,20 +591,23 @@
         "variable": false
       }
     ],
-    "durationMs": 17000,
-    "xp": 3,
+    "durationMs": 25200,
+    "xp": 10,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_copper_helmet"
   },
   {
-    "id": "recipe_copper_chestplate",
     "requiresContext": [],
     "stationChargeCost": 1,
     "name": "Copper Chestplate",
     "skill": "smithing",
-    "levelRequirement": 13,
+    "levelRequirement": 16,
     "inputs": [
       {
         "itemId": "item_copper_ingot",
@@ -594,15 +627,18 @@
         "variable": false
       }
     ],
-    "durationMs": 19000,
-    "xp": 5,
+    "durationMs": 40400,
+    "xp": 22,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_copper_chestplate"
   },
   {
-    "id": "recipe_iron_pickaxe",
     "requiresContext": [],
     "stationChargeCost": 1,
     "name": "Iron Pickaxe",
@@ -611,7 +647,7 @@
     "inputs": [
       {
         "itemId": "item_iron_ingot",
-        "quantity": 4
+        "quantity": 2
       },
       {
         "itemId": "item_fir_wood",
@@ -631,15 +667,18 @@
         "variable": false
       }
     ],
-    "durationMs": 21000,
-    "xp": 11,
+    "durationMs": 20900,
+    "xp": 13,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_iron_pickaxe"
   },
   {
-    "id": "recipe_iron_woodaxe",
     "requiresContext": [],
     "stationChargeCost": 1,
     "name": "Iron Woodaxe",
@@ -648,7 +687,7 @@
     "inputs": [
       {
         "itemId": "item_iron_ingot",
-        "quantity": 3
+        "quantity": 2
       },
       {
         "itemId": "item_fir_wood",
@@ -668,15 +707,18 @@
         "variable": false
       }
     ],
-    "durationMs": 21000,
-    "xp": 11,
+    "durationMs": 21400,
+    "xp": 13,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_iron_woodaxe"
   },
   {
-    "id": "recipe_iron_dagger",
     "requiresContext": [],
     "stationChargeCost": 1,
     "name": "Iron Dagger",
@@ -705,15 +747,18 @@
         "variable": false
       }
     ],
-    "durationMs": 21000,
-    "xp": 10,
+    "durationMs": 13500,
+    "xp": 8,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_iron_dagger"
   },
   {
-    "id": "recipe_iron_sword",
     "requiresContext": [],
     "stationChargeCost": 1,
     "name": "Iron Sword",
@@ -742,15 +787,18 @@
         "variable": false
       }
     ],
-    "durationMs": 22000,
+    "durationMs": 21500,
     "xp": 14,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_iron_sword"
   },
   {
-    "id": "recipe_iron_cleaver",
     "requiresContext": [],
     "stationChargeCost": 1,
     "name": "Iron Cleaver",
@@ -759,7 +807,7 @@
     "inputs": [
       {
         "itemId": "item_iron_ingot",
-        "quantity": 2
+        "quantity": 3
       },
       {
         "itemId": "item_fir_wood",
@@ -779,12 +827,16 @@
         "variable": false
       }
     ],
-    "durationMs": 24000,
-    "xp": 29,
+    "durationMs": 30700,
+    "xp": 25,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_iron_cleaver"
   },
   {
     "id": "recipe_iron_bow",
@@ -817,7 +869,7 @@
       }
     ],
     "durationMs": 21000,
-    "xp": 11,
+    "xp": 13,
     "stationKinds": [
       "smithy"
     ],
@@ -857,7 +909,7 @@
       }
     ],
     "durationMs": 21000,
-    "xp": 11,
+    "xp": 13,
     "stationKinds": [
       "smithy"
     ],
@@ -867,7 +919,6 @@
     }
   },
   {
-    "id": "recipe_iron_helmet",
     "requiresContext": [],
     "stationChargeCost": 1,
     "name": "Iron Helmet",
@@ -892,15 +943,18 @@
         "variable": false
       }
     ],
-    "durationMs": 22000,
-    "xp": 15,
+    "durationMs": 28600,
+    "xp": 19,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_iron_helmet"
   },
   {
-    "id": "recipe_iron_chestplate",
     "requiresContext": [],
     "stationChargeCost": 1,
     "name": "Iron Chestplate",
@@ -925,15 +979,18 @@
         "variable": false
       }
     ],
-    "durationMs": 23000,
-    "xp": 24,
+    "durationMs": 45300,
+    "xp": 35,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_iron_chestplate"
   },
   {
-    "id": "recipe_mythril_pickaxe",
     "requiresContext": [],
     "stationChargeCost": 1,
     "name": "Mythril Pickaxe",
@@ -942,7 +999,7 @@
     "inputs": [
       {
         "itemId": "item_mythril_ingot",
-        "quantity": 4
+        "quantity": 2
       },
       {
         "itemId": "item_maple_wood",
@@ -962,15 +1019,18 @@
         "variable": false
       }
     ],
-    "durationMs": 26000,
-    "xp": 61,
+    "durationMs": 24600,
+    "xp": 25,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_mythril_pickaxe"
   },
   {
-    "id": "recipe_adamantium_pickaxe",
     "requiresContext": [],
     "stationChargeCost": 1,
     "name": "Adamantine Pickaxe",
@@ -979,7 +1039,7 @@
     "inputs": [
       {
         "itemId": "item_adamantine_ingot",
-        "quantity": 4
+        "quantity": 2
       },
       {
         "itemId": "item_mahogany_wood",
@@ -999,16 +1059,18 @@
         "variable": false
       }
     ],
-    "durationMs": 30000,
-    "xp": 474,
+    "durationMs": 28100,
+    "xp": 46,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_adamantium_pickaxe"
   },
   {
-    "id": "recipe_darkmetal_pickaxe",
     "requiresContext": [],
     "stationChargeCost": 1,
     "name": "Darkmetal Pickaxe",
@@ -1017,7 +1079,7 @@
     "inputs": [
       {
         "itemId": "item_darkmetal_ingot",
-        "quantity": 4
+        "quantity": 2
       },
       {
         "itemId": "item_ebony_wood",
@@ -1037,12 +1099,16 @@
         "variable": false
       }
     ],
-    "durationMs": 35000,
-    "xp": 1474,
+    "durationMs": 32200,
+    "xp": 91,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_darkmetal_pickaxe"
   },
   {
     "name": "Copper Shield",
@@ -1053,11 +1119,11 @@
     "inputs": [
       {
         "itemId": "item_copper_ingot",
-        "quantity": 2
+        "quantity": 3
       },
       {
         "itemId": "item_oak_wood",
-        "quantity": 2
+        "quantity": 1
       }
     ],
     "outputs": [
@@ -1073,16 +1139,18 @@
         "variable": false
       }
     ],
-    "durationMs": 19000,
-    "xp": 4,
+    "durationMs": 26600,
+    "xp": 13,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
     },
     "id": "recipe_copper_shield"
   },
   {
-    "id": "recipe_mythril_woodaxe",
     "requiresContext": [],
     "stationChargeCost": 1,
     "name": "Mythril Woodaxe",
@@ -1091,7 +1159,7 @@
     "inputs": [
       {
         "itemId": "item_mythril_ingot",
-        "quantity": 3
+        "quantity": 2
       },
       {
         "itemId": "item_maple_wood",
@@ -1111,16 +1179,18 @@
         "variable": false
       }
     ],
-    "durationMs": 26000,
-    "xp": 135,
+    "durationMs": 24200,
+    "xp": 24,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_mythril_woodaxe"
   },
   {
-    "id": "recipe_adamantine_woodaxe",
     "requiresContext": [],
     "stationChargeCost": 1,
     "name": "Adamantine Woodaxe",
@@ -1129,7 +1199,7 @@
     "inputs": [
       {
         "itemId": "item_adamantine_ingot",
-        "quantity": 3
+        "quantity": 2
       },
       {
         "itemId": "item_cedar_wood",
@@ -1149,16 +1219,18 @@
         "variable": false
       }
     ],
-    "durationMs": 30000,
-    "xp": 217,
+    "durationMs": 27600,
+    "xp": 42,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_adamantine_woodaxe"
   },
   {
-    "id": "recipe_darkmetal_woodaxe",
     "requiresContext": [],
     "stationChargeCost": 1,
     "name": "Darkmetal Woodaxe",
@@ -1167,7 +1239,7 @@
     "inputs": [
       {
         "itemId": "item_darkmetal_ingot",
-        "quantity": 3
+        "quantity": 2
       },
       {
         "itemId": "item_mahogany_wood",
@@ -1187,16 +1259,18 @@
         "variable": false
       }
     ],
-    "durationMs": 34000,
-    "xp": 1640,
+    "durationMs": 31700,
+    "xp": 78,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_darkmetal_woodaxe"
   },
   {
-    "id": "recipe_iron_shield",
     "name": "Iron Shield",
     "skill": "smithing",
     "levelRequirement": 32,
@@ -1204,11 +1278,11 @@
     "inputs": [
       {
         "itemId": "item_iron_ingot",
-        "quantity": 2
+        "quantity": 3
       },
       {
         "itemId": "item_fir_wood",
-        "quantity": 2
+        "quantity": 1
       }
     ],
     "outputs": [
@@ -1224,16 +1298,19 @@
         "variable": false
       }
     ],
-    "durationMs": 23000,
+    "durationMs": 30600,
     "stationChargeCost": 1,
-    "xp": 22,
+    "xp": 23,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_iron_shield"
   },
   {
-    "id": "recipe_mythril_dagger",
     "name": "Mythril Dagger",
     "skill": "smithing",
     "levelRequirement": 42,
@@ -1261,16 +1338,19 @@
         "variable": false
       }
     ],
-    "durationMs": 25000,
+    "durationMs": 16500,
     "stationChargeCost": 1,
-    "xp": 50,
+    "xp": 16,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_mythril_dagger"
   },
   {
-    "id": "recipe_mythril_sword",
     "name": "Mythril Sword",
     "skill": "smithing",
     "levelRequirement": 46,
@@ -1298,16 +1378,19 @@
         "variable": false
       }
     ],
-    "durationMs": 26000,
+    "durationMs": 24500,
     "stationChargeCost": 1,
-    "xp": 69,
+    "xp": 26,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_mythril_sword"
   },
   {
-    "id": "recipe_mythril_helmet",
     "name": "Mythril Helmet",
     "skill": "smithing",
     "levelRequirement": 47,
@@ -1331,16 +1414,19 @@
         "variable": false
       }
     ],
-    "durationMs": 27000,
+    "durationMs": 33300,
     "stationChargeCost": 1,
-    "xp": 77,
+    "xp": 36,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_mythril_helmet"
   },
   {
-    "id": "recipe_mythril_shield",
     "name": "Mythril Shield",
     "skill": "smithing",
     "levelRequirement": 52,
@@ -1348,11 +1434,11 @@
     "inputs": [
       {
         "itemId": "item_mythril_ingot",
-        "quantity": 2
+        "quantity": 3
       },
       {
         "itemId": "item_maple_wood",
-        "quantity": 2
+        "quantity": 1
       }
     ],
     "outputs": [
@@ -1368,16 +1454,19 @@
         "variable": false
       }
     ],
-    "durationMs": 28000,
+    "durationMs": 34600,
     "stationChargeCost": 1,
-    "xp": 114,
+    "xp": 42,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_mythril_shield"
   },
   {
-    "id": "recipe_mythril_chestplate",
     "name": "Mythril Chestplate",
     "skill": "smithing",
     "levelRequirement": 53,
@@ -1401,16 +1490,19 @@
         "variable": false
       }
     ],
-    "durationMs": 28000,
+    "durationMs": 52200,
     "stationChargeCost": 1,
-    "xp": 125,
+    "xp": 65,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_mythril_chestplate"
   },
   {
-    "id": "recipe_adamantine_dagger",
     "name": "Adamantine Dagger",
     "skill": "smithing",
     "levelRequirement": 62,
@@ -1438,16 +1530,19 @@
         "variable": false
       }
     ],
-    "durationMs": 30000,
+    "durationMs": 18600,
     "stationChargeCost": 1,
-    "xp": 254,
+    "xp": 37,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_adamantine_dagger"
   },
   {
-    "id": "recipe_adamantine_sword",
     "name": "Adamantine Sword",
     "skill": "smithing",
     "levelRequirement": 66,
@@ -1475,16 +1570,19 @@
         "variable": false
       }
     ],
-    "durationMs": 31000,
+    "durationMs": 28500,
     "stationChargeCost": 1,
-    "xp": 353,
+    "xp": 49,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_adamantine_sword"
   },
   {
-    "id": "recipe_adamantine_helmet",
     "name": "Adamantine Helmet",
     "skill": "smithing",
     "levelRequirement": 67,
@@ -1508,16 +1606,19 @@
         "variable": false
       }
     ],
-    "durationMs": 31000,
+    "durationMs": 38100,
     "stationChargeCost": 1,
-    "xp": 375,
+    "xp": 67,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_adamantine_helmet"
   },
   {
-    "id": "recipe_adamantine_shield",
     "name": "Adamantine Shield",
     "skill": "smithing",
     "levelRequirement": 72,
@@ -1525,11 +1626,11 @@
     "inputs": [
       {
         "itemId": "item_adamantine_ingot",
-        "quantity": 2
+        "quantity": 3
       },
       {
         "itemId": "item_mahogany_wood",
-        "quantity": 2
+        "quantity": 1
       }
     ],
     "outputs": [
@@ -1545,19 +1646,22 @@
         "variable": false
       }
     ],
-    "durationMs": 32000,
+    "durationMs": 39600,
     "stationChargeCost": 1,
-    "xp": 556,
+    "xp": 130,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_adamantine_shield"
   },
   {
-    "id": "recipe_adamantine_chestplate",
     "name": "Adamantine Chestplate",
     "skill": "smithing",
-    "levelRequirement": 73,
+    "levelRequirement": 76,
     "requiresContext": [],
     "inputs": [
       {
@@ -1578,16 +1682,19 @@
         "variable": false
       }
     ],
-    "durationMs": 32000,
+    "durationMs": 61000,
     "stationChargeCost": 1,
-    "xp": 606,
+    "xp": 242,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_adamantine_chestplate"
   },
   {
-    "id": "recipe_darkmetal_dagger",
     "name": "Darkmetal Dagger",
     "skill": "smithing",
     "levelRequirement": 82,
@@ -1615,16 +1722,19 @@
         "variable": false
       }
     ],
-    "durationMs": 35000,
+    "durationMs": 21200,
     "stationChargeCost": 1,
-    "xp": 1257,
+    "xp": 96,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_darkmetal_dagger"
   },
   {
-    "id": "recipe_darkmetal_sword",
     "name": "Darkmetal Sword",
     "skill": "smithing",
     "levelRequirement": 86,
@@ -1652,16 +1762,19 @@
         "variable": false
       }
     ],
-    "durationMs": 35000,
+    "durationMs": 32800,
     "stationChargeCost": 1,
-    "xp": 1691,
+    "xp": 184,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_darkmetal_sword"
   },
   {
-    "id": "recipe_darkmetal_helmet",
     "name": "Darkmetal Helmet",
     "skill": "smithing",
     "levelRequirement": 87,
@@ -1685,16 +1798,19 @@
         "variable": false
       }
     ],
-    "durationMs": 36000,
+    "durationMs": 43900,
     "stationChargeCost": 1,
-    "xp": 1851,
+    "xp": 281,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_darkmetal_helmet"
   },
   {
-    "id": "recipe_darkmetal_shield",
     "name": "Darkmetal Shield",
     "skill": "smithing",
     "levelRequirement": 92,
@@ -1702,11 +1818,11 @@
     "inputs": [
       {
         "itemId": "item_darkmetal_ingot",
-        "quantity": 2
+        "quantity": 3
       },
       {
         "itemId": "item_ebony_wood",
-        "quantity": 2
+        "quantity": 1
       }
     ],
     "outputs": [
@@ -1722,16 +1838,19 @@
         "variable": false
       }
     ],
-    "durationMs": 37000,
+    "durationMs": 45500,
     "stationChargeCost": 1,
-    "xp": 2702,
+    "xp": 326,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_darkmetal_shield"
   },
   {
-    "id": "recipe_darkmetal_chestplate",
     "name": "Darkmetal Chestplate",
     "skill": "smithing",
     "levelRequirement": 93,
@@ -1755,16 +1874,19 @@
         "variable": false
       }
     ],
-    "durationMs": 37000,
+    "durationMs": 68900,
     "stationChargeCost": 1,
-    "xp": 2931,
+    "xp": 580,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_darkmetal_chestplate"
   },
   {
-    "id": "recipe_iron_mace",
     "name": "Iron Mace",
     "skill": "smithing",
     "levelRequirement": 37,
@@ -1772,7 +1894,7 @@
     "inputs": [
       {
         "itemId": "item_iron_ingot",
-        "quantity": 2
+        "quantity": 3
       },
       {
         "itemId": "item_fir_wood",
@@ -1792,16 +1914,19 @@
         "variable": false
       }
     ],
-    "durationMs": 24000,
+    "durationMs": 31400,
     "stationChargeCost": 1,
-    "xp": 33,
+    "xp": 27,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_iron_mace"
   },
   {
-    "id": "recipe_silver_dagger",
     "name": "Silver Dagger",
     "skill": "smithing",
     "levelRequirement": 36,
@@ -1829,16 +1954,19 @@
         "variable": false
       }
     ],
-    "durationMs": 24000,
+    "durationMs": 15500,
     "stationChargeCost": 1,
-    "xp": 31,
+    "xp": 13,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_silver_dagger"
   },
   {
-    "id": "recipe_silver_sword",
     "name": "Silver Sword",
     "skill": "smithing",
     "levelRequirement": 38,
@@ -1866,16 +1994,19 @@
         "variable": false
       }
     ],
-    "durationMs": 24000,
+    "durationMs": 23800,
     "stationChargeCost": 1,
-    "xp": 35,
+    "xp": 21,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_silver_sword"
   },
   {
-    "id": "recipe_masterwork_blade",
     "name": "Masterwork Blade",
     "skill": "smithing",
     "levelRequirement": 99,
@@ -1883,11 +2014,11 @@
     "inputs": [
       {
         "itemId": "item_darkmetal_ingot",
-        "quantity": 3
+        "quantity": 1
       },
       {
         "itemId": "item_adamantine_ingot",
-        "quantity": 2
+        "quantity": 1
       },
       {
         "itemId": "item_ebony_wood",
@@ -1907,16 +2038,19 @@
         "variable": false
       }
     ],
-    "durationMs": 38000,
+    "durationMs": 24000,
     "stationChargeCost": 1,
-    "xp": 4418,
+    "xp": 110,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_masterwork_blade"
   },
   {
-    "id": "recipe_iron_nails",
     "name": "Iron Nails",
     "skill": "smithing",
     "levelRequirement": 21,
@@ -1931,26 +2065,28 @@
       {
         "itemId": "item_iron_nails",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
+        "minQty": 5,
+        "maxQty": 5,
         "baseQty": {
-          "min": 1,
-          "max": 1
+          "min": 5,
+          "max": 5
         },
         "variable": false
       }
     ],
-    "durationMs": 21000,
+    "durationMs": 8600,
     "stationChargeCost": 1,
-    "xp": 17,
+    "xp": 5,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_iron_nails"
   },
   {
-    "id": "recipe_mythril_nails",
     "name": "Mythril Nails",
     "skill": "smithing",
     "levelRequirement": 41,
@@ -1965,25 +2101,28 @@
       {
         "itemId": "item_mythril_nails",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
+        "minQty": 5,
+        "maxQty": 5,
         "baseQty": {
-          "min": 1,
-          "max": 1
+          "min": 5,
+          "max": 5
         },
         "variable": false
       }
     ],
-    "durationMs": 25000,
+    "durationMs": 10500,
     "stationChargeCost": 1,
-    "xp": 45,
+    "xp": 10,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_mythril_nails"
   },
   {
-    "id": "recipe_silver_ring_band",
     "name": "Silver Ring Band",
     "skill": "smithing",
     "levelRequirement": 39,
@@ -2007,16 +2146,19 @@
         "variable": false
       }
     ],
-    "durationMs": 25000,
+    "durationMs": 11000,
     "stationChargeCost": 1,
-    "xp": 39,
+    "xp": 10,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_silver_ring_band"
   },
   {
-    "id": "recipe_silver_chain",
     "name": "Silver Chain",
     "skill": "smithing",
     "levelRequirement": 56,
@@ -2040,17 +2182,19 @@
         "variable": false
       }
     ],
-    "durationMs": 29000,
+    "durationMs": 12000,
     "stationChargeCost": 1,
-    "xp": 242,
+    "xp": 17,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_silver_chain"
   },
   {
-    "id": "recipe_gold_ring_band",
     "name": "Gold Ring Band",
     "skill": "smithing",
     "levelRequirement": 59,
@@ -2074,17 +2218,19 @@
         "variable": false
       }
     ],
-    "durationMs": 29000,
+    "durationMs": 12400,
     "stationChargeCost": 1,
-    "xp": 292,
+    "xp": 18,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_gold_ring_band"
   },
   {
-    "id": "recipe_gold_chain",
     "name": "Gold Chain",
     "skill": "smithing",
     "levelRequirement": 65,
@@ -2108,16 +2254,19 @@
         "variable": false
       }
     ],
-    "durationMs": 31000,
+    "durationMs": 12500,
     "stationChargeCost": 1,
-    "xp": 330,
+    "xp": 30,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_gold_chain"
   },
   {
-    "id": "recipe_iron_gears",
     "name": "Iron Gears",
     "skill": "smithing",
     "levelRequirement": 45,
@@ -2125,7 +2274,7 @@
     "inputs": [
       {
         "itemId": "item_iron_ingot",
-        "quantity": 2
+        "quantity": 1
       }
     ],
     "outputs": [
@@ -2141,17 +2290,19 @@
         "variable": false
       }
     ],
-    "durationMs": 26000,
+    "durationMs": 10600,
     "stationChargeCost": 1,
-    "xp": 266,
+    "xp": 11,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_iron_gears"
   },
   {
-    "id": "recipe_mythril_harpoon",
     "name": "Mythril Harpoon",
     "skill": "smithing",
     "levelRequirement": 54,
@@ -2159,11 +2310,11 @@
     "inputs": [
       {
         "itemId": "item_mythril_ingot",
-        "quantity": 3
+        "quantity": 2
       },
       {
         "itemId": "item_maple_plank",
-        "quantity": 2
+        "quantity": 1
       }
     ],
     "outputs": [
@@ -2179,16 +2330,19 @@
         "variable": false
       }
     ],
-    "durationMs": 28000,
+    "durationMs": 26400,
     "stationChargeCost": 1,
-    "xp": 135,
+    "xp": 35,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_mythril_harpoon"
   },
   {
-    "id": "recipe_adamantine_harpoon",
     "name": "Adamantine Harpoon",
     "skill": "smithing",
     "levelRequirement": 63,
@@ -2196,11 +2350,11 @@
     "inputs": [
       {
         "itemId": "item_adamantine_ingot",
-        "quantity": 3
+        "quantity": 2
       },
       {
         "itemId": "item_mahogany_plank",
-        "quantity": 2
+        "quantity": 1
       }
     ],
     "outputs": [
@@ -2216,16 +2370,19 @@
         "variable": false
       }
     ],
-    "durationMs": 30000,
+    "durationMs": 28200,
     "stationChargeCost": 1,
-    "xp": 275,
+    "xp": 45,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_adamantine_harpoon"
   },
   {
-    "id": "recipe_darkmetal_harpoon",
     "name": "Darkmetal Harpoon",
     "skill": "smithing",
     "levelRequirement": 83,
@@ -2233,11 +2390,11 @@
     "inputs": [
       {
         "itemId": "item_darkmetal_ingot",
-        "quantity": 3
+        "quantity": 2
       },
       {
         "itemId": "item_ebony_plank",
-        "quantity": 2
+        "quantity": 1
       }
     ],
     "outputs": [
@@ -2253,13 +2410,17 @@
         "variable": false
       }
     ],
-    "durationMs": 35000,
+    "durationMs": 32200,
     "stationChargeCost": 1,
-    "xp": 1365,
+    "xp": 85,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_darkmetal_harpoon"
   },
   {
     "name": "Dough",
@@ -2267,11 +2428,11 @@
     "inputs": [
       {
         "itemId": "item_water",
-        "quantity": 2
+        "quantity": 1
       },
       {
         "itemId": "item_flour",
-        "quantity": 2
+        "quantity": 1
       }
     ],
     "outputs": [
@@ -2288,16 +2449,19 @@
         "anchor": true
       }
     ],
-    "xp": 2,
+    "xp": 3,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
     },
-    "id": "recipe_dough",
-    "durationMs": 17000,
+    "durationMs": 8200,
     "levelRequirement": 4,
     "stationChargeCost": 1,
-    "skill": "cooking"
+    "skill": "cooking",
+    "id": "recipe_dough"
   },
   {
     "name": "Shrimp",
@@ -2323,22 +2487,23 @@
       }
     ],
     "xp": 4,
-    "id": "recipe_shrimp",
-    "durationMs": 8000,
+    "durationMs": 11900,
     "levelRequirement": 1,
     "stationChargeCost": 1,
     "sim": {
       "tempo": "fast",
       "purpose": "iph",
-      "xpPinned": true
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
     },
     "skill": "cooking",
     "stationKinds": [
       "kitchen"
-    ]
+    ],
+    "id": "recipe_shrimp"
   },
   {
-    "id": "recipe_mtp8qjj6",
     "name": "Apple Juice",
     "skill": "cooking",
     "levelRequirement": 6,
@@ -2346,33 +2511,36 @@
     "inputs": [
       {
         "itemId": "item_apple",
-        "quantity": 4
+        "quantity": 1
       }
     ],
     "outputs": [
       {
         "itemId": "item_apple_juice",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
+        "minQty": 5,
+        "maxQty": 5,
         "baseQty": {
-          "min": 1,
-          "max": 1
+          "min": 5,
+          "max": 5
         },
         "variable": false,
         "anchor": true
       }
     ],
-    "durationMs": 10000,
+    "durationMs": 13000,
     "stationChargeCost": 1,
-    "xp": 1,
+    "xp": 5,
     "sim": {
       "tempo": "fast",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_mtp8qjj6"
   },
   {
-    "id": "recipe_mtp8qjj7",
     "name": "Lemonade",
     "skill": "cooking",
     "levelRequirement": 42,
@@ -2380,33 +2548,36 @@
     "inputs": [
       {
         "itemId": "item_lemon",
-        "quantity": 4
+        "quantity": 2
       }
     ],
     "outputs": [
       {
         "itemId": "item_lemonade",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
+        "minQty": 5,
+        "maxQty": 5,
         "baseQty": {
-          "min": 1,
-          "max": 1
+          "min": 5,
+          "max": 5
         },
         "variable": false,
         "anchor": true
       }
     ],
-    "durationMs": 25000,
+    "durationMs": 16500,
     "stationChargeCost": 1,
-    "xp": 50,
+    "xp": 16,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_mtp8qjj7"
   },
   {
-    "id": "recipe_mtp8qjj8",
     "name": "Limeade",
     "skill": "cooking",
     "levelRequirement": 54,
@@ -2414,34 +2585,36 @@
     "inputs": [
       {
         "itemId": "item_lime",
-        "quantity": 4
+        "quantity": 3
       }
     ],
     "outputs": [
       {
         "itemId": "item_limeade",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
+        "minQty": 5,
+        "maxQty": 5,
         "baseQty": {
-          "min": 1,
-          "max": 1
+          "min": 5,
+          "max": 5
         },
         "variable": false,
         "anchor": true
       }
     ],
-    "durationMs": 28000,
+    "durationMs": 17200,
     "stationChargeCost": 1,
-    "xp": 62,
+    "xp": 28,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_mtp8qjj8"
   },
   {
-    "id": "recipe_mtp8qjj9",
     "name": "Beer",
     "skill": "cooking",
     "levelRequirement": 13,
@@ -2449,37 +2622,40 @@
     "inputs": [
       {
         "itemId": "item_water",
-        "quantity": 2
+        "quantity": 1
       },
       {
         "itemId": "item_wheat",
-        "quantity": 2
+        "quantity": 1
       }
     ],
     "outputs": [
       {
         "itemId": "item_beer",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
+        "minQty": 5,
+        "maxQty": 5,
         "anchor": true,
         "baseQty": {
-          "min": 1,
-          "max": 1
+          "min": 5,
+          "max": 5
         },
         "variable": false
       }
     ],
-    "durationMs": 19000,
+    "durationMs": 12800,
     "stationChargeCost": 1,
-    "xp": 5,
+    "xp": 6,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_mtp8qjj9"
   },
   {
-    "id": "recipe_mtym8vxh",
     "name": "Steak",
     "skill": "cooking",
     "levelRequirement": 17,
@@ -2503,16 +2679,19 @@
         "variable": false
       }
     ],
-    "durationMs": 20000,
+    "durationMs": 13400,
     "stationChargeCost": 1,
-    "xp": 6,
+    "xp": 7,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_mtym8vxh"
   },
   {
-    "id": "recipe_roast_meat",
     "requiresContext": [],
     "stationChargeCost": 1,
     "name": "Roast Meat",
@@ -2537,18 +2716,21 @@
         "variable": false
       }
     ],
-    "durationMs": 16000,
-    "xp": 2,
+    "durationMs": 11300,
+    "xp": 4,
     "stationKinds": [
       "kitchen"
     ],
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_roast_meat"
   },
   {
-    "id": "recipe_cooked_crab",
     "requiresContext": [],
     "stationChargeCost": 1,
     "name": "Cooked Crab",
@@ -2573,15 +2755,18 @@
         "variable": false
       }
     ],
-    "durationMs": 18000,
-    "xp": 3,
+    "durationMs": 12300,
+    "xp": 5,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_cooked_crab"
   },
   {
-    "id": "recipe_honey_bread",
     "requiresContext": [],
     "stationChargeCost": 1,
     "name": "Honey Bread",
@@ -2610,15 +2795,18 @@
         "variable": false
       }
     ],
-    "durationMs": 19000,
-    "xp": 4,
+    "durationMs": 13200,
+    "xp": 6,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_honey_bread"
   },
   {
-    "id": "recipe_cooked_trout",
     "requiresContext": [],
     "stationChargeCost": 1,
     "name": "Cooked Trout",
@@ -2643,16 +2831,18 @@
         "variable": false
       }
     ],
-    "durationMs": 17000,
-    "xp": 6,
+    "durationMs": 13300,
+    "xp": 5,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_cooked_trout"
   },
   {
-    "id": "recipe_grape_juice",
     "requiresContext": [],
     "stationChargeCost": 1,
     "name": "Grape Juice",
@@ -2661,31 +2851,34 @@
     "inputs": [
       {
         "itemId": "item_grapes",
-        "quantity": 4
+        "quantity": 1
       }
     ],
     "outputs": [
       {
         "itemId": "item_grape_juice",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
+        "minQty": 5,
+        "maxQty": 5,
         "baseQty": {
-          "min": 1,
-          "max": 1
+          "min": 5,
+          "max": 5
         },
         "variable": false
       }
     ],
-    "durationMs": 20000,
-    "xp": 7,
+    "durationMs": 14500,
+    "xp": 8,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_grape_juice"
   },
   {
-    "id": "recipe_cooked_tropical_fish",
     "name": "Cooked Tropical Fish",
     "skill": "cooking",
     "levelRequirement": 30,
@@ -2694,7 +2887,7 @@
     "inputs": [
       {
         "itemId": "item_tropical_fish",
-        "quantity": 1
+        "quantity": 2
       }
     ],
     "outputs": [
@@ -2710,15 +2903,18 @@
         "variable": false
       }
     ],
-    "durationMs": 23000,
-    "xp": 18,
+    "durationMs": 15400,
+    "xp": 11,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_cooked_tropical_fish"
   },
   {
-    "id": "recipe_cooked_swordfish",
     "name": "Swordfish Steak",
     "skill": "cooking",
     "levelRequirement": 63,
@@ -2727,7 +2923,7 @@
     "inputs": [
       {
         "itemId": "item_swordfish",
-        "quantity": 1
+        "quantity": 3
       }
     ],
     "outputs": [
@@ -2743,16 +2939,18 @@
         "variable": false
       }
     ],
-    "durationMs": 30000,
-    "xp": 169,
+    "durationMs": 18800,
+    "xp": 30,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_cooked_swordfish"
   },
   {
-    "id": "recipe_cooked_lobster",
     "name": "Cooked Lobster",
     "skill": "cooking",
     "levelRequirement": 50,
@@ -2761,7 +2959,7 @@
     "inputs": [
       {
         "itemId": "item_lobster",
-        "quantity": 1
+        "quantity": 2
       }
     ],
     "outputs": [
@@ -2777,16 +2975,18 @@
         "variable": false
       }
     ],
-    "durationMs": 27000,
-    "xp": 58,
+    "durationMs": 17300,
+    "xp": 25,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_cooked_lobster"
   },
   {
-    "id": "recipe_lavender_salmon",
     "name": "Lavender Salmon",
     "skill": "cooking",
     "levelRequirement": 57,
@@ -2795,11 +2995,11 @@
     "inputs": [
       {
         "itemId": "item_salmon",
-        "quantity": 1
+        "quantity": 3
       },
       {
         "itemId": "item_lavender",
-        "quantity": 1
+        "quantity": 3
       }
     ],
     "outputs": [
@@ -2815,16 +3015,18 @@
         "variable": false
       }
     ],
-    "durationMs": 29000,
-    "xp": 71,
+    "durationMs": 18100,
+    "xp": 25,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_lavender_salmon"
   },
   {
-    "id": "recipe_baked_potato",
     "name": "Baked Potato",
     "skill": "cooking",
     "levelRequirement": 2,
@@ -2848,17 +3050,19 @@
         "variable": false
       }
     ],
-    "durationMs": 16000,
+    "durationMs": 11600,
     "stationChargeCost": 1,
     "xp": 4,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_baked_potato"
   },
   {
-    "id": "recipe_bread",
     "name": "Bread",
     "skill": "cooking",
     "levelRequirement": 7,
@@ -2882,16 +3086,19 @@
         "variable": false
       }
     ],
-    "durationMs": 17000,
+    "durationMs": 12600,
     "stationChargeCost": 1,
-    "xp": 3,
+    "xp": 5,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_bread"
   },
   {
-    "id": "recipe_carrot_soup",
     "name": "Carrot Soup",
     "skill": "cooking",
     "levelRequirement": 9,
@@ -2919,16 +3126,19 @@
         "variable": false
       }
     ],
-    "durationMs": 18000,
+    "durationMs": 11900,
     "stationChargeCost": 1,
-    "xp": 3,
+    "xp": 5,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_carrot_soup"
   },
   {
-    "id": "recipe_redberry_tea",
     "name": "Redberry Tea",
     "skill": "cooking",
     "levelRequirement": 10,
@@ -2947,25 +3157,28 @@
       {
         "itemId": "item_redberry_tea",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
+        "minQty": 5,
+        "maxQty": 5,
         "baseQty": {
-          "min": 1,
-          "max": 1
+          "min": 5,
+          "max": 5
         },
         "variable": false
       }
     ],
-    "durationMs": 18000,
+    "durationMs": 13900,
     "stationChargeCost": 1,
-    "xp": 3,
+    "xp": 6,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_redberry_tea"
   },
   {
-    "id": "recipe_plain_stew",
     "name": "Plain Stew",
     "skill": "cooking",
     "levelRequirement": 11,
@@ -2997,16 +3210,19 @@
         "variable": false
       }
     ],
-    "durationMs": 18000,
+    "durationMs": 13500,
     "stationChargeCost": 1,
-    "xp": 4,
+    "xp": 6,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_plain_stew"
   },
   {
-    "id": "recipe_blackberry_pie",
     "name": "Blackberry Pie",
     "skill": "cooking",
     "levelRequirement": 14,
@@ -3034,16 +3250,19 @@
         "variable": false
       }
     ],
-    "durationMs": 19000,
+    "durationMs": 12500,
     "stationChargeCost": 1,
-    "xp": 5,
+    "xp": 6,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_blackberry_pie"
   },
   {
-    "id": "recipe_apple_pie",
     "name": "Apple Pie",
     "skill": "cooking",
     "levelRequirement": 15,
@@ -3071,16 +3290,19 @@
         "variable": false
       }
     ],
-    "durationMs": 19000,
+    "durationMs": 14200,
     "stationChargeCost": 1,
-    "xp": 5,
+    "xp": 7,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_apple_pie"
   },
   {
-    "id": "recipe_mirepoix",
     "name": "Mirepoix",
     "skill": "cooking",
     "levelRequirement": 16,
@@ -3112,16 +3334,19 @@
         "variable": false
       }
     ],
-    "durationMs": 19000,
+    "durationMs": 9800,
     "stationChargeCost": 1,
-    "xp": 6,
+    "xp": 5,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_mirepoix"
   },
   {
-    "id": "recipe_onion_soup",
     "name": "Onion Soup",
     "skill": "cooking",
     "levelRequirement": 18,
@@ -3149,16 +3374,19 @@
         "variable": false
       }
     ],
-    "durationMs": 20000,
+    "durationMs": 13000,
     "stationChargeCost": 1,
     "xp": 7,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_onion_soup"
   },
   {
-    "id": "recipe_butter",
     "name": "Butter",
     "skill": "cooking",
     "levelRequirement": 20,
@@ -3182,16 +3410,19 @@
         "variable": false
       }
     ],
-    "durationMs": 20000,
+    "durationMs": 8800,
     "stationChargeCost": 1,
-    "xp": 8,
+    "xp": 5,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_butter"
   },
   {
-    "id": "recipe_buttered_potato",
     "name": "Buttered Potato",
     "skill": "cooking",
     "levelRequirement": 21,
@@ -3219,16 +3450,19 @@
         "variable": false
       }
     ],
-    "durationMs": 21000,
+    "durationMs": 13800,
     "stationChargeCost": 1,
-    "xp": 9,
+    "xp": 8,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_buttered_potato"
   },
   {
-    "id": "recipe_blueberry_pie",
     "name": "Blueberry Pie",
     "skill": "cooking",
     "levelRequirement": 22,
@@ -3256,16 +3490,19 @@
         "variable": false
       }
     ],
-    "durationMs": 21000,
+    "durationMs": 13500,
     "stationChargeCost": 1,
-    "xp": 10,
+    "xp": 8,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_blueberry_pie"
   },
   {
-    "id": "recipe_hot_milk",
     "name": "Hot Milk",
     "skill": "cooking",
     "levelRequirement": 23,
@@ -3284,25 +3521,28 @@
       {
         "itemId": "item_hot_milk",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
+        "minQty": 5,
+        "maxQty": 5,
         "baseQty": {
-          "min": 1,
-          "max": 1
+          "min": 5,
+          "max": 5
         },
         "variable": false
       }
     ],
-    "durationMs": 21000,
+    "durationMs": 14800,
     "stationChargeCost": 1,
-    "xp": 11,
+    "xp": 9,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_hot_milk"
   },
   {
-    "id": "recipe_cherry_cordial",
     "name": "Cherry Cordial",
     "skill": "cooking",
     "levelRequirement": 24,
@@ -3310,7 +3550,7 @@
     "inputs": [
       {
         "itemId": "item_cherry",
-        "quantity": 1
+        "quantity": 2
       },
       {
         "itemId": "item_water",
@@ -3321,25 +3561,28 @@
       {
         "itemId": "item_cherry_cordial",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
+        "minQty": 5,
+        "maxQty": 5,
         "baseQty": {
-          "min": 1,
-          "max": 1
+          "min": 5,
+          "max": 5
         },
         "variable": false
       }
     ],
-    "durationMs": 21000,
+    "durationMs": 14500,
     "stationChargeCost": 1,
-    "xp": 11,
+    "xp": 9,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_cherry_cordial"
   },
   {
-    "id": "recipe_cheese",
     "name": "Cheese",
     "skill": "cooking",
     "levelRequirement": 26,
@@ -3347,7 +3590,7 @@
     "inputs": [
       {
         "itemId": "item_milk",
-        "quantity": 1
+        "quantity": 2
       }
     ],
     "outputs": [
@@ -3363,16 +3606,19 @@
         "variable": false
       }
     ],
-    "durationMs": 22000,
+    "durationMs": 9200,
     "stationChargeCost": 1,
-    "xp": 14,
+    "xp": 6,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_cheese"
   },
   {
-    "id": "recipe_trout_and_leek",
     "name": "Trout and Leek",
     "skill": "cooking",
     "levelRequirement": 27,
@@ -3380,11 +3626,11 @@
     "inputs": [
       {
         "itemId": "item_trout",
-        "quantity": 1
+        "quantity": 2
       },
       {
         "itemId": "item_leek",
-        "quantity": 1
+        "quantity": 2
       }
     ],
     "outputs": [
@@ -3400,16 +3646,19 @@
         "variable": false
       }
     ],
-    "durationMs": 22000,
+    "durationMs": 15000,
     "stationChargeCost": 1,
-    "xp": 15,
+    "xp": 10,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_trout_and_leek"
   },
   {
-    "id": "recipe_cheese_bread",
     "name": "Cheese Bread",
     "skill": "cooking",
     "levelRequirement": 28,
@@ -3437,16 +3686,19 @@
         "variable": false
       }
     ],
-    "durationMs": 22000,
+    "durationMs": 14700,
     "stationChargeCost": 1,
-    "xp": 16,
+    "xp": 10,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_cheese_bread"
   },
   {
-    "id": "recipe_cherry_pie",
     "name": "Cherry Pie",
     "skill": "cooking",
     "levelRequirement": 29,
@@ -3474,16 +3726,19 @@
         "variable": false
       }
     ],
-    "durationMs": 22000,
+    "durationMs": 14400,
     "stationChargeCost": 1,
-    "xp": 17,
+    "xp": 10,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_cherry_pie"
   },
   {
-    "id": "recipe_beef_and_carrot_stew",
     "name": "Beef and Carrot Stew",
     "skill": "cooking",
     "levelRequirement": 31,
@@ -3515,16 +3770,19 @@
         "variable": false
       }
     ],
-    "durationMs": 23000,
+    "durationMs": 15000,
     "stationChargeCost": 1,
-    "xp": 20,
+    "xp": 11,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_beef_and_carrot_stew"
   },
   {
-    "id": "recipe_strawberry_milk",
     "name": "Strawberry Milk",
     "skill": "cooking",
     "levelRequirement": 32,
@@ -3532,36 +3790,39 @@
     "inputs": [
       {
         "itemId": "item_strawberry",
-        "quantity": 1
+        "quantity": 2
       },
       {
         "itemId": "item_milk",
-        "quantity": 1
+        "quantity": 2
       }
     ],
     "outputs": [
       {
         "itemId": "item_strawberry_milk",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
+        "minQty": 5,
+        "maxQty": 5,
         "baseQty": {
-          "min": 1,
-          "max": 1
+          "min": 5,
+          "max": 5
         },
         "variable": false
       }
     ],
-    "durationMs": 23000,
+    "durationMs": 14600,
     "stationChargeCost": 1,
-    "xp": 22,
+    "xp": 11,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_strawberry_milk"
   },
   {
-    "id": "recipe_potato_leek_stew",
     "name": "Potato Leek Stew",
     "skill": "cooking",
     "levelRequirement": 33,
@@ -3593,16 +3854,19 @@
         "variable": false
       }
     ],
-    "durationMs": 23000,
+    "durationMs": 15500,
     "stationChargeCost": 1,
-    "xp": 24,
+    "xp": 12,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_potato_leek_stew"
   },
   {
-    "id": "recipe_stout",
     "name": "Stout",
     "skill": "cooking",
     "levelRequirement": 34,
@@ -3614,36 +3878,39 @@
       },
       {
         "itemId": "item_wheat",
-        "quantity": 1
+        "quantity": 2
       },
       {
         "itemId": "item_honey",
-        "quantity": 1
+        "quantity": 2
       }
     ],
     "outputs": [
       {
         "itemId": "item_stout",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
+        "minQty": 5,
+        "maxQty": 5,
         "baseQty": {
-          "min": 1,
-          "max": 1
+          "min": 5,
+          "max": 5
         },
         "variable": false
       }
     ],
-    "durationMs": 24000,
+    "durationMs": 15100,
     "stationChargeCost": 1,
-    "xp": 27,
+    "xp": 12,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_stout"
   },
   {
-    "id": "recipe_strawberry_tart",
     "name": "Strawberry Tart",
     "skill": "cooking",
     "levelRequirement": 35,
@@ -3675,16 +3942,19 @@
         "variable": false
       }
     ],
-    "durationMs": 24000,
+    "durationMs": 14700,
     "stationChargeCost": 1,
-    "xp": 29,
+    "xp": 12,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_strawberry_tart"
   },
   {
-    "id": "recipe_blueberry_tonic",
     "name": "Blueberry Tonic",
     "skill": "cooking",
     "levelRequirement": 36,
@@ -3692,7 +3962,7 @@
     "inputs": [
       {
         "itemId": "item_blueberry",
-        "quantity": 1
+        "quantity": 2
       },
       {
         "itemId": "item_water",
@@ -3703,26 +3973,28 @@
       {
         "itemId": "item_blueberry_tonic",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
+        "minQty": 5,
+        "maxQty": 5,
         "baseQty": {
-          "min": 1,
-          "max": 1
+          "min": 5,
+          "max": 5
         },
         "variable": false
       }
     ],
-    "durationMs": 24000,
+    "durationMs": 15500,
     "stationChargeCost": 1,
-    "xp": 20,
+    "xp": 13,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_blueberry_tonic"
   },
   {
-    "id": "recipe_steak_and_onions",
     "name": "Steak and Onions",
     "skill": "cooking",
     "levelRequirement": 37,
@@ -3754,16 +4026,19 @@
         "variable": false
       }
     ],
-    "durationMs": 24000,
+    "durationMs": 15100,
     "stationChargeCost": 1,
-    "xp": 33,
+    "xp": 13,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_steak_and_onions"
   },
   {
-    "id": "recipe_builder_s_brew",
     "name": "Builder's Brew",
     "skill": "cooking",
     "levelRequirement": 38,
@@ -3775,36 +4050,39 @@
       },
       {
         "itemId": "item_wheat",
-        "quantity": 1
+        "quantity": 2
       },
       {
         "itemId": "item_blackberry",
-        "quantity": 1
+        "quantity": 2
       }
     ],
     "outputs": [
       {
         "itemId": "item_builder_s_brew",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
+        "minQty": 5,
+        "maxQty": 5,
         "baseQty": {
-          "min": 1,
-          "max": 1
+          "min": 5,
+          "max": 5
         },
         "variable": false
       }
     ],
-    "durationMs": 24000,
+    "durationMs": 15900,
     "stationChargeCost": 1,
-    "xp": 35,
+    "xp": 14,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_builder_s_brew"
   },
   {
-    "id": "recipe_cooked_salmon",
     "name": "Cooked Salmon",
     "skill": "cooking",
     "levelRequirement": 40,
@@ -3812,7 +4090,7 @@
     "inputs": [
       {
         "itemId": "item_salmon",
-        "quantity": 1
+        "quantity": 2
       }
     ],
     "outputs": [
@@ -3828,16 +4106,19 @@
         "variable": false
       }
     ],
-    "durationMs": 25000,
+    "durationMs": 16100,
     "stationChargeCost": 1,
-    "xp": 41,
+    "xp": 15,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_cooked_salmon"
   },
   {
-    "id": "recipe_garden_stew",
     "name": "Garden Stew",
     "skill": "cooking",
     "levelRequirement": 43,
@@ -3869,17 +4150,19 @@
         "variable": false
       }
     ],
-    "durationMs": 26000,
+    "durationMs": 16100,
     "stationChargeCost": 1,
-    "xp": 27,
+    "xp": 16,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_garden_stew"
   },
   {
-    "id": "recipe_peach_nectar",
     "name": "Peach Nectar",
     "skill": "cooking",
     "levelRequirement": 44,
@@ -3887,7 +4170,7 @@
     "inputs": [
       {
         "itemId": "item_peach",
-        "quantity": 1
+        "quantity": 2
       },
       {
         "itemId": "item_water",
@@ -3898,26 +4181,28 @@
       {
         "itemId": "item_peach_nectar",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
+        "minQty": 5,
+        "maxQty": 5,
         "baseQty": {
-          "min": 1,
-          "max": 1
+          "min": 5,
+          "max": 5
         },
         "variable": false
       }
     ],
-    "durationMs": 26000,
+    "durationMs": 16800,
     "stationChargeCost": 1,
-    "xp": 29,
+    "xp": 17,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_peach_nectar"
   },
   {
-    "id": "recipe_peach_pie",
     "name": "Peach Pie",
     "skill": "cooking",
     "levelRequirement": 46,
@@ -3945,16 +4230,19 @@
         "variable": false
       }
     ],
-    "durationMs": 26000,
+    "durationMs": 17000,
     "stationChargeCost": 1,
-    "xp": 69,
+    "xp": 18,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_peach_pie"
   },
   {
-    "id": "recipe_raspberry_cordial",
     "name": "Raspberry Cordial",
     "skill": "cooking",
     "levelRequirement": 47,
@@ -3962,7 +4250,7 @@
     "inputs": [
       {
         "itemId": "item_raspberry",
-        "quantity": 1
+        "quantity": 2
       },
       {
         "itemId": "item_water",
@@ -3973,26 +4261,28 @@
       {
         "itemId": "item_raspberry_cordial",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
+        "minQty": 5,
+        "maxQty": 5,
         "baseQty": {
-          "min": 1,
-          "max": 1
+          "min": 5,
+          "max": 5
         },
         "variable": false
       }
     ],
-    "durationMs": 27000,
+    "durationMs": 16600,
     "stationChargeCost": 1,
-    "xp": 34,
+    "xp": 18,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_raspberry_cordial"
   },
   {
-    "id": "recipe_raspberry_tart",
     "name": "Raspberry Tart",
     "skill": "cooking",
     "levelRequirement": 49,
@@ -4024,16 +4314,19 @@
         "variable": false
       }
     ],
-    "durationMs": 27000,
+    "durationMs": 16800,
     "stationChargeCost": 1,
-    "xp": 86,
+    "xp": 19,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_raspberry_tart"
   },
   {
-    "id": "recipe_lemon_fish",
     "name": "Lemon Fish",
     "skill": "cooking",
     "levelRequirement": 51,
@@ -4041,11 +4334,11 @@
     "inputs": [
       {
         "itemId": "item_tropical_fish",
-        "quantity": 1
+        "quantity": 2
       },
       {
         "itemId": "item_lemon",
-        "quantity": 1
+        "quantity": 2
       }
     ],
     "outputs": [
@@ -4061,17 +4354,19 @@
         "variable": false
       }
     ],
-    "durationMs": 27000,
+    "durationMs": 16900,
     "stationChargeCost": 1,
-    "xp": 38,
+    "xp": 20,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_lemon_fish"
   },
   {
-    "id": "recipe_sofrito",
     "name": "Sofrito",
     "skill": "cooking",
     "levelRequirement": 52,
@@ -4079,15 +4374,15 @@
     "inputs": [
       {
         "itemId": "item_garlic",
-        "quantity": 1
+        "quantity": 2
       },
       {
         "itemId": "item_onion",
-        "quantity": 1
+        "quantity": 2
       },
       {
         "itemId": "item_tomato",
-        "quantity": 1
+        "quantity": 2
       }
     ],
     "outputs": [
@@ -4103,17 +4398,19 @@
         "variable": false
       }
     ],
-    "durationMs": 28000,
+    "durationMs": 11500,
     "stationChargeCost": 1,
-    "xp": 40,
+    "xp": 14,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_sofrito"
   },
   {
-    "id": "recipe_tomato_soup",
     "name": "Tomato Soup",
     "skill": "cooking",
     "levelRequirement": 53,
@@ -4121,7 +4418,7 @@
     "inputs": [
       {
         "itemId": "item_tomato",
-        "quantity": 1
+        "quantity": 3
       },
       {
         "itemId": "item_water",
@@ -4141,17 +4438,19 @@
         "variable": false
       }
     ],
-    "durationMs": 28000,
+    "durationMs": 17700,
     "stationChargeCost": 1,
-    "xp": 44,
+    "xp": 22,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_tomato_soup"
   },
   {
-    "id": "recipe_orange_juice",
     "name": "Orange Juice",
     "skill": "cooking",
     "levelRequirement": 56,
@@ -4159,33 +4458,35 @@
     "inputs": [
       {
         "itemId": "item_orange",
-        "quantity": 4
+        "quantity": 3
       }
     ],
     "outputs": [
       {
         "itemId": "item_orange_juice",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
+        "minQty": 5,
+        "maxQty": 5,
         "baseQty": {
-          "min": 1,
-          "max": 1
+          "min": 5,
+          "max": 5
         },
         "variable": false
       }
     ],
-    "durationMs": 29000,
+    "durationMs": 17900,
     "stationChargeCost": 1,
-    "xp": 61,
+    "xp": 31,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_orange_juice"
   },
   {
-    "id": "recipe_garlic_steak",
     "name": "Garlic Steak",
     "skill": "cooking",
     "levelRequirement": 58,
@@ -4217,16 +4518,19 @@
         "variable": false
       }
     ],
-    "durationMs": 29000,
+    "durationMs": 17700,
     "stationChargeCost": 1,
-    "xp": 182,
+    "xp": 25,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_garlic_steak"
   },
   {
-    "id": "recipe_lavender_tea",
     "name": "Lavender Tea",
     "skill": "cooking",
     "levelRequirement": 59,
@@ -4234,7 +4538,7 @@
     "inputs": [
       {
         "itemId": "item_lavender",
-        "quantity": 1
+        "quantity": 3
       },
       {
         "itemId": "item_water",
@@ -4242,33 +4546,35 @@
       },
       {
         "itemId": "item_honey",
-        "quantity": 1
+        "quantity": 3
       }
     ],
     "outputs": [
       {
         "itemId": "item_lavender_tea",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
+        "minQty": 5,
+        "maxQty": 5,
         "baseQty": {
-          "min": 1,
-          "max": 1
+          "min": 5,
+          "max": 5
         },
         "variable": false
       }
     ],
-    "durationMs": 29000,
+    "durationMs": 18000,
     "stationChargeCost": 1,
-    "xp": 94,
+    "xp": 26,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_lavender_tea"
   },
   {
-    "id": "recipe_hearty_beef_stew",
     "name": "Hearty Beef Stew",
     "skill": "cooking",
     "levelRequirement": 61,
@@ -4300,16 +4606,19 @@
         "variable": false
       }
     ],
-    "durationMs": 30000,
+    "durationMs": 18400,
     "stationChargeCost": 1,
-    "xp": 232,
+    "xp": 28,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_hearty_beef_stew"
   },
   {
-    "id": "recipe_hearty_potato_stew",
     "name": "Hearty Potato Stew",
     "skill": "cooking",
     "levelRequirement": 62,
@@ -4341,17 +4650,19 @@
         "variable": false
       }
     ],
-    "durationMs": 30000,
+    "durationMs": 18600,
     "stationChargeCost": 1,
-    "xp": 83,
+    "xp": 40,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_hearty_potato_stew"
   },
   {
-    "id": "recipe_wine",
     "name": "Wine",
     "skill": "cooking",
     "levelRequirement": 64,
@@ -4359,33 +4670,35 @@
     "inputs": [
       {
         "itemId": "item_grapes",
-        "quantity": 4
+        "quantity": 3
       }
     ],
     "outputs": [
       {
         "itemId": "item_wine",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
+        "minQty": 5,
+        "maxQty": 5,
         "baseQty": {
-          "min": 1,
-          "max": 1
+          "min": 5,
+          "max": 5
         },
         "variable": false
       }
     ],
-    "durationMs": 30000,
+    "durationMs": 18900,
     "stationChargeCost": 1,
-    "xp": 133,
+    "xp": 43,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_wine"
   },
   {
-    "id": "recipe_corn_chowder",
     "name": "Corn Chowder",
     "skill": "cooking",
     "levelRequirement": 65,
@@ -4393,15 +4706,15 @@
     "inputs": [
       {
         "itemId": "item_corn",
-        "quantity": 1
+        "quantity": 3
       },
       {
         "itemId": "item_milk",
-        "quantity": 1
+        "quantity": 3
       },
       {
         "itemId": "item_potato",
-        "quantity": 1
+        "quantity": 3
       }
     ],
     "outputs": [
@@ -4417,16 +4730,19 @@
         "variable": false
       }
     ],
-    "durationMs": 31000,
+    "durationMs": 19100,
     "stationChargeCost": 1,
-    "xp": 330,
+    "xp": 32,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_corn_chowder"
   },
   {
-    "id": "recipe_pineapple_punch",
     "name": "Pineapple Punch",
     "skill": "cooking",
     "levelRequirement": 66,
@@ -4434,11 +4750,11 @@
     "inputs": [
       {
         "itemId": "item_pineapple",
-        "quantity": 1
+        "quantity": 3
       },
       {
         "itemId": "item_lemon",
-        "quantity": 1
+        "quantity": 3
       },
       {
         "itemId": "item_water",
@@ -4449,26 +4765,28 @@
       {
         "itemId": "item_pineapple_punch",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
+        "minQty": 5,
+        "maxQty": 5,
         "baseQty": {
-          "min": 1,
-          "max": 1
+          "min": 5,
+          "max": 5
         },
         "variable": false
       }
     ],
-    "durationMs": 31000,
+    "durationMs": 19200,
     "stationChargeCost": 1,
-    "xp": 95,
+    "xp": 33,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_pineapple_punch"
   },
   {
-    "id": "recipe_buttered_lobster",
     "name": "Buttered Lobster",
     "skill": "cooking",
     "levelRequirement": 67,
@@ -4496,16 +4814,19 @@
         "variable": false
       }
     ],
-    "durationMs": 31000,
+    "durationMs": 19300,
     "stationChargeCost": 1,
-    "xp": 375,
+    "xp": 34,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_buttered_lobster"
   },
   {
-    "id": "recipe_golden_stew",
     "name": "Golden Stew",
     "skill": "cooking",
     "levelRequirement": 68,
@@ -4537,17 +4858,19 @@
         "variable": false
       }
     ],
-    "durationMs": 31000,
+    "durationMs": 19400,
     "stationChargeCost": 1,
-    "xp": 102,
+    "xp": 35,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_golden_stew"
   },
   {
-    "id": "recipe_banana_smoothie",
     "name": "Banana Smoothie",
     "skill": "cooking",
     "levelRequirement": 69,
@@ -4555,40 +4878,43 @@
     "inputs": [
       {
         "itemId": "item_banana",
-        "quantity": 1
+        "quantity": 3
       },
       {
         "itemId": "item_milk",
-        "quantity": 1
+        "quantity": 3
       },
       {
         "itemId": "item_honey",
-        "quantity": 1
+        "quantity": 3
       }
     ],
     "outputs": [
       {
         "itemId": "item_banana_smoothie",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
+        "minQty": 5,
+        "maxQty": 5,
         "baseQty": {
-          "min": 1,
-          "max": 1
+          "min": 5,
+          "max": 5
         },
         "variable": false
       }
     ],
-    "durationMs": 32000,
+    "durationMs": 19500,
     "stationChargeCost": 1,
-    "xp": 434,
+    "xp": 36,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_banana_smoothie"
   },
   {
-    "id": "recipe_banana_bread",
     "name": "Banana Bread",
     "skill": "cooking",
     "levelRequirement": 70,
@@ -4616,17 +4942,19 @@
         "variable": false
       }
     ],
-    "durationMs": 32000,
+    "durationMs": 19600,
     "stationChargeCost": 1,
-    "xp": 130,
+    "xp": 59,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_banana_bread"
   },
   {
-    "id": "recipe_royal_beef_stew",
     "name": "Royal Beef Stew",
     "skill": "cooking",
     "levelRequirement": 71,
@@ -4658,16 +4986,19 @@
         "variable": false
       }
     ],
-    "durationMs": 32000,
+    "durationMs": 19600,
     "stationChargeCost": 1,
-    "xp": 507,
+    "xp": 38,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_royal_beef_stew"
   },
   {
-    "id": "recipe_pineapple_cake",
     "name": "Pineapple Cake",
     "skill": "cooking",
     "levelRequirement": 72,
@@ -4699,16 +5030,19 @@
         "variable": false
       }
     ],
-    "durationMs": 32000,
+    "durationMs": 19700,
     "stationChargeCost": 1,
-    "xp": 556,
+    "xp": 39,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_pineapple_cake"
   },
   {
-    "id": "recipe_royal_potato_stew",
     "name": "Royal Potato Stew",
     "skill": "cooking",
     "levelRequirement": 73,
@@ -4740,16 +5074,19 @@
         "variable": false
       }
     ],
-    "durationMs": 32000,
+    "durationMs": 20200,
     "stationChargeCost": 1,
-    "xp": 606,
+    "xp": 41,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_royal_potato_stew"
   },
   {
-    "id": "recipe_lobster_bisque",
     "name": "Lobster Bisque",
     "skill": "cooking",
     "levelRequirement": 74,
@@ -4781,17 +5118,19 @@
         "variable": false
       }
     ],
-    "durationMs": 33000,
+    "durationMs": 20200,
     "stationChargeCost": 1,
-    "xp": 424,
+    "xp": 42,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_lobster_bisque"
   },
   {
-    "id": "recipe_coconut_milk",
     "name": "Coconut Milk",
     "skill": "cooking",
     "levelRequirement": 75,
@@ -4806,26 +5145,28 @@
       {
         "itemId": "item_coconut_milk",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
+        "minQty": 5,
+        "maxQty": 5,
         "baseQty": {
-          "min": 1,
-          "max": 1
+          "min": 5,
+          "max": 5
         },
         "variable": false
       }
     ],
-    "durationMs": 33000,
+    "durationMs": 20300,
     "stationChargeCost": 1,
-    "xp": 149,
+    "xp": 67,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_coconut_milk"
   },
   {
-    "id": "recipe_emberroot_soup",
     "name": "Emberroot Soup",
     "skill": "cooking",
     "levelRequirement": 76,
@@ -4833,7 +5174,7 @@
     "inputs": [
       {
         "itemId": "item_emberroot",
-        "quantity": 1
+        "quantity": 4
       },
       {
         "itemId": "item_water",
@@ -4853,17 +5194,19 @@
         "variable": false
       }
     ],
-    "durationMs": 33000,
+    "durationMs": 20300,
     "stationChargeCost": 1,
-    "xp": 114,
+    "xp": 69,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_emberroot_soup"
   },
   {
-    "id": "recipe_watermelon_cooler",
     "name": "Watermelon Cooler",
     "skill": "cooking",
     "levelRequirement": 77,
@@ -4871,11 +5214,11 @@
     "inputs": [
       {
         "itemId": "item_watermelon",
-        "quantity": 1
+        "quantity": 4
       },
       {
         "itemId": "item_lime",
-        "quantity": 1
+        "quantity": 4
       },
       {
         "itemId": "item_water",
@@ -4886,26 +5229,28 @@
       {
         "itemId": "item_watermelon_cooler",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
+        "minQty": 5,
+        "maxQty": 5,
         "baseQty": {
-          "min": 1,
-          "max": 1
+          "min": 5,
+          "max": 5
         },
         "variable": false
       }
     ],
-    "durationMs": 33000,
+    "durationMs": 20700,
     "stationChargeCost": 1,
-    "xp": 127,
+    "xp": 46,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_watermelon_cooler"
   },
   {
-    "id": "recipe_mead",
     "name": "Mead",
     "skill": "cooking",
     "levelRequirement": 78,
@@ -4913,7 +5258,7 @@
     "inputs": [
       {
         "itemId": "item_honey",
-        "quantity": 1
+        "quantity": 4
       },
       {
         "itemId": "item_water",
@@ -4924,26 +5269,28 @@
       {
         "itemId": "item_mead",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
+        "minQty": 5,
+        "maxQty": 5,
         "baseQty": {
-          "min": 1,
-          "max": 1
+          "min": 5,
+          "max": 5
         },
         "variable": false
       }
     ],
-    "durationMs": 34000,
+    "durationMs": 20700,
     "stationChargeCost": 1,
-    "xp": 203,
+    "xp": 47,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_mead"
   },
   {
-    "id": "recipe_coconut_swordfish",
     "name": "Coconut Swordfish",
     "skill": "cooking",
     "levelRequirement": 79,
@@ -4951,11 +5298,11 @@
     "inputs": [
       {
         "itemId": "item_swordfish",
-        "quantity": 1
+        "quantity": 4
       },
       {
         "itemId": "item_coconut",
-        "quantity": 1
+        "quantity": 4
       }
     ],
     "outputs": [
@@ -4971,17 +5318,19 @@
         "variable": false
       }
     ],
-    "durationMs": 34000,
+    "durationMs": 20700,
     "stationChargeCost": 1,
-    "xp": 315,
+    "xp": 48,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_coconut_swordfish"
   },
   {
-    "id": "recipe_coconut_pie",
     "name": "Coconut Pie",
     "skill": "cooking",
     "levelRequirement": 80,
@@ -5013,16 +5362,19 @@
         "variable": false
       }
     ],
-    "durationMs": 34000,
+    "durationMs": 21000,
     "stationChargeCost": 1,
-    "xp": 1011,
+    "xp": 50,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_coconut_pie"
   },
   {
-    "id": "recipe_ember_steak",
     "name": "Ember Steak",
     "skill": "cooking",
     "levelRequirement": 81,
@@ -5030,11 +5382,11 @@
     "inputs": [
       {
         "itemId": "item_raw_beef",
-        "quantity": 1
+        "quantity": 4
       },
       {
         "itemId": "item_emberroot",
-        "quantity": 1
+        "quantity": 4
       }
     ],
     "outputs": [
@@ -5050,16 +5402,19 @@
         "variable": false
       }
     ],
-    "durationMs": 34000,
+    "durationMs": 21100,
     "stationChargeCost": 1,
-    "xp": 1116,
+    "xp": 52,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_ember_steak"
   },
   {
-    "id": "recipe_ember_ale",
     "name": "Ember Ale",
     "skill": "cooking",
     "levelRequirement": 82,
@@ -5067,11 +5422,11 @@
     "inputs": [
       {
         "itemId": "item_wheat",
-        "quantity": 1
+        "quantity": 4
       },
       {
         "itemId": "item_emberroot",
-        "quantity": 1
+        "quantity": 4
       },
       {
         "itemId": "item_water",
@@ -5082,26 +5437,28 @@
       {
         "itemId": "item_ember_ale",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
+        "minQty": 5,
+        "maxQty": 5,
         "baseQty": {
-          "min": 1,
-          "max": 1
+          "min": 5,
+          "max": 5
         },
         "variable": false
       }
     ],
-    "durationMs": 35000,
+    "durationMs": 21200,
     "stationChargeCost": 1,
-    "xp": 162,
+    "xp": 91,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_ember_ale"
   },
   {
-    "id": "recipe_swordfish_in_sofrito",
     "name": "Swordfish in Sofrito",
     "skill": "cooking",
     "levelRequirement": 84,
@@ -5129,16 +5486,19 @@
         "variable": false
       }
     ],
-    "durationMs": 35000,
+    "durationMs": 21600,
     "stationChargeCost": 1,
-    "xp": 1474,
+    "xp": 59,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_swordfish_in_sofrito"
   },
   {
-    "id": "recipe_spiced_wine",
     "name": "Spiced Wine",
     "skill": "cooking",
     "levelRequirement": 85,
@@ -5157,25 +5517,28 @@
       {
         "itemId": "item_spiced_wine",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
+        "minQty": 5,
+        "maxQty": 5,
         "baseQty": {
-          "min": 1,
-          "max": 1
+          "min": 5,
+          "max": 5
         },
         "variable": false
       }
     ],
-    "durationMs": 35000,
+    "durationMs": 21600,
     "stationChargeCost": 1,
-    "xp": 1582,
+    "xp": 101,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_spiced_wine"
   },
   {
-    "id": "recipe_ember_stew",
     "name": "Ember Stew",
     "skill": "cooking",
     "levelRequirement": 86,
@@ -5207,16 +5570,19 @@
         "variable": false
       }
     ],
-    "durationMs": 35000,
+    "durationMs": 21900,
     "stationChargeCost": 1,
-    "xp": 1691,
+    "xp": 64,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_ember_stew"
   },
   {
-    "id": "recipe_voidcap_soup",
     "name": "Voidcap Soup",
     "skill": "cooking",
     "levelRequirement": 87,
@@ -5224,7 +5590,7 @@
     "inputs": [
       {
         "itemId": "item_voidcap",
-        "quantity": 1
+        "quantity": 5
       },
       {
         "itemId": "item_water",
@@ -5244,17 +5610,19 @@
         "variable": false
       }
     ],
-    "durationMs": 36000,
+    "durationMs": 22100,
     "stationChargeCost": 1,
-    "xp": 212,
+    "xp": 67,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_voidcap_soup"
   },
   {
-    "id": "recipe_voidcap_tea",
     "name": "Voidcap Tea",
     "skill": "cooking",
     "levelRequirement": 88,
@@ -5262,7 +5630,7 @@
     "inputs": [
       {
         "itemId": "item_voidcap",
-        "quantity": 1
+        "quantity": 5
       },
       {
         "itemId": "item_water",
@@ -5270,32 +5638,35 @@
       },
       {
         "itemId": "item_honey",
-        "quantity": 1
+        "quantity": 5
       }
     ],
     "outputs": [
       {
         "itemId": "item_voidcap_tea",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
+        "minQty": 5,
+        "maxQty": 5,
         "baseQty": {
-          "min": 1,
-          "max": 1
+          "min": 5,
+          "max": 5
         },
         "variable": false
       }
     ],
-    "durationMs": 36000,
+    "durationMs": 22300,
     "stationChargeCost": 1,
-    "xp": 1962,
+    "xp": 70,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_voidcap_tea"
   },
   {
-    "id": "recipe_voidcap_pie",
     "name": "Voidcap Pie",
     "skill": "cooking",
     "levelRequirement": 90,
@@ -5327,16 +5698,19 @@
         "variable": false
       }
     ],
-    "durationMs": 36000,
+    "durationMs": 22600,
     "stationChargeCost": 1,
-    "xp": 2185,
+    "xp": 76,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_voidcap_pie"
   },
   {
-    "id": "recipe_dark_mead",
     "name": "Dark Mead",
     "skill": "cooking",
     "levelRequirement": 91,
@@ -5355,26 +5729,28 @@
       {
         "itemId": "item_dark_mead",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
+        "minQty": 5,
+        "maxQty": 5,
         "baseQty": {
-          "min": 1,
-          "max": 1
+          "min": 5,
+          "max": 5
         },
         "variable": false
       }
     ],
-    "durationMs": 37000,
+    "durationMs": 22700,
     "stationChargeCost": 1,
-    "xp": 328,
+    "xp": 125,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_dark_mead"
   },
   {
-    "id": "recipe_harvest_platter",
     "name": "Harvest Platter",
     "skill": "cooking",
     "levelRequirement": 93,
@@ -5410,17 +5786,19 @@
         "variable": false
       }
     ],
-    "durationMs": 37000,
+    "durationMs": 23100,
     "stationChargeCost": 1,
-    "xp": 824,
+    "xp": 86,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_harvest_platter"
   },
   {
-    "id": "recipe_void_stew",
     "name": "Void Stew",
     "skill": "cooking",
     "levelRequirement": 94,
@@ -5452,17 +5830,19 @@
         "variable": false
       }
     ],
-    "durationMs": 37000,
+    "durationMs": 23100,
     "stationChargeCost": 1,
-    "xp": 1229,
+    "xp": 89,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_void_stew"
   },
   {
-    "id": "recipe_sunset_punch",
     "name": "Sunset Punch",
     "skill": "cooking",
     "levelRequirement": 95,
@@ -5470,41 +5850,43 @@
     "inputs": [
       {
         "itemId": "item_pineapple",
-        "quantity": 1
+        "quantity": 5
       },
       {
         "itemId": "item_watermelon",
-        "quantity": 1
+        "quantity": 5
       },
       {
         "itemId": "item_coconut",
-        "quantity": 1
+        "quantity": 5
       }
     ],
     "outputs": [
       {
         "itemId": "item_sunset_punch",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
+        "minQty": 5,
+        "maxQty": 5,
         "baseQty": {
-          "min": 1,
-          "max": 1
+          "min": 5,
+          "max": 5
         },
         "variable": false
       }
     ],
-    "durationMs": 37000,
+    "durationMs": 23300,
     "stationChargeCost": 1,
-    "xp": 291,
+    "xp": 159,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_sunset_punch"
   },
   {
-    "id": "recipe_elder_draught",
     "name": "Elder Draught",
     "skill": "cooking",
     "levelRequirement": 97,
@@ -5527,25 +5909,28 @@
       {
         "itemId": "item_elder_draught",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
+        "minQty": 5,
+        "maxQty": 5,
         "baseQty": {
-          "min": 1,
-          "max": 1
+          "min": 5,
+          "max": 5
         },
         "variable": false
       }
     ],
-    "durationMs": 38000,
+    "durationMs": 23600,
     "stationChargeCost": 1,
-    "xp": 3948,
+    "xp": 101,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_elder_draught"
   },
   {
-    "id": "recipe_cooked_shark",
     "name": "Cooked Shark",
     "skill": "cooking",
     "levelRequirement": 83,
@@ -5553,7 +5938,7 @@
     "inputs": [
       {
         "itemId": "item_shark",
-        "quantity": 1
+        "quantity": 4
       }
     ],
     "outputs": [
@@ -5569,16 +5954,19 @@
         "variable": false
       }
     ],
-    "durationMs": 35000,
+    "durationMs": 21200,
     "stationChargeCost": 1,
-    "xp": 1365,
+    "xp": 56,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_cooked_shark"
   },
   {
-    "id": "recipe_muily2pf",
     "name": "Charcoal",
     "skill": "crafting",
     "levelRequirement": 1,
@@ -5586,7 +5974,7 @@
     "inputs": [
       {
         "itemId": "item_oak_wood",
-        "quantity": 2
+        "quantity": 1
       }
     ],
     "outputs": [
@@ -5602,15 +5990,18 @@
         "variable": false
       }
     ],
-    "durationMs": 6000,
+    "durationMs": 11900,
     "stationChargeCost": 1,
-    "xp": 8,
+    "xp": 5,
     "sim": {
-      "tempo": "fast"
-    }
+      "tempo": "fast",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_muily2pf"
   },
   {
-    "id": "recipe_muily2pg",
     "name": "Torch",
     "skill": "crafting",
     "levelRequirement": 13,
@@ -5638,12 +6029,16 @@
         "variable": false
       }
     ],
-    "durationMs": 6000,
+    "durationMs": 8500,
     "stationChargeCost": 1,
-    "xp": 2,
+    "xp": 4,
     "sim": {
-      "tempo": "fast"
-    }
+      "tempo": "fast",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_muily2pg"
   },
   {
     "id": "recipe_search_bird_nest",
@@ -5892,17 +6287,16 @@
     ],
     "durationMs": 8000,
     "stationChargeCost": 1,
-    "xp": 1,
+    "xp": 3,
     "sim": {
       "tempo": "fast",
       "purpose": "iph"
     }
   },
   {
-    "id": "recipe_fine_fishing_rod",
     "name": "Fine Fishing Rod",
     "skill": "crafting",
-    "levelRequirement": 5,
+    "levelRequirement": 16,
     "requiresContext": [],
     "inputs": [
       {
@@ -5928,16 +6322,19 @@
         "anchor": true
       }
     ],
-    "durationMs": 17000,
+    "durationMs": 13100,
     "stationChargeCost": 1,
-    "xp": 2,
+    "xp": 7,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_fine_fishing_rod"
   },
   {
-    "id": "recipe_leather",
     "requiresContext": [],
     "stationChargeCost": 1,
     "name": "Leather",
@@ -5946,7 +6343,7 @@
     "inputs": [
       {
         "itemId": "item_hide",
-        "quantity": 2
+        "quantity": 1
       }
     ],
     "outputs": [
@@ -5962,15 +6359,18 @@
         "variable": false
       }
     ],
-    "durationMs": 17000,
-    "xp": 2,
+    "durationMs": 8000,
+    "xp": 3,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_leather"
   },
   {
-    "id": "recipe_leather_hat",
     "requiresContext": [],
     "stationChargeCost": 1,
     "name": "Leather Hat",
@@ -5995,15 +6395,18 @@
         "variable": false
       }
     ],
-    "durationMs": 17000,
-    "xp": 2,
+    "durationMs": 25900,
+    "xp": 10,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_leather_hat"
   },
   {
-    "id": "recipe_leather_chest",
     "requiresContext": [],
     "stationChargeCost": 1,
     "name": "Leather Chest",
@@ -6028,18 +6431,21 @@
         "variable": false
       }
     ],
-    "durationMs": 18000,
-    "xp": 3,
+    "durationMs": 39400,
+    "xp": 17,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_leather_chest"
   },
   {
-    "id": "recipe_fishing_rod",
     "name": "Fishing Rod",
     "skill": "crafting",
-    "levelRequirement": 1,
+    "levelRequirement": 3,
     "requiresContext": [],
     "inputs": [
       {
@@ -6069,28 +6475,31 @@
         "anchor": true
       }
     ],
-    "durationMs": 16000,
+    "durationMs": 11300,
     "stationChargeCost": 1,
-    "xp": 2,
+    "xp": 4,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_fishing_rod"
   },
   {
-    "id": "recipe_trap",
     "name": "Trap",
     "skill": "crafting",
-    "levelRequirement": 1,
+    "levelRequirement": 4,
     "requiresContext": [],
     "inputs": [
       {
         "itemId": "item_oak_wood",
-        "quantity": 4
+        "quantity": 1
       },
       {
         "itemId": "item_copper_nails",
-        "quantity": 2
+        "quantity": 1
       }
     ],
     "outputs": [
@@ -6107,16 +6516,19 @@
         "anchor": true
       }
     ],
-    "durationMs": 16000,
+    "durationMs": 13700,
     "stationChargeCost": 1,
-    "xp": 2,
+    "xp": 5,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_trap"
   },
   {
-    "id": "recipe_oak_plank",
     "name": "Oak Plank",
     "skill": "crafting",
     "levelRequirement": 2,
@@ -6140,17 +6552,19 @@
         "variable": false
       }
     ],
-    "durationMs": 16000,
+    "durationMs": 8700,
     "stationChargeCost": 1,
-    "xp": 4,
+    "xp": 3,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_oak_plank"
   },
   {
-    "id": "recipe_fir_plank",
     "name": "Fir Plank",
     "skill": "crafting",
     "levelRequirement": 20,
@@ -6158,7 +6572,7 @@
     "inputs": [
       {
         "itemId": "item_fir_wood",
-        "quantity": 2
+        "quantity": 3
       }
     ],
     "outputs": [
@@ -6174,16 +6588,19 @@
         "variable": false
       }
     ],
-    "durationMs": 20000,
+    "durationMs": 8800,
     "stationChargeCost": 1,
-    "xp": 8,
+    "xp": 5,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_fir_plank"
   },
   {
-    "id": "recipe_maple_plank",
     "name": "Maple Plank",
     "skill": "crafting",
     "levelRequirement": 40,
@@ -6191,7 +6608,7 @@
     "inputs": [
       {
         "itemId": "item_maple_wood",
-        "quantity": 2
+        "quantity": 4
       }
     ],
     "outputs": [
@@ -6207,16 +6624,19 @@
         "variable": false
       }
     ],
-    "durationMs": 25000,
+    "durationMs": 10800,
     "stationChargeCost": 1,
-    "xp": 41,
+    "xp": 10,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_maple_plank"
   },
   {
-    "id": "recipe_mahogany_plank",
     "name": "Mahogany Plank",
     "skill": "crafting",
     "levelRequirement": 60,
@@ -6224,7 +6644,7 @@
     "inputs": [
       {
         "itemId": "item_mahogany_wood",
-        "quantity": 2
+        "quantity": 6
       }
     ],
     "outputs": [
@@ -6240,17 +6660,19 @@
         "variable": false
       }
     ],
-    "durationMs": 29000,
+    "durationMs": 12100,
     "stationChargeCost": 1,
-    "xp": 81,
+    "xp": 18,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_mahogany_plank"
   },
   {
-    "id": "recipe_ebony_plank",
     "name": "Ebony Plank",
     "skill": "crafting",
     "levelRequirement": 80,
@@ -6258,7 +6680,7 @@
     "inputs": [
       {
         "itemId": "item_ebony_wood",
-        "quantity": 2
+        "quantity": 8
       }
     ],
     "outputs": [
@@ -6274,17 +6696,19 @@
         "variable": false
       }
     ],
-    "durationMs": 34000,
+    "durationMs": 13900,
     "stationChargeCost": 1,
-    "xp": 179,
+    "xp": 33,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_ebony_plank"
   },
   {
-    "id": "recipe_leather_shield",
     "name": "Leather Shield",
     "skill": "crafting",
     "levelRequirement": 9,
@@ -6292,7 +6716,7 @@
     "inputs": [
       {
         "itemId": "item_leather",
-        "quantity": 2
+        "quantity": 3
       }
     ],
     "outputs": [
@@ -6308,16 +6732,19 @@
         "variable": false
       }
     ],
-    "durationMs": 18000,
+    "durationMs": 26200,
     "stationChargeCost": 1,
-    "xp": 3,
+    "xp": 11,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_leather_shield"
   },
   {
-    "id": "recipe_hard_leather",
     "name": "Hard Leather",
     "skill": "crafting",
     "levelRequirement": 21,
@@ -6325,7 +6752,7 @@
     "inputs": [
       {
         "itemId": "item_leather",
-        "quantity": 2
+        "quantity": 1
       },
       {
         "itemId": "item_iron_nails",
@@ -6345,16 +6772,19 @@
         "variable": false
       }
     ],
-    "durationMs": 21000,
+    "durationMs": 8600,
     "stationChargeCost": 1,
-    "xp": 9,
+    "xp": 5,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_hard_leather"
   },
   {
-    "id": "recipe_hard_hat",
     "name": "Hard Hat",
     "skill": "crafting",
     "levelRequirement": 22,
@@ -6378,16 +6808,19 @@
         "variable": false
       }
     ],
-    "durationMs": 21000,
+    "durationMs": 28600,
     "stationChargeCost": 1,
-    "xp": 10,
+    "xp": 17,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_hard_hat"
   },
   {
-    "id": "recipe_hard_shield",
     "name": "Hard Shield",
     "skill": "crafting",
     "levelRequirement": 25,
@@ -6395,7 +6828,7 @@
     "inputs": [
       {
         "itemId": "item_hard_leather",
-        "quantity": 2
+        "quantity": 3
       }
     ],
     "outputs": [
@@ -6411,16 +6844,19 @@
         "variable": false
       }
     ],
-    "durationMs": 21000,
+    "durationMs": 28300,
     "stationChargeCost": 1,
-    "xp": 12,
+    "xp": 18,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_hard_shield"
   },
   {
-    "id": "recipe_hard_chest",
     "name": "Hard Chest",
     "skill": "crafting",
     "levelRequirement": 26,
@@ -6444,16 +6880,19 @@
         "variable": false
       }
     ],
-    "durationMs": 22000,
+    "durationMs": 43100,
     "stationChargeCost": 1,
-    "xp": 14,
+    "xp": 28,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_hard_chest"
   },
   {
-    "id": "recipe_studded_leather",
     "name": "Studded Leather",
     "skill": "crafting",
     "levelRequirement": 41,
@@ -6461,7 +6900,7 @@
     "inputs": [
       {
         "itemId": "item_hard_leather",
-        "quantity": 2
+        "quantity": 1
       },
       {
         "itemId": "item_mythril_nails",
@@ -6481,16 +6920,19 @@
         "variable": false
       }
     ],
-    "durationMs": 25000,
+    "durationMs": 10500,
     "stationChargeCost": 1,
-    "xp": 45,
+    "xp": 10,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_studded_leather"
   },
   {
-    "id": "recipe_studded_hat",
     "name": "Studded Hat",
     "skill": "crafting",
     "levelRequirement": 43,
@@ -6514,16 +6956,19 @@
         "variable": false
       }
     ],
-    "durationMs": 26000,
+    "durationMs": 32200,
     "stationChargeCost": 1,
-    "xp": 56,
+    "xp": 32,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_studded_hat"
   },
   {
-    "id": "recipe_studded_shield",
     "name": "Studded Shield",
     "skill": "crafting",
     "levelRequirement": 46,
@@ -6531,7 +6976,7 @@
     "inputs": [
       {
         "itemId": "item_studded_leather",
-        "quantity": 2
+        "quantity": 3
       }
     ],
     "outputs": [
@@ -6547,16 +6992,19 @@
         "variable": false
       }
     ],
-    "durationMs": 26000,
+    "durationMs": 33000,
     "stationChargeCost": 1,
-    "xp": 69,
+    "xp": 45,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_studded_shield"
   },
   {
-    "id": "recipe_studded_chest",
     "name": "Studded Chest",
     "skill": "crafting",
     "levelRequirement": 47,
@@ -6580,16 +7028,19 @@
         "variable": false
       }
     ],
-    "durationMs": 27000,
+    "durationMs": 49900,
     "stationChargeCost": 1,
-    "xp": 77,
+    "xp": 54,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_studded_chest"
   },
   {
-    "id": "recipe_dragonscale",
     "name": "Dragonscale",
     "skill": "crafting",
     "levelRequirement": 81,
@@ -6597,7 +7048,7 @@
     "inputs": [
       {
         "itemId": "item_red_scale",
-        "quantity": 2
+        "quantity": 4
       }
     ],
     "outputs": [
@@ -6613,16 +7064,19 @@
         "variable": false
       }
     ],
-    "durationMs": 34000,
+    "durationMs": 14200,
     "stationChargeCost": 1,
-    "xp": 1116,
+    "xp": 35,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_dragonscale"
   },
   {
-    "id": "recipe_dragonscale_hat",
     "name": "Dragonscale Hat",
     "skill": "crafting",
     "levelRequirement": 82,
@@ -6646,16 +7100,19 @@
         "variable": false
       }
     ],
-    "durationMs": 35000,
+    "durationMs": 42400,
     "stationChargeCost": 1,
-    "xp": 1257,
+    "xp": 108,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_dragonscale_hat"
   },
   {
-    "id": "recipe_dragonscale_shield",
     "name": "Dragonscale Shield",
     "skill": "crafting",
     "levelRequirement": 85,
@@ -6663,7 +7120,7 @@
     "inputs": [
       {
         "itemId": "item_dragonscale",
-        "quantity": 2
+        "quantity": 3
       }
     ],
     "outputs": [
@@ -6679,16 +7136,19 @@
         "variable": false
       }
     ],
-    "durationMs": 35000,
+    "durationMs": 43500,
     "stationChargeCost": 1,
-    "xp": 1582,
+    "xp": 123,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_dragonscale_shield"
   },
   {
-    "id": "recipe_dragonscale_chest",
     "name": "Dragonscale Chest",
     "skill": "crafting",
     "levelRequirement": 86,
@@ -6712,16 +7172,19 @@
         "variable": false
       }
     ],
-    "durationMs": 35000,
+    "durationMs": 65700,
     "stationChargeCost": 1,
-    "xp": 1691,
+    "xp": 245,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_dragonscale_chest"
   },
   {
-    "id": "recipe_cut_topaz",
     "name": "Cut Topaz",
     "skill": "crafting",
     "levelRequirement": 27,
@@ -6729,7 +7192,7 @@
     "inputs": [
       {
         "itemId": "item_uncut_topaz",
-        "quantity": 1
+        "quantity": 2
       }
     ],
     "outputs": [
@@ -6745,17 +7208,19 @@
         "variable": false
       }
     ],
-    "durationMs": 22000,
+    "durationMs": 9000,
     "stationChargeCost": 1,
-    "xp": 43,
+    "xp": 6,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_cut_topaz"
   },
   {
-    "id": "recipe_cut_ruby",
     "name": "Cut Ruby",
     "skill": "crafting",
     "levelRequirement": 28,
@@ -6763,7 +7228,7 @@
     "inputs": [
       {
         "itemId": "item_uncut_ruby",
-        "quantity": 1
+        "quantity": 2
       }
     ],
     "outputs": [
@@ -6779,16 +7244,19 @@
         "variable": false
       }
     ],
-    "durationMs": 22000,
+    "durationMs": 10300,
     "stationChargeCost": 1,
-    "xp": 16,
+    "xp": 7,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_cut_ruby"
   },
   {
-    "id": "recipe_cut_sapphire",
     "name": "Cut Sapphire",
     "skill": "crafting",
     "levelRequirement": 29,
@@ -6796,7 +7264,7 @@
     "inputs": [
       {
         "itemId": "item_uncut_sapphire",
-        "quantity": 1
+        "quantity": 2
       }
     ],
     "outputs": [
@@ -6812,16 +7280,19 @@
         "variable": false
       }
     ],
-    "durationMs": 22000,
+    "durationMs": 10100,
     "stationChargeCost": 1,
-    "xp": 17,
+    "xp": 7,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_cut_sapphire"
   },
   {
-    "id": "recipe_cut_emerald",
     "name": "Cut Emerald",
     "skill": "crafting",
     "levelRequirement": 31,
@@ -6829,7 +7300,7 @@
     "inputs": [
       {
         "itemId": "item_uncut_emerald",
-        "quantity": 1
+        "quantity": 2
       }
     ],
     "outputs": [
@@ -6845,16 +7316,19 @@
         "variable": false
       }
     ],
-    "durationMs": 23000,
+    "durationMs": 9600,
     "stationChargeCost": 1,
-    "xp": 20,
+    "xp": 7,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_cut_emerald"
   },
   {
-    "id": "recipe_cut_amethyst",
     "name": "Cut Amethyst",
     "skill": "crafting",
     "levelRequirement": 32,
@@ -6862,7 +7336,7 @@
     "inputs": [
       {
         "itemId": "item_uncut_amethyst",
-        "quantity": 1
+        "quantity": 2
       }
     ],
     "outputs": [
@@ -6878,16 +7352,19 @@
         "variable": false
       }
     ],
-    "durationMs": 23000,
+    "durationMs": 10600,
     "stationChargeCost": 1,
-    "xp": 22,
+    "xp": 8,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_cut_amethyst"
   },
   {
-    "id": "recipe_cut_diamond",
     "name": "Cut Diamond",
     "skill": "crafting",
     "levelRequirement": 33,
@@ -6895,7 +7372,7 @@
     "inputs": [
       {
         "itemId": "item_uncut_diamond",
-        "quantity": 1
+        "quantity": 2
       }
     ],
     "outputs": [
@@ -6911,16 +7388,19 @@
         "variable": false
       }
     ],
-    "durationMs": 23000,
+    "durationMs": 9700,
     "stationChargeCost": 1,
-    "xp": 24,
+    "xp": 8,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_cut_diamond"
   },
   {
-    "id": "recipe_silver_topaz_ring",
     "name": "Silver Topaz Ring",
     "skill": "crafting",
     "levelRequirement": 51,
@@ -6948,16 +7428,19 @@
         "variable": false
       }
     ],
-    "durationMs": 27000,
+    "durationMs": 16900,
     "stationChargeCost": 1,
-    "xp": 101,
+    "xp": 30,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_silver_topaz_ring"
   },
   {
-    "id": "recipe_silver_ruby_ring",
     "name": "Silver Ruby Ring",
     "skill": "crafting",
     "levelRequirement": 48,
@@ -6985,16 +7468,19 @@
         "variable": false
       }
     ],
-    "durationMs": 27000,
+    "durationMs": 17200,
     "stationChargeCost": 1,
-    "xp": 81,
+    "xp": 19,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_silver_ruby_ring"
   },
   {
-    "id": "recipe_silver_sapphire_ring",
     "name": "Silver Sapphire Ring",
     "skill": "crafting",
     "levelRequirement": 49,
@@ -7022,16 +7508,19 @@
         "variable": false
       }
     ],
-    "durationMs": 27000,
+    "durationMs": 16800,
     "stationChargeCost": 1,
-    "xp": 86,
+    "xp": 19,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_silver_sapphire_ring"
   },
   {
-    "id": "recipe_silver_emerald_ring",
     "name": "Silver Emerald Ring",
     "skill": "crafting",
     "levelRequirement": 50,
@@ -7059,16 +7548,19 @@
         "variable": false
       }
     ],
-    "durationMs": 27000,
+    "durationMs": 17300,
     "stationChargeCost": 1,
-    "xp": 91,
+    "xp": 20,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_silver_emerald_ring"
   },
   {
-    "id": "recipe_silver_amethyst_ring",
     "name": "Silver Amethyst Ring",
     "skill": "crafting",
     "levelRequirement": 52,
@@ -7096,16 +7588,19 @@
         "variable": false
       }
     ],
-    "durationMs": 28000,
+    "durationMs": 17300,
     "stationChargeCost": 1,
-    "xp": 114,
+    "xp": 21,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_silver_amethyst_ring"
   },
   {
-    "id": "recipe_silver_diamond_ring",
     "name": "Silver Diamond Ring",
     "skill": "crafting",
     "levelRequirement": 53,
@@ -7133,16 +7628,19 @@
         "variable": false
       }
     ],
-    "durationMs": 28000,
+    "durationMs": 17700,
     "stationChargeCost": 1,
-    "xp": 125,
+    "xp": 22,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_silver_diamond_ring"
   },
   {
-    "id": "recipe_silver_topaz_amulet",
     "name": "Silver Topaz Amulet",
     "skill": "crafting",
     "levelRequirement": 57,
@@ -7170,16 +7668,19 @@
         "variable": false
       }
     ],
-    "durationMs": 29000,
+    "durationMs": 18100,
     "stationChargeCost": 1,
-    "xp": 171,
+    "xp": 41,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_silver_topaz_amulet"
   },
   {
-    "id": "recipe_silver_ruby_amulet",
     "name": "Silver Ruby Amulet",
     "skill": "crafting",
     "levelRequirement": 54,
@@ -7207,16 +7708,19 @@
         "variable": false
       }
     ],
-    "durationMs": 28000,
+    "durationMs": 17200,
     "stationChargeCost": 1,
-    "xp": 135,
+    "xp": 22,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_silver_ruby_amulet"
   },
   {
-    "id": "recipe_silver_sapphire_amulet",
     "name": "Silver Sapphire Amulet",
     "skill": "crafting",
     "levelRequirement": 55,
@@ -7244,16 +7748,19 @@
         "variable": false
       }
     ],
-    "durationMs": 28000,
+    "durationMs": 17500,
     "stationChargeCost": 1,
-    "xp": 145,
+    "xp": 23,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_silver_sapphire_amulet"
   },
   {
-    "id": "recipe_silver_emerald_amulet",
     "name": "Silver Emerald Amulet",
     "skill": "crafting",
     "levelRequirement": 56,
@@ -7281,16 +7788,19 @@
         "variable": false
       }
     ],
-    "durationMs": 29000,
+    "durationMs": 17900,
     "stationChargeCost": 1,
-    "xp": 161,
+    "xp": 24,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_silver_emerald_amulet"
   },
   {
-    "id": "recipe_silver_amethyst_amulet",
     "name": "Silver Amethyst Amulet",
     "skill": "crafting",
     "levelRequirement": 58,
@@ -7318,16 +7828,19 @@
         "variable": false
       }
     ],
-    "durationMs": 29000,
+    "durationMs": 17700,
     "stationChargeCost": 1,
-    "xp": 182,
+    "xp": 25,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_silver_amethyst_amulet"
   },
   {
-    "id": "recipe_silver_diamond_amulet",
     "name": "Silver Diamond Amulet",
     "skill": "crafting",
     "levelRequirement": 59,
@@ -7355,16 +7868,19 @@
         "variable": false
       }
     ],
-    "durationMs": 29000,
+    "durationMs": 18000,
     "stationChargeCost": 1,
-    "xp": 192,
+    "xp": 26,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_silver_diamond_amulet"
   },
   {
-    "id": "recipe_gold_topaz_ring",
     "name": "Gold Topaz Ring",
     "skill": "crafting",
     "levelRequirement": 70,
@@ -7392,16 +7908,19 @@
         "variable": false
       }
     ],
-    "durationMs": 32000,
+    "durationMs": 19600,
     "stationChargeCost": 1,
-    "xp": 458,
+    "xp": 66,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_gold_topaz_ring"
   },
   {
-    "id": "recipe_gold_ruby_ring",
     "name": "Gold Ruby Ring",
     "skill": "crafting",
     "levelRequirement": 67,
@@ -7429,16 +7948,19 @@
         "variable": false
       }
     ],
-    "durationMs": 31000,
+    "durationMs": 19300,
     "stationChargeCost": 1,
-    "xp": 375,
+    "xp": 63,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_gold_ruby_ring"
   },
   {
-    "id": "recipe_gold_sapphire_ring",
     "name": "Gold Sapphire Ring",
     "skill": "crafting",
     "levelRequirement": 68,
@@ -7466,16 +7988,19 @@
         "variable": false
       }
     ],
-    "durationMs": 31000,
+    "durationMs": 19400,
     "stationChargeCost": 1,
-    "xp": 398,
+    "xp": 35,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_gold_sapphire_ring"
   },
   {
-    "id": "recipe_gold_emerald_ring",
     "name": "Gold Emerald Ring",
     "skill": "crafting",
     "levelRequirement": 69,
@@ -7503,16 +8028,19 @@
         "variable": false
       }
     ],
-    "durationMs": 32000,
+    "durationMs": 19500,
     "stationChargeCost": 1,
-    "xp": 434,
+    "xp": 36,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_gold_emerald_ring"
   },
   {
-    "id": "recipe_gold_amethyst_ring",
     "name": "Gold Amethyst Ring",
     "skill": "crafting",
     "levelRequirement": 71,
@@ -7540,16 +8068,19 @@
         "variable": false
       }
     ],
-    "durationMs": 32000,
+    "durationMs": 19600,
     "stationChargeCost": 1,
-    "xp": 507,
+    "xp": 38,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_gold_amethyst_ring"
   },
   {
-    "id": "recipe_gold_diamond_ring",
     "name": "Gold Diamond Ring",
     "skill": "crafting",
     "levelRequirement": 72,
@@ -7577,16 +8108,19 @@
         "variable": false
       }
     ],
-    "durationMs": 32000,
+    "durationMs": 19700,
     "stationChargeCost": 1,
-    "xp": 556,
+    "xp": 39,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_gold_diamond_ring"
   },
   {
-    "id": "recipe_gold_topaz_amulet",
     "name": "Gold Topaz Amulet",
     "skill": "crafting",
     "levelRequirement": 76,
@@ -7614,16 +8148,19 @@
         "variable": false
       }
     ],
-    "durationMs": 33000,
+    "durationMs": 20300,
     "stationChargeCost": 1,
-    "xp": 777,
+    "xp": 89,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_gold_topaz_amulet"
   },
   {
-    "id": "recipe_gold_ruby_amulet",
     "name": "Gold Ruby Amulet",
     "skill": "crafting",
     "levelRequirement": 73,
@@ -7651,16 +8188,19 @@
         "variable": false
       }
     ],
-    "durationMs": 32000,
+    "durationMs": 20200,
     "stationChargeCost": 1,
-    "xp": 606,
+    "xp": 41,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_gold_ruby_amulet"
   },
   {
-    "id": "recipe_gold_sapphire_amulet",
     "name": "Gold Sapphire Amulet",
     "skill": "crafting",
     "levelRequirement": 74,
@@ -7688,16 +8228,19 @@
         "variable": false
       }
     ],
-    "durationMs": 33000,
+    "durationMs": 20200,
     "stationChargeCost": 1,
-    "xp": 676,
+    "xp": 42,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_gold_sapphire_amulet"
   },
   {
-    "id": "recipe_gold_emerald_amulet",
     "name": "Gold Emerald Amulet",
     "skill": "crafting",
     "levelRequirement": 75,
@@ -7725,16 +8268,19 @@
         "variable": false
       }
     ],
-    "durationMs": 33000,
+    "durationMs": 20300,
     "stationChargeCost": 1,
-    "xp": 726,
+    "xp": 43,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_gold_emerald_amulet"
   },
   {
-    "id": "recipe_gold_amethyst_amulet",
     "name": "Gold Amethyst Amulet",
     "skill": "crafting",
     "levelRequirement": 77,
@@ -7762,16 +8308,19 @@
         "variable": false
       }
     ],
-    "durationMs": 33000,
+    "durationMs": 20700,
     "stationChargeCost": 1,
-    "xp": 828,
+    "xp": 46,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_gold_amethyst_amulet"
   },
   {
-    "id": "recipe_gold_diamond_amulet",
     "name": "Gold Diamond Amulet",
     "skill": "crafting",
     "levelRequirement": 78,
@@ -7799,16 +8348,19 @@
         "variable": false
       }
     ],
-    "durationMs": 34000,
+    "durationMs": 20700,
     "stationChargeCost": 1,
-    "xp": 906,
+    "xp": 47,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_gold_diamond_amulet"
   },
   {
-    "id": "recipe_master_rod",
     "name": "Master Rod",
     "skill": "crafting",
     "levelRequirement": 42,
@@ -7816,11 +8368,11 @@
     "inputs": [
       {
         "itemId": "item_maple_plank",
-        "quantity": 3
+        "quantity": 1
       },
       {
         "itemId": "item_mythril_nails",
-        "quantity": 2
+        "quantity": 1
       },
       {
         "itemId": "item_beeswax_comb",
@@ -7840,16 +8392,19 @@
         "variable": false
       }
     ],
-    "durationMs": 25000,
+    "durationMs": 16500,
     "stationChargeCost": 1,
-    "xp": 50,
+    "xp": 16,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_master_rod"
   },
   {
-    "id": "recipe_fly_lure",
     "name": "Fly Lure",
     "skill": "crafting",
     "levelRequirement": 11,
@@ -7868,25 +8423,28 @@
       {
         "itemId": "item_fly_lure",
         "chance": 100,
-        "minQty": 3,
-        "maxQty": 3,
+        "minQty": 1,
+        "maxQty": 1,
         "baseQty": {
-          "min": 3,
-          "max": 3
+          "min": 1,
+          "max": 1
         },
         "variable": false
       }
     ],
-    "durationMs": 18000,
+    "durationMs": 13100,
     "stationChargeCost": 1,
-    "xp": 4,
+    "xp": 6,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_fly_lure"
   },
   {
-    "id": "recipe_spinner_lure",
     "name": "Spinner Lure",
     "skill": "crafting",
     "levelRequirement": 30,
@@ -7894,7 +8452,7 @@
     "inputs": [
       {
         "itemId": "item_iron_nails",
-        "quantity": 2
+        "quantity": 1
       },
       {
         "itemId": "item_fir_plank",
@@ -7905,25 +8463,28 @@
       {
         "itemId": "item_spinner_lure",
         "chance": 100,
-        "minQty": 3,
-        "maxQty": 3,
+        "minQty": 1,
+        "maxQty": 1,
         "baseQty": {
-          "min": 3,
-          "max": 3
+          "min": 1,
+          "max": 1
         },
         "variable": false
       }
     ],
-    "durationMs": 23000,
+    "durationMs": 15400,
     "stationChargeCost": 1,
-    "xp": 18,
+    "xp": 11,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_spinner_lure"
   },
   {
-    "id": "recipe_glow_lure",
     "name": "Glow Lure",
     "skill": "crafting",
     "levelRequirement": 38,
@@ -7931,7 +8492,7 @@
     "inputs": [
       {
         "itemId": "item_beeswax_comb",
-        "quantity": 2
+        "quantity": 1
       },
       {
         "itemId": "item_iron_nails",
@@ -7942,25 +8503,28 @@
       {
         "itemId": "item_glow_lure",
         "chance": 100,
-        "minQty": 3,
-        "maxQty": 3,
+        "minQty": 1,
+        "maxQty": 1,
         "baseQty": {
-          "min": 3,
-          "max": 3
+          "min": 1,
+          "max": 1
         },
         "variable": false
       }
     ],
-    "durationMs": 24000,
+    "durationMs": 15900,
     "stationChargeCost": 1,
-    "xp": 35,
+    "xp": 14,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_glow_lure"
   },
   {
-    "id": "recipe_lavender_incense",
     "name": "Lavender Incense",
     "skill": "crafting",
     "levelRequirement": 7,
@@ -7968,7 +8532,7 @@
     "inputs": [
       {
         "itemId": "item_lavender",
-        "quantity": 2
+        "quantity": 1
       }
     ],
     "outputs": [
@@ -7984,11 +8548,16 @@
         "variable": false
       }
     ],
-    "durationMs": 6000,
-    "xp": 8
+    "durationMs": 12600,
+    "xp": 5,
+    "sim": {
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_lavender_incense"
   },
   {
-    "id": "recipe_beeswax_candle",
     "name": "Beeswax Candle",
     "skill": "crafting",
     "levelRequirement": 19,
@@ -7996,7 +8565,7 @@
     "inputs": [
       {
         "itemId": "item_beeswax_comb",
-        "quantity": 2
+        "quantity": 1
       }
     ],
     "outputs": [
@@ -8012,11 +8581,16 @@
         "variable": false
       }
     ],
-    "durationMs": 6000,
-    "xp": 8
+    "durationMs": 14500,
+    "xp": 8,
+    "sim": {
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_beeswax_candle"
   },
   {
-    "id": "recipe_wheat",
     "name": "Wheat",
     "skill": "farming",
     "levelRequirement": 4,
@@ -8062,9 +8636,9 @@
         "variable": true
       }
     ],
-    "durationMs": 3000,
+    "durationMs": 5500,
     "stationChargeCost": 1,
-    "xp": 1,
+    "xp": 3,
     "crop": {
       "growMs": 3600000,
       "load": 10,
@@ -8072,11 +8646,13 @@
     },
     "sim": {
       "tempo": "quick",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true
+    },
+    "id": "recipe_wheat"
   },
   {
-    "id": "recipe_lavender",
     "name": "Lavender",
     "skill": "farming",
     "levelRequirement": 5,
@@ -8123,9 +8699,9 @@
         "variable": true
       }
     ],
-    "durationMs": 3000,
+    "durationMs": 5300,
     "stationChargeCost": 1,
-    "xp": 1,
+    "xp": 2,
     "crop": {
       "growMs": 5400000,
       "load": 8,
@@ -8133,8 +8709,11 @@
     },
     "sim": {
       "tempo": "quick",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true
+    },
+    "id": "recipe_lavender"
   },
   {
     "id": "recipe_flour",
@@ -8163,7 +8742,7 @@
     ],
     "durationMs": 16000,
     "stationChargeCost": 1,
-    "xp": 2,
+    "xp": 5,
     "stationKinds": [
       "windmill"
     ],
@@ -8173,7 +8752,6 @@
     }
   },
   {
-    "id": "recipe_potato",
     "name": "Potato",
     "skill": "farming",
     "levelRequirement": 2,
@@ -8219,7 +8797,7 @@
         "variable": true
       }
     ],
-    "durationMs": 3000,
+    "durationMs": 5800,
     "stationChargeCost": 1,
     "xp": 2,
     "crop": {
@@ -8230,11 +8808,12 @@
     "sim": {
       "tempo": "quick",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true
+    },
+    "id": "recipe_potato"
   },
   {
-    "id": "recipe_carrot",
     "name": "Carrot",
     "skill": "farming",
     "levelRequirement": 9,
@@ -8280,9 +8859,9 @@
         "variable": true
       }
     ],
-    "durationMs": 3000,
+    "durationMs": 6800,
     "stationChargeCost": 1,
-    "xp": 1,
+    "xp": 3,
     "crop": {
       "growMs": 3600000,
       "load": 10,
@@ -8290,11 +8869,13 @@
     },
     "sim": {
       "tempo": "quick",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true
+    },
+    "id": "recipe_carrot"
   },
   {
-    "id": "recipe_onion",
     "name": "Onion",
     "skill": "farming",
     "levelRequirement": 15,
@@ -8340,9 +8921,9 @@
         "variable": true
       }
     ],
-    "durationMs": 4000,
+    "durationMs": 6100,
     "stationChargeCost": 1,
-    "xp": 1,
+    "xp": 4,
     "crop": {
       "growMs": 3600000,
       "load": 10,
@@ -8350,11 +8931,13 @@
     },
     "sim": {
       "tempo": "quick",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true
+    },
+    "id": "recipe_onion"
   },
   {
-    "id": "recipe_celery",
     "name": "Celery",
     "skill": "farming",
     "levelRequirement": 16,
@@ -8379,14 +8962,15 @@
       },
       {
         "itemId": "item_celery_seed",
-        "chance": 40,
+        "chance": 20,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
           "min": 1,
           "max": 1
         },
-        "variable": true
+        "variable": true,
+        "baseChance": 40
       },
       {
         "itemId": "item_worm",
@@ -8400,9 +8984,9 @@
         "variable": true
       }
     ],
-    "durationMs": 4000,
+    "durationMs": 7500,
     "stationChargeCost": 1,
-    "xp": 1,
+    "xp": 4,
     "crop": {
       "growMs": 3600000,
       "load": 10,
@@ -8410,11 +8994,13 @@
     },
     "sim": {
       "tempo": "quick",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true
+    },
+    "id": "recipe_celery"
   },
   {
-    "id": "recipe_leek",
     "name": "Leek",
     "skill": "farming",
     "levelRequirement": 27,
@@ -8460,9 +9046,9 @@
         "variable": true
       }
     ],
-    "durationMs": 4000,
+    "durationMs": 7100,
     "stationChargeCost": 1,
-    "xp": 3,
+    "xp": 7,
     "crop": {
       "growMs": 3600000,
       "load": 10,
@@ -8470,11 +9056,13 @@
     },
     "sim": {
       "tempo": "quick",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true
+    },
+    "id": "recipe_leek"
   },
   {
-    "id": "recipe_turnip",
     "name": "Turnip",
     "skill": "farming",
     "levelRequirement": 42,
@@ -8499,14 +9087,15 @@
       },
       {
         "itemId": "item_turnip_seed",
-        "chance": 40,
+        "chance": 22,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
           "min": 1,
           "max": 1
         },
-        "variable": true
+        "variable": true,
+        "baseChance": 40
       },
       {
         "itemId": "item_worm",
@@ -8520,9 +9109,9 @@
         "variable": true
       }
     ],
-    "durationMs": 5000,
+    "durationMs": 8200,
     "stationChargeCost": 1,
-    "xp": 10,
+    "xp": 11,
     "crop": {
       "growMs": 3600000,
       "load": 10,
@@ -8530,11 +9119,13 @@
     },
     "sim": {
       "tempo": "quick",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true
+    },
+    "id": "recipe_turnip"
   },
   {
-    "id": "recipe_cabbage",
     "name": "Cabbage",
     "skill": "farming",
     "levelRequirement": 43,
@@ -8559,14 +9150,15 @@
       },
       {
         "itemId": "item_cabbage_seed",
-        "chance": 40,
+        "chance": 22,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
           "min": 1,
           "max": 1
         },
-        "variable": true
+        "variable": true,
+        "baseChance": 40
       },
       {
         "itemId": "item_worm",
@@ -8580,9 +9172,9 @@
         "variable": true
       }
     ],
-    "durationMs": 5000,
+    "durationMs": 8100,
     "stationChargeCost": 1,
-    "xp": 11,
+    "xp": 13,
     "crop": {
       "growMs": 3600000,
       "load": 10,
@@ -8590,11 +9182,13 @@
     },
     "sim": {
       "tempo": "quick",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true
+    },
+    "id": "recipe_cabbage"
   },
   {
-    "id": "recipe_garlic",
     "name": "Garlic",
     "skill": "farming",
     "levelRequirement": 51,
@@ -8619,14 +9213,15 @@
       },
       {
         "itemId": "item_garlic_seed",
-        "chance": 40,
+        "chance": 30,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
           "min": 1,
           "max": 1
         },
-        "variable": true
+        "variable": true,
+        "baseChance": 40
       },
       {
         "itemId": "item_worm",
@@ -8640,9 +9235,9 @@
         "variable": true
       }
     ],
-    "durationMs": 5000,
+    "durationMs": 8400,
     "stationChargeCost": 1,
-    "xp": 12,
+    "xp": 15,
     "crop": {
       "growMs": 3600000,
       "load": 10,
@@ -8651,11 +9246,12 @@
     "sim": {
       "tempo": "quick",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true
+    },
+    "id": "recipe_garlic"
   },
   {
-    "id": "recipe_tomato",
     "name": "Tomato",
     "skill": "farming",
     "levelRequirement": 52,
@@ -8680,14 +9276,15 @@
       },
       {
         "itemId": "item_tomato_seed",
-        "chance": 40,
+        "chance": 30,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
           "min": 1,
           "max": 1
         },
-        "variable": true
+        "variable": true,
+        "baseChance": 40
       },
       {
         "itemId": "item_worm",
@@ -8701,9 +9298,9 @@
         "variable": true
       }
     ],
-    "durationMs": 5000,
+    "durationMs": 8700,
     "stationChargeCost": 1,
-    "xp": 20,
+    "xp": 19,
     "crop": {
       "growMs": 3600000,
       "load": 10,
@@ -8711,11 +9308,13 @@
     },
     "sim": {
       "tempo": "quick",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true
+    },
+    "id": "recipe_tomato"
   },
   {
-    "id": "recipe_corn",
     "name": "Corn",
     "skill": "farming",
     "levelRequirement": 65,
@@ -8761,9 +9360,9 @@
         "variable": true
       }
     ],
-    "durationMs": 6000,
+    "durationMs": 9500,
     "stationChargeCost": 1,
-    "xp": 21,
+    "xp": 30,
     "crop": {
       "growMs": 3600000,
       "load": 10,
@@ -8772,11 +9371,12 @@
     "sim": {
       "tempo": "quick",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true
+    },
+    "id": "recipe_corn"
   },
   {
-    "id": "recipe_emberroot",
     "name": "Emberroot",
     "skill": "farming",
     "levelRequirement": 76,
@@ -8822,9 +9422,9 @@
         "variable": true
       }
     ],
-    "durationMs": 6000,
+    "durationMs": 10100,
     "stationChargeCost": 1,
-    "xp": 31,
+    "xp": 40,
     "crop": {
       "growMs": 3600000,
       "load": 10,
@@ -8833,11 +9433,12 @@
     "sim": {
       "tempo": "quick",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true
+    },
+    "id": "recipe_emberroot"
   },
   {
-    "id": "recipe_voidcap",
     "name": "Voidcap",
     "skill": "farming",
     "levelRequirement": 87,
@@ -8883,9 +9484,9 @@
         "variable": true
       }
     ],
-    "durationMs": 7000,
+    "durationMs": 11100,
     "stationChargeCost": 1,
-    "xp": 360,
+    "xp": 42,
     "crop": {
       "growMs": 3600000,
       "load": 10,
@@ -8893,11 +9494,13 @@
     },
     "sim": {
       "tempo": "quick",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true
+    },
+    "id": "recipe_voidcap"
   },
   {
-    "id": "recipe_mint",
     "name": "Mint",
     "skill": "farming",
     "levelRequirement": 12,
@@ -8923,14 +9526,15 @@
       },
       {
         "itemId": "item_mint_seed",
-        "chance": 30,
+        "chance": 10,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
           "min": 1,
           "max": 1
         },
-        "variable": true
+        "variable": true,
+        "baseChance": 30
       },
       {
         "itemId": "item_worm",
@@ -8944,9 +9548,9 @@
         "variable": true
       }
     ],
-    "durationMs": 3000,
+    "durationMs": 6400,
     "stationChargeCost": 1,
-    "xp": 1,
+    "xp": 3,
     "crop": {
       "growMs": 5400000,
       "load": 8,
@@ -8954,11 +9558,13 @@
     },
     "sim": {
       "tempo": "quick",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true
+    },
+    "id": "recipe_mint"
   },
   {
-    "id": "recipe_rose",
     "name": "Rose",
     "skill": "farming",
     "levelRequirement": 30,
@@ -8984,14 +9590,15 @@
       },
       {
         "itemId": "item_rose_seed",
-        "chance": 30,
+        "chance": 17,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
           "min": 1,
           "max": 1
         },
-        "variable": true
+        "variable": true,
+        "baseChance": 30
       },
       {
         "itemId": "item_worm",
@@ -9005,9 +9612,9 @@
         "variable": true
       }
     ],
-    "durationMs": 4000,
+    "durationMs": 6800,
     "stationChargeCost": 1,
-    "xp": 3,
+    "xp": 5,
     "crop": {
       "growMs": 5400000,
       "load": 8,
@@ -9015,11 +9622,13 @@
     },
     "sim": {
       "tempo": "quick",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true
+    },
+    "id": "recipe_rose"
   },
   {
-    "id": "recipe_mandrake",
     "name": "Mandrake",
     "skill": "farming",
     "levelRequirement": 40,
@@ -9045,14 +9654,15 @@
       },
       {
         "itemId": "item_mandrake_seed",
-        "chance": 30,
+        "chance": 22,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
           "min": 1,
           "max": 1
         },
-        "variable": true
+        "variable": true,
+        "baseChance": 30
       },
       {
         "itemId": "item_worm",
@@ -9066,9 +9676,9 @@
         "variable": true
       }
     ],
-    "durationMs": 5000,
+    "durationMs": 7500,
     "stationChargeCost": 1,
-    "xp": 8,
+    "xp": 10,
     "crop": {
       "growMs": 5400000,
       "load": 8,
@@ -9076,11 +9686,13 @@
     },
     "sim": {
       "tempo": "quick",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true
+    },
+    "id": "recipe_mandrake"
   },
   {
-    "id": "recipe_moonpetal",
     "name": "Moonpetal",
     "skill": "farming",
     "levelRequirement": 60,
@@ -9127,9 +9739,9 @@
         "variable": true
       }
     ],
-    "durationMs": 6000,
+    "durationMs": 9300,
     "stationChargeCost": 1,
-    "xp": 21,
+    "xp": 25,
     "crop": {
       "growMs": 5400000,
       "load": 8,
@@ -9138,11 +9750,12 @@
     "sim": {
       "tempo": "quick",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true
+    },
+    "id": "recipe_moonpetal"
   },
   {
-    "id": "recipe_starflower",
     "name": "Starflower",
     "skill": "farming",
     "levelRequirement": 80,
@@ -9189,9 +9802,9 @@
         "variable": true
       }
     ],
-    "durationMs": 6000,
+    "durationMs": 10400,
     "stationChargeCost": 1,
-    "xp": 44,
+    "xp": 58,
     "crop": {
       "growMs": 5400000,
       "load": 8,
@@ -9200,8 +9813,10 @@
     "sim": {
       "tempo": "quick",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true
+    },
+    "id": "recipe_starflower"
   },
   {
     "id": "recipe_muily2pb",
@@ -12319,7 +12934,6 @@
     }
   },
   {
-    "id": "recipe_cut_stone",
     "name": "Cut Stone",
     "skill": "construction",
     "levelRequirement": 1,
@@ -12327,7 +12941,7 @@
     "inputs": [
       {
         "itemId": "item_stone",
-        "quantity": 3
+        "quantity": 1
       }
     ],
     "outputs": [
@@ -12343,16 +12957,19 @@
         "variable": false
       }
     ],
-    "durationMs": 16000,
+    "durationMs": 12800,
     "stationChargeCost": 1,
-    "xp": 2,
+    "xp": 5,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_cut_stone"
   },
   {
-    "id": "recipe_roof_tiles",
     "name": "Roof Tiles",
     "skill": "construction",
     "levelRequirement": 10,
@@ -12360,7 +12977,7 @@
     "inputs": [
       {
         "itemId": "item_clay",
-        "quantity": 3
+        "quantity": 1
       }
     ],
     "outputs": [
@@ -12376,16 +12993,19 @@
         "variable": false
       }
     ],
-    "durationMs": 18000,
+    "durationMs": 13700,
     "stationChargeCost": 1,
-    "xp": 3,
+    "xp": 7,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_roof_tiles"
   },
   {
-    "id": "recipe_fir_frame",
     "name": "Fir Frame",
     "skill": "construction",
     "levelRequirement": 20,
@@ -12393,11 +13013,11 @@
     "inputs": [
       {
         "itemId": "item_fir_plank",
-        "quantity": 3
+        "quantity": 1
       },
       {
         "itemId": "item_iron_nails",
-        "quantity": 2
+        "quantity": 1
       }
     ],
     "outputs": [
@@ -12413,16 +13033,19 @@
         "variable": false
       }
     ],
-    "durationMs": 20000,
+    "durationMs": 13700,
     "stationChargeCost": 1,
-    "xp": 8,
+    "xp": 11,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_fir_frame"
   },
   {
-    "id": "recipe_maple_frame",
     "name": "Maple Frame",
     "skill": "construction",
     "levelRequirement": 40,
@@ -12430,11 +13053,11 @@
     "inputs": [
       {
         "itemId": "item_maple_plank",
-        "quantity": 3
+        "quantity": 1
       },
       {
         "itemId": "item_mythril_nails",
-        "quantity": 2
+        "quantity": 1
       }
     ],
     "outputs": [
@@ -12450,24 +13073,27 @@
         "variable": false
       }
     ],
-    "durationMs": 25000,
+    "durationMs": 15900,
     "stationChargeCost": 1,
-    "xp": 41,
+    "xp": 17,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_maple_frame"
   },
   {
-    "id": "recipe_marble_block",
     "name": "Marble Block",
     "skill": "construction",
-    "levelRequirement": 45,
+    "levelRequirement": 48,
     "requiresContext": [],
     "inputs": [
       {
         "itemId": "item_marble",
-        "quantity": 3
+        "quantity": 2
       }
     ],
     "outputs": [
@@ -12483,17 +13109,19 @@
         "variable": false
       }
     ],
-    "durationMs": 26000,
+    "durationMs": 16900,
     "stationChargeCost": 1,
-    "xp": 113,
+    "xp": 23,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_marble_block"
   },
   {
-    "id": "recipe_mahogany_frame",
     "name": "Mahogany Frame",
     "skill": "construction",
     "levelRequirement": 60,
@@ -12501,11 +13129,11 @@
     "inputs": [
       {
         "itemId": "item_mahogany_plank",
-        "quantity": 3
+        "quantity": 1
       },
       {
         "itemId": "item_mythril_nails",
-        "quantity": 2
+        "quantity": 1
       }
     ],
     "outputs": [
@@ -12521,16 +13149,19 @@
         "variable": false
       }
     ],
-    "durationMs": 29000,
+    "durationMs": 18100,
     "stationChargeCost": 1,
-    "xp": 203,
+    "xp": 53,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_mahogany_frame"
   },
   {
-    "id": "recipe_ebony_frame",
     "name": "Ebony Frame",
     "skill": "construction",
     "levelRequirement": 80,
@@ -12538,11 +13169,11 @@
     "inputs": [
       {
         "itemId": "item_ebony_plank",
-        "quantity": 3
+        "quantity": 1
       },
       {
         "itemId": "item_mythril_nails",
-        "quantity": 2
+        "quantity": 1
       }
     ],
     "outputs": [
@@ -12558,16 +13189,19 @@
         "variable": false
       }
     ],
-    "durationMs": 34000,
+    "durationMs": 20800,
     "stationChargeCost": 1,
-    "xp": 1011,
+    "xp": 88,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_ebony_frame"
   },
   {
-    "id": "recipe_basalt_block",
     "name": "Basalt Block",
     "skill": "construction",
     "levelRequirement": 85,
@@ -12575,7 +13209,7 @@
     "inputs": [
       {
         "itemId": "item_basalt",
-        "quantity": 3
+        "quantity": 4
       }
     ],
     "outputs": [
@@ -12591,13 +13225,17 @@
         "variable": false
       }
     ],
-    "durationMs": 35000,
+    "durationMs": 21800,
     "stationChargeCost": 1,
-    "xp": 1582,
+    "xp": 80,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_basalt_block"
   },
   {
     "id": "recipe_build_sheep_pasture",
@@ -13439,7 +14077,6 @@
     ]
   },
   {
-    "id": "recipe_birdwatcher",
     "name": "Birdwatcher",
     "skill": "alchemy",
     "levelRequirement": 1,
@@ -13462,27 +14099,29 @@
       {
         "itemId": "item_birdwatcher",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
+        "minQty": 5,
+        "maxQty": 5,
         "baseQty": {
-          "min": 1,
-          "max": 1
+          "min": 5,
+          "max": 5
         },
         "variable": false,
         "anchor": true
       }
     ],
-    "durationMs": 16000,
+    "durationMs": 13200,
     "stationChargeCost": 1,
-    "xp": 122,
+    "xp": 8,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_birdwatcher"
   },
   {
-    "id": "recipe_elixir_of_ironskin",
     "requiresContext": [],
     "stationChargeCost": 1,
     "name": "Elixir of Ironskin",
@@ -13515,15 +14154,18 @@
         "variable": false
       }
     ],
-    "durationMs": 18000,
-    "xp": 3,
+    "durationMs": 13700,
+    "xp": 9,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_elixir_of_ironskin"
   },
   {
-    "id": "recipe_elixir_of_valor",
     "name": "Elixir of Valor",
     "skill": "alchemy",
     "levelRequirement": 18,
@@ -13559,17 +14201,19 @@
         "variable": false
       }
     ],
-    "durationMs": 20000,
+    "durationMs": 14400,
     "stationChargeCost": 1,
-    "xp": 20,
+    "xp": 8,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_elixir_of_valor"
   },
   {
-    "id": "recipe_prospectors_draught",
     "name": "Prospector's Draught",
     "skill": "alchemy",
     "levelRequirement": 12,
@@ -13592,26 +14236,28 @@
       {
         "itemId": "item_prospectors_draught",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
+        "minQty": 5,
+        "maxQty": 5,
         "baseQty": {
-          "min": 1,
-          "max": 1
+          "min": 5,
+          "max": 5
         },
         "variable": false
       }
     ],
-    "durationMs": 19000,
+    "durationMs": 12500,
     "stationChargeCost": 1,
-    "xp": 5,
+    "xp": 6,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_prospectors_draught"
   },
   {
-    "id": "recipe_scholars_tonic",
     "name": "Scholar's Tonic",
     "skill": "alchemy",
     "levelRequirement": 38,
@@ -13634,26 +14280,28 @@
       {
         "itemId": "item_scholars_tonic",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
+        "minQty": 5,
+        "maxQty": 5,
         "baseQty": {
-          "min": 1,
-          "max": 1
+          "min": 5,
+          "max": 5
         },
         "variable": false
       }
     ],
-    "durationMs": 24000,
+    "durationMs": 15300,
     "stationChargeCost": 1,
-    "xp": 71,
+    "xp": 14,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_scholars_tonic"
   },
   {
-    "id": "recipe_bountiful_draught",
     "name": "Bountiful Draught",
     "skill": "alchemy",
     "levelRequirement": 45,
@@ -13680,25 +14328,28 @@
       {
         "itemId": "item_bountiful_draught",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
+        "minQty": 5,
+        "maxQty": 5,
         "baseQty": {
-          "min": 1,
-          "max": 1
+          "min": 5,
+          "max": 5
         },
         "variable": false
       }
     ],
-    "durationMs": 26000,
+    "durationMs": 16800,
     "stationChargeCost": 1,
-    "xp": 65,
+    "xp": 29,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_bountiful_draught"
   },
   {
-    "id": "recipe_greater_ironskin",
     "name": "Greater Ironskin",
     "skill": "alchemy",
     "levelRequirement": 60,
@@ -13730,16 +14381,19 @@
         "variable": false
       }
     ],
-    "durationMs": 29000,
+    "durationMs": 18500,
     "stationChargeCost": 1,
-    "xp": 203,
+    "xp": 30,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_greater_ironskin"
   },
   {
-    "id": "recipe_greater_valor",
     "name": "Greater Valor",
     "skill": "alchemy",
     "levelRequirement": 65,
@@ -13775,16 +14429,19 @@
         "variable": false
       }
     ],
-    "durationMs": 31000,
+    "durationMs": 19100,
     "stationChargeCost": 1,
-    "xp": 330,
+    "xp": 69,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_greater_valor"
   },
   {
-    "id": "recipe_elixir_of_legends",
     "name": "Elixir of Legends",
     "skill": "alchemy",
     "levelRequirement": 80,
@@ -13812,17 +14469,19 @@
         "variable": false
       }
     ],
-    "durationMs": 34000,
+    "durationMs": 20900,
     "stationChargeCost": 1,
-    "xp": 235,
+    "xp": 95,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
-      "xpPinned": true
-    }
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_elixir_of_legends"
   },
   {
-    "id": "recipe_masters_draught",
     "name": "Master's Draught",
     "skill": "alchemy",
     "levelRequirement": 90,
@@ -13849,22 +14508,26 @@
       {
         "itemId": "item_masters_draught",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 1,
+        "minQty": 5,
+        "maxQty": 5,
         "baseQty": {
-          "min": 1,
-          "max": 1
+          "min": 5,
+          "max": 5
         },
         "variable": false
       }
     ],
-    "durationMs": 36000,
+    "durationMs": 22500,
     "stationChargeCost": 1,
-    "xp": 2185,
+    "xp": 90,
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true,
+      "outputsPinned": true
+    },
+    "id": "recipe_masters_draught"
   },
   {
     "id": "recipe_bait_from_raw_shrimp",
@@ -13933,7 +14596,6 @@
     }
   },
   {
-    "id": "recipe_bait_from_trout",
     "name": "Bait from Trout",
     "skill": "fishing",
     "levelRequirement": 5,
@@ -13957,16 +14619,18 @@
         "variable": false
       }
     ],
-    "durationMs": 3000,
+    "durationMs": 9000,
     "stationChargeCost": 1,
-    "xp": 1,
+    "xp": 4,
     "sim": {
       "tempo": "quick",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true
+    },
+    "id": "recipe_bait_from_trout"
   },
   {
-    "id": "recipe_bait_from_anchovy",
     "name": "Bait from Anchovy",
     "skill": "fishing",
     "levelRequirement": 25,
@@ -13990,13 +14654,16 @@
         "variable": false
       }
     ],
-    "durationMs": 4000,
+    "durationMs": 10100,
     "stationChargeCost": 1,
-    "xp": 2,
+    "xp": 7,
     "sim": {
       "tempo": "quick",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true
+    },
+    "id": "recipe_bait_from_anchovy"
   },
   {
     "id": "recipe_bait_from_tropical_fish",
@@ -14058,14 +14725,13 @@
     ],
     "durationMs": 4000,
     "stationChargeCost": 1,
-    "xp": 2,
+    "xp": 3,
     "sim": {
       "tempo": "quick",
       "purpose": "iph"
     }
   },
   {
-    "id": "recipe_bait_from_salmon",
     "name": "Bait from Salmon",
     "skill": "fishing",
     "levelRequirement": 40,
@@ -14089,16 +14755,18 @@
         "variable": false
       }
     ],
-    "durationMs": 5000,
+    "durationMs": 10900,
     "stationChargeCost": 1,
-    "xp": 8,
+    "xp": 11,
     "sim": {
       "tempo": "quick",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true
+    },
+    "id": "recipe_bait_from_salmon"
   },
   {
-    "id": "recipe_bait_from_tuna",
     "name": "Bait from Tuna",
     "skill": "fishing",
     "levelRequirement": 45,
@@ -14122,16 +14790,18 @@
         "variable": false
       }
     ],
-    "durationMs": 5000,
+    "durationMs": 10600,
     "stationChargeCost": 1,
-    "xp": 13,
+    "xp": 12,
     "sim": {
       "tempo": "quick",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true
+    },
+    "id": "recipe_bait_from_tuna"
   },
   {
-    "id": "recipe_bait_from_stingray",
     "name": "Bait from Stingray",
     "skill": "fishing",
     "levelRequirement": 54,
@@ -14155,16 +14825,18 @@
         "variable": false
       }
     ],
-    "durationMs": 5000,
+    "durationMs": 12000,
     "stationChargeCost": 1,
-    "xp": 24,
+    "xp": 17,
     "sim": {
       "tempo": "quick",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true
+    },
+    "id": "recipe_bait_from_stingray"
   },
   {
-    "id": "recipe_bait_from_lobster",
     "name": "Bait from Lobster",
     "skill": "fishing",
     "levelRequirement": 50,
@@ -14188,16 +14860,18 @@
         "variable": false
       }
     ],
-    "durationMs": 5000,
+    "durationMs": 11300,
     "stationChargeCost": 1,
-    "xp": 17,
+    "xp": 14,
     "sim": {
       "tempo": "quick",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true
+    },
+    "id": "recipe_bait_from_lobster"
   },
   {
-    "id": "recipe_bait_from_sturgeon",
     "name": "Bait from Sturgeon",
     "skill": "fishing",
     "levelRequirement": 60,
@@ -14221,16 +14895,18 @@
         "variable": false
       }
     ],
-    "durationMs": 6000,
+    "durationMs": 12100,
     "stationChargeCost": 1,
-    "xp": 42,
+    "xp": 19,
     "sim": {
       "tempo": "quick",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true
+    },
+    "id": "recipe_bait_from_sturgeon"
   },
   {
-    "id": "recipe_bait_from_swordfish",
     "name": "Bait from Swordfish",
     "skill": "fishing",
     "levelRequirement": 63,
@@ -14254,13 +14930,16 @@
         "variable": false
       }
     ],
-    "durationMs": 6000,
+    "durationMs": 12400,
     "stationChargeCost": 1,
-    "xp": 55,
+    "xp": 28,
     "sim": {
       "tempo": "quick",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true
+    },
+    "id": "recipe_bait_from_swordfish"
   },
   {
     "id": "recipe_bait_from_shark",
@@ -14289,14 +14968,13 @@
     ],
     "durationMs": 7000,
     "stationChargeCost": 1,
-    "xp": 273,
+    "xp": 18,
     "sim": {
       "tempo": "quick",
       "purpose": "iph"
     }
   },
   {
-    "id": "recipe_bait_from_anglerfish",
     "name": "Bait from Anglerfish",
     "skill": "fishing",
     "levelRequirement": 89,
@@ -14320,13 +14998,16 @@
         "variable": false
       }
     ],
-    "durationMs": 7000,
+    "durationMs": 15000,
     "stationChargeCost": 1,
-    "xp": 403,
+    "xp": 59,
     "sim": {
       "tempo": "quick",
-      "purpose": "iph"
-    }
+      "purpose": "iph",
+      "xpPinned": true,
+      "timePinned": true
+    },
+    "id": "recipe_bait_from_anglerfish"
   },
   {
     "id": "recipe_offer_oak_charcoal",
@@ -14352,7 +15033,7 @@
       "litMs": 60000
     },
     "durationMs": 4000,
-    "xp": 3
+    "xp": 13
   },
   {
     "id": "recipe_offer_lavender_incense",

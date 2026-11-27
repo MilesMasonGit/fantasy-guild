@@ -145,7 +145,7 @@
               "payload": {
                 "type": "WORK_TIME",
                 "bucket": "percentage",
-                "value": -0.06,
+                "value": -0.05,
                 "category": "forestry"
               },
               "chargeDelta": 0,
@@ -177,7 +177,7 @@
               "payload": {
                 "type": "WORK_TIME",
                 "bucket": "percentage",
-                "value": -0.126,
+                "value": -0.1,
                 "category": "forestry"
               },
               "chargeDelta": 0,
@@ -225,7 +225,7 @@
               "payload": {
                 "type": "YIELD",
                 "bucket": "percentage",
-                "value": 0.07,
+                "value": 0.05,
                 "category": "forestry"
               },
               "chargeDelta": 0,
@@ -257,7 +257,7 @@
               "payload": {
                 "type": "YIELD",
                 "bucket": "percentage",
-                "value": 0.152,
+                "value": 0.1,
                 "category": "forestry"
               },
               "chargeDelta": 0,
@@ -370,7 +370,7 @@
               "payload": {
                 "type": "WORK_TIME",
                 "bucket": "percentage",
-                "value": -0.06,
+                "value": -0.05,
                 "category": "mining"
               },
               "chargeDelta": 0,
@@ -402,7 +402,7 @@
               "payload": {
                 "type": "WORK_TIME",
                 "bucket": "percentage",
-                "value": -0.126,
+                "value": -0.1,
                 "category": "mining"
               },
               "chargeDelta": 0,
@@ -450,7 +450,7 @@
               "payload": {
                 "type": "YIELD",
                 "bucket": "percentage",
-                "value": 0.07,
+                "value": 0.05,
                 "category": "mining"
               },
               "chargeDelta": 0,
@@ -482,7 +482,7 @@
               "payload": {
                 "type": "YIELD",
                 "bucket": "percentage",
-                "value": 0.152,
+                "value": 0.1,
                 "category": "mining"
               },
               "chargeDelta": 0,
@@ -530,7 +530,7 @@
               "payload": {
                 "type": "GROW_TIME",
                 "bucket": "percentage",
-                "value": -0.1
+                "value": -0.05
               },
               "chargeDelta": 0,
               "to": {
@@ -561,7 +561,7 @@
               "payload": {
                 "type": "GROW_TIME",
                 "bucket": "percentage",
-                "value": -0.2
+                "value": -0.1
               },
               "chargeDelta": 0,
               "to": {
@@ -608,7 +608,7 @@
               "payload": {
                 "type": "WORK_TIME",
                 "bucket": "percentage",
-                "value": -0.06,
+                "value": -0.05,
                 "category": "smithing"
               },
               "chargeDelta": 0,
@@ -640,7 +640,7 @@
               "payload": {
                 "type": "WORK_TIME",
                 "bucket": "percentage",
-                "value": -0.126,
+                "value": -0.1,
                 "category": "smithing"
               },
               "chargeDelta": 0,
@@ -688,7 +688,7 @@
               "payload": {
                 "type": "YIELD",
                 "bucket": "percentage",
-                "value": 0.07,
+                "value": 0.05,
                 "category": "smithing"
               },
               "chargeDelta": 0,
@@ -720,7 +720,7 @@
               "payload": {
                 "type": "YIELD",
                 "bucket": "percentage",
-                "value": 0.152,
+                "value": 0.1,
                 "category": "smithing"
               },
               "chargeDelta": 0,
@@ -768,7 +768,7 @@
               "payload": {
                 "type": "WORK_TIME",
                 "bucket": "percentage",
-                "value": -0.06,
+                "value": -0.05,
                 "category": "fishing"
               },
               "chargeDelta": 0,
@@ -800,7 +800,7 @@
               "payload": {
                 "type": "WORK_TIME",
                 "bucket": "percentage",
-                "value": -0.126,
+                "value": -0.1,
                 "category": "fishing"
               },
               "chargeDelta": 0,
@@ -848,7 +848,7 @@
               "payload": {
                 "type": "YIELD",
                 "bucket": "percentage",
-                "value": 0.07,
+                "value": 0.05,
                 "category": "fishing"
               },
               "chargeDelta": 0,
@@ -880,7 +880,7 @@
               "payload": {
                 "type": "YIELD",
                 "bucket": "percentage",
-                "value": 0.152,
+                "value": 0.1,
                 "category": "fishing"
               },
               "chargeDelta": 0,
@@ -928,7 +928,7 @@
               "payload": {
                 "type": "WORK_TIME",
                 "bucket": "percentage",
-                "value": -0.06,
+                "value": -0.0333,
                 "category": "farming"
               },
               "chargeDelta": 0,
@@ -960,7 +960,7 @@
               "payload": {
                 "type": "WORK_TIME",
                 "bucket": "percentage",
-                "value": -0.126,
+                "value": -0.0667,
                 "category": "farming"
               },
               "chargeDelta": 0,
@@ -992,7 +992,7 @@
               "payload": {
                 "type": "WORK_TIME",
                 "bucket": "percentage",
-                "value": -0.199,
+                "value": -0.1,
                 "category": "farming"
               },
               "chargeDelta": 0,
@@ -1040,7 +1040,7 @@
               "payload": {
                 "type": "YIELD",
                 "bucket": "percentage",
-                "value": 0.07,
+                "value": 0.0333,
                 "category": "farming"
               },
               "chargeDelta": 0,
@@ -1072,7 +1072,7 @@
               "payload": {
                 "type": "YIELD",
                 "bucket": "percentage",
-                "value": 0.152,
+                "value": 0.0667,
                 "category": "farming"
               },
               "chargeDelta": 0,
@@ -1104,7 +1104,7 @@
               "payload": {
                 "type": "YIELD",
                 "bucket": "percentage",
-                "value": 0.25,
+                "value": 0.1,
                 "category": "farming"
               },
               "chargeDelta": 0,
@@ -1152,7 +1152,7 @@
               "payload": {
                 "type": "GROW_TIME",
                 "bucket": "percentage",
-                "value": -0.1
+                "value": -0.0333
               },
               "chargeDelta": 0,
               "to": {
@@ -1170,7 +1170,7 @@
               "payload": {
                 "type": "GROW_TIME",
                 "bucket": "percentage",
-                "value": -0.1
+                "value": -0.0333
               },
               "chargeDelta": 0,
               "to": {
@@ -1188,7 +1188,7 @@
               "payload": {
                 "type": "GROW_TIME",
                 "bucket": "percentage",
-                "value": -0.1
+                "value": -0.0333
               },
               "chargeDelta": 0,
               "to": {
@@ -1206,7 +1206,7 @@
               "payload": {
                 "type": "GROW_TIME",
                 "bucket": "percentage",
-                "value": -0.1
+                "value": -0.0333
               },
               "chargeDelta": 0,
               "to": {
@@ -1224,7 +1224,7 @@
               "payload": {
                 "type": "GROW_TIME",
                 "bucket": "percentage",
-                "value": -0.1
+                "value": -0.0333
               },
               "chargeDelta": 0,
               "to": {
@@ -1242,7 +1242,7 @@
               "payload": {
                 "type": "GROW_TIME",
                 "bucket": "percentage",
-                "value": -0.1
+                "value": -0.0333
               },
               "chargeDelta": 0,
               "to": {
@@ -1260,7 +1260,7 @@
               "payload": {
                 "type": "GROW_TIME",
                 "bucket": "percentage",
-                "value": -0.1
+                "value": -0.0333
               },
               "chargeDelta": 0,
               "to": {
@@ -1278,7 +1278,7 @@
               "payload": {
                 "type": "GROW_TIME",
                 "bucket": "percentage",
-                "value": -0.1
+                "value": -0.0333
               },
               "chargeDelta": 0,
               "to": {
@@ -1296,7 +1296,7 @@
               "payload": {
                 "type": "GROW_TIME",
                 "bucket": "percentage",
-                "value": -0.1
+                "value": -0.0333
               },
               "chargeDelta": 0,
               "to": {
@@ -1327,7 +1327,7 @@
               "payload": {
                 "type": "GROW_TIME",
                 "bucket": "percentage",
-                "value": -0.2
+                "value": -0.0667
               },
               "chargeDelta": 0,
               "to": {
@@ -1345,7 +1345,7 @@
               "payload": {
                 "type": "GROW_TIME",
                 "bucket": "percentage",
-                "value": -0.2
+                "value": -0.0667
               },
               "chargeDelta": 0,
               "to": {
@@ -1363,7 +1363,7 @@
               "payload": {
                 "type": "GROW_TIME",
                 "bucket": "percentage",
-                "value": -0.2
+                "value": -0.0667
               },
               "chargeDelta": 0,
               "to": {
@@ -1381,7 +1381,7 @@
               "payload": {
                 "type": "GROW_TIME",
                 "bucket": "percentage",
-                "value": -0.2
+                "value": -0.0667
               },
               "chargeDelta": 0,
               "to": {
@@ -1399,7 +1399,7 @@
               "payload": {
                 "type": "GROW_TIME",
                 "bucket": "percentage",
-                "value": -0.2
+                "value": -0.0667
               },
               "chargeDelta": 0,
               "to": {
@@ -1417,7 +1417,7 @@
               "payload": {
                 "type": "GROW_TIME",
                 "bucket": "percentage",
-                "value": -0.2
+                "value": -0.0667
               },
               "chargeDelta": 0,
               "to": {
@@ -1435,7 +1435,7 @@
               "payload": {
                 "type": "GROW_TIME",
                 "bucket": "percentage",
-                "value": -0.2
+                "value": -0.0667
               },
               "chargeDelta": 0,
               "to": {
@@ -1453,7 +1453,7 @@
               "payload": {
                 "type": "GROW_TIME",
                 "bucket": "percentage",
-                "value": -0.2
+                "value": -0.0667
               },
               "chargeDelta": 0,
               "to": {
@@ -1471,7 +1471,7 @@
               "payload": {
                 "type": "GROW_TIME",
                 "bucket": "percentage",
-                "value": -0.2
+                "value": -0.0667
               },
               "chargeDelta": 0,
               "to": {
@@ -1502,7 +1502,7 @@
               "payload": {
                 "type": "GROW_TIME",
                 "bucket": "percentage",
-                "value": -0.3
+                "value": -0.1
               },
               "chargeDelta": 0,
               "to": {
@@ -1520,7 +1520,7 @@
               "payload": {
                 "type": "GROW_TIME",
                 "bucket": "percentage",
-                "value": -0.3
+                "value": -0.1
               },
               "chargeDelta": 0,
               "to": {
@@ -1538,7 +1538,7 @@
               "payload": {
                 "type": "GROW_TIME",
                 "bucket": "percentage",
-                "value": -0.3
+                "value": -0.1
               },
               "chargeDelta": 0,
               "to": {
@@ -1556,7 +1556,7 @@
               "payload": {
                 "type": "GROW_TIME",
                 "bucket": "percentage",
-                "value": -0.3
+                "value": -0.1
               },
               "chargeDelta": 0,
               "to": {
@@ -1574,7 +1574,7 @@
               "payload": {
                 "type": "GROW_TIME",
                 "bucket": "percentage",
-                "value": -0.3
+                "value": -0.1
               },
               "chargeDelta": 0,
               "to": {
@@ -1592,7 +1592,7 @@
               "payload": {
                 "type": "GROW_TIME",
                 "bucket": "percentage",
-                "value": -0.3
+                "value": -0.1
               },
               "chargeDelta": 0,
               "to": {
@@ -1610,7 +1610,7 @@
               "payload": {
                 "type": "GROW_TIME",
                 "bucket": "percentage",
-                "value": -0.3
+                "value": -0.1
               },
               "chargeDelta": 0,
               "to": {
@@ -1628,7 +1628,7 @@
               "payload": {
                 "type": "GROW_TIME",
                 "bucket": "percentage",
-                "value": -0.3
+                "value": -0.1
               },
               "chargeDelta": 0,
               "to": {
@@ -1646,7 +1646,7 @@
               "payload": {
                 "type": "GROW_TIME",
                 "bucket": "percentage",
-                "value": -0.3
+                "value": -0.1
               },
               "chargeDelta": 0,
               "to": {
@@ -1693,7 +1693,7 @@
               "payload": {
                 "type": "WORK_TIME",
                 "bucket": "percentage",
-                "value": -0.06,
+                "value": -0.0333,
                 "category": "cooking"
               },
               "chargeDelta": 0,
@@ -1725,7 +1725,7 @@
               "payload": {
                 "type": "WORK_TIME",
                 "bucket": "percentage",
-                "value": -0.126,
+                "value": -0.0667,
                 "category": "cooking"
               },
               "chargeDelta": 0,
@@ -1757,7 +1757,7 @@
               "payload": {
                 "type": "WORK_TIME",
                 "bucket": "percentage",
-                "value": -0.199,
+                "value": -0.1,
                 "category": "cooking"
               },
               "chargeDelta": 0,
@@ -1805,7 +1805,7 @@
               "payload": {
                 "type": "YIELD",
                 "bucket": "percentage",
-                "value": 0.07,
+                "value": 0.0333,
                 "category": "cooking"
               },
               "chargeDelta": 0,
@@ -1837,7 +1837,7 @@
               "payload": {
                 "type": "YIELD",
                 "bucket": "percentage",
-                "value": 0.152,
+                "value": 0.0667,
                 "category": "cooking"
               },
               "chargeDelta": 0,
@@ -1869,7 +1869,7 @@
               "payload": {
                 "type": "YIELD",
                 "bucket": "percentage",
-                "value": 0.25,
+                "value": 0.1,
                 "category": "cooking"
               },
               "chargeDelta": 0,
@@ -1917,7 +1917,7 @@
               "payload": {
                 "type": "WORK_TIME",
                 "bucket": "percentage",
-                "value": -0.06,
+                "value": -0.0333,
                 "category": "crafting"
               },
               "chargeDelta": 0,
@@ -1949,7 +1949,7 @@
               "payload": {
                 "type": "WORK_TIME",
                 "bucket": "percentage",
-                "value": -0.126,
+                "value": -0.0667,
                 "category": "crafting"
               },
               "chargeDelta": 0,
@@ -1981,7 +1981,7 @@
               "payload": {
                 "type": "WORK_TIME",
                 "bucket": "percentage",
-                "value": -0.199,
+                "value": -0.1,
                 "category": "crafting"
               },
               "chargeDelta": 0,
@@ -2029,7 +2029,7 @@
               "payload": {
                 "type": "YIELD",
                 "bucket": "percentage",
-                "value": 0.07,
+                "value": 0.0333,
                 "category": "crafting"
               },
               "chargeDelta": 0,
@@ -2061,7 +2061,7 @@
               "payload": {
                 "type": "YIELD",
                 "bucket": "percentage",
-                "value": 0.152,
+                "value": 0.0667,
                 "category": "crafting"
               },
               "chargeDelta": 0,
@@ -2093,7 +2093,7 @@
               "payload": {
                 "type": "YIELD",
                 "bucket": "percentage",
-                "value": 0.25,
+                "value": 0.1,
                 "category": "crafting"
               },
               "chargeDelta": 0,
@@ -2141,7 +2141,7 @@
               "payload": {
                 "type": "WORK_TIME",
                 "bucket": "percentage",
-                "value": -0.06,
+                "value": -0.05,
                 "category": "construction"
               },
               "chargeDelta": 0,
@@ -2173,7 +2173,7 @@
               "payload": {
                 "type": "WORK_TIME",
                 "bucket": "percentage",
-                "value": -0.126,
+                "value": -0.1,
                 "category": "construction"
               },
               "chargeDelta": 0,
@@ -2221,7 +2221,7 @@
               "payload": {
                 "type": "WORK_TIME",
                 "bucket": "percentage",
-                "value": -0.06,
+                "value": -0.1,
                 "category": "alchemy"
               },
               "chargeDelta": 0,
@@ -2269,7 +2269,7 @@
               "payload": {
                 "type": "YIELD",
                 "bucket": "percentage",
-                "value": 0.07,
+                "value": 0.1,
                 "category": "alchemy"
               },
               "chargeDelta": 0,

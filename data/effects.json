@@ -910,7 +910,7 @@
         "payload": {
           "type": "WORK_TIME",
           "bucket": "percentage",
-          "value": -0.15
+          "value": -0.05
         },
         "chargeDelta": 0,
         "to": {
@@ -935,7 +935,7 @@
         "payload": {
           "type": "DOUBLE_DROP",
           "bucket": "flat",
-          "value": 25,
+          "value": 50,
           "category": "item_copper_ore"
         },
         "chargeDelta": 0,
@@ -961,7 +961,7 @@
         "payload": {
           "type": "DOUBLE_DROP",
           "bucket": "flat",
-          "value": 25,
+          "value": 50,
           "category": "item_coal"
         },
         "chargeDelta": 0,
@@ -1013,7 +1013,7 @@
         "payload": {
           "type": "WORK_TIME",
           "bucket": "percentage",
-          "value": -0.2
+          "value": -0.05
         },
         "chargeDelta": 0,
         "to": {
@@ -1038,7 +1038,7 @@
         "payload": {
           "type": "GROW_TIME",
           "bucket": "percentage",
-          "value": -0.09
+          "value": -0.05
         },
         "chargeDelta": 0,
         "to": {
@@ -1221,7 +1221,7 @@
         "payload": {
           "type": "LOOT_MULT",
           "bucket": "flat",
-          "value": 5
+          "value": 10
         },
         "chargeDelta": 0,
         "to": {
@@ -1277,7 +1277,7 @@
         "payload": {
           "type": "YIELD",
           "bucket": "percentage",
-          "value": 0.1,
+          "value": 0.15,
           "category": "farming"
         },
         "chargeDelta": 0,
@@ -1334,7 +1334,7 @@
         "payload": {
           "type": "YIELD",
           "bucket": "percentage",
-          "value": 0.1,
+          "value": 0.2,
           "category": "forestry"
         },
         "chargeDelta": 0,
@@ -1391,7 +1391,7 @@
         "payload": {
           "type": "YIELD",
           "bucket": "percentage",
-          "value": 0.05,
+          "value": 0.2,
           "category": "mining"
         },
         "chargeDelta": 0,
@@ -1530,7 +1530,7 @@
         "payload": {
           "type": "YIELD",
           "bucket": "percentage",
-          "value": 0.1,
+          "value": 0.2,
           "category": "fishing"
         },
         "chargeDelta": 0,
@@ -1784,7 +1784,7 @@
         "payload": {
           "type": "LOOT_MULT",
           "bucket": "flat",
-          "value": 5,
+          "value": 25,
           "category": "forestry"
         },
         "chargeDelta": 0,
@@ -1884,7 +1884,7 @@
         "payload": {
           "type": "LOOT_MULT",
           "bucket": "flat",
-          "value": 5,
+          "value": 25,
           "category": "cooking"
         },
         "chargeDelta": 0,
@@ -1909,7 +1909,7 @@
         "payload": {
           "type": "YIELD",
           "bucket": "percentage",
-          "value": 0.1,
+          "value": 0.25,
           "category": "farming"
         },
         "chargeDelta": 0,
@@ -2333,7 +2333,7 @@
         "payload": {
           "type": "XP_BONUS",
           "bucket": "percentage",
-          "value": 0.1,
+          "value": 0.15,
           "category": "cooking"
         },
         "chargeDelta": 0,
@@ -2391,7 +2391,7 @@
         "payload": {
           "type": "XP_BONUS",
           "bucket": "percentage",
-          "value": 0.1,
+          "value": 0.15,
           "category": "melee"
         },
         "chargeDelta": 0,
@@ -2449,7 +2449,7 @@
         "payload": {
           "type": "XP_BONUS",
           "bucket": "percentage",
-          "value": 0.1,
+          "value": 0.15,
           "category": "crafting"
         },
         "chargeDelta": 0,
@@ -2507,7 +2507,7 @@
         "payload": {
           "type": "XP_BONUS",
           "bucket": "percentage",
-          "value": 0.1,
+          "value": 0.15,
           "category": "smithing"
         },
         "chargeDelta": 0,
@@ -2565,7 +2565,7 @@
         "payload": {
           "type": "XP_BONUS",
           "bucket": "percentage",
-          "value": 0.1,
+          "value": 0.15,
           "category": "ranged"
         },
         "chargeDelta": 0,
@@ -2623,7 +2623,7 @@
         "payload": {
           "type": "XP_BONUS",
           "bucket": "percentage",
-          "value": 0.1,
+          "value": 0.15,
           "category": "construction"
         },
         "chargeDelta": 0,
@@ -2681,7 +2681,7 @@
         "payload": {
           "type": "XP_BONUS",
           "bucket": "percentage",
-          "value": 0.1,
+          "value": 0.15,
           "category": "magic"
         },
         "chargeDelta": 0,
@@ -2739,7 +2739,7 @@
         "payload": {
           "type": "XP_BONUS",
           "bucket": "percentage",
-          "value": 0.1,
+          "value": 0.15,
           "category": "stealth"
         },
         "chargeDelta": 0,
@@ -2797,7 +2797,7 @@
         "payload": {
           "type": "XP_BONUS",
           "bucket": "percentage",
-          "value": 0.1,
+          "value": 0.15,
           "category": "science"
         },
         "chargeDelta": 0,
@@ -2855,7 +2855,7 @@
         "payload": {
           "type": "XP_BONUS",
           "bucket": "percentage",
-          "value": 0.1,
+          "value": 0.15,
           "category": "faith"
         },
         "chargeDelta": 0,
@@ -2913,7 +2913,7 @@
         "payload": {
           "type": "XP_BONUS",
           "bucket": "percentage",
-          "value": 0.1,
+          "value": 0.15,
           "category": "enchanting"
         },
         "chargeDelta": 0,
@@ -2971,7 +2971,7 @@
         "payload": {
           "type": "XP_BONUS",
           "bucket": "percentage",
-          "value": 0.1,
+          "value": 0.15,
           "category": "crime"
         },
         "chargeDelta": 0,
@@ -3029,7 +3029,7 @@
         "payload": {
           "type": "XP_BONUS",
           "bucket": "percentage",
-          "value": 0.1,
+          "value": 0.15,
           "category": "farming"
         },
         "chargeDelta": 0,
@@ -3087,7 +3087,7 @@
         "payload": {
           "type": "XP_BONUS",
           "bucket": "percentage",
-          "value": 0.1,
+          "value": 0.15,
           "category": "summoning"
         },
         "chargeDelta": 0,
@@ -3839,7 +3839,7 @@
         "payload": {
           "type": "XP_BONUS",
           "bucket": "percentage",
-          "value": 0.08
+          "value": 0.15
         },
         "chargeDelta": 0,
         "to": {
@@ -3896,7 +3896,7 @@
         "payload": {
           "type": "YIELD",
           "bucket": "percentage",
-          "value": 0.04
+          "value": 0.2
         },
         "chargeDelta": 0,
         "to": {
@@ -4149,7 +4149,7 @@
         "payload": {
           "type": "WORK_TIME",
           "bucket": "percentage",
-          "value": -0.15
+          "value": -0.05
         },
         "chargeDelta": 0,
         "to": {
@@ -4199,7 +4199,7 @@
         "payload": {
           "type": "LOOT_MULT",
           "bucket": "flat",
-          "value": 10
+          "value": 50
         },
         "chargeDelta": 0,
         "to": {
@@ -4269,7 +4269,7 @@
         "payload": {
           "type": "WORK_TIME",
           "bucket": "percentage",
-          "value": -0.15
+          "value": -0.05
         },
         "chargeDelta": 0,
         "to": {
@@ -4294,7 +4294,7 @@
         "payload": {
           "type": "LOOT_MULT",
           "bucket": "flat",
-          "value": 10
+          "value": 50
         },
         "chargeDelta": 0,
         "to": {
@@ -4344,7 +4344,7 @@
         "payload": {
           "type": "WORK_TIME",
           "bucket": "percentage",
-          "value": -0.1,
+          "value": -0.05,
           "category": "farming"
         },
         "chargeDelta": 0,
@@ -4363,7 +4363,7 @@
         "payload": {
           "type": "WORK_TIME",
           "bucket": "percentage",
-          "value": -0.1,
+          "value": -0.05,
           "category": "fishing"
         },
         "chargeDelta": 0,
@@ -4389,7 +4389,7 @@
         "payload": {
           "type": "WORK_TIME",
           "bucket": "percentage",
-          "value": -0.15
+          "value": -0.05
         },
         "chargeDelta": 0,
         "to": {
@@ -4439,7 +4439,7 @@
         "payload": {
           "type": "LOOT_MULT",
           "bucket": "flat",
-          "value": 10
+          "value": 50
         },
         "chargeDelta": 0,
         "to": {
@@ -4534,7 +4534,7 @@
         "payload": {
           "type": "LOOT_MULT",
           "bucket": "flat",
-          "value": 10
+          "value": 50
         },
         "chargeDelta": 0,
         "to": {
@@ -4559,7 +4559,7 @@
         "payload": {
           "type": "XP_BONUS",
           "bucket": "percentage",
-          "value": 0.1
+          "value": 0.025
         },
         "chargeDelta": 0,
         "to": {
@@ -4584,7 +4584,7 @@
         "payload": {
           "type": "WORK_TIME",
           "bucket": "percentage",
-          "value": -0.1,
+          "value": -0.05,
           "category": "farming"
         },
         "chargeDelta": 0,
@@ -4610,7 +4610,7 @@
         "payload": {
           "type": "LOOT_MULT",
           "bucket": "flat",
-          "value": 10,
+          "value": 50,
           "category": "forestry"
         },
         "chargeDelta": 0,
@@ -4662,7 +4662,7 @@
         "payload": {
           "type": "GROW_TIME",
           "bucket": "percentage",
-          "value": -0.2,
+          "value": -0.1,
           "category": "forestry"
         },
         "chargeDelta": 0,
@@ -4688,7 +4688,7 @@
         "payload": {
           "type": "WORK_TIME",
           "bucket": "percentage",
-          "value": -0.1,
+          "value": -0.05,
           "category": "crafting"
         },
         "chargeDelta": 0,
@@ -4707,7 +4707,7 @@
         "payload": {
           "type": "WORK_TIME",
           "bucket": "percentage",
-          "value": -0.1,
+          "value": -0.05,
           "category": "smithing"
         },
         "chargeDelta": 0,
@@ -4733,7 +4733,7 @@
         "payload": {
           "type": "GROW_TIME",
           "bucket": "percentage",
-          "value": -0.2,
+          "value": -0.1,
           "category": "mining"
         },
         "chargeDelta": 0,
@@ -4785,7 +4785,7 @@
         "payload": {
           "type": "WORK_TIME",
           "bucket": "percentage",
-          "value": -0.1,
+          "value": -0.05,
           "category": "smithing"
         },
         "chargeDelta": 0,
@@ -4804,7 +4804,7 @@
         "payload": {
           "type": "WORK_TIME",
           "bucket": "percentage",
-          "value": -0.1,
+          "value": -0.05,
           "category": "crafting"
         },
         "chargeDelta": 0,
@@ -4856,7 +4856,7 @@
         "payload": {
           "type": "LOOT_MULT",
           "bucket": "flat",
-          "value": 10,
+          "value": 50,
           "category": "fishing"
         },
         "chargeDelta": 0,
@@ -4882,7 +4882,7 @@
         "payload": {
           "type": "WORK_TIME",
           "bucket": "percentage",
-          "value": -0.1,
+          "value": -0.05,
           "category": "cooking"
         },
         "chargeDelta": 0,
@@ -4908,7 +4908,7 @@
         "payload": {
           "type": "LOOT_MULT",
           "bucket": "flat",
-          "value": 10,
+          "value": 50,
           "category": "farming"
         },
         "chargeDelta": 0,
@@ -4986,7 +4986,7 @@
         "payload": {
           "type": "WORK_TIME",
           "bucket": "percentage",
-          "value": -0.1,
+          "value": -0.05,
           "category": "cooking"
         },
         "chargeDelta": 0,
@@ -5005,7 +5005,7 @@
         "payload": {
           "type": "WORK_TIME",
           "bucket": "percentage",
-          "value": -0.1,
+          "value": -0.05,
           "category": "alchemy"
         },
         "chargeDelta": 0,
@@ -5031,7 +5031,7 @@
         "payload": {
           "type": "WORK_TIME",
           "bucket": "percentage",
-          "value": -0.03
+          "value": -0.05
         },
         "chargeDelta": 0,
         "to": {
@@ -5708,7 +5708,7 @@
         "payload": {
           "type": "WORK_TIME",
           "bucket": "percentage",
-          "value": -0.1,
+          "value": -0.05,
           "category": "science"
         },
         "chargeDelta": 0,
