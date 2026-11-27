@@ -128,10 +128,10 @@ describe('the profiles weigh setups by their numbers', () => {
             numbersOf: (t, s) => { numbers++; return book.numbersOf(t, s); }
         };
         const pace = buildPace(c, buildLedger(c), null, { book: counted });
-        // Maxed at one bush reads every herb's supply through the web: each work weighs every potion at
-        // Typical and again at Maxed, and keeps one setup a profile (today 780 weighed against 210 kept;
-        // weighed in full, none would be weighed by its numbers).
+        // Maxed at one bush reads the herbs' supply it needs: each work weighs every potion at Typical and
+        // again at Maxed, and keeps one setup a profile (a hero holding one dose: today 332 weighed against
+        // 183 kept; weighed in full, none would be weighed by its numbers).
         pace.rateAt({ token: 'token_bush_0' }, PROFILE.MAXED);
-        expect(numbers).toBeGreaterThan(2 * full);
+        expect(numbers).toBeGreaterThan(1.5 * full);
     });
 });

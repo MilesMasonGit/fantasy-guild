@@ -309,14 +309,14 @@ describe('a web of potions', () => {
         return out;
     };
 
-    it('is worked out in moments, each herb fed by all nine potions, whichever question is asked first', () => {
+    it('is worked out in moments, a hero holding one of the nine potions or the Beer, whichever question is asked first', () => {
         const c = potionWebContent(POTIONS);
         const pace = buildPace(c, buildLedger(c), null);
         const maxed = pace.rateAt({ token: 'token_bush_0' }, PROFILE.MAXED);
-        for (let j = 0; j < POTIONS; j++) expect(maxed.chosen.map(x => x.id)).toContain(`item_potion_${j}`);
+        // A hero holds one drink-type consumable at a time (owner, 2026-11-26): the best of the Beer and the nine.
+        expect(maxed.chosen.filter(x => /^item_(potion_\d|beer)$/.test(x.id))).toHaveLength(1);
         expect(maxed.scale).toBeCloseTo(1);
-        // 900 herbs an hour, 90 % more with nine potions; each potion brewed as fast as the Still can, 1200 an hour.
-        expect(pace.supplyOf('item_herb_0', PROFILE.MAXED).perHour).toBeCloseTo(1710);
+        // Each potion brewed as fast as the Still can, 1200 an hour.
         expect(pace.supplyOf('item_potion_0', PROFILE.MAXED).perHour).toBeCloseTo(1200);
         // Typical takes no potion (a potion costs more than its 10 % gives); Bare brews as fast as the Still can, fed by the bushes it needs.
         expect(pace.supplyOf('item_herb_0', PROFILE.TYPICAL).perHour).toBeCloseTo(900);
