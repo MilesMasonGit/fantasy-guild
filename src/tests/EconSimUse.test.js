@@ -5,7 +5,7 @@ import os from 'os';
 import path from 'path';
 
 import { runSim } from '../../cms/src/engine/sim/simRunner.js';
-import { chooseInteger, splitByScarcity } from '../../cms/src/engine/sim/pricingPass.js';
+import { chooseInteger } from '../../cms/src/engine/sim/pricingPass.js';
 import { toleranceFor, workspaceDials } from '../../cms/src/engine/sim/dials.js';
 import { applyItemResults, migrateLegacyIntent } from '../../cms/src/engine/sim/writeBack.js';
 import { buildChainTrails } from '../../cms/src/engine/sim/chain.js';
@@ -22,7 +22,8 @@ import shippedRecipes from '../../data/tokenRecipes.json';
 
 /**
  * ⭐ Recalculate prices an item's Use (the balancer's rule, owner-accepted): a Use's drops together
- * are worth the item used, split among them by scarcity as a recipe's co-outputs are, with no labour
+ * are worth the item used, split among them as a recipe's co-outputs are (an equal share each, a
+ * piece worth its share over its abundance, never under a coin), with no labour
  * term, since a Use takes no hero and no time. A drop with other sources is elected as for any two
  * sources (the lowest level, a Use ranking at the level its item is first had, after a Token or a
  * Recipe on a tie); the Use counts as a source for the no-source checks; a Recalculate and Sync of
@@ -80,25 +81,43 @@ const SEEDS = Object.keys(ABUNDANCE);
 const dropsWorth = (sim, ids = SEEDS) => ids.reduce((s, id) => s + ABUNDANCE[id] * sim.values.get(id), 0);
 
 describe('⭐ a Use with no other source of its drops', () => {
-    it('prices every drop from the item: together they are worth it, split by scarcity, no labour', () => {
+    it('prices every drop from the item: together they are worth it, an equal share each, no labour', () => {
         const sim = solve();
         const worth = sim.values.get(NEST);
         expect(worth).toBeGreaterThan(10);
         expect(sim.useLevels.get(USE)).toBe(1);
-        const shares = splitByScarcity(worth, SEEDS.map(id => ABUNDANCE[id]));
         const band = toleranceFor(1, DIALS, { isAnchor: true });
-        SEEDS.forEach((id, i) => {
+        // Each of the three drops carries a third of the Nest, and a piece is worth its third ÷ its abundance; none is under a coin.
+        const share = worth / SEEDS.length;
+        SEEDS.forEach((id) => {
             expect(sim.elections.get(id)).toMatchObject({ sourceId: USE, kind: 'use', level: 1 });
             const detail = sim.details.get(id);
             expect(detail).toMatchObject({ use: true, targetPerHour: 0, floorEngaged: false, inputValue: worth, cycleTimeMs: null });
-            expect(detail.ideal).toBeCloseTo(shares[i] / ABUNDANCE[id], 9);
+            expect(detail.ideal).toBeCloseTo(share / ABUNDANCE[id], 9);
+            expect(detail.ideal).toBeGreaterThan(1);
             expect(sim.values.get(id)).toBe(chooseInteger(detail.ideal, band).value);
         });
         // The ideals add up to the item exactly; whole gold lands inside the band.
         expect(SEEDS.reduce((s, id) => s + ABUNDANCE[id] * sim.details.get(id).ideal, 0)).toBeCloseTo(worth, 9);
         expect(Math.abs(dropsWorth(sim) - worth) / worth).toBeLessThanOrEqual(band);
-        // The scarcer the drop, the more a unit is worth.
-        expect(sim.values.get('item_gem_seed')).toBeGreaterThan(sim.values.get('item_seed'));
+        // In proportion: a Gem Seed is six times scarcer than a Seed (0.25 against 1.5), so six times the worth a piece, not thirty-six.
+        expect(sim.details.get('item_gem_seed').ideal / sim.details.get('item_seed').ideal).toBeCloseTo(ABUNDANCE.item_seed / ABUNDANCE.item_gem_seed, 9);
+    });
+
+    it('a common drop at the floor: its coins come out of the rarer drop, and the drops stay worth the item', () => {
+        const worth = solve().values.get(NEST);
+        // Seeds by the handful, three quarters of the Nest's worth in pieces: half the Nest is under a coin a piece for them, so they are kept at 1 coin and carry their count, and a Gem Seed one time in ten takes the rest.
+        const handful = Math.round(worth * 0.75);
+        const lavish = { drops: [{ itemId: 'item_seed', chance: 100, minQty: handful, maxQty: handful }, { itemId: 'item_gem_seed', chance: 10, minQty: 1, maxQty: 1 }] };
+        const sim = runSim({ items: { ...items({ use: false }), [NEST]: item(NEST, { use: lavish }) }, tokens: { token_tree: tree() } }, DIALS);
+        expect(sim.values.get(NEST)).toBe(worth);
+        expect(handful).toBeGreaterThan(worth / 2);
+        expect(sim.values.get('item_seed')).toBe(1);
+        expect(sim.details.get('item_seed').ideal).toBeCloseTo(1, 9);
+        expect(sim.details.get('item_gem_seed').ideal).toBeCloseTo((worth - handful) / 0.1, 9);
+        const total = handful * sim.values.get('item_seed') + 0.1 * sim.values.get('item_gem_seed');
+        expect(Math.abs(total - worth) / worth).toBeLessThanOrEqual(toleranceFor(1, DIALS, { isAnchor: true }));
+        expect(sim.rows.some(r => r.code === 'use-off-worth')).toBe(false);
     });
 
     it('the guard: the same drops as a recipe, which pays its labour, come out worth more than the item', () => {
@@ -141,10 +160,11 @@ describe('⭐ a drop with another source: elected as for two sources', () => {
         const sim = solve({ recipes: { recipe_seed: maker } });
         expect(sim.elections.get('item_seed')).toMatchObject({ sourceId: 'recipe_seed', kind: 'recipe' });
         const worth = sim.values.get(NEST);
+        // The Seed keeps its worth; the two drops the Use prices share the rest equally.
         const inherited = ABUNDANCE.item_seed * sim.values.get('item_seed');
-        const shares = splitByScarcity(worth - inherited, [ABUNDANCE.item_gem_seed, ABUNDANCE.item_odd_seed]);
-        expect(sim.details.get('item_gem_seed').ideal).toBeCloseTo(shares[0] / ABUNDANCE.item_gem_seed, 9);
-        expect(sim.details.get('item_odd_seed').ideal).toBeCloseTo(shares[1] / ABUNDANCE.item_odd_seed, 9);
+        const share = (worth - inherited) / 2;
+        expect(sim.details.get('item_gem_seed').ideal).toBeCloseTo(share / ABUNDANCE.item_gem_seed, 9);
+        expect(sim.details.get('item_odd_seed').ideal).toBeCloseTo(share / ABUNDANCE.item_odd_seed, 9);
         expect(sim.elections.get('item_gem_seed').sourceId).toBe(USE);
     });
 

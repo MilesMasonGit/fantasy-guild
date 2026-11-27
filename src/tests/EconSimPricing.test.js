@@ -76,17 +76,49 @@ describe('EconSim — PRICE pass', () => {
         });
     });
 
-    describe('multi-output anchors split inversely to abundance (the Trout Stream shape)', () => {
-        it('gives the scarcer output the bigger per-unit slice', () => {
+    // BALANCE_RULES section 7: every anchored output carries an equal share of the cycle's worth, and a piece is worth its share ÷ its abundance (chance × mean count), so ten times rarer is ten times the worth a piece. A piece is never under 1 coin, and what the floor adds comes out of the other outputs' shares.
+    describe('multi-output anchors: an equal share each, a piece worth its share over its abundance (the Trout Stream shape)', () => {
+        // Level 1, fast (8 s, 450 cycles an hour), GPH: 1,200 ÷ 450 = 2.667 coins a cycle.
+        const PER_CYCLE = 1200 / 450;
+
+        it('every output carries an equal share, so ten times scarcer is ten times the worth a piece', () => {
             const shares = splitByScarcity(11, [1, 0.1]);
-            expect(shares[0] + shares[1]).toBeCloseTo(11, 9);
-            // The *target* splits inversely to abundance, so the 10×-scarcer
-            // output takes 10× the gold …
-            expect(shares[1] / shares[0]).toBeCloseTo(10, 9);
-            // … and its per-unit value (share ÷ abundance) is 10× that again.
-            // The square is deliberate: the weight is 1/abundance and the share
-            // is then divided by abundance a second time.
-            expect((shares[1] / 0.1) / (shares[0] / 1)).toBeCloseTo(100, 9);
+            expect(shares[0]).toBeCloseTo(5.5, 9);
+            expect(shares[1]).toBeCloseTo(5.5, 9);
+            // A piece: 5.5 ÷ 1 = 5.5 and 5.5 ÷ 0.1 = 55, ten times, not a hundred.
+            expect((shares[1] / 0.1) / (shares[0] / 1)).toBeCloseTo(10, 9);
+        });
+
+        it('a piece is never under 1 coin, and the floor\'s excess comes out of the other outputs\' shares', () => {
+            // An equal share of 6 is 2: a piece of the first would be 2 ÷ 4 = 0.5, so it carries 4 (1 coin a piece), and the other two share the 2 left, 1 each.
+            const shares = splitByScarcity(6, [4, 0.5, 0.1]);
+            [4, 1, 1].forEach((s, i) => expect(shares[i]).toBeCloseTo(s, 9));
+            expect(shares.reduce((a, b) => a + b, 0)).toBeCloseTo(6, 9);
+            expect(shares[1] / 0.5).toBeCloseTo(2, 9);
+            expect(shares[2] / 0.1).toBeCloseTo(10, 9);
+        });
+
+        it('flooring one can push the next under the floor, so it repeats until none is', () => {
+            // A share of 9 ÷ 3 = 3 floors the first (4 > 3) only; the 5 left in two is 2.5, which floors the second (2.8 > 2.5); the third takes the 2.2 left.
+            const shares = splitByScarcity(9, [4, 2.8, 0.1]);
+            [4, 2.8, 2.2].forEach((s, i) => expect(shares[i]).toBeCloseTo(s, 9));
+        });
+
+        it('every output at the floor: the target spread over all the pieces, each worth the same fraction of a coin', () => {
+            // A share of 0.5 floors both; their pieces at 1 coin (3) are worth more than the target (1), so each piece works out at 1 ÷ 3.
+            const shares = splitByScarcity(1, [2, 1]);
+            expect(shares[0] / 2).toBeCloseTo(1 / 3, 9);
+            expect(shares[1] / 1).toBeCloseTo(1 / 3, 9);
+            expect(shares[0] + shares[1]).toBeCloseTo(1, 9);
+        });
+
+        it('an output that never yields carries nothing, and no target shares nothing', () => {
+            expect(splitByScarcity(4, [1, 0])).toEqual([4, 0]);
+            expect(splitByScarcity(0, [1, 0.5])).toEqual([0, 0]);
+            expect(splitByScarcity(-3, [1])).toEqual([0]);
+            expect(splitByScarcity(Number.NaN, [1])).toEqual([0]);
+            expect(splitByScarcity(5, [])).toEqual([]);
+            expect(splitByScarcity(5, [0, 0])).toEqual([0, 0]);
         });
 
         it('prices both outputs of one Token in one pass', () => {
@@ -101,10 +133,42 @@ describe('EconSim — PRICE pass', () => {
 
             const trout = result.details.get('item_trout');
             const pearl = result.details.get('item_pearl');
-            expect(pearl.ideal / trout.ideal).toBeCloseTo(100, 4);
-            expect(pearl.ideal).toBeGreaterThan(trout.ideal);
+            // 2.667 ÷ 2 each: a trout 1.333, a pearl (one time in ten) 13.33.
+            expect(trout.ideal).toBeCloseTo(PER_CYCLE / 2 / 1, 9);
+            expect(pearl.ideal).toBeCloseTo(PER_CYCLE / 2 / 0.1, 9);
+            expect(pearl.ideal / trout.ideal).toBeCloseTo(10, 9);
             expect(result.elections.get('item_trout').sourceId).toBe('token_stream');
             expect(result.elections.get('item_pearl').sourceId).toBe('token_stream');
+        });
+
+        it('a common output at the floor: the rare one takes what is left, and the cycle lands on its worth, not over it', () => {
+            const result = runSim({
+                tokens: { a: token('token_tree', { outputs: [out('item_wood', { minQty: 1, maxQty: 2 }), out('item_nest', { chance: 5 })] }) },
+                items: itemsFor('item_wood', 'item_nest'),
+            });
+            // An equal share is 1.333; Wood (1.5 a cycle) would be 0.889 a piece, so it is kept at 1 coin and carries 1.5, and the Nest (0.05 a cycle) takes the 1.167 left: 23.33 a piece.
+            expect(result.details.get('item_wood').ideal).toBeCloseTo(1, 9);
+            expect(result.values.get('item_wood')).toBe(1);
+            expect(result.details.get('item_nest').ideal).toBeCloseTo((PER_CYCLE - 1.5) / 0.05, 9);
+            expect(result.values.get('item_nest')).toBe(23);
+            // At whole coins a cycle gives 1.5 + 0.05 × 23 = 2.65, inside the band of 2.667. The floor no longer adds on top of it.
+            const carried = 1.5 * result.values.get('item_wood') + 0.05 * result.values.get('item_nest');
+            expect(Math.abs(carried - PER_CYCLE) / PER_CYCLE).toBeLessThanOrEqual(0.25);
+            expect(result.rows.filter(r => r.code === 'integer-residual')).toEqual([]);
+        });
+
+        it('every output at the floor: each kept at 1 coin with its residual named, and the total passes the target', () => {
+            // IPH (factor 0.35): 0.933 a cycle, less than Clay's 2.5 pieces and Flint's 0.5 at 1 coin each.
+            const result = runSim({
+                tokens: { a: token('token_pit', { purpose: 'iph', outputs: [out('item_clay', { minQty: 1, maxQty: 4 }), out('item_flint', { chance: 50 })] }) },
+                items: itemsFor('item_clay', 'item_flint'),
+            });
+            const perCycle = PER_CYCLE * 0.35;
+            for (const id of ['item_clay', 'item_flint']) {
+                expect(result.details.get(id).ideal).toBeCloseTo(perCycle / 3, 9);
+                expect(result.values.get(id)).toBe(1);
+                expect(result.rows.some(r => r.code === 'integer-residual' && r.itemId === id)).toBe(true);
+            }
         });
     });
 

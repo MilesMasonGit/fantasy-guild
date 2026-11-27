@@ -30,14 +30,32 @@ export function chooseInteger(ideal, band) {
 }
 
 /**
- * Split a per-cycle target across the outputs an entity anchors, inversely proportional to abundance, so the rare drop is the valuable one.
- * ⚠️ That compounds: each output's weight is `1 / abundance`, its slice is `target × weight ÷ Σ weights`, and its per-unit value is that slice ÷ abundance, so a 10× scarcer output is worth 100× per unit. The square is deliberate.
+ * Split a per-cycle target across the outputs an entity anchors: every output carries an equal share, and one piece is worth its share ÷ its abundance, so a drop ten times rarer is worth ten times as much a piece. Returns the coins each output carries a cycle, adding up to the target; an output that never yields carries none.
+ * ⚠️ A piece is never worth less than 1 coin. An output whose share would price it below that carries its abundance (1 coin a piece) and the others share what is left, so the floor's excess comes out of their shares instead of landing on top of the target. Flooring one lowers the others' share and can push another under, hence the loop.
+ * ⚠️ When every output ends at the floor, its pieces at 1 coin are worth more than the whole target and no one is left to take the excess: each share is then the target spread evenly over all the pieces, so every piece works out at the same fraction of a coin, `chooseInteger` keeps each at 1 and files its residual, and the total passes the target.
  */
 export function splitByScarcity(target, abundances) {
-    const weights = abundances.map(a => (a > 0 ? 1 / a : 0));
-    const total = weights.reduce((s, w) => s + w, 0);
-    if (total <= 0) return abundances.map(() => 0);
-    return weights.map(w => (target * w) / total);
+    const shares = abundances.map(() => 0);
+    const yielding = abundances.map((_, i) => i).filter(i => abundances[i] > 0);
+    const total = Number.isFinite(target) && target > 0 ? target : 0;
+    let open = yielding;
+    let left = total;
+    while (open.length > 0) {
+        const share = left / open.length;
+        const under = open.filter(i => abundances[i] > share);
+        if (under.length === 0) {
+            for (const i of open) shares[i] = share;
+            return shares;
+        }
+        for (const i of under) {
+            shares[i] = abundances[i];
+            left -= abundances[i];
+        }
+        open = open.filter(i => abundances[i] <= share);
+    }
+    const pieces = yielding.reduce((s, i) => s + abundances[i], 0);
+    for (const i of yielding) shares[i] = (total * abundances[i]) / pieces;
+    return shares;
 }
 
 /** Sum an entity's inputs at current values. Returns null if any is unpriced. */
