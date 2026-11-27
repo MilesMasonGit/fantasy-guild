@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Sparkles, X, Loader2, Check, AlertTriangle, Key } from 'lucide-react';
 import { useGlobalStore } from '../../stores/useGlobalStore';
 import { useEntityStore } from '../../stores/useEntityStore';
-import { generateContent, resolveAndImport, DEFAULT_GENERATOR_SKILL } from '../../engine/contentGenerator';
+import { generateContent, DEFAULT_GENERATOR_SKILL } from '../../engine/contentGenerator';
 import { SKILLS } from '../../utils/constants';
 
 const GENERATION_MODES = [
@@ -33,7 +33,6 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
 
   const [status, setStatus] = useState('idle');
   const [preview, setPreview] = useState(null);
-  const [result, setResult] = useState(null);
   const [error, setError] = useState('');
 
   const [keyInput, setKeyInput] = useState(apiKey);
@@ -68,20 +67,6 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
       setStatus('preview');
     } catch (err) {
       setError(err.message || 'Generation failed');
-      setStatus('error');
-    }
-  };
-
-  const handleImport = () => {
-    if (!preview) return;
-    setStatus('importing');
-
-    try {
-      const importResult = resolveAndImport(preview, useEntityStore, areaId, prefill?.activeId, prefill?.entityType);
-      setResult(importResult);
-      setStatus('done');
-    } catch (err) {
-      setError('Import failed: ' + err.message);
       setStatus('error');
     }
   };
@@ -234,7 +219,7 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
           {status === 'preview' && preview && (
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-xs font-semibold" style={{ color: 'var(--color-success)' }}>
-                <Check size={14} /> Generated Successfully — Review Before Import
+                <Check size={14} /> Generated Successfully
               </div>
 
               <div className="rounded-lg p-3 border" style={{ background: 'var(--color-bg-elevated)', borderColor: 'var(--color-border-subtle)' }}>
@@ -309,24 +294,6 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
             </div>
           )}
 
-          {status === 'done' && result && (
-            <div className="flex flex-col items-center justify-center py-8 gap-3">
-              <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: 'var(--color-success)', color: '#000' }}>
-                <Check size={24} />
-              </div>
-              <p className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>Import Complete!</p>
-              <p className="text-xs text-center px-4" style={{ color: 'var(--color-text-secondary)' }}>
-                {result.tasksUpdated > 0 && `Updated task "${prefill?.name}". `}
-                {result.recipesUpdated > 0 && `Updated recipe "${prefill?.name}". `}
-                {result.itemsUpdated > 0 && `Updated item "${prefill?.name}". `}
-                Created {result.areasCreated || 0} areas, {result.itemsCreated} items, {result.tasksCreated} tasks, {result.recipesCreated} recipes, and {result.stationsCreated} stations.
-              </p>
-              <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
-                Run the simulation to calculate values, then rename and theme your new content.
-              </p>
-            </div>
-          )}
-
           {error && (
             <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: 'var(--color-error)', color: 'white' }}>
               <AlertTriangle size={14} />
@@ -344,13 +311,8 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
           {status === 'preview' && (
             <>
               <button onClick={() => { setStatus('idle'); setPreview(null); }} className="btn-ghost">Regenerate</button>
-              <button onClick={handleImport} className="btn-primary flex items-center gap-2">
-                <Check size={14} /> Import {(preview?.items || []).length + (preview?.tasks || []).length + (preview?.recipes || []).length + (preview?.stations || []).length} Entities
-              </button>
+              <button onClick={onClose} className="btn-primary">Close</button>
             </>
-          )}
-          {status === 'done' && (
-            <button onClick={onClose} className="btn-primary">Close</button>
           )}
           {status === 'error' && (
             <button onClick={() => { setStatus('idle'); setError(''); }} className="btn-ghost">Try Again</button>

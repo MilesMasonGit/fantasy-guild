@@ -12,7 +12,7 @@ import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { heroDamageMultiplier } from '../systems/combat/CombatFormulas.js';
 import { getPaletteEntry } from '../config/registries/modifierPalette.js';
 import { movesView, kindView } from '../ui/components/combat/fightView.js';
-import { buildSystemPrompt, buildUserPrompt, resolveAndImport } from '../../cms/src/engine/contentGenerator.js';
+import { buildSystemPrompt, buildUserPrompt } from '../../cms/src/engine/contentGenerator.js';
 
 /**
  * A weapon or an enemy Attacks every 3s; a move with no name is a Strike; an item's hit is Damage.
@@ -100,12 +100,6 @@ describe('the fight\'s leftovers', () => {
                 expect(prompt, gone).not.toContain(gone);
             }
             expect(buildUserPrompt({ type: 'generate_combat', tier: 2 }, {})).not.toMatch(/Enem/);
-        });
-
-        it('writes no enemy, even when the reply carries some', () => {
-            const store = { getState: () => ({ items: {}, effects: {}, areas: {} }) };
-            const result = resolveAndImport({ enemies: [{ name: 'Goblin', tier: 1, combatType: 'Melee', hp: 10, attackSpeed: 2000 }] }, store, '');
-            expect(Object.keys(result).filter(k => /enem|encounter/i.test(k))).toEqual([]);
         });
     });
 
