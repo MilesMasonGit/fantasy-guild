@@ -22,7 +22,6 @@ import { PLAN_TIER_LEVELS, tierOrNull, tierLevelsOf, tierLevelAt } from '../../.
  *       layout: 'sparse',                            // the layout the pace times (the other is reported beside it)
  *       sitePlaces: { places: 12, buildings: 8, perKind: 4 }, // places round a node, at most this many for buildings, this many boosting one kind
  *       paybackHours: 2,                             // a sensible investor's boost pays for itself within this
- *       hallPaybackHours: 24,                        // and a Guild Hall rank within this
  *       batchPayback: 4,                             // a drink or work potion's batch saves at least this many times its making
  *       chainXpWarnFactor: 2,                        // a chain's XP an hour of gathering this many times off its tier's median warns
  *       steadyFindsPerDay: 1,                        // a rare find on repeatable work this often a day is a steady source
@@ -184,8 +183,6 @@ export const DEFAULT_LEDGER_SETTINGS = Object.freeze({
     layout: LAYOUTS[0],
     sitePlaces: DEFAULT_SITE_PLACES,
     paybackHours: 2,
-    // The owner (2026-10-30): a Guild Hall rank may take about a day to pay for itself.
-    hallPaybackHours: 24,
     // BALANCE_RULES section 5: a batch of drinks or work potions saves at least four times the hero time it took to make, ingredients included.
     batchPayback: 4,
     // The balancer (2026-11-26): a chain's XP an hour of its gathering warns beyond twice or half its tier's median; within, information.
@@ -208,14 +205,16 @@ const clone = (v) => JSON.parse(JSON.stringify(v));
  * Settings with every field present and sane: anything missing or unreadable falls back to its
  * default, and the stages follow from the pace rule and the tier levels ({@link stagesOf}). Fields
  * this file does not know are kept, for later phases; the hand budgets and curve points of before
- * (`stages`, `paceCurve`) are dropped, as the rule now sets them, and so is the camp's copies of
- * before (`campMembers`), which the layouts replace.
+ * (`stages`, `paceCurve`) are dropped, as the rule now sets them, and so are the camp's copies of
+ * before (`campMembers`), which the layouts replace, and the Guild Hall's own payback hours of before
+ * (`hallPaybackHours`), which the payback curve replaces.
  */
 export function settingsOf(raw) {
     const src = { ...(isObject(raw) ? raw : {}) };
     delete src.stages;
     delete src.paceCurve;
     delete src.campMembers;
+    delete src.hallPaybackHours;
     const d = DEFAULT_LEDGER_SETTINGS;
 
     const player = isObject(src.player) ? src.player : {};
@@ -249,7 +248,6 @@ export function settingsOf(raw) {
         layout: LAYOUTS.includes(src.layout) ? src.layout : d.layout,
         sitePlaces: sitePlacesOf(src.sitePlaces),
         paybackHours: positive(src.paybackHours, d.paybackHours),
-        hallPaybackHours: positive(src.hallPaybackHours, d.hallPaybackHours),
         batchPayback: positive(src.batchPayback, d.batchPayback),
         chainXpWarnFactor: Math.max(1, positive(src.chainXpWarnFactor, d.chainXpWarnFactor)),
         steadyFindsPerDay: positive(src.steadyFindsPerDay, d.steadyFindsPerDay),

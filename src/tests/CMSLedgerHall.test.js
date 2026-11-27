@@ -116,6 +116,7 @@ describe('the Ledger tab', { timeout: 20000 }, () => {
         expect(gold.getAttribute('data-hall-pays')).toBe('no');
         // The one-work payback is information, never red: what pays is the payback over all its work.
         expect(gold.querySelector('[data-hall-payback]').style.color).toBe('var(--color-text-secondary)');
+        expect(view.container.textContent).not.toMatch(/Guild Hall payback in the settings/);
         // Beside it, its payback over all the work it boosts against the payback curve: red, far slower.
         expect(gold.querySelector('[data-hall-guild]').textContent).toMatch(/ on 1 work \(curve 1 h 2 min\)$/);
         expect(gold.querySelector('[data-hall-guild]').style.color).toBe('var(--color-error)');
@@ -124,10 +125,10 @@ describe('the Ledger tab', { timeout: 20000 }, () => {
         expect(row('ph_infirmary|1')).toBeNull();
     });
 
-    it('the settings: the batch payback (4, the owner\'s rule) and the chain XP warn factor (2, a placeholder) beside the Guild Hall payback hours', () => {
+    it('the settings: the batch payback (4, the owner\'s rule) and the chain XP warn factor (2, a placeholder), and no Guild Hall payback hours', () => {
         const view = mount();
         fireEvent.click(view.getByRole('tab', { name: 'Settings' }));
-        expect(view.getByLabelText('Guild Hall payback hours').value).toBe('24');
+        expect(view.queryByLabelText('Guild Hall payback hours')).toBeNull();
         expect(view.getByLabelText('Payback hours').value).toBe('2');
         const batch = view.getByLabelText('Batch payback');
         const warn = view.getByLabelText('Chain XP warn factor');

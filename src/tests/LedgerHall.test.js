@@ -108,7 +108,7 @@ describe('the profiles and the Hall', () => {
         // Deep Veins sits behind Quick Picks, behind Lore: both lit at rank 1 to open it, their price in its own.
         expect(hall[0].path).toEqual(['ph_lore', 'ph_quick']);
         expect(typical.setup.hallRanks).toMatchObject({ ph_lore: 2, ph_quick: 1, ph_deep: 1, ph_gold: 0, ph_rich: 0 });
-        for (const c of hall) expect(c.payback).toBeLessThanOrEqual(24);
+        for (const c of hall) expect(c.payback).toBeLessThanOrEqual(paybackHoursAt(1));
         // The Gold Leaf's 1 % for 100,000 Oak Wood never pays back; Rich Seams is a plane-1 rank.
         expect(hall.map(c => c.upgrade)).not.toContain('ph_gold');
         expect(hall.map(c => c.upgrade)).not.toContain('ph_rich');
@@ -145,34 +145,36 @@ describe('the profiles and the Hall', () => {
         expect(lore.price).toBeCloseTo((10 + 20) / 1440);
     });
 
-    it('the Hall has its own payback time, a day unless set: the boosts\' two hours never decide a rank', () => {
-        expect(settingsOf(null)).toMatchObject({ paybackHours: 2, hallPaybackHours: 24 });
-        expect(settingsOf({ hallPaybackHours: 6 }).hallPaybackHours).toBe(6);
-        expect(world({ hallPaybackHours: 1e6 }).rateAt(VEIN, PROFILE.TYPICAL, 0).setup.hallRanks.ph_gold).toBe(1);
+    it('no Guild Hall payback setting: the boosts\' two hours never decide a rank, nor a stored day', () => {
+        expect(settingsOf(null)).toMatchObject({ paybackHours: 2 });
+        expect(settingsOf(null)).not.toHaveProperty('hallPaybackHours');
+        expect(settingsOf({ hallPaybackHours: 6 })).not.toHaveProperty('hallPaybackHours');
+        expect(world({ hallPaybackHours: 1e6 }).rateAt(VEIN, PROFILE.TYPICAL, 0).setup.hallRanks.ph_gold).toBe(0);
         expect(world({ paybackHours: 1e6 }).rateAt(VEIN, PROFILE.TYPICAL, 0).setup.hallRanks.ph_gold).toBe(0);
     });
 
-    it('Typical buys a rank that pays back on its work within the Hall\'s day, not within two hours; the pages hold it to the curve', () => {
+    it('Typical buys a rank that pays back on its work within the payback curve at its tier\'s opening level, not within a day', () => {
         const c = content();
         // Rich Seams, a Plane 1 rank (the ladder opens Plane 1 at level 10); no other star opens through it.
         const curve = paybackHoursAt(10);
-        const priced = (quantity, settings = null) => {
+        const priced = (quantity) => {
             c.hallSky.stars.ph_rich.ranks[0].price = [{ itemId: 'item_copper_ore', quantity }];
-            const pace = buildPace(c, buildLedger(c), settings);
+            const pace = buildPace(c, buildLedger(c), null);
             return { pace, row: pace.hallPaybacks().find(r => r.id === 'ph_rich' && r.rank === 1) };
         };
         const { row } = priced(1200);
+        // Its payback is its price over what it saves: price it to half the curve, then to three times it (still within the old day).
         const perHour = 1200 / row.priceHours;
-        // Priced to three times the curve: within the day, so Typical buys it, but over the curve, so it is red.
+        const cheap = priced(Math.floor(0.5 * curve * row.gain * perHour));
+        expect(cheap.row.payback).toBeLessThan(curve);
+        expect(cheap.pace.rateAt(VEIN, PROFILE.TYPICAL, 1).setup.hallRanks.ph_rich).toBe(1);
         const dear = priced(Math.ceil(3 * curve * row.gain * perHour));
-        expect(dear.row.payback).toBeGreaterThan(2);
+        expect(dear.row.payback).toBeGreaterThan(curve);
         expect(dear.row.payback).toBeLessThan(24);
-        expect(dear.pace.rateAt(VEIN, PROFILE.TYPICAL, 1).setup.hallRanks.ph_rich).toBe(1);
+        expect(dear.pace.rateAt(VEIN, PROFILE.TYPICAL, 1).setup.hallRanks.ph_rich).toBe(0);
+        // It boosts the vein alone, so over all its work it is as slow: red on the pages, as Typical leaves it.
+        expect(cheap.row.pays).toBe(true);
         expect(dear.row.pays).toBe(false);
-        const hours = priced(Math.ceil(3 * curve * row.gain * perHour), { hallPaybackHours: 2 });
-        expect(hours.pace.rateAt(VEIN, PROFILE.TYPICAL, 1).setup.hallRanks.ph_rich).toBe(0);
-        // Priced to half the curve it pays.
-        expect(priced(Math.floor(0.5 * curve * row.gain * perHour)).row.pays).toBe(true);
     });
 });
 
