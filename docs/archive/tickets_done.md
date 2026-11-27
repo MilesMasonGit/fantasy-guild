@@ -606,3 +606,4 @@ T-747 — owner (a): a fight under way may be pushed by a spawn; GDD wording fix
 T-752 — the CMS Generate button and the Gemini generator removed (owner a) — a605afe58 — 2026-11-27
 T-116 — moot: the generator it named is removed — a605afe58 — 2026-11-27
 T-753 — the xp lever caps a work under the later best and reports gaps — 042fbf03c — 2026-11-27
+T-751 — Recalculate prices an item's Use: drops together worth the item, split by scarcity, no labour; a Use counts as a source — e6294972 — 2026-11-27
