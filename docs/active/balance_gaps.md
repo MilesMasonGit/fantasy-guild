@@ -30,6 +30,19 @@ None is a wall: the slowest level in any of them is 1.3x the curve. Times are fo
 | Mining | 91-98 | 4.9 days optimized, 9.3 typical on the Fossil Bed | A capstone Token at 95 or later | 2026-11-25 |
 | Tailor | 92-98 | 4.4 days optimized, 8.3 typical on Void Cape | A capstone at 96 or later | 2026-11-25 |
 
+## Early levels with no work of their own (2026-11-27)
+
+*Found by the XP corrections (round 2). Each skill below has one starter recipe as its best XP for its
+first 15 or so levels, and that recipe runs about 1.7 times faster once the next station opens, so its XP
+cannot be raised without it out-paying every recipe to about level 40. Times are for a fully boosted hero.*
+
+| Skill | Levels | Today | Best work | Suggestion |
+|---|---|---|---|---|
+| Smithing | 1 to 15 | 2.2 times the curve | Copper Ingot | one or two cheap copper recipes between 5 and 15 that pay their own level |
+| Crafting | 1 to 15 | 1.7 times | Charcoal | the same, between 5 and 15 |
+| Alchemy | 1 to 14 | 1.8 times | Birdwatcher, Elixir of Ironskin | the same, or an early Apothecary boost |
+| Cooking | 1 to 20 | 1.2 times | Shrimp | fine as it is; listed so it is not raised by hand |
+
 ## Waiting on something else
 
 - **Construction** 61-79 and 86-98 (4.6 and 13.4 days typical): its eight building parts aren't its
