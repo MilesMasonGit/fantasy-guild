@@ -1,9 +1,9 @@
 {
   "meta": {
-    "commit": "5b6637af8",
-    "branch": "bench/quiet-retake-1127",
+    "commit": "129fc418c",
+    "branch": "bench/retake-1127-1300",
     "dirty": false,
-    "date": "2026-11-27T08:09:21.336Z",
+    "date": "2026-11-27T20:05:22.875Z",
     "node": "v24.11.1",
     "machine": "DESKTOP-IEM8MOS",
     "cpu": "Intel(R) Core(TM) i7-8700 CPU @ 3.20GHz",
@@ -22,216 +22,12 @@
       "acceptWorkChange": null,
       "events": false
     },
-    "note": "Medians of the timing runs, and each scenario's work fingerprint. Re-take on a quiet machine: npm run bench -- --save-baseline",
-    "workChanges": [
-      {
-        "ticket": "T-337",
-        "commit": "83c2fb619",
-        "branch": "merge/rulebook-on",
-        "dirty": false,
-        "date": "2026-11-27T09:03:56.026Z",
-        "node": "v24.11.1",
-        "scenarios": {
-          "S1": [
-            "heroXp",
-            "heroHash"
-          ],
-          "S2": [
-            "heroXp",
-            "heroHash"
-          ],
-          "S3": [
-            "heroXp",
-            "heroHash"
-          ],
-          "S5": [
-            "heroXp",
-            "heroHash"
-          ],
-          "S6": [
-            "heroXp",
-            "heroHash"
-          ],
-          "S7": [
-            "heroXp",
-            "heroHash"
-          ],
-          "S8": [
-            "heroXp",
-            "heroHash"
-          ],
-          "S8L": [
-            "heroXp",
-            "heroHash"
-          ],
-          "S8F": [
-            "heroXp",
-            "heroHash"
-          ],
-          "C240": [
-            "heroXp",
-            "heroHash"
-          ],
-          "C256": [
-            "heroXp",
-            "heroHash"
-          ],
-          "FS": [
-            "heroXp",
-            "heroHash"
-          ]
-        }
-      },
-      {
-        "ticket": "T-726",
-        "commit": "eea739d28",
-        "branch": "merge/step-and-kit",
-        "dirty": false,
-        "date": "2026-11-27T10:01:36.482Z",
-        "node": "v24.11.1",
-        "scenarios": {
-          "C256": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "heroXp",
-            "sprites",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ]
-        }
-      },
-      {
-        "ticket": "T-735",
-        "commit": "cbd7c30b2",
-        "branch": "merge/catchup-fidelity",
-        "dirty": false,
-        "date": "2026-11-27T11:08:06.534Z",
-        "node": "v24.11.1",
-        "scenarios": {
-          "S8": [
-            "bankItems",
-            "heroXp",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S8L": [
-            "bankItems",
-            "heroXp",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S8F": [
-            "bankItems",
-            "heroXp",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ]
-        }
-      },
-      {
-        "ticket": "T-750",
-        "commit": "5202e8d41",
-        "branch": "merge/bench-no-perks",
-        "dirty": false,
-        "date": "2026-11-27T11:26:28.026Z",
-        "node": "v24.11.1",
-        "scenarios": {
-          "S1": [
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S2": [
-            "bankItems",
-            "heroXp",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S3": [
-            "bankItems",
-            "heroXp",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S5": [
-            "tokens",
-            "uses",
-            "bankItems",
-            "heroXp",
-            "sprites",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S6": [
-            "bankItems",
-            "heroXp",
-            "sprites",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "S7": [
-            "tokensHash"
-          ],
-          "C240": [
-            "uses",
-            "bankItems",
-            "heroXp",
-            "sprites",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "C256": [
-            "uses",
-            "bankItems",
-            "heroXp",
-            "sprites",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ],
-          "FS": [
-            "tokens",
-            "bankItems",
-            "heroXp",
-            "sprites",
-            "tokensHash",
-            "bankHash",
-            "heroHash",
-            "spriteHash",
-            "randomDraws"
-          ]
-        }
-      }
-    ]
+    "note": "Medians of the timing runs, and each scenario's work fingerprint. Re-take on a quiet machine: npm run bench -- --save-baseline"
   },
   "scenarios": {
     "S1": {
-      "p50": 0.03739999999970678,
-      "p99": 0.08449999999993452,
+      "p50": 0.035099999999602005,
+      "p99": 0.07879999999977372,
       "fingerprint": {
         "tokens": 6,
         "uses": 22942,
@@ -251,8 +47,8 @@
       }
     },
     "S2": {
-      "p50": 0.3046999999996842,
-      "p99": 0.6670999999996639,
+      "p50": 0.2802999999998974,
+      "p99": 0.6189999999996871,
       "fingerprint": {
         "tokens": 100,
         "uses": 124894,
@@ -272,8 +68,8 @@
       }
     },
     "S3": {
-      "p50": 0.7413000000001375,
-      "p99": 2.009900000000016,
+      "p50": 0.7225000000003092,
+      "p99": 1.835700000000088,
       "fingerprint": {
         "tokens": 302,
         "uses": 706151,
@@ -293,10 +89,10 @@
       }
     },
     "S4": {
-      "arrivalsWorst": 8.65769999999975,
-      "landedP50": 0.19729999999981374,
-      "refusedWorst": 0.7050999999996748,
-      "shrinkMs": 31.271700000000237,
+      "arrivalsWorst": 8.444100000000162,
+      "landedP50": 0.20469999999977517,
+      "refusedWorst": 0.6915999999996529,
+      "shrinkMs": 25.74929999999995,
       "fingerprint": {
         "tokens": 122,
         "uses": 181240,
@@ -327,8 +123,8 @@
       }
     },
     "S5": {
-      "p50": 0.31959999999980937,
-      "p99": 0.796100000000024,
+      "p50": 0.30680000000029395,
+      "p99": 0.7251999999998588,
       "fingerprint": {
         "tokens": 102,
         "uses": 125001,
@@ -348,8 +144,8 @@
       }
     },
     "S6": {
-      "p50": 0.3083999999998923,
-      "p99": 0.636899999999514,
+      "p50": 0.273099999999431,
+      "p99": 0.5628999999998996,
       "fingerprint": {
         "tokens": 100,
         "uses": 124105,
@@ -370,8 +166,8 @@
       }
     },
     "S7": {
-      "p50": 0.22490000000016153,
-      "p99": 0.48680000000013024,
+      "p50": 0.2134000000000924,
+      "p99": 0.43100000000004,
       "fingerprint": {
         "tokens": 38,
         "uses": 31291,
@@ -391,7 +187,7 @@
       }
     },
     "S8": {
-      "runMs": 1821.3207000000002,
+      "runMs": 1683.0220999999997,
       "fingerprint": {
         "tokens": 100,
         "uses": 123159,
@@ -458,8 +254,8 @@
       }
     },
     "C240": {
-      "p50": 0.5423000000000684,
-      "p99": 0.8984999999997854,
+      "p50": 0.5244999999999891,
+      "p99": 0.8064999999996871,
       "fingerprint": {
         "tokens": 241,
         "uses": 279740,
@@ -479,8 +275,8 @@
       }
     },
     "C256": {
-      "p50": 0.5851999999995314,
-      "p99": 1.4013000000004467,
+      "p50": 0.5478000000002794,
+      "p99": 1.3611000000000786,
       "fingerprint": {
         "tokens": 250,
         "uses": 298860,
@@ -500,8 +296,8 @@
       }
     },
     "FS": {
-      "p50": 0.06340000000000146,
-      "p99": 0.27910000000019863,
+      "p50": 0.046199999999771535,
+      "p99": 0.1659999999997126,
       "fingerprint": {
         "tokens": 8,
         "uses": 0,
