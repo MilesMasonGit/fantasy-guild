@@ -72,7 +72,7 @@ export const BALANCE_TEXT = Object.freeze({
         limit: 'At its cap', other: 'Other'
     }),
     worldTables: 'World tables',
-    coins: (row) => `${row.name}${row.kind === 'hall' ? ` rank ${row.rank}` : ''} asks ${row.coins} coins; the coin curve asks the coins one hero earns at ${tierLabel(row.cap)} (${Math.round(row.perHour)} an hour${row.source ? `, ${row.source}` : ''}) in ${row.minutes} min (its ${row.curve} curve).`,
+    coins: (row) => `${row.name}${row.kind === 'hall' ? ` rank ${row.rank}` : ''} asks ${row.coins} coins; the coin curve asks the coins one hero earns selling at ${tierLabel(row.cap)} (${Math.round(row.perHour)} an hour${row.source ? `, ${row.source}` : ''}) in ${row.minutes} min (its ${row.curve} curve).`,
     field: Object.freeze({
         'config.xp': 'XP a cycle', xp: 'XP a cycle', 'config.skillRequired': 'Level needed', levelRequirement: 'Level needed',
         durationMs: 'Time (ms)', 'config.cycleTimeMs': 'Cycle (ms)', 'grows.afterMs': 'Grow time (ms)', 'shop.coins': 'Shop coins'

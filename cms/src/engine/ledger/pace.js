@@ -120,7 +120,7 @@ export const PACE_TEXT = Object.freeze({
     coinSupply: (name, coins, stage) => `${name} asks ${coins} ${coins === 1 ? 'coin' : 'coins'}, but nothing the guild has by ${stage} earns coins: give what its work makes a coin worth (a value), an enemy a Coin drop or a steal table coins.`,
     theft: (enemy, hideout) => `thefts from ${enemy} at ${hideout}`,
     noCurve: (curve, stage) => `no ${curve} coin curve point at or before ${stage}`,
-    noIncome: (stage) => `nothing the guild has by ${stage} earns coins`,
+    noIncome: (stage) => `nothing the guild has by ${stage} earns coins by selling`,
     notReached: 'never reached',
     /** Why a way out is a floor (`gateOf(...).floor`): the real one asks more. */
     wayOutFloor: Object.freeze({
@@ -605,12 +605,15 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         return out;
     }
 
-    const NO_COINS = Object.freeze({ perHour: 0, work: null, theft: null, readyHours: 0 });
+    /** The ways a hero earns coins: selling what a work makes, a kill's Coin drop, a Hideout's thefts. */
+    const EARN = Object.freeze({ SELL: 'sell', KILL: 'kill', THEFT: 'theft' });
+    const NO_COINS = Object.freeze({ perHour: 0, kind: null, work: null, theft: null, readyHours: 0 });
     const sourceMemo = new Map();
     const sourceBusy = new Set();
     /**
      * Every way one hero earns coins at a profile and stage, the most an hour first: `[{ perHour,
-     * work, theft, readyHours }]`, each a work's net coins fed as the guild feeds it
+     * kind, work, theft, readyHours }]` (`kind` {@link EARN}: a fight is a kill, whatever its loot
+     * sells for), each a work's net coins fed as the guild feeds it
      * ({@link coinRateOf}) or a Hideout's thefts ({@link theftsAt}), with the hours from a new game
      * the pace curve reaches its level gate at ({@link curveHoursTo}; a fight's, its enemy's level). A work
      * that pays coins (a build on a Foundation that asks them) earns none here. Asked only of a price
@@ -632,10 +635,10 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             // A fight is had at its enemy's level, as the reach reads a fight's difficulty.
             const enemy = rates.token(work.target.token)?.enemy;
             const gate = isObject(enemy) ? Math.max(1, Number(enemy.level) || 1) : context.skill ? (context.gate ?? 1) : 1;
-            out.push({ perHour, work, theft: null, readyHours: curveHoursTo(gate) });
+            out.push({ perHour, kind: isObject(enemy) ? EARN.KILL : EARN.SELL, work, theft: null, readyHours: curveHoursTo(gate) });
         }
         for (const t of theftsAt(cap)) {
-            if (t.perHour > 0) out.push({ perHour: t.perHour, work: null, theft: t, readyHours: curveHoursTo(t.level) });
+            if (t.perHour > 0) out.push({ perHour: t.perHour, kind: EARN.THEFT, work: null, theft: t, readyHours: curveHoursTo(t.level) });
         }
         out.sort((a, b) => b.perHour - a.perHour || a.readyHours - b.readyHours);
         sourceBusy.delete(key);
@@ -650,6 +653,17 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
      */
     function coinSupplyOf(profile, cap, hours = Infinity) {
         for (const src of coinSourcesOf(profile, cap)) if (src.readyHours <= hours) return src;
+        return NO_COINS;
+    }
+
+    /**
+     * A worker's selling at a profile and stage, `hours` into a new game: the best-paying work whose
+     * output is sold, among the work whose level the guild has by then ({@link coinSourcesOf}), the
+     * best at that moment, never an average. What a coin price is set on (BALANCE_RULES section 7):
+     * a fighter's kills and a Hideout's thefts are priced at half of it, so they never set it.
+     */
+    function sellingSupplyOf(profile, cap, hours = Infinity) {
+        for (const src of coinSourcesOf(profile, cap)) if (src.kind === EARN.SELL && src.readyHours <= hours) return src;
         return NO_COINS;
     }
 
@@ -1841,8 +1855,9 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     let coinPriceMemo = null;
     /**
      * A coin cost for every price that may ask coins, proposed from its coin curve (BALANCE_RULES
-     * section 7): the coins one hero earns an hour when it is paid ({@link coinSupplyOf}: the best way
-     * whose level the pace curve has reached by then) times its curve's minutes at its stage
+     * section 7): the coins one hero earns an hour selling when it is paid ({@link sellingSupplyOf}:
+     * the best sold work whose level the pace curve has reached by then; kills and thefts still time
+     * the price on the path, {@link coinHoursFrom}) times its curve's minutes at its stage
      * (`settings.coinMinutesAt`), rounded down to two figures. Further out costs more twice over:
      * later on a hero earns more an hour, and the curve asks more minutes.
      * - A Shop Token (a Foundation is one), on the everyday curve: at its stage (the owner's tier,
@@ -1867,7 +1882,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             const cap = Math.min(maxTier, earnAt);
             const at = Number.isFinite(paidAt) ? paidAt : stageStartHours(earnAt);
             const minutes = coinMinutesAt(settings, tier, curve);
-            const s = coinSupplyOf(profile, cap, at);
+            const s = sellingSupplyOf(profile, cap, at);
             const out = { ...base, curve, tier, cap, at, minutes, perHour: s.perHour, source: coinSourceName(s) };
             if (minutes === null) return { ...out, proposed: null, why: PACE_TEXT.noCurve(curve, tierLabel(tier)) };
             if (!(s.perHour > 0)) return { ...out, proposed: null, why: PACE_TEXT.noIncome(tierLabel(cap)) };
@@ -1901,9 +1916,20 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
 
     let coinDropMemo = null;
     /**
+     * A worker's selling at Typical where a fighter or a thief first earns at a stage: once both the
+     * level `level` and the stage are had ({@link sellingSupplyOf}).
+     */
+    const sellingWhen = (cap, level) => sellingSupplyOf(PROFILE.TYPICAL, cap, Math.max(curveHoursTo(level), stageStartHours(cap))).perHour;
+    const perEach = (perHour, n) => (n > 0 && perHour > 0 ? Math.round(perHour / 2 / n) : null);
+
+    /**
      * Every Live enemy's Coin drop beside what one kill's drops sell for at their coin worth (Bare,
      * average luck, its rare table counted), and that as its proposed Coin drop: a kill drops coins
-     * like a sale of its loot. `[{ id, name, level, tier, coinDrop, proposed }]`, weakest first.
+     * like a sale of its loot. With the kills an hour one hero makes at Typical at its stage, fed as
+     * the coin supply feeds it, the coins they drop an hour (Coin Find counted), and a worker's selling
+     * there ({@link sellingWhen}) with half of it a kill (BALANCE_RULES section 7: a fighter earns about
+     * half a worker's coins). `[{ id, name, level, tier, coinDrop, proposed, killsPerHour,
+     * coinsPerHour, sellingPerHour, halfSellingPerKill }]`, weakest first.
      */
     function coinDrops() {
         if (coinDropMemo) return coinDropMemo;
@@ -1915,10 +1941,41 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             const { rate } = profiles.profileOf(work.target, PROFILE.BARE, cap);
             let sells = 0;
             for (const [item, n] of Object.entries(rate.perCycle || {})) sells += n * worthOf(item);
-            rows.push({ id: def.id, name: nameOf(tokenKey(def.id)), level: Number(def.enemy.level) || null, tier: work.tier, coinDrop: enemyCoinDropOf(def), proposed: Math.round(sells) });
+            const f = workAt(work, PROFILE.TYPICAL, cap);
+            const killsPerHour = f.rate?.ok ? (Number(f.rate.cyclesPerHour) || 0) * f.scale : 0;
+            const level = Math.max(1, Number(def.enemy.level) || 1);
+            const sellingPerHour = sellingWhen(cap, level);
+            rows.push({
+                id: def.id, name: nameOf(tokenKey(def.id)), level: Number(def.enemy.level) || null, tier: work.tier, coinDrop: enemyCoinDropOf(def), proposed: Math.round(sells),
+                killsPerHour, coinsPerHour: Math.max(0, f.coins || 0), sellingPerHour, halfSellingPerKill: perEach(sellingPerHour, killsPerHour)
+            });
         }
         rows.sort((a, b) => (a.level ?? 0) - (b.level ?? 0) || a.name.localeCompare(b.name));
         coinDropMemo = rows;
+        return rows;
+    }
+
+    let coinTheftMemo = null;
+    /**
+     * Every hoarding camp each Hideout robs of coins ({@link theftsAt}, everything had by the last
+     * stage): the thefts an hour it makes, less those caught, the coins a theft and an hour, at the
+     * stage its camp, enemy and Hideout are all had (`tier`), and a worker's selling there
+     * ({@link sellingWhen}, at the Hideout's level) with half of it a theft (BALANCE_RULES section 7).
+     * `[{ camp, campName, enemy, enemyName, hideout, hideoutName, tier, level, thefts, coins, perHour,
+     * sellingPerHour, halfSellingPerTheft }]`, by stage then camp.
+     */
+    function coinThefts() {
+        if (coinTheftMemo) return coinTheftMemo;
+        const rows = theftsAt(maxTier).map(t => {
+            const tier = Math.max(...[t.camp, t.enemy, t.hideout].map(id => tierOfKey(tokenKey(id)) ?? 0));
+            const sellingPerHour = sellingWhen(tier, t.level);
+            return {
+                camp: t.camp, campName: nameOf(tokenKey(t.camp)), enemy: t.enemy, enemyName: nameOf(tokenKey(t.enemy)), hideout: t.hideout, hideoutName: nameOf(tokenKey(t.hideout)),
+                tier, level: t.level, thefts: t.thefts, coins: t.coins, perHour: t.perHour, sellingPerHour, halfSellingPerTheft: perEach(sellingPerHour, t.thefts)
+            };
+        });
+        rows.sort((a, b) => a.tier - b.tier || a.campName.localeCompare(b.campName) || a.hideoutName.localeCompare(b.hideoutName));
+        coinTheftMemo = rows;
         return rows;
     }
 
@@ -2564,6 +2621,8 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         breakdown,
         /** The guild's coins an hour at a profile and stage, `hours` into a new game (any level when left out): `{ perHour, work, theft, readyHours }`. */
         coinSupplyOf: (profile, cap = maxTier, hours = Infinity) => coinSupplyOf(profile, cap, hours),
+        /** A worker's selling at a profile and stage, `hours` into a new game: what a coin price is set on. */
+        sellingSupplyOf: (profile, cap = maxTier, hours = Infinity) => sellingSupplyOf(profile, cap, hours),
         /** Every way one hero earns coins at a profile and stage, the most an hour first, with when its level is had. */
         coinSourcesOf: (profile, cap = maxTier) => coinSourcesOf(profile, cap),
         /** One copy's coin worth, as Recalculate writes it. */
@@ -2571,6 +2630,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         coinPrices,
         asksCoins,
         coinDrops,
+        coinThefts,
         findings,
         /** The nodes whose site's layout moves what they make past the tolerance (the `layout` check). */
         layoutRows,
