@@ -34,8 +34,7 @@ here.
 
 | ID | What | Origin |
 |---|---|---|
-| T-752 | P4 | owner | *For: director.* **Keep the CMS's Gemini Generate button?** Its import step called store actions that no longer exist and was removed (2026-11-27); the window now only previews, and its prompts still describe the old item, task and station shapes. (a) Recommended: remove the button and the generator. (b) Keep the preview as it is. (c) Rebuild it to write Planned entries in today's shapes (a brief). | clean-up builder 2026-11-27 |
-| T-747 | P4 | owner | *For: director.* **Can a fight already under way be pushed?** A camp's new spawn still pushes an enemy that is fighting (157 times in the hunt hour at 100 ms ticks; the hero follows, spacing holds), which contradicts the GDD's line that a fight never moves once begun. (a) Recommended: leave it, fix the wording. (b) An enemy in a fight is unpushable too (spawns land further from their camp). | T-726 engineer 2026-11-27 |
+| T-752 | P4 | open | *For: director (builder-lite).* **Remove the CMS Gemini Generate button and the generator** (owner 2026-11-27: a). Was: keep it? Its import step called store actions that no longer exist and was removed (2026-11-27); the window now only previews, and its prompts still describe the old item, task and station shapes. (a) Recommended: remove the button and the generator. (b) Keep the preview as it is. (c) Rebuild it to write Planned entries in today's shapes (a brief). | clean-up builder 2026-11-27 |
 | T-007 | **Coal Vein at 4 s**: accept, re-tag its purpose from gold to items (~3 s), or leave for the simulator rework? | FB §5.1 |
 | T-010 | **Speech bubble audit**: add/remove list for `docs/reference/speech_bubble_lines.md`. | FB §5.5 |
 | T-011 | **Watch by eye** (no agent has seen these on screen): Token hit animations + transform glow, loot flight to the Hall, Shop drawer, countdown badge. | FB §5.6 |

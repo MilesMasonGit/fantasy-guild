@@ -1480,8 +1480,10 @@ Their resistances, weaknesses and moves are authored (the combat content pack).
   a step let go part-way (its hero sent elsewhere first) still ends at its
   spot: the enemy walks on, the spot stays held until it arrives, and no fight
   starts; a hero who reaches it meanwhile waits for it to get there, then
-  fights it there or steps afresh as any arriving hero. It is decided once, as the hero arrives: a fight never moves
-  once begun, and the next kill of the same enemy fights where it stands. The
+  fights it there or steps afresh as any arriving hero. It is decided once, as the hero arrives: a fight never steps
+  again once begun, and the next kill of the same enemy fights where it stands.
+  A fight under way can still be pushed by a neighbour's spawn, like any Token
+  that is not fixed, keeping the spacing; its hero follows (owner, 2026-11-27). The
   enemy walks at its full speed (90 u/s), so a step delays the first swing by
   its length at that speed, at most about 1.8 s; the QA crowd's steps are
   8 to 48 u. Afterwards the enemy stays where it stepped (enemies stand

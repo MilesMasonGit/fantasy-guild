@@ -602,3 +602,4 @@ T-114 — the logging to forestry migration removed — 455cb9291 — 2026-11-27
 T-141 — a respawning Token also sold at the Shop warns — 455cb9291 — 2026-11-27
 T-481 — FarmingHarvest pins its regrown harvest roll, green on seeds a to g — 455cb9291 — 2026-11-27
 T-677 — the CMS generator's dead import removed — 455cb9291 — 2026-11-27
+T-747 — owner (a): a fight under way may be pushed by a spawn; GDD wording fixed — 5aa1c61bd — 2026-11-27
