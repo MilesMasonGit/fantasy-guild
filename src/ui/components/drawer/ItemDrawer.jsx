@@ -38,11 +38,21 @@ export const DRAWER_SPRITE_PX = 128;
  */
 export const ItemDrawer = ({ open, menuRight = false }) => {
     const entry = useShownBankEntry();
+    const id = entry?.id ?? null;
+    // `movedTo`: the item the drawer moved on to once the Use took the whole stack.
     const [lastUse, setLastUse] = useState(null);
     useEffect(() => {
         if (!open) setLastUse(null);
     }, [open]);
-    const shownUse = lastUse && entry && (lastUse.itemId === entry.id || !InventoryManager.hasItem(lastUse.itemId)) ? lastUse : null;
+    useEffect(() => {
+        setLastUse((use) => {
+            if (!use || id === use.itemId) return use;
+            if (InventoryManager.hasItem(use.itemId)) return null;
+            if (use.movedTo === undefined) return { ...use, movedTo: id };
+            return id === use.movedTo ? use : null;
+        });
+    }, [id]);
+    const shownUse = lastUse && (lastUse.itemId === id || lastUse.movedTo === id) ? lastUse : null;
     return (
         <SideDrawer open={open} menuRight={menuRight} backdrop="bank" label={t('bank.drawer.label')} data-item-drawer={entry?.id || ''}>
             {entry ? <ItemDrawerBody key={entry.id} entry={entry} lastUse={shownUse} onUsed={setLastUse} /> : <ItemDrawerEmpty />}
