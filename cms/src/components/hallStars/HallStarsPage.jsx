@@ -4,7 +4,7 @@ import { useEntityStore } from '../../stores/useEntityStore';
 import { Section } from '../shared/EditorLayout';
 import { rulesLinesOf } from '../../utils/constants';
 import { normaliseHallSky, TAG_SIDES, FIRST_STAR_RING, opensRingOf } from '../../../../src/config/hallStars.js';
-import { skyWithFallback, rankEffectLabel } from '../../../../src/config/guildUpgrades.js';
+import { rankEffectLabel } from '../../../../src/config/guildUpgrades.js';
 import { getPaletteEntry } from '../../../../src/config/registries/modifierPalette.js';
 import { PLAN_TIERS, tierLabel } from '../../../../src/systems/progression/ledger/plan.js';
 import { workspacePace } from '../../engine/ledgerReport';
@@ -17,8 +17,8 @@ import { hallRows, hallRowsOf, hoursText } from '../../engine/ledgerPace';
  * pack. Each rank's **tier** is the owner's, set here; the ledger then says what the rank pays back
  * in at Typical over all the work it boosts, on the payback curve, and proposes a price for it (a
  * preview: nothing is applied). Bunk Beds, Bank Tabs
- * and the Wishing Well are stars like the rest (the game gives a hero and a Bank tab a rank by id);
- * until a pack brings them the game stands in for them, and the stand-ins are not listed.
+ * and the Wishing Well are stars like the rest (the game gives a hero and a Bank tab a rank by id),
+ * and the game's boot audit refuses a sky without all three.
  * ⚠️ The paybacks are the ledger's whole pace, worked out when the page opens and on Refresh, not on
  * every edit.
  */
@@ -74,14 +74,13 @@ export default function HallStarsPage() {
   }), [tokens, items]);
   const sky = useMemo(() => normaliseHallSky({ constellations: hallConstellations || {}, stars: hallStars || {} }), [hallConstellations, hallStars]);
   const groups = useMemo(() => {
-    // The game's stand-in constellations head the page while the workspace lacks them, so their authored stars have a home.
-    const all = skyWithFallback(sky).constellations.map((c) => ({ ...c, builtIn: !!c.fallback }));
+    const all = sky.constellations;
     const known = new Set(all.map((c) => c.id));
     const orphans = sky.stars.filter((s) => !known.has(s.constellation));
     return [
       ...all.map((c) => ({ ...c, stars: sky.stars.filter((s) => s.constellation === c.id) })),
       ...(orphans.length ? [{ id: '', name: 'In no constellation', stars: orphans }] : []),
-    ].filter((g) => g.stars.length || !g.builtIn);
+    ];
   }, [sky]);
   const [open, setOpen] = useState(() => new Set());
   const toggle = (id) => setOpen((was) => { const next = new Set(was); if (next.has(id)) next.delete(id); else next.add(id); return next; });
@@ -91,8 +90,8 @@ export default function HallStarsPage() {
       <div className="p-4" data-testid="hall-stars-page">
         <Section title="Guild Hall stars" icon={<Sparkles size={14} />}>
           <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
-            This workspace holds no Guild Hall sky yet. A change pack brings the first stars in; until then the game shows
-            only its stand-ins for Bunk Beds, Bank Tabs and the Wishing Well, and Sync leaves data/hallStars.json alone.
+            This workspace holds no Guild Hall sky yet. A change pack brings the first stars in; until then Sync leaves
+            data/hallStars.json alone.
           </p>
         </Section>
       </div>

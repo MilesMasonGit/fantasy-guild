@@ -17,6 +17,12 @@ import { runChecks, CHECKS } from '../../cms/src/engine/ledger/checks.js';
 import { settingsOf, levelAtMinutes, minutesToReach } from '../../cms/src/engine/ledger/settings.js';
 import { xpForLevel } from '../utils/XPCurve.js';
 import { paceContent, potionWebContent } from './fixtures/paceWorld.js';
+import { setHallSky } from '../config/guildUpgrades.js';
+import { withRequiredThree } from './fixtures/hallSky.js';
+
+// Content with no `hallSky` reads the game's live sky, and nothing here loads the star registry: the
+// file puts in the three the game reads by id, the Wishing Well paying 10 Water a rank.
+setHallSky(withRequiredThree());
 
 /** These numbers were worked out for a camp of two nodes, the sparse layout; the pace times the dense one by default. */
 const SPARSE = { layout: 'sparse' };
@@ -29,13 +35,13 @@ const SPARSE = { layout: 'sparse' };
  */
 
 const world = () => {
-    const content = paceContent();
+    const content = { ...paceContent(), hallSky: withRequiredThree() };
     const ledger = buildLedger(content);
     return { content, ledger, pace: buildPace(content, ledger, SPARSE) };
 };
 
 describe('the kinds of work the calculator now rates', () => {
-    const book = () => buildRateBook(paceContent());
+    const book = () => buildRateBook({ ...paceContent(), hallSky: withRequiredThree() });
 
     it('a build: the recipe and the Foundation it stands on are its inputs, the build its cycle, its XP Construction', () => {
         const r = book().rateOf({ token: 'token_plot', recipe: 'recipe_build_hut' });

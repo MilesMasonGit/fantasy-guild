@@ -171,7 +171,7 @@ describe('CMS connectivity auditor — Guild Hall stars, by the game\'s own rule
         id: `stm_fx_${type}`, keyword: 'provides', to: { mode: 'id', value: 'fx_camp' }, reach: 'board',
         payload: { type, bucket: 'percentage', value }
     });
-    const sky = (stars) => ({ constellations: {}, stars });
+    const sky = (stars) => ({ constellations: { well: { id: 'well', name: 'The Well' } }, stars });
     const star = (id, rules) => ({ id, name: id, constellation: 'well', links: ['hall'], ranks: [{ price: [{ itemId: 'fx_ore', quantity: 5 }], rules }] });
 
     it('names a star carrying only the retired Camp Reach, to delete in the CMS', () => {

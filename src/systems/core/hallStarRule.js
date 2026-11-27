@@ -2,7 +2,7 @@
 
 import { normaliseHallSky, normaliseStar, opensRingOf } from '../../config/hallStars.js';
 import {
-    FALLBACK_CONSTELLATION_IDS, FALLBACK_STAR_IDS, FALLBACK_SKY, HALL_NODE, RANKS_BY_ID, ROSTER_STAR, BANK_TABS_STAR
+    REQUIRED_STAR_IDS, HALL_NODE, RANKS_BY_ID, ROSTER_STAR, BANK_TABS_STAR
 } from '../../config/guildUpgrades.js';
 import { getPaletteEntry } from '../../config/registries/modifierPalette.js';
 import { coinAmountProblem } from '../../config/registries/coinCosts.js';
@@ -36,10 +36,8 @@ function retiredWhy(entry) {
 export function hallStarFindings({ sky, items = {}, tokens = {} } = {}) {
     const out = [];
     const { constellations, stars } = normaliseHallSky(sky || {});
-    // The game stands in for Bunk Beds, Bank Tabs, the Wishing Well and their constellations when the
-    // sky lacks them, so a link or a constellation naming one is good either way.
-    const constellationIds = new Set([...FALLBACK_CONSTELLATION_IDS, ...constellations.map(c => c.id)]);
-    const starIds = new Set([...FALLBACK_STAR_IDS, ...stars.map(s => s.id)]);
+    const constellationIds = new Set(constellations.map(c => c.id));
+    const starIds = new Set(stars.map(s => s.id));
     const push = (star, field, message) => out.push({ entityType: 'Hall star', entityId: star.id, entityName: star.name || star.id, field, message });
 
     for (const [key, raw] of Object.entries(sky?.stars || {})) {
@@ -124,32 +122,15 @@ const BY_ID = {
 };
 
 /**
- * ⚠️ While the fallback stands: a warning for each of Bunk Beds, Bank Tabs, the Wishing Well and
- * their constellations the sky as authored lacks, which the game stands in for with its built-in
- * placeholder (`guildUpgrades.FALLBACK_SKY`). `severity: 'warning'`: the game plays as it did before
- * the three were authored. Output as {@link hallStarFindings}'s, `entityType` 'Hall constellation'
- * for a constellation.
+ * An error for each of Bunk Beds, Bank Tabs and the Wishing Well the sky lacks: the game reads all
+ * three by id and has no stand-in for one. Output as {@link hallStarFindings}'s.
  */
-export function hallFallbackFindings({ sky } = {}) {
-    const { constellations, stars } = normaliseHallSky(sky || {});
-    const haveS = new Set(stars.map(s => s.id));
-    const haveC = new Set(constellations.map(c => c.id));
-    const out = [];
-    for (const [id, star] of Object.entries(FALLBACK_SKY.stars)) {
-        if (haveS.has(id)) continue;
-        out.push({
-            entityType: 'Hall star', entityId: id, entityName: star.name, field: 'id', severity: 'warning',
-            message: 'is not an authored star yet, so the game uses its built-in stand-in (placeholder prices in Oak Wood). A change pack from the content agent brings it.'
-        });
-    }
-    for (const [id, constellation] of Object.entries(FALLBACK_SKY.constellations)) {
-        if (haveC.has(id)) continue;
-        out.push({
-            entityType: 'Hall constellation', entityId: id, entityName: constellation.name, field: 'id', severity: 'warning',
-            message: 'is not an authored constellation yet, so the game uses its built-in stand-in. A change pack from the content agent brings it.'
-        });
-    }
-    return out;
+export function hallRequiredFindings({ sky } = {}) {
+    const have = new Set(normaliseHallSky(sky || {}).stars.map(s => s.id));
+    return REQUIRED_STAR_IDS.filter(id => !have.has(id)).map(id => ({
+        entityType: 'Hall star', entityId: id, entityName: id, field: 'id', severity: 'error',
+        message: 'is missing from the Guild Hall sky, and the game reads it by id. Add it in the CMS and Sync.'
+    }));
 }
 
 /**

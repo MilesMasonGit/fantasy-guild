@@ -13,6 +13,7 @@ import {
     CALIBRATED_FILES, hashText, fileHashes, calibrationState, calibrationFinding,
 } from '../../cms/src/engine/ledger/calibration.js';
 import { paceWorkspace } from './fixtures/paceWorld.js';
+import { withRequiredThree } from './fixtures/hallSky.js';
 
 /**
  * The Ledger's pace in the CMS (brief 290 L5): checks D in the Problems list, the Pace page (stages,
@@ -99,7 +100,8 @@ describe('the tab', { timeout: 20000 }, () => {
         useEntityStore.setState(empty);
         useSimulationStore.setState({ simRows: [] });
         // The tab's numbers were worked out for a camp of two nodes: the sparse layout (the pace times the dense one by default).
-        store().hydrate({ ...paceWorkspace(), planSettings: { layout: 'sparse' } });
+        const three = withRequiredThree();
+        store().hydrate({ ...paceWorkspace(), hallConstellations: three.constellations, hallStars: three.stars, planSettings: { layout: 'sparse' } });
     });
     afterEach(() => {
         cleanup();

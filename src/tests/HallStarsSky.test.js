@@ -18,6 +18,7 @@ import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { getUpgradeDef, GUILD_UPGRADES } from '../config/guildUpgrades.js';
 import { registerHallSky } from '../config/registries/hallStarRegistry.js';
 import { qaHallSky, installQaSky } from './fixtures/qaHallSky.js';
+import { withRequiredThree } from './fixtures/hallSky.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     success: vi.fn(), warning: vi.fn(), error: vi.fn(), info: vi.fn(), notify: vi.fn()
@@ -31,7 +32,7 @@ beforeEach(() => {
     GameState.state.heroes = [];
     GameState.state.progress.guildUpgrades = {};
     InventoryManager.init();
-    registerHallSky(qaHallSky());
+    registerHallSky(withRequiredThree(qaHallSky()));
     GuildUpgradeManager.recompute();
 });
 
@@ -74,12 +75,12 @@ describe('the sky draws the authored constellations', () => {
 });
 
 describe('the sky grows to hold its stars, and drags when too big', () => {
-    it('holds the built-in sky at its spacing and grows past it for far stars', () => {
+    it('holds a sky of the three at its spacing and grows past it for far stars', () => {
         const unit = WEB_UNIT_PX * SKY_SPACING;
-        registerHallSky({});
-        // The built-in sky's reach is its names: the Vault's 0.72 out sideways, the Hearth's and the Well's 0.8 up and down.
+        registerHallSky(withRequiredThree());
+        // The fixture three's reach is their names: the Vault's 0.72 out sideways, the Hearth's and the Well's 0.8 up and down.
         expect(webSize()).toEqual({ w: Math.max(WEB_W, Math.ceil(2 * (0.72 * unit + 120))), h: Math.max(WEB_H, Math.ceil(2 * (0.8 * unit + 40))) });
-        registerHallSky({ stars: { far: { id: 'far', constellation: 'well', links: ['hall'], node: { x: 2, y: -1.5 }, ranks: [{ price: [] }] } } });
+        registerHallSky(withRequiredThree({ stars: { far: { id: 'far', constellation: 'well', links: ['hall'], node: { x: 2, y: -1.5 }, ranks: [{ price: [] }] } } }));
         expect(webSize()).toEqual({ w: Math.ceil(2 * (2 * unit + 170)), h: Math.ceil(2 * (1.5 * unit + 70)) });
     });
 

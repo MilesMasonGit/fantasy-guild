@@ -8,9 +8,9 @@ import { hallGraph, openingPath, hallTracksOf } from '../../cms/src/engine/ledge
 import { CHECKS } from '../../cms/src/engine/ledger/checks.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { tierOf } from '../config/hallStars.js';
-import { FALLBACK_STAR_IDS } from '../config/guildUpgrades.js';
 import { paceContent } from './fixtures/paceWorld.js';
 import { paceHallSky } from './fixtures/paceHallSky.js';
+import { withRequiredThree } from './fixtures/hallSky.js';
 
 /** These numbers were worked out for a camp of two nodes, the sparse layout; the pace times the dense one by default. */
 const SPARSE = { layout: 'sparse' };
@@ -27,7 +27,7 @@ const SPARSE = { layout: 'sparse' };
 const content = () => {
     const c = paceContent();
     c.tokens.token_vein.config.xp = 10;
-    c.hallSky = paceHallSky();
+    c.hallSky = withRequiredThree(paceHallSky());
     return c;
 };
 const world = (settings = null) => {
@@ -84,11 +84,9 @@ describe('the rate calculator reads a star the setup holds', () => {
         expect(camped.factors.find(f => f.id === 'hall:ph_rails')?.axes ?? []).toEqual([]);
     });
 
-    it('content with no sky rates as before, on the stand-ins alone, and a tier written as null is not set', () => {
+    it('content with no sky rates no star, standing in for none, and a tier written as null is not set', () => {
         const c = paceContent();
-        const stars = buildRateBook(c).hall.stars;
-        expect(stars.map(s => s.id)).toEqual(FALLBACK_STAR_IDS);
-        expect(stars.every(s => s.fallback === true)).toBe(true);
+        expect(buildRateBook(c).hall.stars).toEqual([]);
         expect(tierOf(null)).toBeNull();
         expect(tierOf(0)).toBe(0);
         expect(tierOf('2')).toBe(2);
@@ -365,7 +363,7 @@ describe('the payback check counts opening a star; a skill that gathers nothing 
 
     it('every rank one work alone pays back on the curve is one Typical buys on that work', () => {
         const pace = world();
-        const paying = pace.hallPaybacks().filter(r => !r.builtIn && r.rate && !r.enabler && r.work && r.payback <= r.curve);
+        const paying = pace.hallPaybacks().filter(r => r.rate && !r.enabler && r.work && r.payback <= r.curve);
         expect(paying.length).toBeGreaterThan(2);
         for (const row of paying) {
             const held = pace.rateAt(row.work.target, PROFILE.TYPICAL, row.cap).setup.hallRanks?.[row.id] || 0;

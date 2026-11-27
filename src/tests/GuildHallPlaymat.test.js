@@ -6,11 +6,12 @@ import { getCoins, addCoins } from '../systems/inventory/Coins.js';
 import {
     isUpgradeAccessible, getUpgradeLinks, getUpgradeWebLinks, getLockDetail, LOCK_KIND, HALL_NODE,
     getUpgradePrice, getUpgradeDef,
-    ROSTER_BASE, GUILD_UPGRADES, PLACEHOLDER_PRICE_ITEM, placeholderPrices
+    ROSTER_BASE, GUILD_UPGRADES
 } from '../config/guildUpgrades.js';
 import { getItem } from '../config/registries/itemRegistry.js';
 import { registerHallSky } from '../config/registries/hallStarRegistry.js';
 import { withOuterUpgrade, OUTER_UPGRADE_ID as OUTER } from './fixtures/outerUpgrade.js';
+import { PLACEHOLDER_PRICE_ITEM, withRequiredThree } from './fixtures/hallSky.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     success: vi.fn(), warning: vi.fn(), error: vi.fn(), info: vi.fn(), notify: vi.fn()
@@ -88,7 +89,6 @@ describe('Guild Hall upgrade web', () => {
             expect(getUpgradeDef(id)?.authored, id).toBe(true);
             expect(isUpgradeAccessible(id, {}), id).toBe(true);
         }
-        expect(GUILD_UPGRADES.filter(d => d.fallback).map(d => d.id)).toEqual([]);
         for (const id of ['token_cap', 'cartography_slots', 'notice_board']) expect(getUpgradeDef(id), id).toBeNull();
     });
 
@@ -101,8 +101,8 @@ describe('Guild Hall upgrade web', () => {
     });
 
     it('keeps only the star beyond Bank Tabs shut after every single first purchase', () => {
-        // The built-in tracks and the test star alone: the shipped sky has stars beyond others.
-        registerHallSky({});
+        // The three the game reads by id and the test star alone: the shipped sky has stars beyond others.
+        registerHallSky(withRequiredThree());
         try {
             const oldOpen = (id, ranks) => {
                 if (id === OUTER) return (ranks.bank_tabs || 0) >= 1;
@@ -249,14 +249,6 @@ describe('Guild Hall upgrades are paid in items', () => {
             }
             expect(getUpgradePrice(def, def.maxRank)).toBeNull();
         }
-    });
-
-    it('lets the helper name a different item and amount per upgrade', () => {
-        expect(placeholderPrices(3, { itemId: 'item_x', perRank: 4 })).toEqual([
-            [{ itemId: 'item_x', quantity: 4 }],
-            [{ itemId: 'item_x', quantity: 8 }],
-            [{ itemId: 'item_x', quantity: 12 }]
-        ]);
     });
 
     it('succeeds and deducts exactly the price from the Bank and the purse, leaving gold alone', () => {

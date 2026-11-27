@@ -9,6 +9,12 @@ import {
 } from '../systems/progression/ledger/engine.js';
 import { normaliseWorldTables } from '../config/worldTablesShape.js';
 import { ledgerContent, withIronChest, withoutOrigin } from './fixtures/ledgerWorld.js';
+import { setHallSky } from '../config/guildUpgrades.js';
+import { withRequiredThree } from './fixtures/hallSky.js';
+
+// Content with no `hallSky` reads the game's live sky, and nothing here loads the star registry: the
+// file puts in the three the game reads by id, the Wishing Well paying 10 Water a rank.
+setHallSky(withRequiredThree());
 
 /**
  * The ledger's engines on a small fixture world (`fixtures/ledgerWorld.js`): reach (the earliest

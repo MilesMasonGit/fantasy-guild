@@ -21,6 +21,7 @@ import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { KEYWORD, paletteForKeyword } from '../systems/effects/statements.js';
 import { getPaletteEntry } from '../config/registries/modifierPalette.js';
 import { registerHallSky } from '../config/registries/hallStarRegistry.js';
+import { withRequiredThree } from './fixtures/hallSky.js';
 import { registerEffects } from '../config/registries/effectRegistry.js';
 import { registerSkillPerks } from '../config/registries/perkRegistry.js';
 import { HALL_NODE, authoredStars, getUpgradeDef } from '../config/guildUpgrades.js';
@@ -62,7 +63,7 @@ const PER_RANK = [100, 150, 200];
 const TOTALS = [100, 250, 450];
 
 function sky({ ranks = TOTALS.map(v => rank([gift(v)])) } = {}) {
-    return {
+    return withRequiredThree({
         constellations: { hearth_x: { id: 'hearth_x', name: 'Hearth X', label: { x: 0, y: -1 } } },
         stars: {
             xp_all: { id: 'xp_all', constellation: 'hearth_x', name: 'Fresh Recruits', node: { x: 0, y: -0.7 }, links: [HALL_NODE], ranks },
@@ -70,7 +71,7 @@ function sky({ ranks = TOTALS.map(v => rank([gift(v)])) } = {}) {
                 rank([{ ...rule(EFFECT_TYPES.WORK_TIME, -0.1), payload: { type: EFFECT_TYPES.WORK_TIME, bucket: 'percentage', value: -0.1 } }])
             ] }
         }
-    };
+    });
 }
 
 /** A guild with `n` fresh heroes (every skill at level 1, no XP) and room for exactly them. */

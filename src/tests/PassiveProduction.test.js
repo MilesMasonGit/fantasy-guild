@@ -16,6 +16,8 @@ import { registerItems } from '../config/registries/itemRegistry.js';
 import { PASSIVE_LAP_BASE_MS } from '../config/registries/tokenConstants.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import { placeAt, clearMat } from './fixtures/mat.js';
+import { setHallSky } from '../config/guildUpgrades.js';
+import { withRequiredThree } from './fixtures/hallSky.js';
 
 /**
  * T-099 — **Passive Production**: every line a Token pays on its own, no hero
@@ -89,6 +91,8 @@ const run = (ms, step = 1000) => { for (let t = 0; t < ms; t += step) BoardRunne
 const setWell = (rank) => { GameState.state.progress.guildUpgrades.wishing_well = rank; };
 
 beforeEach(() => {
+    // Nothing here loads the star registry, so the file puts in the Wishing Well it reads (10 Water a rank).
+    setHallSky(withRequiredThree());
     GameState.initNew();
     InventoryManager.init();
     SpriteLayer.init();

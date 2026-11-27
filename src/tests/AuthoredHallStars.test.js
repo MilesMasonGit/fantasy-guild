@@ -1,7 +1,7 @@
 // Bunk Beds, Bank Tabs and the Wishing Well as authored stars: the data may carry them and the game
 // keeps only what each does by id (a hero a rank, a Bank tab a rank; the Well's Water is a line).
-// Until the data carries them, the game's stand-ins hold the guild exactly as before. An old save
-// keeps their ranks, the Well's old id included. Fixtures only: nothing here reads the three from `data/`.
+// The game has no stand-in for them: a sky without one is a boot audit error. An old save keeps their
+// ranks, the Well's old id included. Fixtures only: nothing here reads the three from `data/`.
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
@@ -13,7 +13,8 @@ import * as PassiveProduction from '../systems/board/PassiveProduction.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import { migrateState, withRenamedUpgrades } from '../systems/core/SaveMigration.js';
-import { hallStarFindings, hallFallbackFindings } from '../systems/core/hallStarRule.js';
+import { hallStarFindings, hallRequiredFindings } from '../systems/core/hallStarRule.js';
+import { auditContent } from '../systems/core/ContentAudit.js';
 import { starSentence, starAmount } from '../systems/progression/hallStarText.js';
 import { outlineSpriteName } from '../ui/components/board/hallStarOutline.js';
 import { PASSIVE_LAP_BASE_MS } from '../config/registries/tokenConstants.js';
@@ -21,7 +22,7 @@ import { ITEMS } from '../config/registries/itemRegistry.js';
 import { TOKENS } from '../config/registries/tokenRegistry.js';
 import { registerHallSky, authoredHallSky } from '../config/registries/hallStarRegistry.js';
 import {
-    GUILD_UPGRADES, CONSTELLATIONS, FALLBACK_STAR_IDS, PLACEHOLDER_PRICE_ITEM, getUpgradeDef, getUpgradePrice
+    GUILD_UPGRADES, CONSTELLATIONS, REQUIRED_STAR_IDS, getUpgradeDef
 } from '../config/guildUpgrades.js';
 import { buildLedger, itemKey, tokenKey } from '../systems/progression/ledger/engine.js';
 import { buildRateBook } from '../../cms/src/engine/ledger/rates.js';
@@ -30,6 +31,7 @@ import { validatePack } from '../../cms/src/engine/changePacks.js';
 import { ledgerContent } from './fixtures/ledgerWorld.js';
 import { paceContent } from './fixtures/paceWorld.js';
 import { authoredThree, installAuthoredThree, skyWithAuthoredThree, FIXTURE_WATER_PER_RANK } from './fixtures/authoredThreeStars.js';
+import { withRequiredThree, REQUIRED_WATER_PER_RANK } from './fixtures/hallSky.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -40,7 +42,7 @@ const THREE = ['roster_size', 'bank_tabs', 'wishing_well'];
 const water = () => SpriteLayer.countOnBoard('item_water');
 const ranks = () => GameState.state.progress.guildUpgrades;
 
-/** The shipped sky without the three, whatever `data/` holds: the sky before the pack is Synced. */
+/** The shipped sky without the three, whatever `data/` holds. */
 function skyWithoutThree() {
     const shipped = authoredHallSky();
     const drop = (collection, ids) => Object.fromEntries(Object.entries(collection || {}).filter(([id]) => !ids.includes(id)));
@@ -101,15 +103,14 @@ describe('an old save keeps its Bunk Beds, Bank Tabs and Wishing Well ranks unde
 });
 
 describe('the authored sky carries the three', () => {
-    it('in their authored places, constellations, prices and words, with no stand-in left', () => {
+    it('in their authored places, constellations, prices and words', () => {
         installAuthoredThree();
-        expect(GUILD_UPGRADES.filter(u => u.fallback)).toEqual([]);
         expect(GUILD_UPGRADES.filter(u => THREE.includes(u.id))).toHaveLength(3);
         expect(getUpgradeDef('bank_tabs')).toMatchObject({ maxRank: 15, node: { x: -0.55, y: 0 }, constellation: 'vault' });
         expect(getUpgradeDef('roster_size')).toMatchObject({ maxRank: 8, node: { x: 0, y: -0.55 } });
         expect(getUpgradeDef('wishing_well')).toMatchObject({ maxRank: 10, node: { x: 0, y: 0.55 } });
-        expect(CONSTELLATIONS.filter(c => ['hearth', 'vault', 'well'].includes(c.id)).map(c => [c.id, c.label, !!c.fallback])).toEqual([
-            ['hearth', { x: 0, y: -0.85 }, false], ['vault', { x: -0.78, y: 0.3 }, false], ['well', { x: 0, y: 0.85 }, false]
+        expect(CONSTELLATIONS.filter(c => ['hearth', 'vault', 'well'].includes(c.id)).map(c => [c.id, c.label])).toEqual([
+            ['hearth', { x: 0, y: -0.85 }], ['vault', { x: -0.78, y: 0.3 }], ['well', { x: 0, y: 0.85 }]
         ]);
         expect(GuildUpgradeManager.getNextCost('bank_tabs')).toEqual([{ itemId: 'item_copper_ore', quantity: 20 }]);
         expect(GuildUpgradeManager.getNextCost('wishing_well')).toEqual([{ itemId: 'item_oak_wood', quantity: 5 }]);
@@ -142,9 +143,9 @@ describe('the authored sky carries the three', () => {
         expect(BoardState.getTokenById(hall.id)).toBeTruthy();
     });
 
-    it('the boot audit finds nothing wrong with the three, and no stand-in to warn of', () => {
+    it('the boot audit finds nothing wrong with the three, and none missing', () => {
         const sky = skyWithAuthoredThree();
-        expect(hallFallbackFindings({ sky })).toEqual([]);
+        expect(hallRequiredFindings({ sky })).toEqual([]);
         expect(hallStarFindings({ sky, items: ITEMS, tokens: TOKENS }).filter(f => THREE.includes(f.entityId))).toEqual([]);
     });
 
@@ -167,80 +168,72 @@ describe('the authored sky carries the three', () => {
     });
 });
 
-describe('until the pack is Synced, the stand-ins hold the guild as before', () => {
-    beforeEach(() => {
+describe('a sky without the three is a boot audit error, with no stand-in', () => {
+    it('names each missing star as an error, and no star stands in', () => {
         registerHallSky(skyWithoutThree());
-        GuildUpgradeManager.recompute();
-    });
+        expect(() => GuildUpgradeManager.recompute()).not.toThrow();
+        for (const id of THREE) expect(getUpgradeDef(id), id).toBeNull();
 
-    it('holds the three at the placeholder prices, rank counts, places and Water they had', () => {
-        expect(GUILD_UPGRADES.slice(0, 3).map(u => [u.id, u.maxRank, !!u.fallback])).toEqual([
-            ['bank_tabs', 15, true], ['roster_size', 8, true], ['wishing_well', 10, true]
-        ]);
-        expect(CONSTELLATIONS.slice(0, 3).map(c => [c.id, c.name, c.label])).toEqual([
-            ['hearth', 'The Hearth', { x: 0, y: -0.8 }], ['vault', 'The Vault', { x: -0.72, y: 0.3 }], ['well', 'The Well', { x: 0, y: 0.8 }]
-        ]);
-        expect(getUpgradeDef('bank_tabs').node).toEqual({ x: -0.5, y: 0 });
-        for (const id of THREE) {
-            const def = getUpgradeDef(id);
-            const freeFirst = id !== 'bank_tabs';
-            for (let r = 0; r < def.maxRank; r++) {
-                const price = getUpgradePrice(def, r);
-                if (freeFirst && r === 0) expect(price, `${id} rank 1`).toEqual([]);
-                else expect(price, `${id} rank ${r + 1}`).toEqual([{ itemId: PLACEHOLDER_PRICE_ITEM, quantity: 10 * (r + 1) }]);
-            }
-        }
-        expect(starAmount(getUpgradeDef('wishing_well'), 3)).toBe('30 Water');
-        expect(outlineSpriteName(getUpgradeDef('roster_size'))).toBe('t_bunk_bed');
-
-        GameState.state.progress.guildUpgrades = { wishing_well: 3, bank_tabs: 4, roster_size: 2 };
-        GuildUpgradeManager.recompute();
-        expect(GameState.state.inventory.maxTabs).toBe(5);
-        expect(GameState.state.progress.rosterLimit).toBe(2);
-        const hall = placeHall();
-        BoardRunner.tick(PASSIVE_LAP_BASE_MS);
-        expect(water()).toBe(30);
-        expect(PassiveProduction.linesOf(hall).find(l => l.itemId === 'item_water').quantity).toBe(30);
-    });
-
-    it('warns once for each stand-in in the boot audit, and only as allowed', () => {
-        const findings = hallFallbackFindings({ sky: skyWithoutThree() });
+        const findings = hallRequiredFindings({ sky: skyWithoutThree() });
         expect(findings.map(f => [f.entityType, f.entityId, f.severity])).toEqual([
-            ['Hall star', 'bank_tabs', 'warning'], ['Hall star', 'roster_size', 'warning'], ['Hall star', 'wishing_well', 'warning'],
-            ['Hall constellation', 'hearth', 'warning'], ['Hall constellation', 'vault', 'warning'], ['Hall constellation', 'well', 'warning']
+            ['Hall star', 'bank_tabs', 'error'], ['Hall star', 'roster_size', 'error'], ['Hall star', 'wishing_well', 'error']
         ]);
-        expect(FALLBACK_STAR_IDS).toEqual(['bank_tabs', 'roster_size', 'wishing_well']);
+        expect(REQUIRED_STAR_IDS).toEqual(['bank_tabs', 'roster_size', 'wishing_well']);
+    });
+
+    it('the boot audit reads the file as loaded and names a missing star there, not as allowed', () => {
+        // The audit reads the registry's own record of the file, so the test takes a star out of it and puts it back.
+        const file = authoredHallSky();
+        const before = { ...file.stars };
+        delete file.stars.wishing_well;
+        try {
+            const boot = auditContent().filter(f => f.what.includes('is missing from the Guild Hall sky'));
+            expect(boot.map(f => f.where)).toEqual(['Hall star "wishing_well"']);
+            expect(boot[0].what.startsWith('(allowed)')).toBe(false);
+        } finally {
+            for (const id of Object.keys(file.stars)) delete file.stars[id];
+            Object.assign(file.stars, before);
+        }
+    });
+
+    it('names only the one missing', () => {
+        const sky = skyWithAuthoredThree();
+        delete sky.stars.wishing_well;
+        expect(hallRequiredFindings({ sky }).map(f => f.entityId)).toEqual(['wishing_well']);
+    });
+
+    it('the shipped sky holds all three: the boot audit names none missing', () => {
+        expect(hallRequiredFindings({ sky: authoredHallSky() })).toEqual([]);
+        expect(auditContent().filter(f => f.what.includes('is missing from the Guild Hall sky'))).toEqual([]);
     });
 });
 
 describe('the progression ledger reads the Wishing Well and the other two from the content', () => {
-    it('reach: the Well\'s Water comes at its authored price and amount, or the stand-in\'s', () => {
+    it('reach: the Well\'s Water comes at its authored price and amount, and a sky without it has none', () => {
         const wellRule = (hallSky) => buildLedger({ ...ledgerContent(), hallSky }).world.rules.find(r => r.id === 'upgrade:wishing_well');
         expect(wellRule(authoredThree())).toMatchObject({
             needs: [tokenKey('token_guild_hall'), itemKey('item_oak_wood')],
             gives: [{ key: itemKey('item_water'), chance: 1, perCycle: FIXTURE_WATER_PER_RANK }]
         });
-        expect(wellRule({})).toMatchObject({
+        expect(wellRule(withRequiredThree())).toMatchObject({
             needs: [tokenKey('token_guild_hall')],
-            gives: [{ key: itemKey('item_water'), chance: 1, perCycle: 10 }]
+            gives: [{ key: itemKey('item_water'), chance: 1, perCycle: REQUIRED_WATER_PER_RANK }]
         });
+        expect(wellRule({})).toBeUndefined();
     });
 
-    it('rates: the authored three are priced like any star; a stand-in stays the game\'s own, Bunk Beds\' first rank held either way', () => {
+    it('rates: the three are priced like any star, Bunk Beds\' first rank held however it is priced', () => {
         const tracks = (hallSky) => new Map(hallTracksOf(buildRateBook({ ...paceContent(), hallSky })).map(t => [t.id, t]));
         const authored = tracks(authoredThree());
-        const standIns = tracks({});
-        for (const id of THREE) {
-            expect(authored.get(id).builtIn, id).toBe(false);
-            expect(standIns.get(id).builtIn, id).toBe(true);
-        }
+        const freeFirst = tracks(withRequiredThree());
         expect(THREE.map(id => freeRanks(authored.get(id)))).toEqual([1, 0, 0]);
-        expect(THREE.map(id => freeRanks(standIns.get(id)))).toEqual([1, 0, 1]);
+        expect(THREE.map(id => freeRanks(freeFirst.get(id)))).toEqual([1, 0, 0]);
+        expect(tracks({}).size).toBe(0);
         expect(authored.get('bank_tabs').price(1)).toEqual([{ itemId: 'item_copper_ore', quantity: 20 }]);
 
         const hallWater = (hallSky) => buildRateBook({ ...paceContent(), hallSky })
             .rateOf({ token: 'token_guild_hall' }, { hallRanks: { wishing_well: 2 } }).perCycle.item_water;
         expect(hallWater(authoredThree())).toBe(2 * FIXTURE_WATER_PER_RANK);
-        expect(hallWater({})).toBe(20);
+        expect(hallWater(withRequiredThree())).toBe(2 * REQUIRED_WATER_PER_RANK);
     });
 });

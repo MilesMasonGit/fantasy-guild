@@ -8,6 +8,7 @@ import { ChartView, yieldsText } from '../ui/components/encyclopedia/Encyclopedi
 import { buildWorld, HOW, itemKey, tokenKey } from '../systems/progression/ledger/engine.js';
 import { GUILD_UPGRADES, HALL_NODE } from '../config/guildUpgrades.js';
 import { registerHallSky } from '../config/registries/hallStarRegistry.js';
+import { withRequiredThree } from './fixtures/hallSky.js';
 import { ledgerContent } from './fixtures/ledgerWorld.js';
 import en from '../i18n/en.json';
 import { getTokenType } from '../config/registries/tokenRegistry.js';
@@ -171,7 +172,7 @@ describe('the Guild Hall pays at every rank: its star lines and the Wishing Well
     };
 
     it('reads what each track pays the Hall at each rank through the game\'s own Passive Production lines', () => {
-        registerHallSky(SKY);
+        registerHallSky(withRequiredThree(SKY));
         const rows = hallLinesByRank(GUILD_UPGRADES);
         expect(rows.find(r => r.trackId === 'es_woodpile')).toEqual({
             trackId: 'es_woodpile', name: 'Woodpile', itemId: 'item_oak_wood',
@@ -184,7 +185,7 @@ describe('the Guild Hall pays at every rank: its star lines and the Wishing Well
     });
 
     it('a star line is a way in from the Guild Hall: the star on its line, its ranks on the box and in the hover', () => {
-        registerHallSky(SKY);
+        registerHallSky(withRequiredThree(SKY));
         const book = buildEncyclopedia({ ...ledgerContent(), hallProduction: hallLinesByRank(GUILD_UPGRADES) });
         const way = waysIn(book, I('item_oak_wood')).find(w => w.how === HOW.UPGRADE);
         expect(way).toMatchObject({ from: T('token_guild_hall'), caption: 'hallStar', captionArgs: { star: 'Woodpile' }, star: 'Woodpile' });

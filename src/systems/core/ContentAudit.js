@@ -37,7 +37,7 @@ import { authoredSkillPerks } from '../../config/registries/perkRegistry.js';
 import { perkFindings } from './perkRule.js';
 import { masteryFindings } from './masteryRule.js';
 import { authoredHallSky } from '../../config/registries/hallStarRegistry.js';
-import { hallStarFindings, hallFallbackFindings } from './hallStarRule.js';
+import { hallStarFindings, hallRequiredFindings } from './hallStarRule.js';
 import { gearDefenceFindings } from './gearDefenceRule.js';
 import { effectStackFindings } from './effectStackRule.js';
 import { authoredEvents } from '../../config/registries/eventRegistry.js';
@@ -838,16 +838,15 @@ function auditMastery(out) {
 
 /**
  * The Guild Hall's authored stars: one that cannot open, names a missing item, Token or
- * constellation, or carries a rule the guild cannot hold; and, allowed, each of Bunk Beds, Bank Tabs,
- * the Wishing Well and their constellations still on the game's stand-in. The rules live in
- * `hallStarRule.js`.
+ * constellation, or carries a rule the guild cannot hold; and each of Bunk Beds, Bank Tabs and the
+ * Wishing Well the sky lacks. The rules live in `hallStarRule.js`.
  */
 function auditHallStars(out) {
     for (const f of hallStarFindings({ sky: authoredHallSky(), items: ITEMS || {}, tokens: TOKENS || {} })) {
         out.push(finding(`Hall star "${f.entityId}"`, f.message));
     }
-    for (const f of hallFallbackFindings({ sky: authoredHallSky() })) {
-        out.push(finding(`${f.entityType} "${f.entityId}"`, `(allowed) ${f.message}`));
+    for (const f of hallRequiredFindings({ sky: authoredHallSky() })) {
+        out.push(finding(`${f.entityType} "${f.entityId}"`, f.message));
     }
 }
 

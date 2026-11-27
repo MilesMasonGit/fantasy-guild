@@ -4,7 +4,8 @@ import { isPlanned, planOf, tierLabel, tierLevelsOf, tierLevelAt } from './plan.
 import { materialsOfToken } from '../../world/materials.js';
 import { chanceText } from '../../../utils/Formatters.js';
 import { normaliseStarterCamp } from '../../../config/starterCampShape.js';
-import { authoredStars, skyWithFallback, HALL_NODE, WISHING_WELL_STAR } from '../../../config/guildUpgrades.js';
+import { normaliseHallSky } from '../../../config/hallStars.js';
+import { authoredStars, HALL_NODE, WISHING_WELL_STAR } from '../../../config/guildUpgrades.js';
 import { ringStarsOf, ringOfStar } from '../../world/ringStars.js';
 import { expandBearer } from '../../effects/effectLibrary.js';
 import { stationSkillOf, stationKindOf, KEYWORD } from '../../effects/statements.js';
@@ -813,9 +814,9 @@ export function spotArrivalRules(world, place) {
     return out;
 }
 
-/** The Wishing Well's star (`hallStars.js` record): `hallSky`'s, the stand-in when it lacks one, or the game's sky's when there is no `hallSky`. */
+/** The Wishing Well's star (`hallStars.js` record): `hallSky`'s, or the game's sky's when there is no `hallSky`. */
 function wishingWellOf(hallSky) {
-    const stars = isObject(hallSky) ? skyWithFallback(hallSky).stars : authoredStars();
+    const stars = isObject(hallSky) ? normaliseHallSky(hallSky).stars : authoredStars();
     return stars.find(s => s.id === WISHING_WELL_STAR) || null;
 }
 
@@ -831,8 +832,7 @@ function wishingWellOf(hallSky) {
  * @returns {Map<number, string[]>} each ring a star opens, with the stars that open it
  */
 function hallStarRules(hallSky, { add, names, inputsOf }) {
-    // The game's stand-ins for Bunk Beds, Bank Tabs and the Wishing Well count where the sky lacks them.
-    const { stars } = skyWithFallback(isObject(hallSky) ? hallSky : {});
+    const { stars } = normaliseHallSky(isObject(hallSky) ? hallSky : {});
     const byRing = ringStarsOf(stars);
     const out = new Map([...byRing].map(([ring, list]) => [ring, list.map(s => s.id)]));
     if (!byRing.size) return out;

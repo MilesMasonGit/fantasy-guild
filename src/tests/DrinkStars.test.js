@@ -124,7 +124,7 @@ const strong = (value, options) => rule(EFFECT_TYPES.STRONG_DRINK, value, option
 /** A sky of one star on the Hearth with one rank per list of rules. */
 function sky(ranks) {
     return {
-        constellations: {},
+        constellations: { hearth: { id: 'hearth', name: 'The Hearth' } },
         stars: {
             ds_star: {
                 id: 'ds_star', constellation: 'hearth', name: 'Brewer', node: { x: 0, y: -2.6 }, links: [HALL_NODE],

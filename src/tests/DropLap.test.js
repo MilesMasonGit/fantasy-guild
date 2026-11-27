@@ -23,6 +23,7 @@ import { getPaletteEntry } from '../config/registries/modifierPalette.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerHallSky, authoredHallSky } from '../config/registries/hallStarRegistry.js';
+import { withRequiredThree } from './fixtures/hallSky.js';
 import { PASSIVE_LAP_BASE_MS } from '../config/registries/tokenConstants.js';
 import { getUpgradeDef, HALL_NODE } from '../config/guildUpgrades.js';
 import { resetMatTuning } from '../config/matTuning.js';
@@ -93,9 +94,10 @@ const lapStar = () => {
     return star;
 };
 
-/** The lap star, in a sky of its own (beside a Well line star, for the ledger's words). */
+/** The lap star and its constellation, in a sky of their own. */
 function lapSky(star = lapStar()) {
-    return { constellations: {}, stars: { [LAP_STAR_ID]: { id: LAP_STAR_ID, ...star } } };
+    const constellation = structuredClone(authoredHallSky().constellations[star.constellation]);
+    return { constellations: { [constellation.id]: constellation }, stars: { [LAP_STAR_ID]: { id: LAP_STAR_ID, ...star } } };
 }
 
 const seeds = () => SpriteLayer.countOnBoard('fixture_lap_seed');
@@ -116,7 +118,7 @@ beforeEach(() => {
     GameState.state.heroes = [];
     GameState.state.inventory.maxSlots = 50;
     clearMat();
-    registerHallSky(lapSky());
+    registerHallSky(withRequiredThree(lapSky()));
     GuildUpgradeManager.recompute();
 });
 
@@ -278,9 +280,9 @@ describe('⭐ the lap star in words, in the sky and in the rules', () => {
     it('Lap Speed is a Guild Hall star\'s axis only, and the boot audit finds nothing wrong with the star', () => {
         expect(getPaletteEntry(EFFECT_TYPES.PASSIVE_LAP)).toMatchObject({ guildOnly: true, label: 'Lap Speed', buckets: ['percentage'] });
         expect(paletteForKeyword(KEYWORD.PROVIDES).map(e => e.type)).not.toContain(EFFECT_TYPES.PASSIVE_LAP);
-        const sky = lapSky();
+        const sky = withRequiredThree(lapSky());
         sky.stars[LAP_STAR_ID].ranks.forEach(r => { r.price = [{ itemId: 'item_water', quantity: 1 }]; });
-        expect(hallStarFindings({ sky, items: { item_water: {} }, tokens: {} })).toEqual([]);
+        expect(hallStarFindings({ sky, items: { item_water: {}, item_oak_wood: {} }, tokens: {} })).toEqual([]);
     });
 
     it('a Region\'s Lap Time rule moves the one lap too (the guild-wide aggregator)', () => {
@@ -300,7 +302,7 @@ describe('⭐ the ledger rates the Hall at the lap its setup holds', () => {
         const sky = paceHallSky();
         sky.stars[LAP_STAR_ID] = { id: LAP_STAR_ID, ...lapStar(), links: [HALL_NODE] };
         sky.stars[LAP_STAR_ID].ranks.forEach(r => { r.price = [{ itemId: 'item_oak_wood', quantity: 10 }]; r.tier = 0; });
-        c.hallSky = sky;
+        c.hallSky = withRequiredThree(sky);
         return c;
     };
     const HALL = { token: 'token_guild_hall' };

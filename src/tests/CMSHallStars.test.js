@@ -203,11 +203,12 @@ describe('the Guild Hall page', () => {
         expect(well.querySelector('[data-hall-star-ranks]').textContent).toContain('12 item_water each Passive Production lap');
     });
 
-    it('heads the page with the stand-in constellations while the workspace lacks them, holding its stars there', () => {
+    it('lists a star whose constellation the workspace lacks under no constellation, and makes up none', () => {
         const infirmary = { ...STAR, id: 'star_infirmary', constellation: 'hearth', links: ['roster_size'] };
         store().hydrate(workspace({ hallConstellations: {}, hallStars: { star_infirmary: infirmary } }));
         const { container } = render(React.createElement(HallStarsPage));
-        expect(container.querySelector('[data-hall-star="star_infirmary"]').closest('[data-hall-constellation]').getAttribute('data-hall-constellation')).toBe('hearth');
+        expect(container.querySelector('[data-hall-star="star_infirmary"]').closest('[data-hall-constellation]').getAttribute('data-hall-constellation')).toBe('');
+        expect(container.querySelector('[data-hall-constellation="hearth"]')).toBeNull();
         expect(container.querySelector('[data-hall-constellation="vault"]')).toBeNull();
         expect(container.querySelector('[data-hall-star="roster_size"]')).toBeNull();
     });

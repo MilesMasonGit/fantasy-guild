@@ -1,4 +1,4 @@
-// the progression ledger's view of the Guild Hall: every track (authored star or the game's stand-in), its ranks, and the neighbour gate
+// the progression ledger's view of the Guild Hall: every star's track, its ranks, and the neighbour gate
 
 import { HALL_NODE, ROSTER_STAR } from '../../../../src/config/guildUpgrades.js';
 import { rankOf } from '../../../../src/config/hallStars.js';
@@ -7,13 +7,11 @@ import { EFFECT_TYPES } from '../../../../src/systems/effects/constants.js';
 
 /**
  * One list for the profiles and the pace to read the Hall from: the stars the rate book was built
- * with (`book.hall`, from the content's `hallSky`, with the game's stand-ins for Bunk Beds, Bank Tabs
- * and the Wishing Well where it lacks them), each as
+ * with (`book.hall`, from the content's `hallSky`), each as
  *
- *     { id, name, builtIn, maxRank, links, price(rank), coins(rank), tier(rank), star }
+ *     { id, name, maxRank, links, price(rank), coins(rank), tier(rank), star }
  *
- * `price(r)`, `coins(r)` (the coins it asks beside its items, 0 for none) and `tier(r)` are rank r's own (r from 1). `builtIn` marks a stand-in: it has no tier and
- * the ledger proposes no price for it. Once authored, the three are priced like any star.
+ * `price(r)`, `coins(r)` (the coins it asks beside its items, 0 for none) and `tier(r)` are rank r's own (r from 1).
  *
  * Pure.
  */
@@ -30,26 +28,22 @@ export function starMovesLap(star) {
     return starRulesOf(star).some(r => r.type === EFFECT_TYPES.PASSIVE_LAP);
 }
 
-/** Every Hall track, in the book's order (the stand-ins first). */
+/** Every Hall track, in the book's order. */
 export function hallTracksOf(book) {
     return (book.hall?.stars || []).map(star => ({
-        id: star.id, name: star.name, builtIn: !!star.fallback, maxRank: star.ranks.length, links: star.links,
+        id: star.id, name: star.name, maxRank: star.ranks.length, links: star.links,
         price: (r) => rankOf(star, r)?.price || [], coins: (r) => rankOf(star, r)?.coins || 0,
         tier: (r) => rankOf(star, r)?.tier ?? null, star, description: star.description
     }));
 }
 
 /**
- * The ranks a new guild holds without buying them: a stand-in's first ranks whose price is nothing,
- * and Bunk Beds' first however it is priced (a new game holds it, for the hero made on the new-game
- * screen). Any other authored star has none.
+ * The ranks a new guild holds without buying them: Bunk Beds' first however it is priced (a new game
+ * holds it, for the hero made on the new-game screen). Any other star has none.
  */
 export function freeRanks(track) {
     if (!track) return 0;
-    let rank = 0;
-    if (track.builtIn) while (rank < track.maxRank && track.price(rank + 1).length === 0) rank++;
-    if (track.id === ROSTER_STAR) rank = Math.max(rank, Math.min(1, track.maxRank));
-    return rank;
+    return track.id === ROSTER_STAR ? Math.min(1, track.maxRank) : 0;
 }
 
 /**

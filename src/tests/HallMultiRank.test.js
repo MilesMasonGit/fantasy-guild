@@ -13,6 +13,7 @@ import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { KEYWORD } from '../systems/effects/statements.js';
 import { registerHallSky } from '../config/registries/hallStarRegistry.js';
+import { withRequiredThree } from './fixtures/hallSky.js';
 import { HALL_NODE } from '../config/guildUpgrades.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
@@ -62,7 +63,7 @@ function sky() {
     };
 }
 
-const SKY = sky();
+const SKY = withRequiredThree(sky());
 
 function hero(id) {
     const skills = {};

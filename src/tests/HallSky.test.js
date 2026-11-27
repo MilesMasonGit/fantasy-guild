@@ -16,9 +16,10 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { addCoins } from '../systems/inventory/Coins.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
 import {
-    GUILD_UPGRADES, CONSTELLATIONS, FALLBACK_CONSTELLATION_IDS, HALL_NODE, UPGRADE_SPRITES, getUpgradeDef, totalPrice
+    GUILD_UPGRADES, CONSTELLATIONS, HALL_NODE, UPGRADE_SPRITES, getUpgradeDef, totalPrice
 } from '../config/guildUpgrades.js';
 import { registerHallSky, authoredHallSky } from '../config/registries/hallStarRegistry.js';
+import { withRequiredThree } from './fixtures/hallSky.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import { hallCameraSides } from './fixtures/hallCameraSides.js';
 import { withOuterUpgrade, OUTER_UPGRADE_ID as OUTER } from './fixtures/outerUpgrade.js';
@@ -211,17 +212,17 @@ describe('the Hall sky: the shipped constellations', () => {
         const ids = new Set(CONSTELLATIONS.map(c => c.id));
         for (const def of GUILD_UPGRADES) expect(ids.has(def.constellation), def.id).toBe(true);
         expect(CONSTELLATIONS.map(c => c.name)).toEqual(Object.values(authoredHallSky().constellations).map(c => c.name));
-        // The data authors the three the stand-ins held (The Hearth, The Vault, The Well), so none is a stand-in.
-        for (const id of FALLBACK_CONSTELLATION_IDS) expect(ids.has(id), id).toBe(true);
-        expect(CONSTELLATIONS.filter(c => c.fallback).map(c => c.id)).toEqual([]);
-        expect(CONSTELLATIONS.filter(c => FALLBACK_CONSTELLATION_IDS.includes(c.id)).map(c => c.name))
+        // The data authors the constellations of Bunk Beds, Bank Tabs and the Wishing Well.
+        const three = ['hearth', 'vault', 'well'];
+        for (const id of three) expect(ids.has(id), id).toBe(true);
+        expect(CONSTELLATIONS.filter(c => three.includes(c.id)).map(c => c.name))
             .toEqual(['The Hearth', 'The Vault', 'The Well']);
     });
 });
 
 describe('the Hall sky: constellations', () => {
-    // The stand-ins alone: the shipped sky's stars join the Hearth and the Well.
-    beforeEach(() => registerHallSky({}));
+    // The three the game reads by id alone: the shipped sky's stars join the Hearth and the Well.
+    beforeEach(() => registerHallSky(withRequiredThree()));
     afterEach(() => registerHallSky(null));
 
     it('finishes a constellation when every star in it is lit', () => {

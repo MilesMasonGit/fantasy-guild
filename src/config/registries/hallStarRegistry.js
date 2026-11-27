@@ -7,8 +7,7 @@ import { describeStarRank } from '../../systems/progression/hallStarText.js';
 /**
  * The sky's authored constellations and stars, read from `data/hallStars.json` (shape:
  * `hallStars.js`) and put into the Hall's live lists (`guildUpgrades.setHallSky`) as this module
- * loads. Without the file the Hall holds only the stand-ins for Bunk Beds, Bank Tabs and the Wishing
- * Well (`guildUpgrades.FALLBACK_SKY`).
+ * loads. Without the file the Hall is empty.
  *
  * ⚠️ **Never hand-edit `data/hallStars.json`.** The CMS writes it wholesale on Sync.
  */
