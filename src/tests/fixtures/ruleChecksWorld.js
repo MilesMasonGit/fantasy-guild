@@ -1,6 +1,6 @@
 // Test fixture: the pace world (`paceWorld.js`) for the ledger's rule checks (`LedgerRuleChecks.test.js`):
 // a Tin Vein beside the Copper one (two pieces of work a Mining star boosts), and three chains at the
-// Still: Plank (one oak), Copper Mash (two ore) and Copper Cake (two mash), with the small sky.
+// Still: Plank (one oak), Copper Mash (two ore) and Copper Cake (two mash, 30 XP), with the small sky.
 
 import { paceContent } from './paceWorld.js';
 import { paceHallSky } from './paceHallSky.js';
@@ -22,7 +22,7 @@ export function ruleContent({ sky = true } = {}) {
     c.recipes.push(
         recipe('recipe_plank', 'Plank', 1, [['item_oak_wood', 1]], 'item_plank'),
         recipe('recipe_mash', 'Copper Mash', 3, [['item_copper_ore', 2]], 'item_mash'),
-        recipe('recipe_cake', 'Copper Cake', 10, [['item_mash', 2]], 'item_cake')
+        recipe('recipe_cake', 'Copper Cake', 30, [['item_mash', 2]], 'item_cake')
     );
     if (sky) c.hallSky = paceHallSky();
     return c;

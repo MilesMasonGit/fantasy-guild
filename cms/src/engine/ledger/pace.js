@@ -1696,11 +1696,14 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             });
         }
 
-        // A chain paying far more or less XP per raw unit than its tier's others.
+        // A chain paying more or less XP an hour of its gathering than its tier's others: far off is a warning.
+        const warnAt = settings.chainXpWarnFactor;
         for (const c of chainXpRows()) {
             if (c.off === null || !(Math.abs(c.off) > tol + 1e-9)) continue;
-            add('chain-xp', itemKey(c.item), `${c.name} (${tierLabel(c.tier)}, a chain of ${c.links} links) pays ${PACE_TEXT.figure(c.perRaw)} XP per raw unit (${PACE_TEXT.figure(c.xp)} XP over ${PACE_TEXT.figure(c.raw)} raw), ${Math.round(Math.abs(c.off) * 100)} % ${c.off > 0 ? 'over' : 'under'} its tier's median of ${PACE_TEXT.figure(c.median)} XP (±${settings.tolerancePct} %; BALANCE_RULES section 1: each link of a chain pays its own XP, so a tier's chains pay about alike for what they take from the ground). Move a link's XP, or its ingredient counts, toward the median.`, {
-                severity: 'warn', name: c.name
+            const ratio = c.off + 1;
+            const far = ratio > warnAt + 1e-9 || ratio < 1 / warnAt - 1e-9;
+            add('chain-xp', itemKey(c.item), `${c.name} (${tierLabel(c.tier)}, a chain of ${c.links} links) pays ${PACE_TEXT.figure(c.xpPerHour)} XP an hour of the gathering behind it (${PACE_TEXT.figure(c.xp)} XP over ${PACE_TEXT.short(c.rawHours)} of gathering ${PACE_TEXT.figure(c.raw)} raw), ${Math.round(Math.abs(c.off) * 100)} % ${c.off > 0 ? 'over' : 'under'} its tier's median of ${PACE_TEXT.figure(c.median)} XP an hour (±${settings.tolerancePct} %, a warning beyond ${warnAt}× either way; BALANCE_RULES section 1: each link of a chain pays its own XP, so a tier's chains pay about alike for the time they take from the ground). ${far ? "Move a link's XP, or its ingredient counts, toward the median." : 'Information: within the warning factor.'}`, {
+                severity: far ? 'warn' : 'info', name: c.name
             });
         }
 
@@ -2467,14 +2470,17 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
 
     let chainMemo = null;
     /**
-     * Every chain's total XP per raw unit (BALANCE_RULES section 1: each link pays its own XP, so ore
-     * to ingot to dagger pays three times). A chain ends at an item a station makes that no live
-     * station recipe spends; its XP is every link's for one of it, each link at its authored XP (one
-     * action at Bare, no perks), over the raw units it takes: what gathering, a water, a field or
-     * anything but a station gives, each counted once. Each item comes from its best source at Bare
-     * at the end's stage. Beside each, the median of its tier's chains (by the end's tier) and how far
-     * off it is, null where a tier has fewer than {@link CHAIN_MEDIAN_MIN} chains. A chain through a
-     * loop is left out. `[{ item, name, tier, cap, xp, raw, perRaw, links, median, off }]`, by tier then name.
+     * Every chain's total XP per hour of the gathering behind it (BALANCE_RULES section 1: each link
+     * pays its own XP, so ore to ingot to dagger pays three times). A chain ends at an item a station
+     * makes that no live station recipe spends; its XP is every link's for one of it, each link at its
+     * authored XP (one action at Bare, no perks), over the hours its raw inputs take to gather: what
+     * gathering, a water, a field or anything but a station gives, each at its own Bare source's rate
+     * (a rare drop at its find rate; one in stock is free). Each item comes from its best source at
+     * Bare at the end's stage; a raw input with no source by then leaves the chain out. Beside each,
+     * the median of its tier's chains (by the end's tier) and how far off it is, null where a tier has
+     * fewer than {@link CHAIN_MEDIAN_MIN} chains. A chain through a loop is left out.
+     * `[{ item, name, tier, cap, xp, raw, rawHours, xpPerHour, links, median, off }]`, `raw` its raw
+     * units, by tier then name.
      */
     function chainXpRows() {
         if (chainMemo) return chainMemo;
@@ -2489,12 +2495,14 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             const key = `${itemId}|${cap}`;
             if (memo.has(key)) return memo.get(key);
             if (stack.has(itemId)) return null;
-            const work = supplyOf(itemId, PROFILE.BARE, cap).work;
+            const source = supplyOf(itemId, PROFILE.BARE, cap);
+            const work = source.work;
             let out = null;
             if (!work || !isStation(work)) {
+                const hours = source.perHour === Infinity ? 0 : source.perHour > 0 ? 1 / source.perHour : null;
                 const r = work ? authoredRate(work, cap) : null;
                 const made = r?.ok ? sum(Object.values(r.items || {})) : 0;
-                out = { xp: made > 0 ? sum(Object.values(r.xp || {})) / made : 0, raw: 1, links: work ? 1 : 0 };
+                if (hours !== null) out = { xp: made > 0 ? sum(Object.values(r.xp || {})) / made : 0, raw: 1, hours, links: work ? 1 : 0 };
             } else {
                 const r = authoredRate(work, cap);
                 const made = r?.ok ? r.items?.[itemId] || 0 : 0;
@@ -2502,6 +2510,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                     stack.add(itemId);
                     let xp = sum(Object.values(r.xp || {})) / made;
                     let raw = 0;
+                    let hours = 0;
                     let links = 0;
                     let whole = true;
                     for (const [input, n] of Object.entries(r.inputs || {})) {
@@ -2509,10 +2518,11 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                         if (!c) { whole = false; break; }
                         xp += (n / made) * c.xp;
                         raw += (n / made) * c.raw;
+                        hours += (n / made) * c.hours;
                         links = Math.max(links, c.links);
                     }
                     stack.delete(itemId);
-                    if (whole && raw > 0) out = { xp, raw, links: links + 1 };
+                    if (whole && hours > 0) out = { xp, raw, hours, links: links + 1 };
                 }
             }
             memo.set(key, out);
@@ -2531,7 +2541,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             if (cap === null || tier === null || !counted(key)) continue;
             const c = chainOf(itemId, cap, new Set());
             if (!c || c.links < 2) continue;
-            rows.push({ item: itemId, name: nameOf(key), tier, cap, xp: c.xp, raw: c.raw, perRaw: c.xp / c.raw, links: c.links, median: null, off: null });
+            rows.push({ item: itemId, name: nameOf(key), tier, cap, xp: c.xp, raw: c.raw, rawHours: c.hours, xpPerHour: c.xp / c.hours, links: c.links, median: null, off: null });
         }
         const byTier = new Map();
         for (const row of rows) {
@@ -2540,10 +2550,10 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         }
         for (const group of byTier.values()) {
             if (group.length < CHAIN_MEDIAN_MIN) continue;
-            const median = medianOf(group.map(r => r.perRaw));
+            const median = medianOf(group.map(r => r.xpPerHour));
             for (const row of group) {
                 row.median = median;
-                row.off = median > 0 ? row.perRaw / median - 1 : null;
+                row.off = median > 0 ? row.xpPerHour / median - 1 : null;
             }
         }
         rows.sort((a, b) => a.tier - b.tier || a.name.localeCompare(b.name));
