@@ -1126,9 +1126,28 @@ less micromanagement than area flags).
   crit, a drink's buff; the tooltip lists them too, owner 2026-11-21, T-639), the actions, and how
   many were collected this run. A press that moves 8 px is a drag instead, and the click that ends
   a drag picks nothing; in Select mode a click selects. The mat stays where it is while the Bank is
-  open. **Discard** throws a stack away (it asks first), nothing back (owner 2026-11-21, T-638);
-  nothing is sold.
+  open. **Sell** takes the Bank's whole stack for its coin worth, after a confirm (brief 870 C1; it
+  replaced Discard), and **Use** stands beside it for an item that has one (below).
   *(`ItemDrawer.jsx`, `SideDrawer.jsx`)*
+- **Using items** — **Built (brief 400 B4); no shipped item has a Use yet** (the Bird Nest's comes
+  as a content pack). An item may carry a **Use**, authored in the CMS item editor as drops (`use:
+  { drops: [{ itemId, chance, minQty, maxQty }] }`, a recipe output's chance and amounts). In the
+  Item drawer an item with a Use shows **1, 50 %, All −1 and All** (half rounds up; on a stack of
+  one, 50 % and All −1 are greyed) and a **slider** over the stack, then a **Use N** button beside
+  Sell. Use **pays out at once, into the Bank, with no hero**, station or time, and asks no
+  confirm: each copy rolls every drop as a work cycle rolls its outputs (its chance, then an amount
+  from min to max) on the game's own random numbers; no rule reaches it (no Yield, Double Loot or
+  Lucky). Past 10,000 copies at once each drop pays its expected amount, made whole by chance. The
+  copies leave the Bank first, so using the last of a stack frees its slot. **A full Bank loses
+  nothing**: a drop the Bank has no room for (a new kind with no free slot, or a stack at the
+  shared ceiling) goes to the mat as loot, as all income does, and the Bank Full banner says so;
+  it comes in when room is made. A small line under the actions says what the Use gave ("Used 5
+  Bird Nest: 7 Wheat Seed, 2 Oak Seedling and 4 more.") and, in amber, how many kinds wait on the
+  mat; after a Use that took the whole stack it stays on the item the drawer moves to, until
+  another item is picked or the Bank closes. The progression ledger (the CMS's checks, pace and
+  economy, and the Encyclopedia) reads a Use as a way to get each drop ("used from the Bank"; the
+  chart's line from the item says *use*). Both content audits name a drop naming a missing item
+  and a Use that gives nothing. *(`itemUse.js`, `inventory/ItemUse.js`, `ItemUseControl.jsx`)*
 - **Supply is automatic**: Tokens take inputs from the Bank, then from loot on
   the mat. A cycle is all-or-nothing; first come, first served.
 - **Tools and weapons that break** — **Built (brief 480 L1); no content uses

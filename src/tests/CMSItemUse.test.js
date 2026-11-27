@@ -11,8 +11,8 @@ import { useSimulationStore } from '../../cms/src/stores/useSimulationStore';
 import { syncFiles } from '../../cms/src/engine/recipeSync';
 import { loadGameData } from '../../cms/gameData.js';
 import { validateWorkspace } from '../../cms/schemaCheck.js';
-import { useDropsOf as cmsUseDropsOf } from '../../cms/src/utils/constants';
-import { useDropsOf } from '../config/registries/itemUse.js';
+import { itemUseDropsOf as cmsUseDropsOf } from '../../cms/src/utils/constants';
+import { itemUseDropsOf } from '../config/registries/itemUse.js';
 import ItemEditor from '../../cms/src/components/editors/ItemEditor.jsx';
 
 /**
@@ -74,7 +74,7 @@ afterAll(() => { for (const dir of tmpRoots) fs.rmSync(dir, { recursive: true, f
 
 describe('⭐ the Use through Restore, Recalculate and Sync', () => {
     it('the CMS reads a Use with the game\'s own rule', () => {
-        expect(cmsUseDropsOf).toBe(useDropsOf);
+        expect(cmsUseDropsOf).toBe(itemUseDropsOf);
     });
 
     it('comes back from Restore from Game and goes out with Sync exactly as written', () => {

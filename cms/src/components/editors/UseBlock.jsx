@@ -3,7 +3,7 @@ import { PackageOpen, Plus, X } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { Section } from '../shared/EditorLayout';
 import { NumberCell } from '../shared/IOEntryList';
-import { useProblem } from '../../utils/constants';
+import { itemUseProblem } from '../../utils/constants';
 
 /**
  * An item's Use (`use: { drops: [{ itemId, chance, minQty, maxQty }] }`): in the game's Bank, using
@@ -28,7 +28,7 @@ function perCopy(line) {
 export default function UseBlock({ item, onPatch }) {
   const items = useEntityStore((s) => s.items);
   const drops = Array.isArray(item?.use?.drops) ? item.use.drops : [];
-  const problem = useProblem(item);
+  const problem = itemUseProblem(item);
 
   const itemList = useMemo(
     () => Object.values(items || {}).filter((i) => i?.id && i.id !== item?.id).sort((a, b) => String(a.name || a.id).localeCompare(String(b.name || b.id))),

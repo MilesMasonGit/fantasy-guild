@@ -418,8 +418,17 @@ item held.
   the **count**; the **tags as pills**, each explaining itself on hover (one line a tag, in the
   strings file's `itemTags` section; an item with no tags shows its kind); **what it does** (tool,
   break chance, weapon stats, arrow, resists and cuts, what it restores, the description); then the
-  **actions** (Use, later Sell and Discard) and **Collected this run** small at the foot. The mat
-  stays put while the Bank and the drawer lie over it. *New, unapproved.*
+  **actions** and **Collected this run** small at the foot. The mat stays put while the Bank and
+  the drawer lie over it. *New, unapproved.*
+- **The drawer's actions** (briefs 400 B4, 870 C1): one row of main `KitButton`s, **Use N** first
+  (an item with a Use only) and **Sell**. Over the row, for an item with a Use, the amount: four
+  small square chips in one row, **1 · 50% · All -1 · All**, on the tag pills' dark fill with the
+  frames' line, muted words, white on hover, the chip matching the amount in gold (as a selected
+  tab), greyed where it would mean 1 on a stack of one; under them a `ui-range` slider over the
+  stack (none for a stack of one). Under the row, after a Use, one small line of what came ("Used 5
+  Bird Nest: 7 Wheat Seed, 2 Oak Seedling and 4 more.", three named at most) and, in amber, what
+  waits on the mat ("No room in the Bank for 2 kinds: they wait on the mat as loot."). While Sell
+  asks to confirm, the amount and the Use button step aside. *New, unapproved.*
 
 ## The Upgrade drawer and the Hall's star titles (brief 570)
 

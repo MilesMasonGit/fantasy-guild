@@ -3,9 +3,9 @@ import { GameState } from '../state/GameState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { ItemRateTracker } from '../systems/inventory/ItemRateTracker.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
-import { useDropsOf, hasUse, useProblem } from '../config/registries/itemUse.js';
-import { useItem, rollUse, ROLL_EACH_UP_TO } from '../systems/inventory/ItemUse.js';
-import { useAmountOf } from '../ui/components/drawer/ItemUseControl.jsx';
+import { itemUseDropsOf, hasUse, itemUseProblem } from '../config/registries/itemUse.js';
+import { applyItemUse, rollUse, ROLL_EACH_UP_TO } from '../systems/inventory/ItemUse.js';
+import { amountForPreset } from '../ui/components/drawer/ItemUseControl.jsx';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { ENGINE_EVENTS } from '../systems/core/engineEvents.js';
@@ -63,23 +63,23 @@ const onFloor = (id) => SpriteLayer.countOnBoard(id);
 
 describe('an item\'s Use as the game reads it', () => {
     it('reads its drops: chance 100 and one of each when absent, whole amounts, a line that can never drop left out', () => {
-        expect(useDropsOf(NEST)).toEqual([
+        expect(itemUseDropsOf(NEST)).toEqual([
             { itemId: 'iu_seed', chance: 100, minQty: 1, maxQty: 2 },
             { itemId: 'iu_rare', chance: 25, minQty: 1, maxQty: 1 }
         ]);
-        expect(useDropsOf({ use: { drops: [{ itemId: 'a' }, { itemId: 'b', chance: 150, minQty: 3, maxQty: 1.7 }] } }))
+        expect(itemUseDropsOf({ use: { drops: [{ itemId: 'a' }, { itemId: 'b', chance: 150, minQty: 3, maxQty: 1.7 }] } }))
             .toEqual([{ itemId: 'a', chance: 100, minQty: 1, maxQty: 1 }, { itemId: 'b', chance: 100, minQty: 1, maxQty: 3 }]);
-        expect(useDropsOf({ use: { drops: [{ itemId: 'a', chance: 0 }, { chance: 50 }, { itemId: 'c', minQty: 0, maxQty: 0 }] } })).toEqual([]);
-        expect(useDropsOf({})).toEqual([]);
-        expect(useDropsOf(null)).toEqual([]);
+        expect(itemUseDropsOf({ use: { drops: [{ itemId: 'a', chance: 0 }, { chance: 50 }, { itemId: 'c', minQty: 0, maxQty: 0 }] } })).toEqual([]);
+        expect(itemUseDropsOf({})).toEqual([]);
+        expect(itemUseDropsOf(null)).toEqual([]);
         expect(hasUse(NEST)).toBe(true);
         expect(hasUse({ id: 'x' })).toBe(false);
     });
 
     it('a Use that gives nothing is an audit line; no Use, or one that gives, is none; a drop naming no item is named at boot', () => {
-        expect(useProblem({})).toBeNull();
-        expect(useProblem(NEST)).toBeNull();
-        expect(useProblem({ use: { drops: [] } })).toMatch(/its Use gives nothing/);
+        expect(itemUseProblem({})).toBeNull();
+        expect(itemUseProblem(NEST)).toBeNull();
+        expect(itemUseProblem({ use: { drops: [] } })).toMatch(/its Use gives nothing/);
         const lines = auditContent();
         expect(lines.some(f => f.where === 'Item "iu_broken"' && /Something its Use gives points at the item "iu_missing"/.test(f.what))).toBe(true);
         expect(lines.some(f => f.where === 'Item "iu_empty"' && /its Use gives nothing/.test(f.what))).toBe(true);
@@ -92,7 +92,7 @@ describe('the rolls', () => {
         // Copy 1: seed amount 0.9 → 2; rare chance 0.1 → lands, amount → 1. Copy 2: seed 0.2 → 1; rare 0.9 → misses.
         const stream = [0.9, 0.1, 0.5, 0.2, 0.9];
         const random = () => stream.shift();
-        expect([...rollUse(useDropsOf(NEST), 2, random)]).toEqual([['iu_seed', 3], ['iu_rare', 1]]);
+        expect([...rollUse(itemUseDropsOf(NEST), 2, random)]).toEqual([['iu_seed', 3], ['iu_rare', 1]]);
         expect(stream).toEqual([]);
     });
 
@@ -101,7 +101,7 @@ describe('the rolls', () => {
             GameState.state.inventory.items = {};
             InventoryManager.addItem('iu_nest', 40);
             rolls = sameRolls(seed);
-            const result = useItem('iu_nest', 40);
+            const result = applyItemUse('iu_nest', 40);
             rolls.mockRestore();
             rolls = null;
             return result.paid;
@@ -117,12 +117,12 @@ describe('the rolls', () => {
 
     it('past the roll-each limit, each line pays its expected amount made whole by chance', () => {
         const big = ROLL_EACH_UP_TO * 10;
-        const out = rollUse(useDropsOf(NEST), big, () => 0.5);
+        const out = rollUse(itemUseDropsOf(NEST), big, () => 0.5);
         expect(out.get('iu_seed')).toBe(big * 1.5);
         expect(out.get('iu_rare')).toBe(big * 0.25);
         // At the limit, every copy still rolls.
         let draws = 0;
-        rollUse(useDropsOf(NEST), ROLL_EACH_UP_TO, () => { draws++; return 0.99; });
+        rollUse(itemUseDropsOf(NEST), ROLL_EACH_UP_TO, () => { draws++; return 0.99; });
         expect(draws).toBe(ROLL_EACH_UP_TO * 2);
     });
 });
@@ -130,14 +130,14 @@ describe('the rolls', () => {
 describe('a Use pays out at once, into the Bank, with no hero', () => {
     it('each amount the drawer offers: 1, 50 %, All -1 and All', () => {
         InventoryManager.addItem('iu_sure', 10);
-        const amounts = ['one', 'half', 'allButOne', 'all'].map(p => useAmountOf(p, 10));
+        const amounts = ['one', 'half', 'allButOne', 'all'].map(p => amountForPreset(p, 10));
         expect(amounts).toEqual([1, 5, 9, 10]);
         // A sure 3 a copy: every amount pays exactly three times what it takes.
         let left = 10;
         let seeds = 0;
         for (const preset of ['one', 'half', 'allButOne', 'all']) {
-            const n = useAmountOf(preset, left);
-            const result = useItem('iu_sure', n);
+            const n = amountForPreset(preset, left);
+            const result = applyItemUse('iu_sure', n);
             expect(result).toEqual({ itemId: 'iu_sure', used: n, paid: [{ itemId: 'iu_seed', quantity: 3 * n }], waiting: [] });
             left -= n;
             seeds += 3 * n;
@@ -152,21 +152,21 @@ describe('a Use pays out at once, into the Bank, with no hero', () => {
     });
 
     it('a stack of one: 50 % and All -1 are 1, as All is', () => {
-        expect(['one', 'half', 'allButOne', 'all'].map(p => useAmountOf(p, 1))).toEqual([1, 1, 1, 1]);
-        expect(useAmountOf('half', 7)).toBe(4);
+        expect(['one', 'half', 'allButOne', 'all'].map(p => amountForPreset(p, 1))).toEqual([1, 1, 1, 1]);
+        expect(amountForPreset('half', 7)).toBe(4);
     });
 
     it('uses at most what the Bank holds; none held, no Use, or nothing asked uses nothing', () => {
         InventoryManager.addItem('iu_sure', 2);
-        expect(useItem('iu_sure', 50).used).toBe(2);
+        expect(applyItemUse('iu_sure', 50).used).toBe(2);
         expect(count('iu_sure')).toBe(0);
-        expect(useItem('iu_sure', 1)).toBeNull();
+        expect(applyItemUse('iu_sure', 1)).toBeNull();
         InventoryManager.addItem('iu_plain', 3);
-        expect(useItem('iu_plain', 1)).toBeNull();
+        expect(applyItemUse('iu_plain', 1)).toBeNull();
         expect(count('iu_plain')).toBe(3);
         InventoryManager.addItem('iu_nest', 3);
-        expect(useItem('iu_nest', 0)).toBeNull();
-        expect(useItem('iu_nest', -4)).toBeNull();
+        expect(applyItemUse('iu_nest', 0)).toBeNull();
+        expect(applyItemUse('iu_nest', -4)).toBeNull();
         expect(count('iu_nest')).toBe(3);
     });
 
@@ -174,7 +174,7 @@ describe('a Use pays out at once, into the Bank, with no hero', () => {
         InventoryManager.addItem('iu_sure', 4);
         const heard = [];
         const off = EventBus.subscribe(ENGINE_EVENTS.INVENTORY_UPDATED, p => heard.push(p));
-        useItem('iu_sure', 4);
+        applyItemUse('iu_sure', 4);
         off();
         expect(heard).toEqual([
             { itemId: 'iu_sure', amount: 0, removed: 4 },
@@ -184,7 +184,7 @@ describe('a Use pays out at once, into the Bank, with no hero', () => {
 
     it('counts in each item\'s per hour: the copies spent, the drops gained', () => {
         InventoryManager.addItem('iu_sure', 4);
-        useItem('iu_sure', 4);
+        applyItemUse('iu_sure', 4);
         expect(ItemRateTracker.getFlow('iu_seed')).toMatchObject({ gained: 12, spent: 0 });
         expect(ItemRateTracker.getFlow('iu_sure')).toMatchObject({ spent: 4 });
     });
@@ -192,7 +192,7 @@ describe('a Use pays out at once, into the Bank, with no hero', () => {
     it('a drop naming an item that does not exist pays nothing; the rest still pay', () => {
         registerItems({ iu_half: { id: 'iu_half', name: 'Use Half', type: 'material', use: { drops: [{ itemId: 'iu_gone' }, { itemId: 'iu_seed' }] } } });
         InventoryManager.addItem('iu_half', 2);
-        const result = useItem('iu_half', 2);
+        const result = applyItemUse('iu_half', 2);
         expect(result.paid).toEqual([{ itemId: 'iu_seed', quantity: 2 }]);
         expect(count('iu_half')).toBe(0);
     });
@@ -210,7 +210,7 @@ describe('a full Bank loses nothing', () => {
         expect(InventoryManager.freeSlots()).toBe(0);
         const full = [];
         const off = EventBus.subscribe(ENGINE_EVENTS.BANK_FULL, p => full.push(p));
-        const result = useItem('iu_sure', 2);
+        const result = applyItemUse('iu_sure', 2);
         off();
         expect(count('iu_sure')).toBe(3);
         expect(count('iu_seed')).toBe(0);
@@ -229,7 +229,7 @@ describe('a full Bank loses nothing', () => {
         InventoryManager.addItem('iu_nest', 4);
         InventoryManager.addItem('iu_fill', 1);
         rolls = sameRolls(11);
-        const result = useItem('iu_nest', 4);
+        const result = applyItemUse('iu_nest', 4);
         const given = Object.fromEntries(result.paid.map(p => [p.itemId, p.quantity]));
         expect(count('iu_nest')).toBe(0);
         // The seeds come first and take the freed slot.
@@ -248,7 +248,7 @@ describe('a full Bank loses nothing', () => {
         fullBank(2);
         InventoryManager.addItem('iu_sure', 5);
         InventoryManager.addItem('iu_seed', 1);
-        const result = useItem('iu_sure', 5);
+        const result = applyItemUse('iu_sure', 5);
         expect(result.waiting).toEqual([]);
         expect(count('iu_seed')).toBe(16);
     });

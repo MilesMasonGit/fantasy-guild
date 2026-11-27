@@ -12,7 +12,7 @@ import { useShownBankEntry } from './bankInspection.js';
 import { lifetimeOf } from '../../../systems/progression/collectionLog.js';
 import { itemKey } from '../../../systems/progression/ledger/engine.js';
 import { bankStackWorth, sellBankStack } from '../../../systems/inventory/Coins.js';
-import { useItem } from '../../../systems/inventory/ItemUse.js';
+import { applyItemUse } from '../../../systems/inventory/ItemUse.js';
 import { InventoryManager } from '../../../systems/inventory/InventoryManager.js';
 import { hasUse } from '../../../config/registries/itemUse.js';
 import { ItemUseAmounts, ItemUseResult } from './ItemUseControl.jsx';
@@ -72,7 +72,7 @@ export const ItemDrawerBody = ({ entry, lastUse = null, onUsed = null }) => {
     // The stack shrinks as it is used: the amount follows it down.
     const useCount = Math.max(1, Math.min(count, amount));
     const use = () => {
-        const result = useItem(entry.id, useCount);
+        const result = applyItemUse(entry.id, useCount);
         if (result) onUsed?.(result);
     };
     // Only the Bank's stack is sold: worn copies stay worn, and a carried consumable reads the Bank's count.

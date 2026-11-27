@@ -37,7 +37,7 @@ function normalise(raw) {
 }
 
 /** The drops of an item's Use, in authored order (`[]` for an item with none). */
-export function useDropsOf(item) {
+export function itemUseDropsOf(item) {
     if (!item || typeof item !== 'object' || !item.use) return [];
     let drops = cache.get(item);
     if (drops === undefined) {
@@ -49,7 +49,7 @@ export function useDropsOf(item) {
 
 /** Whether an item can be used from the Bank: its Use keeps at least one drop. */
 export function hasUse(item) {
-    return useDropsOf(item).length > 0;
+    return itemUseDropsOf(item).length > 0;
 }
 
 /**
@@ -57,7 +57,7 @@ export function hasUse(item) {
  * a `use` whose every line names no item, has no chance, or no amount. For the boot audit and the
  * CMS Economy Audit.
  */
-export function useProblem(item) {
+export function itemUseProblem(item) {
     if (!item || typeof item !== 'object' || item.use == null) return null;
     if (hasUse(item)) return null;
     return 'its Use gives nothing: no drop names an item with a chance and an amount above 0, so the Bank offers no Use';

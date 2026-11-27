@@ -8,7 +8,7 @@ export const USE_PRESETS = Object.freeze(['one', 'half', 'allButOne', 'all']);
 const PRESET_KEY = Object.freeze({ one: 'useOne', half: 'useHalf', allButOne: 'useAllButOne', all: 'useAll' });
 
 /** How many a preset uses of a stack of `count`, at least 1. */
-export function useAmountOf(preset, count) {
+export function amountForPreset(preset, count) {
     const n = Math.max(1, Math.floor(Number(count) || 0));
     if (preset === 'half') return Math.max(1, Math.ceil(n / 2));
     if (preset === 'allButOne') return Math.max(1, n - 1);
@@ -26,7 +26,7 @@ export const ItemUseAmounts = ({ count, amount, onAmount }) => (
     <div data-item-use-amounts className="w-full flex flex-col gap-1.5">
         <div className="flex items-center gap-1">
             {USE_PRESETS.map((preset) => {
-                const n = useAmountOf(preset, count);
+                const n = amountForPreset(preset, count);
                 const idle = count <= 1 && (preset === 'half' || preset === 'allButOne');
                 const picked = !idle && n === amount;
                 return (

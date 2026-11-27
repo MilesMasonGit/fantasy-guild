@@ -1,4 +1,4 @@
-import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs, toolFindings, crimeFindings, stealOf, spotFindings, summonFindings, fishFindings, catchItemIds, baitItemIds, rareTableOf, perkFindings, masteryFindings, gearDefenceFindings, effectStackFindings, hallStarFindings, coinWorthFindings, coinCostFindings, useDropsOf, useProblem } from '../utils/constants';
+import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs, toolFindings, crimeFindings, stealOf, spotFindings, summonFindings, fishFindings, catchItemIds, baitItemIds, rareTableOf, perkFindings, masteryFindings, gearDefenceFindings, effectStackFindings, hallStarFindings, coinWorthFindings, coinCostFindings, itemUseDropsOf, itemUseProblem } from '../utils/constants';
 import { eventProblems, EVENT_BIOMES } from '../../../src/config/eventTable.js';
 import { STANDS_ON_CHOICES } from '../../../src/systems/atlas/TerrainMap.js';
 
@@ -79,7 +79,7 @@ export function auditConnectivity(entities, solverRefusals = []) {
 
   // An item's Use: what it gives is produced by using it, and the item is spent by its Use.
   for (const item of allItems) {
-    const drops = useDropsOf(item);
+    const drops = itemUseDropsOf(item);
     if (!drops.length) continue;
     for (const drop of drops) {
       if (!producedBy[drop.itemId]) producedBy[drop.itemId] = [];
@@ -306,7 +306,7 @@ export function auditConnectivity(entities, solverRefusals = []) {
 
   // An item's Use: a drop naming an item that does not exist, or a Use that gives nothing (`itemUse.js`), in the boot audit's words.
   for (const item of allItems) {
-    for (const drop of useDropsOf(item)) {
+    for (const drop of itemUseDropsOf(item)) {
       if (items[drop.itemId]) continue;
       issues.push({
         entityId: item.id,
@@ -317,7 +317,7 @@ export function auditConnectivity(entities, solverRefusals = []) {
         details: `Its Use gives item ID "${drop.itemId}", which does not exist in the database.`,
       });
     }
-    const problem = useProblem(item);
+    const problem = itemUseProblem(item);
     if (problem) {
       issues.push({
         entityId: item.id,

@@ -23,7 +23,7 @@ import { normaliseEventTable, isRunnable } from '../../../config/eventTable.js';
 import { EVENT_WAIT_MIN_MS, EVENT_WAIT_MAX_MS } from '../../../config/eventTiming.js';
 import { allowsTerrain, TERRAIN } from '../../atlas/TerrainMap.js';
 import { coinsOf, shopCoinsOf } from '../../../config/registries/coinCosts.js';
-import { useDropsOf } from '../../../config/registries/itemUse.js';
+import { itemUseDropsOf } from '../../../config/registries/itemUse.js';
 
 /**
  * Two engines over one picture of the content (`buildWorld`), shared by the CMS's ledger views and
@@ -596,9 +596,9 @@ export function buildWorld(content = {}, { tierLevels = null } = {}) {
     }
 
     // An item's Use: one copy spent from the Bank pays its drops at once, with no hero, station or
-    // time (`ItemUse.useItem`). Its cycle is 0, so a tree charges it no hero time beyond the item's own.
+    // time (`ItemUse.applyItemUse`). Its cycle is 0, so a tree charges it no hero time beyond the item's own.
     for (const [id, def] of Object.entries(items)) {
-        const drops = useDropsOf(def);
+        const drops = itemUseDropsOf(def);
         if (!drops.length) continue;
         const self = itemKey(id);
         add({

@@ -14,7 +14,7 @@ import { EFFECTS, getEffect } from '../../config/registries/effectRegistry.js';
 import { effectRefsOf, duplicateRefsOf, hasWorkingStatements, usedBy, statusBlockOf } from '../effects/effectLibrary.js';
 import { ITEMS, getItem } from '../../config/registries/itemRegistry.js';
 import { coinWorthFindings } from '../../config/registries/itemCoins.js';
-import { useDropsOf, useProblem } from '../../config/registries/itemUse.js';
+import { itemUseDropsOf, itemUseProblem } from '../../config/registries/itemUse.js';
 import { coinCostFindings } from '../../config/registries/coinCosts.js';
 import { STANDS_ON_CHOICES, isStandsOnWord } from '../atlas/TerrainMap.js';
 import { listPooledSkillIds, runsNoRecipe } from '../../config/registries/recipePoolRegistry.js';
@@ -689,10 +689,10 @@ function auditItems(out) {
             out.push(finding(where, 'has no name — it looks like a half-finished entry that was saved by accident'));
         }
         checkRef(out, where, 'sprite', def.sprite, 'Its artwork');
-        for (const line of useDropsOf(def)) {
+        for (const line of itemUseDropsOf(def)) {
             checkRef(out, where, 'item', line.itemId, 'Something its Use gives');
         }
-        const problem = useProblem(def);
+        const problem = itemUseProblem(def);
         if (problem) out.push(finding(where, problem));
     }
 }

@@ -1,7 +1,7 @@
 // Using items from the Bank: an item's Use pays its drops at once, into the Bank, with no hero
 
 import { getItem } from '../../config/registries/itemRegistry.js';
-import { useDropsOf } from '../../config/registries/itemUse.js';
+import { itemUseDropsOf } from '../../config/registries/itemUse.js';
 import { rollOutputQuantity } from '../../config/registries/tokenConstants.js';
 import { roundByChance } from '../../utils/RNG.js';
 import { InventoryManager } from './InventoryManager.js';
@@ -57,8 +57,8 @@ export function rollUse(drops, count, random = Math.random) {
  *   waiting: {itemId: string, quantity: number}[] } | null} `paid` everything the copies gave,
  *   `waiting` the part of it left on the mat; null when the item has no Use or the Bank holds none
  */
-export function useItem(itemId, count) {
-    const drops = useDropsOf(getItem(itemId));
+export function applyItemUse(itemId, count) {
+    const drops = itemUseDropsOf(getItem(itemId));
     if (!drops.length) return null;
     const n = Math.min(InventoryManager.getItemCount(itemId), Math.max(0, Math.floor(Number(count) || 0)));
     if (n <= 0) return null;
