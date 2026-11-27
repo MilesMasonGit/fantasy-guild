@@ -28,7 +28,8 @@ vi.mock('../systems/board/FightRoom.js', async (orig) => ({
     stepOf: (id) => aside.plans.get(id) || null,
     finishStep: (id) => {
         const plan = aside.plans.get(id);
-        if (plan) plan.done = true;
+        if (plan?.heroId === null) aside.plans.delete(id);
+        else if (plan) plan.done = true;
     }
 }));
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -278,7 +279,26 @@ describe('the step to open space for a crowded fight', () => {
         expect(dirty[0][1]).toEqual({ x: 1100, y: 500 });
     });
 
-    it('a step let go halfway stands where it got to, and rebuilds the neighbourhood there', () => {
+    it('a step let go halfway walks on to its spot, and rebuilds the neighbourhood once, at both ends', () => {
+        const { enemy } = campWithEnemy();
+        aside.plans.set(enemy.id, { heroId: 'h1', x: 1200, y: 500, side: -1, done: false });
+        tick(1000);
+        expect(pointOf(enemy)).toEqual({ x: 1020, y: 500 });
+        const dirty = [];
+        const unsub = EventBus.subscribe(BOARD_EVENTS.ADJACENCY_DIRTY, (p) => dirty.push(p.points));
+        aside.plans.get(enemy.id).heroId = null;            // its hero sent elsewhere (`FightRoom.pruneSteps`)
+        try {
+            tick(5000);
+        } finally {
+            unsub?.();
+        }
+        expect(pointOf(enemy)).toEqual({ x: 1200, y: 500 });
+        expect(aside.plans.has(enemy.id)).toBe(false);      // cleared as it arrives
+        expect(EnemyMotion.bodyOf(enemy.id)).toBeNull();
+        expect(dirty).toEqual([[{ x: 920, y: 500 }, { x: 1200, y: 500 }]]);
+    });
+
+    it('a step dropped halfway (its enemy picked up, say) stands where it got to', () => {
         const { enemy } = campWithEnemy();
         aside.plans.set(enemy.id, { heroId: 'h1', x: 1200, y: 500, side: -1, done: false });
         tick(1000);
