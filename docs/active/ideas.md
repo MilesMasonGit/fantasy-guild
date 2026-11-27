@@ -74,6 +74,8 @@ the first outside playtest, modding.
 
 ## Stage A — now, alongside the crunch
 
+- **Scrolls** (owner, 2026-11-26, from the one-drink ruling): a second kind of boost item with its own slot, one held at a time beside the one drink (brief 910). Not designed: what they do, who makes them, how they differ from drinks. Interview when the owner wants it.
+
 ### Follow-ups after the running briefs
 
 - **Hero flags**: moved on. The smaller pennant is brief 250 (T-150). The
