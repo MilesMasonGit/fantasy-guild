@@ -1,10 +1,10 @@
 import React from 'react';
-import { Trash2, Sparkles, Image } from 'lucide-react';
+import { Trash2, Image } from 'lucide-react';
 import { slugify } from '../../utils/idGenerator';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
-export function Header({ name, id, onDelete, onSuggest, deleteLabel = "DELETE", sprite, isBackground, isEnemy, size }) {
+export function Header({ name, id, onDelete, deleteLabel = "DELETE", sprite, isBackground, isEnemy, size }) {
   const isLarge = size === 2;
   return (
     <div className="flex items-center justify-between">
@@ -58,14 +58,6 @@ export function Header({ name, id, onDelete, onSuggest, deleteLabel = "DELETE", 
         </div>
       </div>
       <div className="flex items-center gap-2">
-        {onSuggest && (
-          <button 
-            onClick={onSuggest} 
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition-all text-xs font-bold"
-          >
-            <Sparkles size={14} /> AI Suggest
-          </button>
-        )}
         {onDelete && (
           <button 
             onClick={onDelete} 

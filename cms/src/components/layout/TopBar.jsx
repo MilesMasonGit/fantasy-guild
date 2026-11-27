@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Settings, DatabaseBackup, Download, Sparkles, Calculator, Check, UploadCloud, AlertCircle, Inbox } from 'lucide-react';
+import { Settings, DatabaseBackup, Download, Calculator, Check, UploadCloud, AlertCircle, Inbox } from 'lucide-react';
 import { exportWorkspace, syncToGame, sendSync, restoreFromGame } from '../../engine/fileUtils';
 import SyncGuardPanel from '../shared/SyncGuardPanel';
 import { useEntityStore } from '../../stores/useEntityStore';
@@ -20,7 +20,7 @@ const VIEWS = [
   { key: 'sprites', label: 'Sprite Audit' },
 ];
 
-export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOpenSettings, onOpenFileManager }) {
+export default function TopBar({ onViewChange, currentView, onOpenSettings, onOpenFileManager }) {
   const [recalcDone, setRecalcDone] = useState(false);
   const [syncStatus, setSyncStatus] = useState('idle');
   const [guard, setGuard] = useState(null);
@@ -193,16 +193,6 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
           <span className="text-xs font-semibold">
             {syncStatus === 'syncing' ? 'Syncing...' : syncStatus === 'synced' ? 'Synced to Game!' : syncStatus === 'error' ? 'Sync Error' : 'Sync to Game'}
           </span>
-        </button>
-
-        <button
-          onClick={onOpenGenerate}
-          className="btn-ghost flex items-center gap-1.5"
-          style={{ padding: '6px 10px' }}
-          title="AI content generator (parked — unchanged by the rework)"
-        >
-          <Sparkles size={14} />
-          <span className="text-xs">Generate</span>
         </button>
 
         <button

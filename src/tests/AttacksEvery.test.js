@@ -12,7 +12,6 @@ import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { heroDamageMultiplier } from '../systems/combat/CombatFormulas.js';
 import { getPaletteEntry } from '../config/registries/modifierPalette.js';
 import { movesView, kindView } from '../ui/components/combat/fightView.js';
-import { buildSystemPrompt, buildUserPrompt } from '../../cms/src/engine/contentGenerator.js';
 
 /**
  * A weapon or an enemy Attacks every 3s; a move with no name is a Strike; an item's hit is Damage.
@@ -90,18 +89,6 @@ describe('the fight\'s leftovers', () => {
         for (const dir of ['src', 'cms/src', 'cms/schemas']) walk(path.join(ROOT, dir));
         expect(hits).toEqual([]);
     }, 30000);
-
-    describe('the CMS content generator', () => {
-        const globals = { gpt: 1, skillMultiplierRate: 0.01, energyGpValue: 1, healthGpValue: 1, xpToGoldRatio: 1, sellModifiers: {} };
-
-        it('asks for no enemies in the old shape', () => {
-            const prompt = buildSystemPrompt(globals, {}, {});
-            for (const gone of ['"enemies"', 'combatType', 'combatStat', 'attackSpeed', '"encounters"', 'assignedEnemies']) {
-                expect(prompt, gone).not.toContain(gone);
-            }
-            expect(buildUserPrompt({ type: 'generate_combat', tier: 2 }, {})).not.toMatch(/Enem/);
-        });
-    });
 
     describe('a hero\'s damage multiplier is the Damage bucket itself', () => {
         let hero;
