@@ -368,11 +368,12 @@ describe('live mode: round trip', () => {
     it('every count and chance the pack pins survives Recalculate and Sync, and moves without the pin', () => {
         const ws = liveWorkspace();
         // A Still that anchors the Tonic's value and a Press its Flax's, so the Tonic recipe's 5 a craft is a source Recalculate tunes.
-        const anchoring = (id, name, itemId) => ({
-            id, name, uses: null, sim: TAGS, plan: live,
+        // ⚠️ The Still is Medium: at Quick its Tonic is worth 1g, and the rule's band (as the CMS runs, with the rulebook on) then holds the 5 where it is.
+        const anchoring = (id, name, itemId, sim = TAGS) => ({
+            id, name, uses: null, sim, plan: live,
             config: { skill: 'alchemy', skillRequired: 10, cycleTimeMs: 4000, xp: 2, inputs: [], outputs: [{ ...out1(itemId, 1), anchor: true }] },
         });
-        ws.tokens.token_still = anchoring('token_still', 'Still', 'item_tonic');
+        ws.tokens.token_still = anchoring('token_still', 'Still', 'item_tonic', { tempo: 'medium', purpose: 'iph' });
         ws.tokens.token_press = anchoring('token_press', 'Press', 'item_flax');
         const { pack } = runLive(ws);
         let accepted = ws;

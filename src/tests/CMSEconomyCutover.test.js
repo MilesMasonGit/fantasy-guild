@@ -5,7 +5,7 @@ import { useEntityStore } from '../../cms/src/stores/useEntityStore';
 import { useGlobalStore } from '../../cms/src/stores/useGlobalStore';
 import { useSimulationStore } from '../../cms/src/stores/useSimulationStore';
 import { syncFiles } from '../../cms/src/engine/recipeSync';
-import { DEFAULT_DIALS } from '../../cms/src/engine/sim/dials';
+import { DEFAULT_DIALS, normaliseDials, workspaceDials } from '../../cms/src/engine/sim/dials';
 import { xpPerCycle } from '../../cms/src/engine/sim/xpPass';
 import { RETIRED_ITEM_FIELDS } from '../../cms/src/engine/sim/writeBack';
 
@@ -168,7 +168,7 @@ describe('What Recalculate writes', () => {
         const token = result.tokens.token_grove;
         const recipe = recipeOf(result);
         const expectedFor = (level, purpose, cycleTimeMs) =>
-            xpPerCycle(level, purpose, cycleTimeMs, DEFAULT_DIALS);
+            xpPerCycle(level, purpose, cycleTimeMs, normaliseDials(workspaceDials(DEFAULT_DIALS)));
 
         expect(token.config.xp).toBe(
             expectedFor(1, 'iph', token.config.cycleTimeMs)
@@ -274,20 +274,13 @@ describe('The dial store', () => {
         expect(useGlobalStore.getState().simDials).toEqual(DEFAULT_DIALS);
     });
 
-    it('hands the dials to the passes — turning one moves a price', () => {
+    it('hands the dials to the passes — a dial the rulebook does not own still reaches them', () => {
         load(staleWorkspace());
-        const base = useEntityStore.getState().recalculateEconomy(useGlobalStore.getState());
-
-        const doubled = useEntityStore.getState().recalculateEconomy({
-            simDials: {
-                ...DEFAULT_DIALS,
-                gphPins: Object.fromEntries(
-                    Object.entries(DEFAULT_DIALS.gphPins).map(([l, g]) => [l, g * 4])
-                ),
-            },
-        });
-
-        expect(doubled.items.item_log.value).toBeGreaterThan(base.items.item_log.value);
+        expect(() => useEntityStore.getState().recalculateEconomy(useGlobalStore.getState())).not.toThrow();
+        // The earn curves are the rulebook's in a workspace; the recovery ratio is not, and the passes refuse a duplicator.
+        expect(() => useEntityStore.getState().recalculateEconomy({
+            simDials: { ...DEFAULT_DIALS, downcycleRecoveryRatio: 1 },
+        })).toThrow(/downcycleRecoveryRatio/);
     });
 
     /**

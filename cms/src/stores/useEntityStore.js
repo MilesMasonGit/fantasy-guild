@@ -14,6 +14,7 @@ import { pendingSpriteRenames, applySpriteRenamesTo } from '../engine/spriteRena
 import { workspaceStorage } from '../engine/diskWorkspace';
 import { seedStoredWorkspace, workspaceFromImport } from '../engine/workspaceSeeds';
 import { recalculateWorkspace, balancedForSync } from '../engine/recalculate';
+import { workspaceDials } from '../engine/sim/dials';
 import { emptyRenames, recordRename, forgetRenamesTo, settleSyncedRenames } from '../engine/renames';
 
 /** The CMS's authored content, in one store: the keyed collections `items` and `tokens`, the named effect library, and the per-skill recipe pools. Enemy is a filtered view of the Token list. */
@@ -556,7 +557,11 @@ function collectionActions(collectionKey, set, get) {
                 const next = { ...current, ...patch };
                 // ⚠️ Only a Passive Production line loses its time: the other blocks' times are live.
                 if (collectionKey === 'tokens' && Array.isArray(patch.trickle)) {
-                    next.trickle = patch.trickle.map(({ everyMs: _dropped, ...line }) => line);
+                    next.trickle = patch.trickle.map((line) => {
+                        const kept = { ...line };
+                        delete kept.everyMs;
+                        return kept;
+                    });
                 }
 
                 // Renaming keeps the id in step unless the author has pinned it by editing the id directly (which clears autoSyncId).
@@ -583,7 +588,8 @@ function collectionActions(collectionKey, set, get) {
 
         [`delete${capitalized}`]: (id) =>
             set((s) => {
-                const { [id]: _removed, ...rest } = s[collectionKey];
+                const rest = { ...s[collectionKey] };
+                delete rest[id];
                 const clearing = s.activeEntityId === id;
                 return {
                     [collectionKey]: rest,
@@ -879,7 +885,7 @@ export const useEntityStore = create(
              */
             recalculateEconomy: (globals = {}) => {
                 const workspace = useEntityStore.getState();
-                const { workspace: next, report } = recalculateWorkspace(workspace, globals?.simDials || {}, {
+                const { workspace: next, report } = recalculateWorkspace(workspace, workspaceDials(globals?.simDials), {
                     previousChurn: useSimulationStore.getState().churnReport,
                 });
 

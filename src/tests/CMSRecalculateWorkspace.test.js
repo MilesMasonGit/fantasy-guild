@@ -6,7 +6,7 @@ import path from 'path';
 import { recalculateWorkspace, balancedForSync } from '../../cms/src/engine/recalculate';
 import { workspaceFromImport } from '../../cms/src/engine/workspaceSeeds';
 import { workspaceFromDataFiles } from '../../cms/src/engine/changePacks';
-import { DEFAULT_DIALS } from '../../cms/src/engine/sim/dials';
+import { DEFAULT_DIALS, workspaceDials } from '../../cms/src/engine/sim/dials';
 import { useEntityStore } from '../../cms/src/stores/useEntityStore';
 import { useSimulationStore } from '../../cms/src/stores/useSimulationStore';
 
@@ -53,7 +53,7 @@ describe('recalculateWorkspace', () => {
         vi.useFakeTimers();
         vi.setSystemTime(1000);
         try {
-            const { workspace: next, report } = recalculateWorkspace(workspace, DEFAULT_DIALS, { previousChurn: null });
+            const { workspace: next, report } = recalculateWorkspace(workspace, workspaceDials(DEFAULT_DIALS), { previousChurn: null });
             useSimulationStore.getState().setSimResults({});
             useEntityStore.getState().hydrate(workspace);
             const balanced = useEntityStore.getState().recalculateEconomy({ simDials: DEFAULT_DIALS });

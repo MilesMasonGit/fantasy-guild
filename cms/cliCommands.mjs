@@ -79,12 +79,12 @@ export const USAGE = `Usage: npm run cms -- <command> [options]
                                   --unclear, else <id>-unclear.txt beside the pack), never guessed. Written to --out (never into
                                   cms/incoming/); reads the workspace, never saves it.
   recalc [--all] [--rulebook]     Recalculate (the economic simulator) on the workspace and save it.
-                                  --rulebook runs it with the rulebook dial on (the balance rules'
-                                  curves, BALANCE_RULES sections 1 and 7) for this run only; the
-                                  workspace's stored dials stay as they are.
+                                  The rulebook (the balance rules' curves, BALANCE_RULES sections 1
+                                  and 7) is on by default; --rulebook is still accepted and changes
+                                  nothing. The workspace's stored dials stay as they are.
   sync [--confirm-removals] [--no-commit] [--rulebook]
                                   Recalculate, then write data/ exactly as Sync to Game does, and
-                                  commit only the files it wrote. --rulebook as for recalc.
+                                  commit only the files it wrote. --rulebook as for recalc (on by default).
   restore                         Rebuild the workspace from data/ and cms/plan/plan.json (Restore
                                   from Game); the old one is kept in Backups first.
   ledger [--json=<file>] [--one-layout] [--with-planned]
@@ -190,25 +190,23 @@ const counts = (ws) => {
 };
 
 /**
- * The workspace's dials as the CMS's globals store holds them: every default, with the stored ones
- * over it, and the rulebook dial on for this run when `--rulebook` is given (never saved).
+ * The workspace's dials as the CMS's Recalculate reads them: every default, with the stored ones
+ * over it, through `workspaceDials` (the rulebook on, whatever was stored; never saved).
  */
-async function dialsFor(load, disk, options = {}) {
+async function dialsFor(load, disk) {
     const { DEFAULT_GLOBALS } = await load('/src/utils/constants.js');
-    const dials = { ...DEFAULT_GLOBALS.simDials, ...(disk.simDials || {}) };
-    return options.rulebook === true ? { ...dials, rulebook: true } : dials;
+    const { workspaceDials } = await load('/src/engine/sim/dials.js');
+    return workspaceDials({ ...DEFAULT_GLOBALS.simDials, ...(disk.simDials || {}) });
 }
 
 /** Run Recalculate on the stored workspace, as the page would after loading it. */
-async function recalculated(load, disk, options = {}) {
+async function recalculated(load, disk) {
     const { seedStoredWorkspace } = await load('/src/engine/workspaceSeeds.js');
     const { recalculateWorkspace } = await load('/src/engine/recalculate.js');
     const seeded = { ...disk.workspace, ...seedStoredWorkspace(disk.workspace) };
-    const { workspace, report } = recalculateWorkspace(seeded, await dialsFor(load, disk, options));
+    const { workspace, report } = recalculateWorkspace(seeded, await dialsFor(load, disk));
     return { seeded, workspace, report };
 }
-
-const rulebookNote = (options) => (options.rulebook === true ? ' (with the rulebook dial on for this run)' : '');
 
 function auditLines(report, { all = false } = {}) {
     const by = { Critical: [], Warning: [], Info: [] };
@@ -308,9 +306,9 @@ async function cmdPackApply(file, paths, options, load, out) {
 
 async function cmdRecalc(paths, options, load, out) {
     const disk = requireDisk(paths);
-    const { workspace, report } = await recalculated(load, disk, options);
+    const { workspace, report } = await recalculated(load, disk);
     const saved = save(paths, disk, workspace, 'cli: recalc');
-    out(`Recalculated ${shortPath(paths.root, paths.workspaceFile)}${rulebookNote(options)}, now revision ${saved.revision}: ${counts(workspace)}.`);
+    out(`Recalculated ${shortPath(paths.root, paths.workspaceFile)} with the rulebook on, now revision ${saved.revision}: ${counts(workspace)}.`);
     for (const line of auditLines(report, { all: options.all === true })) out(line);
     return 0;
 }
@@ -320,9 +318,9 @@ async function cmdSync(paths, options, load, out) {
     const { syncFiles } = await load('/src/engine/recipeSync.js');
     const { balancedForSync } = await load('/src/engine/recalculate.js');
     // As the page does it: Recalculate first, and the workspace keeps the result whatever the Sync then does.
-    const { workspace, report } = await recalculated(load, disk, options);
+    const { workspace, report } = await recalculated(load, disk);
     const saved = save(paths, disk, workspace, 'cli: sync');
-    out(`Recalculated ${shortPath(paths.root, paths.workspaceFile)}${rulebookNote(options)}, now revision ${saved.revision}: ${counts(workspace)}.`);
+    out(`Recalculated ${shortPath(paths.root, paths.workspaceFile)} with the rulebook on, now revision ${saved.revision}: ${counts(workspace)}.`);
     out(auditLines(report)[0]);
 
     const { [PLAN_SYNC_KEY]: plan, [RENAMES_SYNC_KEY]: renames, ...files } = syncFiles(balancedForSync(workspace, report));
