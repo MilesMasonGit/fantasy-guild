@@ -52,7 +52,7 @@ describe('the report reads the workspace\'s sky', () => {
         expect(pace.hallPaybacks().filter(r => !r.builtIn).map(r => `${r.id}|${r.rank}`)).toEqual([
             'ph_lore|1', 'ph_lore|2', 'ph_quick|1', 'ph_deep|1', 'ph_gold|1', 'ph_rich|1', 'ph_rails|1', 'ph_spring|1', 'ph_spring|2', 'ph_infirmary|1'
         ]);
-        expect(findings.filter(f => f.check === 'hall-payback').map(f => f.key)).toEqual(['hall:ph_gold']);
+        expect(findings.filter(f => f.check === 'hall-guild-payback' && f.severity === 'warn').map(f => f.key)).toContain('hall:ph_gold');
         expect(workspacePace(hallWorkspace()).hallPaybacks().length).toBe(pace.hallPaybacks().length);
         // A workspace with no sky prices only the built-in tracks.
         expect(workspaceReport(paceWorkspace()).pace.hallPaybacks().every(r => r.builtIn)).toBe(true);
@@ -72,7 +72,7 @@ describe('the change-pack gate reads the sky', () => {
         };
         const gate = runGate(workspace, pack, workspaceSnapshot);
         expect(gate.errors || []).toEqual([]);
-        expect(gate.diff.added.map(f => `${f.check}|${f.key}`)).toEqual(['hall-guild-payback|hall:ph_gold_two', 'hall-payback|hall:ph_gold_two']);
+        expect(gate.diff.added.map(f => `${f.check}|${f.key}`)).toEqual(['hall-guild-payback|hall:ph_gold_two']);
         // The stars already there are in both sides: the Gold Leaf already in the workspace adds nothing.
         expect(gate.before.findings.some(f => f.key === 'hall:ph_gold')).toBe(true);
         useEntityStore.setState(empty);

@@ -157,6 +157,30 @@ describe("a Guild Hall rank's payback over all the work it boosts, on the paybac
         expect(wide.findings().some(x => x.check === 'hall-guild-payback' && x.key === 'hall:ph_gold')).toBe(false);
     });
 
+    it('the one-work, one-day payback check is retired: the payback over all the work is the one', () => {
+        expect(CHECKS['hall-payback']).toBeUndefined();
+        const pace = paceOf(ruleContent(), twoHeroes);
+        expect(pace.findings().some(x => x.check === 'hall-payback')).toBe(false);
+        // The Gold Leaf, a day too slow on its one work, is still found, over all its work.
+        expect(pace.findings().some(x => x.check === 'hall-guild-payback' && x.key === 'hall:ph_gold')).toBe(true);
+    });
+
+    it('a rank whose price cannot be gathered by its stage is a price fault of its own, not a payback', () => {
+        const c = ruleContent();
+        c.items.item_moonstone = { id: 'item_moonstone', name: 'Moonstone', type: 'material', plan: { tier: 0 } };
+        c.hallSky.stars.ph_lore.ranks[0].price = [{ itemId: 'item_moonstone', quantity: 5 }];
+        const pace = paceOf(c, twoHeroes);
+        const f = pace.findings().filter(x => x.key === 'hall:ph_lore');
+        const fault = f.find(x => x.check === 'hall-price-unreachable');
+        expect(fault).toMatchObject({ severity: 'warn' });
+        expect(fault.message).toMatch(/^Lore rank 1 \(Starter Camp\) costs 5 Moonstone, which cannot be gathered by Starter Camp/);
+        expect(CHECKS['hall-price-unreachable'].group).toBe('D');
+        // Its payback is not worked out on a price no one can pay.
+        expect(f.some(x => x.check === 'hall-guild-payback' && /rank 1 /.test(x.message))).toBe(false);
+        // A price that can be gathered is no fault.
+        expect(paceOf(ruleContent(), twoHeroes).findings().some(x => x.check === 'hall-price-unreachable')).toBe(false);
+    });
+
     it('the three checks reach the ledger\'s list as the other pacing checks do', () => {
         const c = ruleContent();
         const ledger = buildLedger(c);

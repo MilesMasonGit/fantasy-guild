@@ -165,7 +165,6 @@ describe('the profiles and the Hall', () => {
         const hours = buildPace(c, buildLedger(c), { hallPaybackHours: 2 });
         expect(hours.hallPaybacks().find(r => r.id === 'ph_rich' && r.rank === 1).pays).toBe(false);
         expect(hours.rateAt(VEIN, PROFILE.TYPICAL, 1).setup.hallRanks.ph_rich).toBe(0);
-        expect(hours.findings().some(f => f.key === 'hall:ph_rich' && /over the 2 h a Guild Hall rank has to pay for itself/.test(f.message))).toBe(true);
     });
 });
 
@@ -184,13 +183,12 @@ describe('every rank\'s payback at Typical, and the price the ledger proposes', 
         expect(rowOf(pace, 'ph_rich', 1).cap).toBe(1);
     });
 
-    it('a rank that does not pay back is a finding; a star that adds no rate is named, not priced', () => {
+    it('a rank that does not pay back within the day is found over all its work; a star that adds no rate is named, not priced', () => {
         const pace = world();
         expect(rowOf(pace, 'ph_gold', 1)).toMatchObject({ rate: true, pays: false });
         const f = pace.findings();
-        const gold = f.find(x => x.check === 'hall-payback' && x.key === 'hall:ph_gold');
-        expect(gold.message).toMatch(/Gold Leaf rank 1 \(Starter Camp\) costs 100000 Oak Wood \(.* to gather at Typical\) and saves \d+ s an hour on Copper Vein: it pays back in/);
-        expect(f.filter(x => x.check === 'hall-payback')).toHaveLength(1);
+        expect(f.some(x => x.check === 'hall-guild-payback' && x.key === 'hall:ph_gold')).toBe(true);
+        expect(f.some(x => x.check === 'hall-payback')).toBe(false);
         expect(rowOf(pace, 'ph_infirmary', 1)).toMatchObject({ rate: false });
         expect(rowOf(pace, 'ph_rails', 1)).toMatchObject({ rate: false });
         expect(f).toContainEqual(expect.objectContaining({ check: 'unmodelled', key: 'hall:ph_infirmary' }));
@@ -299,7 +297,6 @@ describe('the payback check counts opening a star; a skill that gathers nothing 
         expect(pace.rateAt(VEIN, PROFILE.TYPICAL, 0).setup.hallRanks.ph_beyond).toBe(0);
         // No price can make it pay: opening it alone takes longer.
         expect(row.proposed.why).toMatch(/Gold Leaf/);
-        expect(pace.findings().find(x => x.check === 'hall-payback' && x.key === 'hall:ph_beyond').message).toMatch(/to open it, lighting Gold Leaf/);
     });
 
     it('a star beside one Typical holds for its own sake opens free; one Typical lit only to open it is counted', () => {

@@ -1662,27 +1662,28 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             });
         }
 
-        // Guild Hall ranks: each must pay for itself, at Typical.
+        // Guild Hall ranks: one that adds no rate is named; one whose price its stage cannot gather is a price fault.
         for (const row of hallPaybacks()) {
-            if (row.rate === false) {
-                if (row.rank === 1 && !row.ring) add('unmodelled', `hall:${row.id}`, `${row.name}: what it gives (${row.what}) is not a rate, so its payback is not worked out.`, { name: row.name });
-                continue;
-            }
-            if (row.enabler || row.pays) continue;
-            const opened = row.opening.path.length ? `, and ${PACE_TEXT.short(row.opening.cost)} to open it, ${openingWords(row.opening)}` : '';
-            add('hall-payback', `hall:${row.id}`, `${row.name} rank ${row.rank} (${stageWords(row)}) costs ${row.priceText} (${PACE_TEXT.short(row.priceHours)} to gather at Typical${opened}) ${savesWords(row)}: it pays back in ${PACE_TEXT.hours(row.payback)}, over the ${PACE_TEXT.hours(settings.hallPaybackHours)} a Guild Hall rank has to pay for itself.`, { name: row.name });
+            if (row.rate === false && row.rank === 1 && !row.ring) add('unmodelled', `hall:${row.id}`, `${row.name}: what it gives (${row.what}) is not a rate, so its payback is not worked out.`, { name: row.name });
+            if (Number.isFinite(row.priceHours)) continue;
+            const missing = row.price.filter(p => !Number.isFinite(hallUnitHours(p.itemId, row.cap))).map(p => nameOf(itemKey(p.itemId)));
+            const coins = row.coins > 0 && !Number.isFinite(rankCoinHours(row)) ? [PACE_TEXT.coins(row.coins)] : [];
+            const what = [...missing, ...coins].join(' and ');
+            add('hall-price-unreachable', `hall:${row.id}`, `${row.name} rank ${row.rank} (${stageWords(row)}) costs ${row.priceText}, which cannot be gathered by ${tierLabel(row.cap)} at Typical${what ? ` (${what} is not had by then)` : ''}: no one can buy it there, so its payback is not worked out. Price it in what its stage gathers, or set it at the stage its price is first had.`, {
+                severity: 'warn', name: row.name
+            });
         }
 
         // A Guild Hall rank over all the work it boosts, on the payback curve: slow is a warning, far quicker information.
         const tol = settings.tolerancePct / 100;
         for (const h of hallGuildPaybacks()) {
-            // A free rank (a new guild's) has no price to pay back.
-            if (h.cost === 0 || !(Math.abs(h.off) > tol + 1e-9)) continue;
+            // A free rank (a new guild's) has no price to pay back; one no one can pay is a price fault, above.
+            if (h.cost === 0 || !Number.isFinite(h.row.priceHours) || !(Math.abs(h.off) > tol + 1e-9)) continue;
             const slow = h.off > 0;
             const over = !Number.isFinite(h.payback) ? 'never within' : h.off >= 1 ? `${PACE_TEXT.times(h.off + 1)}` : `${Math.round(Math.abs(h.off) * 100)} % ${slow ? 'over' : 'under'}`;
             const across = h.id === ROSTER_STAR ? 'as another hero' : `over all the work it boosts (${PACE_TEXT.pieces(h.works)}, the ${h.counted} best for the guild's ${PACE_TEXT.heroes(h.heroes)})`;
             const remedy = slow ? 'Lower its price or raise what it gives' : 'It is cheap for what it gives: raise its price, or let it be if it is a first step';
-            add('hall-guild-payback', `hall:${h.id}`, `${h.name} rank ${h.rank} (${stageWords(h.row)}) ${Number.isFinite(h.cost) ? `costs ${PACE_TEXT.short(h.cost)} at Typical` : 'costs what Typical cannot gather by then'} and saves ${PACE_TEXT.saves(h.gain)} ${across}: it pays back in ${PACE_TEXT.hours(h.payback)}, ${over} the payback curve's ${PACE_TEXT.hours(h.curve)} at level ${h.level} (±${settings.tolerancePct} %; BALANCE_RULES section 5: payback is 1 hour × 24^(L / 80) and counts all the work a star boosts). ${remedy}.`, {
+            add('hall-guild-payback', `hall:${h.id}`, `${h.name} rank ${h.rank} (${stageWords(h.row)}) ${Number.isFinite(h.cost) ? `costs ${PACE_TEXT.short(h.cost)} at Typical` : 'is behind stars Typical cannot light by then'} and saves ${PACE_TEXT.saves(h.gain)} ${across}: it pays back in ${PACE_TEXT.hours(h.payback)}, ${over} the payback curve's ${PACE_TEXT.hours(h.curve)} at level ${h.level} (±${settings.tolerancePct} %; BALANCE_RULES section 5: payback is 1 hour × 24^(L / 80) and counts all the work a star boosts). ${remedy}.`, {
                 name: h.name, severity: slow ? 'warn' : 'info'
             });
         }
@@ -2069,11 +2070,6 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         : tierLabel(row.tier ?? row.cap));
     /** The stars lit to open a star, in words: "lighting Gold Leaf and Lore". */
     const openingWords = (opening) => `lighting ${opening.path.map(id => hallName(id)).join(' and ')}`;
-    const savesWords = (row) => {
-        if (!(row.gain > 0)) return 'and saves no time at its tier (no work it reaches is open by then)';
-        const on = row.work ? ` on ${workName(row.work)}` : '';
-        return `and saves ${PACE_TEXT.saves(row.gain)}${on}`;
-    };
 
     /** The Hall's works: each piece of work a track's ranks may move (its context lists the track). */
     const hallWorksMemo = new Map();
