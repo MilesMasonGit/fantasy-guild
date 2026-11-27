@@ -2,7 +2,7 @@
 
 import { buildRateBook, LIFECYCLE, WORK, FACTOR } from './rates.js';
 import { EFFECT_TYPES } from '../../../../src/systems/effects/constants.js';
-import { buildProfiles, targetKey, PROFILE, PROFILES, PROFILE_TEXT, BOOST_KIND, BOOST_KIND_TEXT, boostKindOf, BEFORE_HALL, pickKindOf, RARE_FIND_KINDS, gainOf, repeatedByHero } from './profiles.js';
+import { buildProfiles, targetKey, PROFILE, PROFILES, PROFILE_TEXT, BOOST_KIND, BOOST_KIND_TEXT, boostKindOf, BEFORE_HALL, pickKindOf, RARE_FIND_KINDS, gainOf, batchPaybackOf, repeatedByHero } from './profiles.js';
 import { starAddsRate } from './hall.js';
 import { settingsOf, minutesPerLevelAt, minutesToReach, formatMinutes, levelAtMinutes, coinMinutesAt, COIN_CURVE, boostBudgetAt, BOOST_BUDGET_KINDS, heroesAt, chainHeroesAt, paybackHoursAt } from './settings.js';
 import { ledgerCoinWorth } from './coins.js';
@@ -2635,11 +2635,23 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
      * at the game's dose length (the rate calculator reads it from `consumableRule.js`), `doseCycles`
      * the cycles one lasts, `unitHours` the hero-hours one takes to make with its ingredients, `spends`
      * the hours an hour its doses take to make, and `ratio` the one over the other. A craft's batch is
-     * so many doses for so many times one's making, so the ratio is the batch's.
-     * `[{ item, name, tier, cap, work, gain, doses, doseCycles, unitHours, spends, ratio }]`, by name.
+     * so many doses for so many times one's making, so the ratio is the batch's. `finishedRatio` is the
+     * same dose's ratio against Typical's finished setup on that work (the dose and its slot's others
+     * taken off first): information only, no finding reads it.
+     * `[{ item, name, tier, cap, work, gain, doses, doseCycles, unitHours, spends, ratio, finishedRatio }]`, by name.
      */
     function batchPaybackRows() {
         if (batchMemo) return batchMemo;
+        // The same drink measured against Typical's finished setup, itself and its slot-mates taken off first.
+        const finishedRatioOf = (ctx, work, setup, id, cap) => {
+            const offers = profiles.offers(ctx, cap).filter(o => o.kind === BOOST_KIND.CONSUMABLE);
+            const offer = offers.find(o => o.id === id);
+            if (!offer) return null;
+            const mates = new Set(offers.filter(o => o.id === id || (offer.slot && o.slot === offer.slot)).map(o => o.id));
+            const base = { ...setup, consumables: list(setup.consumables).filter(c => !mates.has(c)) };
+            const f = batchPaybackOf(rates.rateOf(work.target, base), rates.rateOf(work.target, offer.apply(base)), id, (item) => unitHours(item, cap));
+            return f ? f.ratio : null;
+        };
         const best = new Map();
         for (const work of works) {
             if (work.tier === null || !counted(work.entry)) continue;
@@ -2651,11 +2663,12 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                 const tier = tierOfKey(key);
                 if (tier === null || !counted(key)) continue;
                 const cap = Math.max(work.tier, tier);
-                const b = profiles.profileOf(work.target, PROFILE.TYPICAL, cap).batches.get(id);
+                const typical = profiles.profileOf(work.target, PROFILE.TYPICAL, cap);
+                const b = typical.batches.get(id);
                 if (!b) continue;
                 const prev = best.get(id);
                 if (!prev || b.ratio > prev.ratio) {
-                    best.set(id, { item: id, name: nameOf(key), tier: effTier(key) ?? tier, cap, work, ...b });
+                    best.set(id, { item: id, name: nameOf(key), tier: effTier(key) ?? tier, cap, work, ...b, finishedRatio: finishedRatioOf(ctx, work, typical.setup, id, cap) });
                 }
             }
         }

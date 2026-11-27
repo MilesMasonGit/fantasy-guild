@@ -3,6 +3,8 @@ import { buildLedger } from '../systems/progression/ledger/engine.js';
 import { buildPace, roundDown } from '../../cms/src/engine/ledger/pace.js';
 import { settingsOf, paybackHoursAt } from '../../cms/src/engine/ledger/settings.js';
 import { CHECKS, runChecks } from '../../cms/src/engine/ledger/checks.js';
+import { buildRateBook } from '../../cms/src/engine/ledger/rates.js';
+import { batchPaybackOf } from '../../cms/src/engine/ledger/profiles.js';
 import { DOSE, DOSE_LENGTH } from '../systems/core/consumableRule.js';
 import { ledgerReadout, readoutText } from '../../cms/src/engine/ledgerReadout.js';
 import { hallRows } from '../../cms/src/engine/ledgerPace.js';
@@ -122,6 +124,26 @@ describe("a drink or work potion's batch pays back at least 4x its making", () =
         // A lower factor lets it pass.
         const ratio = pace.batchPaybackRows().find(r => r.item === 'item_beer').ratio;
         expect(paceOf(ruleContent({ sky: false }), { batchPayback: ratio * 0.9 }).findings().some(x => x.check === 'batch-payback')).toBe(false);
+    });
+});
+
+describe("a batch's second number: the same dose on Typical's finished setup", () => {
+    it('rides on the row beside the gate ratio, which it leaves as it was, and changes no finding', () => {
+        const c = ruleContent({ sky: false });
+        const pace = paceOf(c);
+        const beer = pace.batchPaybackRows().find(r => r.item === 'item_beer');
+        const gate = pace.profiles.profileOf(beer.work.target, 'typical', beer.cap).batches.get('item_beer');
+        expect(beer.ratio).toBe(gate.ratio);
+        expect(Number.isFinite(beer.finishedRatio)).toBe(true);
+        // Measured the old way: Typical's setup with the dose off, against the same with it on.
+        const ctx = pace.profiles.contextOf(beer.work.target);
+        const offer = pace.profiles.offers(ctx, beer.cap).find(o => o.id === 'item_beer');
+        const setup = pace.profiles.profileOf(beer.work.target, 'typical', beer.cap).setup;
+        const base = { ...setup, consumables: (setup.consumables || []).filter(x => x !== 'item_beer') };
+        const book = buildRateBook(c);
+        const old = batchPaybackOf(book.rateOf(beer.work.target, base), book.rateOf(beer.work.target, offer.apply(base)), 'item_beer', (i) => pace.heroHoursOf(i, 'bare', beer.cap));
+        expect(beer.finishedRatio).toBeCloseTo(old.ratio);
+        expect(pace.findings().filter(x => x.check === 'batch-payback').map(x => x.key)).toEqual(['item_beer'].map(i => 'item:' + i));
     });
 });
 
@@ -288,6 +310,7 @@ describe('the read-out and the Ledger page carry them', () => {
         expect(rc.chainXp.find(c => c.item === 'item_cake')).toMatchObject({ links: 3, raw: 4, rawMinutes: 0.667, xpPerHour: 3480, median: 1800, offPct: 93.3, off: true, warn: false });
         expect(rc.chainXp.find(c => c.item === 'item_plank')).toMatchObject({ off: false, warn: false });
         expect(rc.batches.factor).toBe(4);
+        expect(rc.batches.rows.every(b => b.finishedRatio === null || Number.isFinite(b.finishedRatio))).toBe(true);
         expect(rc.batches.rows.find(b => b.item === 'item_beer')).toMatchObject({ doseCycles: DOSE_LENGTH[DOSE.DRINK], short: true });
         expect(rc.hallGuild.find(h => h.id === 'ph_gold' && h.rank === 1)).toMatchObject({ off: true });
         for (const check of ['chain-xp', 'batch-payback', 'hall-guild-payback']) expect(out.checks.some(x => x.check === check), check).toBe(true);
