@@ -163,17 +163,17 @@ describe('npm run cms -- ledger', () => {
         expect(out.stages[out.stages.length - 1]).toMatchObject({ gate: null, minutes: null, gateWhy: 'the last stage: no place after it' });
         expect(out.guild.heroes.map((h) => h.heroes)).toEqual([1, 1, 2, 3, 4, 5, 6, 8]);
         expect(out.guild).toMatchObject({
-            gatherersPerMaker: 2.2, layout: 'sparse', layoutNodes: { sparse: 2, dense: 4 }, layoutSpawners: { sparse: 1, dense: 2 }, sitePlaces: { places: 12, buildings: 8, perKind: 4 }
+            gatherersPerMaker: 2.2, layout: 'sparse', layoutNodes: { sparse: 2, dense: 5 }, layoutSpawners: { sparse: 1, dense: 1 }, sitePlaces: { places: 12, buildings: 8, perKind: 4 }
         });
         // ⭐ Both layouts, the warning where they differ, and the vein the dense layout makes more of.
-        expect(out.layouts).toMatchObject({ timed: 'sparse', other: 'dense', nodes: { sparse: 2, dense: 4 } });
+        expect(out.layouts).toMatchObject({ timed: 'sparse', other: 'dense', nodes: { sparse: 2, dense: 5 } });
         expect(out.layouts.skills.mining).toMatchObject({ warn: true });
         expect(out.layouts.skills.mining.dense.opt).toBeLessThan(out.layouts.skills.mining.sparse.opt);
         expect(out.layouts.warnings).toContain('mining');
         expect(out.layouts.nodesOff.map((n) => n.entry)).toEqual(['token:token_vein']);
-        expect(out.layouts.nodesOff[0].nodes).toEqual({ sparse: 2, dense: 4 });
-        // ⭐ Each work's site: the buildings in its places, with their copies, and its camp's nodes; the camp and the second vein take two places.
-        expect(vein.site.opt).toMatchObject({ places: 4, room: 8, taken: 2, byKind: { yield: 4 }, camp: { id: 'token_mining_camp', nodes: 2, spawners: 0 } });
+        expect(out.layouts.nodesOff[0].nodes).toEqual({ sparse: 2, dense: 5 });
+        // ⭐ Each work's site: the buildings in its places, with their copies, and its camp's nodes; the camp and both veins take three places.
+        expect(vein.site.opt).toMatchObject({ places: 4, room: 8, taken: 3, byKind: { yield: 4 }, camp: { id: 'token_mining_camp', nodes: 2, spawners: 0 } });
         expect(vein.site.opt.buildings).toEqual([{ id: 'token_mine', name: 'Mine', count: 4, kinds: ['yield'] }]);
         // An arrival is never before its path.
         for (const row of out.rows.filter((x) => x.arriveTyp !== null)) expect(row.arriveTyp, row.key).toBeGreaterThanOrEqual(row.pathTyp - 1e-6);

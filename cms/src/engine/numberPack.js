@@ -20,6 +20,7 @@
  */
 
 import { fingerprint, currentValue, PACK_FORMAT, PACK_VERSION } from './changePacks.js';
+import { REST_RULE, restRuleEndChance } from './balanceRules.js';
 import { isSkillId, isGatheringSkill } from '../../../src/config/registries/skillRegistry.js';
 import { PLAN_STATUS, DEFAULT_PLAN_STATUS } from '../../../src/systems/progression/ledger/plan.js';
 import { respawnOf } from '../../../src/config/registries/tokenConstants.js';
@@ -51,17 +52,14 @@ export function ruledMakes(row) {
     return Number.isInteger(row?.makes) && row.makes >= 1 ? row.makes : 1;
 }
 
-/** The rest rule (BALANCE_RULES section 2): about 30 s of work at a node, then back in about 30 s. */
-export const REST_RULE = Object.freeze({ workMs: 30000, restMs: 30000 });
-
 /**
- * A gathering Token's uses and rest by the rest rule, for a cycle of `cycleMs`: `{ patch, unclear, stump }`.
- * It runs out by a chance a cycle (`tokenConstants.endTermsOf`), so its average work is
- * cycle × 100 / chance; the chance that makes that about 30 s is 100 × cycle / 30 s, one decimal,
- * 100 at most. `patch` holds the Token's new `endChance` (its `uses` then mean nothing and go, as
- * the Token editor does) and, for a refill that needs no owner, its 30 s rest. A regrow's rest is
- * its Stump's regrowth, so `stump` is the Stump's new value (`{ id, value }`) with `grows.afterMs`
- * at 30 s and its needs (its Forest) as they are; the Forest's own spawning is not the rest and is
+ * A gathering Token's uses and rest by the rest rule (`balanceRules.REST_RULE`), for a cycle of
+ * `cycleMs`: `{ patch, unclear, stump }`. It runs out by a chance a cycle
+ * (`tokenConstants.endTermsOf`), so its average work is cycle × 100 / chance; the chance that makes
+ * that the rule's work is {@link restRuleEndChance}. `patch` holds the Token's new `endChance` (its
+ * `uses` then mean nothing and go, as the Token editor does) and, for a refill that needs no owner,
+ * the rule's rest. A regrow's rest is its Stump's regrowth, so `stump` is the Stump's new value
+ * (`{ id, value }`) with `grows.afterMs` at the rule's rest and its needs (its Forest) as they are; the Forest's own spawning is not the rest and is
  * left alone. `unclear` says why the rest (or the whole of it) is not written: a gated refill
  * rests only beside its owner, and a regrow into a Token with no growth has nowhere to hold it.
  * ⚠️ Assumes a cycle spends one charge, which every gathering Token does today.
@@ -69,7 +67,7 @@ export const REST_RULE = Object.freeze({ workMs: 30000, restMs: 30000 });
 export function restTerms(record, cycleMs, workspace) {
     const back = respawnOf(record);
     if (!back) return { patch: null, unclear: 'no respawn: it leaves the mat when spent (or never runs out), so an end chance would do nothing and there is no rest to write' };
-    const endChance = Math.min(100, Math.round(1000 * cycleMs / REST_RULE.workMs) / 10);
+    const endChance = restRuleEndChance(cycleMs);
     const patch = { endChance };
     if (back.mode === 'refill' && !back.needsNearby.length) {
         patch.respawn = { ...record.respawn, afterMs: REST_RULE.restMs };

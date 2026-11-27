@@ -207,7 +207,7 @@ export default function LedgerSettings() {
           <div className="flex flex-wrap items-center gap-2">
             A work site has
             <NumberInput value={settings.sitePlaces.places} min={1} whole onCommit={(v) => save({ sitePlaces: { ...settings.sitePlaces, places: v } })} label="Places round a node" width={50} />
-            places round the node it works; its camp, its other nodes and its spawners stand in some, and what they leave holds buildings, at most
+            places round the node it works; a gathering site's camp, spawners and nodes (the one it works among them) stand in some, and what they leave holds buildings, at most
             <NumberInput value={settings.sitePlaces.buildings} min={1} whole onCommit={(v) => save({ sitePlaces: { ...settings.sitePlaces, buildings: v } })} label="Building places" width={50} />
             of them, at most
             <NumberInput value={settings.sitePlaces.perKind} min={1} whole onCommit={(v) => save({ sitePlaces: { ...settings.sitePlaces, perKind: v } })} label="Places a kind" width={50} />

@@ -242,7 +242,7 @@ function Layouts({ pace, onOpen }) {
     <section className="rounded-xl border bg-[#1a1a1e] border-white/10 p-4 space-y-2" aria-label="Layouts">
       <h3 className={sectionHead}>Layouts</h3>
       <p className="text-[10px] text-gray-500">
-        A camp works {n.sparse} nodes in the sparse layout and {n.dense} in the dense one; at a Forest, an Orchard or a Quarry, the whole allowance of {pace.settings.layoutSpawners.sparse} and of {pace.settings.layoutSpawners.dense} of them (Ledger settings); the pace above is timed {pace.settings.layout}. A node that rests no longer than it works keeps one hero busy on two, and the layout then moves nothing; one that rests longer makes more the more of it stands in reach (red beyond ±{tol} %).
+        A camp works {n.sparse} nodes in the sparse layout and {n.dense} in the dense one; at a Forest, an Orchard or a Quarry, the whole allowance of {pace.settings.layoutSpawners.sparse} and of {pace.settings.layoutSpawners.dense} of them (Ledger settings); the pace above is timed {pace.settings.layout}. By the rest rule a node gives about 15 s of work and is back in about a minute, so a hero alone at one is busy about a fifth of the time and a camp of 4 or 5 keeps one busy: the more of a node stands in reach, up to that, the more it makes (red beyond ±{tol} %). A node that rests no longer than it works keeps one hero busy on two, and the layout then moves nothing.
       </p>
       {nodes.length === 0 ? (
         <p className="text-[11px] text-gray-500" data-layout-nodes="0">No node makes past the tolerance more in the dense layout.</p>

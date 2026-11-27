@@ -19,7 +19,7 @@ const prepareStep = (level, xpLevel) => solver.timeStep(RULES, 'prepare', level,
  * (`sim.timePinned`), so the pack's times survive Recalculate and Sync; a gather's yield is left as
  * the content has it, a plan's split and a craft's count by the owner's rules written
  * (BALANCE_RULES section 3: 40 arrows, 40 Arrowheads or Kunai, 5 Nails, 5 drinks; section 5: a
- * work potion's 5); a regrowing tree's rest is its Stump's regrowth at 30 s; and the content
+ * work potion's 5); a regrowing tree's rest is its Stump's regrowth at 60 s; and the content
  * session's answers on what a Live record follows (a build or Dig recipe its Token, an offering its
  * shrine, the Bait recipes their fish, chance-only extras kept, a water's catch on its fish, the two
  * rods as they are). Every edit that writes outputs pins them (`sim.outputsPinned`), a Live gather
@@ -215,17 +215,17 @@ describe('the owner\'s craft counts', () => {
 });
 
 describe('live mode: a tree\'s rest', () => {
-    it('is its Stump\'s regrowth at 30 s, the Stump\'s needs and the Forest\'s spawning as they are', () => {
+    it('is its Stump\'s regrowth at 60 s, the Stump\'s needs and the Forest\'s spawning as they are', () => {
         const ws = liveWorkspace();
         const { pack, restUnclear, stumps } = runLive(ws);
         const stump = pack.entries.find((e) => e.id === 'token_birch_stump');
         expect(stump).toMatchObject({ op: 'edit', kind: 'token' });
-        expect(stump.value.grows).toEqual({ into: 'token_birch_tree', afterMs: 30000, needsNearby: ['token_birch_forest'] });
+        expect(stump.value.grows).toEqual({ into: 'token_birch_tree', afterMs: 60000, needsNearby: ['token_birch_forest'] });
         expect(pack.entries.some((e) => e.id === 'token_birch_forest')).toBe(false);
         expect(restUnclear.some((r) => r.id === 'token_birch_tree')).toBe(false);
-        expect(stumps).toEqual([{ id: 'token_birch_stump', name: 'Birch Stump', tree: 'Birch Tree', afterMs: 30000 }]);
-        // 7.7 s a cycle: 25.7 % that it ends, so about 30 s of work.
-        expect(pack.entries.find((e) => e.id === 'token_birch_tree').value.endChance).toBe(25.7);
+        expect(stumps).toEqual([{ id: 'token_birch_stump', name: 'Birch Stump', tree: 'Birch Tree', afterMs: 60000 }]);
+        // 7.7 s a cycle: 51.3 % that it ends, so about 15 s of work.
+        expect(pack.entries.find((e) => e.id === 'token_birch_tree').value.endChance).toBe(51.3);
     });
 
     it('is one Stump edit however many trees regrow into it', () => {
@@ -362,7 +362,7 @@ describe('live mode: round trip', () => {
         const synced = (e) => (e.kind === 'recipe' ? files['tokenRecipes.json'].find((r) => r.id === e.id)?.durationMs : files['tokens.json'][e.id]?.config?.cycleTimeMs);
         const timed = pack.entries.filter((e) => Number.isFinite(timeOf(e)));
         expect(timed.map((e) => `${e.id} ${synced(e)}`)).toEqual(timed.map((e) => `${e.id} ${timeOf(e)}`));
-        expect(files['tokens.json'].token_birch_stump.grows.afterMs).toBe(30000);
+        expect(files['tokens.json'].token_birch_stump.grows.afterMs).toBe(60000);
     });
 
     it('every count and chance the pack pins survives Recalculate and Sync, and moves without the pin', () => {
@@ -473,7 +473,7 @@ describe('Planned mode', () => {
     });
 
     it('gives a Planned Stump its tree\'s rest, and never a Live one', () => {
-        expect(byId.token_ash_stump.value.grows).toEqual({ into: 'token_ash_tree', afterMs: 30000, needsNearby: ['token_ash_forest'] });
+        expect(byId.token_ash_stump.value.grows).toEqual({ into: 'token_ash_tree', afterMs: 60000, needsNearby: ['token_ash_forest'] });
         expect(byId.token_elm_stump).toBeUndefined();
         expect(result.restUnclear.find((r) => r.id === 'token_elm_tree').reason).toMatch(/Stump token_elm_stump is not Planned/);
         for (const e of result.pack.entries) expect(e.value.plan.status, e.id).toBe('planned');

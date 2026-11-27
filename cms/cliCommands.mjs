@@ -44,8 +44,8 @@ export const USAGE = `Usage: npm run cms -- <command> [options]
                                   (and written to --unclear), never guessed. Reads the workspace,
                                   never saves it; a worktree reads the main checkout's.
                                   A gathering Token also gets its uses and rest by the rest rule:
-                                  an end chance a cycle for about 30 s of work, a 30 s refill; a
-                                  regrowing tree's Stump grows back in 30 s; a refill that needs its
+                                  an end chance a cycle for about 15 s of work, a 60 s refill; a
+                                  regrowing tree's Stump grows back in 60 s; a refill that needs its
                                   owner gets the chance only, and is listed. A Token's plan.split
                                   gives its outputs, one line each.
   pack numbers --live --out=<pack.json> [--ids=<ids.json>] [--catalogue=<catalogue.json>] ...

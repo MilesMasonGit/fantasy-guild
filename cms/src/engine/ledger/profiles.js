@@ -56,8 +56,8 @@ import { hallTracksOf, hallGraph, freeRanks, openingPath, starRulesOf, starMoves
  * turn (a vein, a Field: the layout's), or, for a node of a spawner's family (a Forest's trees, an
  * Orchard's, a Quarry's outcrops), the whole allowance of each of the layout's `campSpawners`
  * spawners, and stands within reach of them, so its own rules reach them too (a Sawmill's double
- * loot, a Mine Head's quicker rest). The site's `sitePlaces.places` round the node worked hold its
- * camp, its other nodes and its spawners ({@link placesTaken}); the rest hold buildings, at most
+ * loot, a Mine Head's quicker rest). The site's `sitePlaces.places` hold its camp, its spawners and
+ * every node it works, the one worked among them ({@link placesTaken}); the rest hold buildings, at most
  * `sitePlaces.buildings`, at most `sitePlaces.perKind` of them boosting one kind (speed, XP, yield
  * or rare finds, {@link supportKinds}), and the same building may stand in several of them: each
  * copy is chosen as any boost is, Typical's when it pays back, Maxed's while it lifts the rate and
@@ -391,17 +391,18 @@ export function buildProfiles(book, {
     const siteNodesOf = (ctx) => campNodesOf(book, ctx, { nodes: campNodes, spawners: campSpawners });
 
     /**
-     * The places round the node a work site's own Tokens take, the node itself at the centre: where a
-     * camp may work it, the camp and the layout's other nodes and spawners (a vein's second node; a
-     * Forest and its other trees); else the work's own spawner and the rest of its allowance, or none.
-     * Counted the same whether or not a profile has its camp yet.
+     * The places a work site's own Tokens take (BALANCE_RULES section 5: a gathering site spends 6 or
+     * 7 of its 12 on its camp, its spawner and its 4 or 5 nodes): where a camp may work it, the camp,
+     * the layout's spawners and every node it works, the one worked among them (a vein's camp and its
+     * five veins; a Logging Camp, its Forest and the Forest's four trees); else the work's own spawner
+     * and its whole allowance, or none. Counted the same whether or not a profile has its camp yet.
      */
     function placesTaken(ctx) {
         if (ctx.camps.length) {
             const own = siteNodesOf(ctx);
-            return 1 + own.spawners + (own.nodes - 1);
+            return 1 + own.spawners + own.nodes;
         }
-        if (ctx.family && ctx.kind !== WORK.FIGHT) return allowanceOf(book, ctx.family);
+        if (ctx.family && ctx.kind !== WORK.FIGHT) return 1 + allowanceOf(book, ctx.family);
         return 0;
     }
 

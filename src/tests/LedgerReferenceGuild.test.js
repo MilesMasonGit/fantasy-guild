@@ -10,7 +10,7 @@ import { paceContent } from './fixtures/paceWorld.js';
  * ⭐ The ledger times the reference guild (BALANCE_RULES section 8): heroes
  * arrive about one a tier and staff a chain of at most one maker and about two gatherers, each doing
  * everything in turn when there are fewer; the guild's time is spent once, so a stage waits for its
- * heroes to do all its work; a camp works the layout's nodes (two sparse, four dense) and its own
+ * heroes to do all its work; a camp works the layout's nodes (two sparse, five dense) and its own
  * rules reach them; a site holds eight building places, at most four boosting one kind, and the same
  * building may stand in several.
  */
@@ -41,7 +41,7 @@ describe('the reference guild\'s settings', () => {
     it('⭐ holds section 8\'s heroes by tier, the two layouts and a site\'s places, and drops the camp copies of before', () => {
         const s = settingsOf(null);
         expect(s.heroesByTier.map(p => [p.tier, p.heroes])).toEqual([[0, 1], [1, 1], [2, 2], [3, 3], [4, 4], [5, 5], [6, 6], [7, 8]]);
-        expect(s.layouts).toEqual({ sparse: 2, dense: 4 });
+        expect(s.layouts).toEqual({ sparse: 2, dense: 5 });
         expect(s.layout).toBe('sparse');
         expect(s.sitePlaces).toEqual({ places: 12, buildings: 8, perKind: 4 });
         expect(settingsOf({ campMembers: 3 })).not.toHaveProperty('campMembers');
@@ -181,14 +181,14 @@ describe('the guild\'s time is spent once', () => {
 });
 
 describe('a camp works the layout\'s nodes', () => {
-    it('⭐ two veins in the sparse layout, four in the dense, one with no camp', () => {
+    it('⭐ two veins in the sparse layout, five in the dense, one with no camp', () => {
         const sparse = paceOf();
         const dense = paceOf(paceContent(), { layout: 'dense' });
         // Five charges of 3 s, then a minute's rest: one vein offers 240 cycles an hour.
         expect(sparse.rateAt(VEIN, PROFILE.BARE).rate.cyclesPerHour).toBeCloseTo(240);
         expect(sparse.rateAt(VEIN, PROFILE.MAXED).setup.camp).toEqual({ id: 'token_mining_camp', members: 2 });
         expect(sparse.rateAt(VEIN, PROFILE.MAXED).rate.cyclesPerHour).toBeCloseTo(480);
-        expect(dense.rateAt(VEIN, PROFILE.MAXED).rate.cyclesPerHour).toBeCloseTo(960);
+        expect(dense.rateAt(VEIN, PROFILE.MAXED).rate.cyclesPerHour).toBeCloseTo(1200);
         // The camp copies of before are not read.
         expect(paceOf(paceContent(), { campMembers: 3 }).rateAt(VEIN, PROFILE.MAXED).setup.camp.members).toBe(2);
     });
@@ -197,10 +197,11 @@ describe('a camp works the layout\'s nodes', () => {
         const pace = paceOf();
         const rows = pace.layoutRows();
         expect(rows.map(r => r.work.key)).toEqual(['token_vein||']);
-        expect(rows[0].dense / rows[0].sparse).toBeCloseTo(2);
+        expect(rows[0].dense / rows[0].sparse).toBeCloseTo(2.5);
         const found = pace.findings().filter(f => f.check === 'layout');
         expect(found.map(f => f.key)).toEqual(['token:token_vein']);
-        expect(found[0].message).toMatch(/Copper Vein at Maxed, worked from Mining Camp: 2 in reach make .* an hour and 4 make .* \(\+100 %, over ±25 %\)/);
+        expect(found[0].message).toMatch(/Copper Vein at Maxed, worked from Mining Camp: 2 in reach make .* an hour and 5 make .* \(\+150 %, over ±25 %\)/);
+        expect(found[0].message).toMatch(/a lone hero at one node is busy about a fifth of the time, so a camp keeps one busy on 5/);
         // A vein that rests no longer than it works keeps one hero busy on two: no warning.
         const c = paceContent();
         c.tokens.token_vein.respawn = { mode: 'refill', afterMs: 1000 };
@@ -212,7 +213,7 @@ describe('a camp works the layout\'s nodes', () => {
         expect(pace.otherLayoutPace().settings.layout).toBe('dense');
         expect(pace.otherLayoutPace().book).toBe(pace.book);
         const spread = pace.layoutSpread();
-        expect(spread).toMatchObject({ timed: 'sparse', other: 'dense', nodes: { sparse: 2, dense: 4 } });
+        expect(spread).toMatchObject({ timed: 'sparse', other: 'dense', nodes: { sparse: 2, dense: 5 } });
         const mining = spread.skills.find(s => s.skill === 'mining');
         expect(mining.days.dense.bare).toBeCloseTo(mining.days.sparse.bare, 9);
         expect(mining.days.dense.maxed).toBeLessThan(mining.days.sparse.maxed);
@@ -249,12 +250,12 @@ describe('a work site is timed by its building places', () => {
         expect(vein.setup.supports).toEqual(expect.arrayContaining([{ id: 'token_mine', count: 4 }, { id: 'token_lore', count: 4 }]));
         expect(vein.rate.perCycle.item_copper_ore).toBeCloseTo(pace.rateAt(VEIN, PROFILE.BARE).rate.perCycle.item_copper_ore * 2);
         // With room for twelve, the Rush Hut takes four more; the Gold Statue's yield still has no place.
-        const roomy = paceOf(siteContent(), { sitePlaces: { places: 14, buildings: 12, perKind: 4 } }).siteOf(VEIN, PROFILE.MAXED);
+        const roomy = paceOf(siteContent(), { sitePlaces: { places: 15, buildings: 12, perKind: 4 } }).siteOf(VEIN, PROFILE.MAXED);
         expect(Object.fromEntries(roomy.buildings.map(b => [b.id, b.count]))).toEqual({ token_mine: 4, token_lore: 4, token_rush: 4 });
-        // The twelve places round the vein hold its camp and its second vein too: ten for buildings, two Rush Huts.
+        // The twelve places hold the site's own Tokens too, its camp and both its veins: nine for buildings, one Rush Hut.
         const round = paceOf(siteContent(), { sitePlaces: { buildings: 12, perKind: 4 } }).siteOf(VEIN, PROFILE.MAXED);
-        expect(round).toMatchObject({ room: 10, taken: 2 });
-        expect(Object.fromEntries(round.buildings.map(b => [b.id, b.count]))).toEqual({ token_mine: 4, token_lore: 4, token_rush: 2 });
+        expect(round).toMatchObject({ room: 9, taken: 3 });
+        expect(Object.fromEntries(round.buildings.map(b => [b.id, b.count]))).toEqual({ token_mine: 4, token_lore: 4, token_rush: 1 });
     });
 
     it('⭐ Maxed fills the places itself when Typical holds none', () => {

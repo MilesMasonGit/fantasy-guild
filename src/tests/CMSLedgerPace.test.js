@@ -164,7 +164,7 @@ describe('the tab', { timeout: 20000 }, () => {
     it('⭐ shows both layouts: the nodes the dense one makes more of, and on a click each skill’s days to 99 in both, worked out as a job', async () => {
         const view = mount();
         fireEvent.click(view.getByRole('tab', { name: 'Pace' }));
-        expect(view.container.querySelector('[data-layout-nodes="1"]').textContent).toMatch(/Copper Vein: .* an hour with 2, .* with 4 \(\+100 %\)/);
+        expect(view.container.querySelector('[data-layout-nodes="1"]').textContent).toMatch(/Copper Vein: .* an hour with 2, .* with 5 \(\+150 %\)/);
         expect(view.container.querySelector('[data-layout-spread]')).toBeNull();
         fireEvent.click(view.container.querySelector('[data-layout-spread-button]'));
         await waitFor(() => expect(view.container.querySelector('[data-layout-spread]')).toBeTruthy(), { timeout: 20000 });

@@ -17,8 +17,8 @@ import { PLAN_TIER_LEVELS, tierOrNull, tierLevelsOf, tierLevelAt } from '../../.
  *       speedCapPct: 65,                             // no speed cut past this at Maxed
  *       heroesByTier: [{ tier, heroes }],            // the reference guild's heroes from a stage on: one at copper to eight
  *       gatherersPerMaker: 2.2,                      // a full chain is one maker and this many gatherers: a chain's heroes at most
- *       layouts: { sparse: 2, dense: 4 },            // the nodes a camp works in each layout the pace can time
- *       layoutSpawners: { sparse: 1, dense: 2 },     // the spawners a site worked from one stands, each with its whole allowance
+ *       layouts: { sparse: 2, dense: 5 },            // the nodes a camp works in each layout the pace can time
+ *       layoutSpawners: { sparse: 1, dense: 1 },     // the spawners a site worked from one stands, each with its whole allowance
  *       layout: 'sparse',                            // the layout the pace times (the other is reported beside it)
  *       sitePlaces: { places: 12, buildings: 8, perKind: 4 }, // places round a node, at most this many for buildings, this many boosting one kind
  *       paybackHours: 2,                             // a sensible investor's boost pays for itself within this
@@ -143,25 +143,25 @@ const DEFAULT_HEROES_BY_TIER = Object.freeze([[0, 1], [1, 1], [2, 2], [3, 3], [4
 
 /**
  * The layouts a work site is timed at (BALANCE_RULES sections 2 and 8): how many nodes a camp works.
- * Sparse is the rule's own, a camp with two (the rest rule keeps one hero fully busy on two); dense
- * gives the site's four places that are not buildings (its camp, a second node or two, a spawner) to
- * nodes, four with the worked one. Bare has no camp: one node.
+ * By the rest rule (15 s of work, back in a minute) a hero alone at a node works about a fifth of
+ * the time, so dense is the rule's camp, five nodes keeping one hero fully busy, and sparse a thin
+ * one of two. Bare has no camp: one node.
  */
 export const LAYOUTS = Object.freeze(['sparse', 'dense']);
-const DEFAULT_LAYOUTS = Object.freeze({ sparse: 2, dense: 4 });
+const DEFAULT_LAYOUTS = Object.freeze({ sparse: 2, dense: 5 });
 
 /**
  * A site worked from a spawner (a Forest, an Orchard, a Quarry) counts the spawner's whole allowance
- * as its nodes, since its nodes come only by the allowance (owner, 2026-11-26): one spawner in the
- * sparse layout, two in the dense.
+ * as its nodes, since its nodes come only by the allowance (owner, 2026-11-26): one spawner in both
+ * layouts (a Forest and its four trees), so the layout moves only the sites of plain nodes.
  */
-const DEFAULT_LAYOUT_SPAWNERS = Object.freeze({ sparse: 1, dense: 2 });
+const DEFAULT_LAYOUT_SPAWNERS = Object.freeze({ sparse: 1, dense: 1 });
 
 /**
  * A work site's places (BALANCE_RULES section 5: Tokens 128 u apart within the 240 u reach, twelve
- * places round a node): its camp, its other nodes and its spawners stand in some, and the rest hold
- * buildings, at most about eight; about four of them max one kind of boost, so a site leans one or
- * two ways.
+ * places round a node): a gathering site's camp, spawner and nodes stand in 6 or 7, leaving about 5
+ * for buildings; a maker's station holds at most about eight; about four of them max one kind of
+ * boost, so a site leans one or two ways.
  */
 const DEFAULT_SITE_PLACES = Object.freeze({ places: 12, buildings: 8, perKind: 4 });
 

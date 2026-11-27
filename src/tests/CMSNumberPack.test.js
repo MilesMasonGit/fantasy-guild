@@ -160,11 +160,11 @@ describe('pack numbers', () => {
 
     it('gives a gathering Token its uses and rest by the rest rule', () => {
         const v = pack.entries.find((e) => e.id === 'token_bamboo_grove').value;
-        // 6.4 s a cycle: 21.3 % a cycle that it ends, about 30 s of work on average; back in 30 s.
-        expect(v.endChance).toBe(21.3);
-        expect(6.4 * 100 / v.endChance).toBeCloseTo(30, 0);
+        // 6.4 s a cycle: 42.7 % a cycle that it ends, about 15 s of work on average; back in a minute.
+        expect(v.endChance).toBe(42.7);
+        expect(6.4 * 100 / v.endChance).toBeCloseTo(15, 0);
         expect('uses' in v).toBe(false);
-        expect(v.respawn).toEqual({ mode: 'refill', afterMs: 30000 });
+        expect(v.respawn).toEqual({ mode: 'refill', afterMs: 60000 });
         // No respawn of its own: its end chance would do nothing, so nothing is written and it is listed.
         const star = pack.entries.find((e) => e.id === 'token_fallen_star').value;
         expect('endChance' in star).toBe(false);
