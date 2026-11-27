@@ -13,9 +13,9 @@ const STEP_U = 160;
  * Set the live mat to `steps` steps wide at the reference aspect, before anything is placed.
  * @returns {{w: number, h: number}} its size in mat units
  */
-export function pinMat(setMatTuning, steps = REFERENCE_STEPS) {
+export function pinMat(setMatTuning, steps = REFERENCE_STEPS, aspect = REFERENCE_ASPECT) {
     setMatTuning('matSteps', steps);
-    setMatTuning('matAspect', REFERENCE_ASPECT);
+    setMatTuning('matAspect', aspect);
     const w = steps * STEP_U;
-    return { w, h: Math.round(w * REFERENCE_ASPECT) };
+    return { w, h: Math.round(w * aspect) };
 }
