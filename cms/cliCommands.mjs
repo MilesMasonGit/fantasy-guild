@@ -502,7 +502,7 @@ async function cmdPackNumbers(paths, options, out) {
         result = writeNumberPack(disk.workspace, rows, { id });
     }
     const { pack, filled, unclear, skipped, restUnclear, stumps = [] } = result;
-    out(`Against ${shortPath(paths.root, paths.workspaceFile)} (revision ${disk.revision}), never saved: ${plural(filled.length, 'entry', 'entries')} written, ${unclear.length} unclear, ${needsEffect.length} needing another effect, ${skipped.length} skipped.`);
+    out(`Against ${shortPath(paths.root, paths.workspaceFile)} (revision ${disk.revision}), never saved: ${plural(filled.length, 'entry', 'entries')} written, ${unclear.length} unclear, ${skipped.length} skipped.`);
     const tagged = filled.filter((f) => f.tagged).length;
     if (tagged) out(`  ${plural(tagged, 'edit')} on a record with a Tempo and a Purpose: Recalculate keeps its pinned time and XP.`);
     if (stumps.length) out(`  ${plural(stumps.length, 'Stump')} given its tree's rest, back in ${stumps[0].afterMs / 1000} s: ${stumps.map((x) => x.name).join(', ')}.`);
@@ -522,9 +522,6 @@ async function cmdPackNumbers(paths, options, out) {
         const head = live ? 'Live entries with no clear match to the catalogue, for the content session:' : 'Planned entries with no clear recipe or Token cycle, for the content session:';
         fs.writeFileSync(listFile, [head, ...unclearText(unclear), '', 'Gathering Tokens whose uses and rest are not written in full (the rest rule):', ...unclearText(restUnclear), ''].join('\n'));
         out(`The unclear list written to ${shortPath(paths.root, listFile)}.`);
-        const needsFile = path.join(path.dirname(file), `${id}-needs-effect.txt`);
-        fs.writeFileSync(needsFile, ['Work boosts on tools, worn gear and XP perks, which have no share of the work budget: each needs another effect (for the content session). Left as they are:', ...boostLines(needsEffect), ''].join('\n'));
-        out(`The needs-another-effect list (${needsEffect.length}) written to ${shortPath(paths.root, needsFile)}.`);
     }
     if (!pack) {
         out(`Nothing to write: no ${live ? 'Live' : 'Planned'} entry has numbers from the solver.`);
