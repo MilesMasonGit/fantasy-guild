@@ -23,6 +23,7 @@ import { normaliseEventTable, isRunnable } from '../../../config/eventTable.js';
 import { EVENT_WAIT_MIN_MS, EVENT_WAIT_MAX_MS } from '../../../config/eventTiming.js';
 import { allowsTerrain, TERRAIN } from '../../atlas/TerrainMap.js';
 import { coinsOf, shopCoinsOf } from '../../../config/registries/coinCosts.js';
+import { useDropsOf } from '../../../config/registries/itemUse.js';
 
 /**
  * Two engines over one picture of the content (`buildWorld`), shared by the CMS's ledger views and
@@ -54,7 +55,7 @@ import { coinsOf, shopCoinsOf } from '../../../config/registries/coinCosts.js';
  * Foundations and the
  * buildings built on them, stations and their kinds, Fields and their crops, tool kinds and tiers,
  * catch pools and bait, fishing spots drifting in on water (and the spot kinds an event lands, see
- * {@link spotArrivalRules}), drops, bonus drops and spawns from rules. A new way
+ * {@link spotArrivalRules}), drops, bonus drops and spawns from rules, an item's Use. A new way
  * content appears belongs in `buildWorld`, as a rule.
  * ⚠️ A Planned entry is not in the world: it never reaches the game, so it makes nothing and nothing
  * makes it; its reach is null.
@@ -133,7 +134,8 @@ export const HOW = Object.freeze({
     WORLD: 'world',
     STAR: 'hall-star',
     ARRIVE: 'arrive',
-    EVENT: 'event-lands'
+    EVENT: 'event-lands',
+    USE: 'use'
 });
 
 /** Author-facing words, kept together for translation. */
@@ -161,7 +163,8 @@ export const LEDGER_ENGINE_TEXT = Object.freeze({
         world: 'on a world cell',
         'hall-star': 'a Guild Hall star lit',
         arrive: 'drifts in on the water by itself',
-        'event-lands': 'lands with an event'
+        'event-lands': 'lands with an event',
+        use: 'used from the Bank'
     }),
     ring: (ring) => `Ring ${ring} opened`,
     someWorlds: 'in some worlds',
@@ -590,6 +593,18 @@ export function buildWorld(content = {}, { tierLevels = null } = {}) {
                 gives: outputs.map(o => ({ key: outputKey(o), chance: chanceOf(o), perCycle: quantityOf(o) * chanceOf(o), ...amountOf(o) }))
             });
         }
+    }
+
+    // An item's Use: one copy spent from the Bank pays its drops at once, with no hero, station or
+    // time (`ItemUse.useItem`). Its cycle is 0, so a tree charges it no hero time beyond the item's own.
+    for (const [id, def] of Object.entries(items)) {
+        const drops = useDropsOf(def);
+        if (!drops.length) continue;
+        const self = itemKey(id);
+        add({
+            id: `use:${id}`, how: HOW.USE, via: self, needs: [self], inputs: [{ key: self, quantity: 1 }], cycleMs: 0,
+            gives: drops.map(o => ({ key: itemKey(o.itemId), chance: chanceOf(o), perCycle: quantityOf(o) * chanceOf(o), ...amountOf(o) }))
+        });
     }
 
     const ringStars = hallStarRules(content.hallSky, { add, names, inputsOf });
@@ -1298,7 +1313,7 @@ export function describePath(reach, key, { luckBelow = LUCK_BELOW } = {}) {
 // ── trees ───────────────────────────────────────────────────────────────────────────────────────
 
 /** The rules a tree may follow: ones that make an item over a cycle. */
-const PRODUCING = new Set([HOW.WORK, HOW.CATCH, HOW.DROP, HOW.CRAFT, HOW.TRICKLE, HOW.UPGRADE]);
+const PRODUCING = new Set([HOW.WORK, HOW.CATCH, HOW.DROP, HOW.CRAFT, HOW.TRICKLE, HOW.UPGRADE, HOW.USE]);
 
 /**
  * The rule a tree follows for one item: the simulator's anchor (`valueSource`, the source the item's

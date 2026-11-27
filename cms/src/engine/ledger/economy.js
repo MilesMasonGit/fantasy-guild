@@ -30,9 +30,9 @@ export const HUB_MIN_USES = 3;
 export const VALUE_EFFORT_FACTOR = 4;
 
 /** The rules that make an item over and over. */
-const PRODUCING = new Set([HOW.WORK, HOW.CATCH, HOW.DROP, HOW.CRAFT, HOW.TRICKLE, HOW.UPGRADE, HOW.BONUS]);
-/** The rules that spend an item over and over: a recipe's cycle, a work's input or bait, an upkeep, a regrowth. */
-const REPEATING = new Set([HOW.STATION, HOW.CRAFT, HOW.WORK, HOW.CATCH, HOW.SPAWN, HOW.GROW]);
+const PRODUCING = new Set([HOW.WORK, HOW.CATCH, HOW.DROP, HOW.CRAFT, HOW.TRICKLE, HOW.UPGRADE, HOW.BONUS, HOW.USE]);
+/** The rules that spend an item over and over: a recipe's cycle, a work's input or bait, an upkeep, a regrowth, a Use. */
+const REPEATING = new Set([HOW.STATION, HOW.CRAFT, HOW.WORK, HOW.CATCH, HOW.SPAWN, HOW.GROW, HOW.USE]);
 /** Item types a player uses up or wears: spending them is the player's, not a recipe's. */
 const FINAL_TYPES = new Set(['consumable', 'treasure', 'food', 'drink', 'potion', 'weapon', 'armor', 'tool', 'fuel', 'drop']);
 

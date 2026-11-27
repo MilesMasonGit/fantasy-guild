@@ -281,6 +281,17 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     // its answers once per path: the paths multiply with each drink, and the pace never finishes.
     const inLoop = new Map();
     const madeBy = new Map();
+    // What each item's Use gives, by the item given: `{ from, per, tier }`, `per` how many one copy
+    // gives on average, `tier` when the item used is first had.
+    const usesGiving = new Map();
+    for (const rule of ledger.world.rules) {
+        if (rule.how !== HOW.USE) continue;
+        for (const give of rule.gives) {
+            const id = parseKey(give.key).id;
+            if (!usesGiving.has(id)) usesGiving.set(id, []);
+            usesGiving.get(id).push({ from: parseKey(rule.via).id, per: give.perCycle, tier: tierOfKey(rule.via) });
+        }
+    }
     let profiles = null;
     let indexed = false;
     const indexMakers = () => {
@@ -385,6 +396,13 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             const f = fed(work, profile, cap, stack, catchLevel(work, itemId));
             const n = f.items[itemId] || 0;
             if (n > best.perHour) best = { perHour: n, work };
+        }
+        // A Use takes no hero: what it gives comes as fast as the item used, by the same work.
+        for (const use of usesGiving.get(itemId) || []) {
+            if (use.tier === null || use.tier > cap || !(use.per > 0)) continue;
+            const s = supplyOf(use.from, profile, cap, stack);
+            const n = s.perHour * use.per;
+            if (n > best.perHour) best = { perHour: n, work: s.work };
         }
         stack.delete(itemId);
         const at = leave();
@@ -971,6 +989,12 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         }
         case HOW.UPGRADE:
             return done(rule.cycleMs ? rule.cycleMs / HOUR_MS : 0);
+        case HOW.USE: {
+            // Its step waits for the first copy (a need); the first one it gives asks the copies past that.
+            if (!(give.perCycle > 0)) return done(Infinity, 'a Use that never gives it');
+            const g = gatherHours([{ key: rule.via, quantity: Math.max(0, 1 / give.perCycle - 1) }], profile, cap);
+            return done(g.hours, Number.isFinite(g.hours) ? null : 'the item used is never made', { gather: g });
+        }
         case HOW.BONUS: {
             const target = rule.needs.find(n => n !== rule.via && n.startsWith('token:'));
             const f = target ? ratedBy({ token: parseKey(target).id }) : null;
@@ -1121,6 +1145,11 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             case HOW.GROW:
                 out = { ...base, goods: rule.inputs || [] };
                 break;
+            case HOW.USE: {
+                const per = rule.gives.find(g => g.key === key)?.perCycle;
+                out = { ...base, goods: per > 0 && per < 1 ? [{ key: rule.via, quantity: 1 / per - 1 }] : [] };
+                break;
+            }
             case HOW.WORK:
             case HOW.DROP:
             case HOW.CATCH:

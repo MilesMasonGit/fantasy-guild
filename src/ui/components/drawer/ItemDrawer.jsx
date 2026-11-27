@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { t } from '../../../i18n/index.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import { PixelGlyph } from '../base/PixelGlyph.jsx';
@@ -12,6 +12,10 @@ import { useShownBankEntry } from './bankInspection.js';
 import { lifetimeOf } from '../../../systems/progression/collectionLog.js';
 import { itemKey } from '../../../systems/progression/ledger/engine.js';
 import { bankStackWorth, sellBankStack } from '../../../systems/inventory/Coins.js';
+import { useItem } from '../../../systems/inventory/ItemUse.js';
+import { InventoryManager } from '../../../systems/inventory/InventoryManager.js';
+import { hasUse } from '../../../config/registries/itemUse.js';
+import { ItemUseAmounts, ItemUseResult } from './ItemUseControl.jsx';
 import { KitButton, KIT_BUTTON_TONE } from '../base/KitButton.jsx';
 import { lookUpItem } from '../encyclopedia/encyclopediaLink.js';
 import { coinsText } from '../base/coinsText.js';
@@ -25,26 +29,42 @@ export const DRAWER_SPRITE_PX = 128;
  * tab's first item, else a calm empty line (`bankInspection.js` picks). Top to bottom: the name
  * with the book to its Encyclopedia page, the sprite at 4×, the count, the tags as pills (each
  * explains itself on hover), what it does (tool, break chance, weapon stats, resists, what it
- * restores, the description), then the actions (Sell) and, at the foot, how many were collected this
- * run.
+ * restores, the description), then the actions (Use, for an item that has one, and Sell) and, at
+ * the foot, how many were collected this run.
+ *
+ * The last Use's result stays under the actions while its item is shown, and after a Use that took
+ * the whole stack on whatever the drawer shows next, until another item is picked or the Bank closes.
  * @param {{ open: boolean, menuRight?: boolean }} props
  */
 export const ItemDrawer = ({ open, menuRight = false }) => {
     const entry = useShownBankEntry();
+    const [lastUse, setLastUse] = useState(null);
+    useEffect(() => {
+        if (!open) setLastUse(null);
+    }, [open]);
+    const shownUse = lastUse && entry && (lastUse.itemId === entry.id || !InventoryManager.hasItem(lastUse.itemId)) ? lastUse : null;
     return (
         <SideDrawer open={open} menuRight={menuRight} backdrop="bank" label={t('bank.drawer.label')} data-item-drawer={entry?.id || ''}>
-            {entry ? <ItemDrawerBody key={entry.id} entry={entry} /> : <ItemDrawerEmpty />}
+            {entry ? <ItemDrawerBody key={entry.id} entry={entry} lastUse={shownUse} onUsed={setLastUse} /> : <ItemDrawerEmpty />}
         </SideDrawer>
     );
 };
 
 /** The drawer's six parts for one Bank entry `{ id, count, template }`. */
-export const ItemDrawerBody = ({ entry }) => {
+export const ItemDrawerBody = ({ entry, lastUse = null, onUsed = null }) => {
     const { template, count } = entry;
     const facts = itemTipFacts(template);
     const pills = itemTagPills(template);
     const collected = lifetimeOf(itemKey(entry.id)).collected || 0;
     const [confirming, setConfirming] = useState(false);
+    const usable = hasUse(template);
+    const [amount, setAmount] = useState(1);
+    // The stack shrinks as it is used: the amount follows it down.
+    const useCount = Math.max(1, Math.min(count, amount));
+    const use = () => {
+        const result = useItem(entry.id, useCount);
+        if (result) onUsed?.(result);
+    };
     // Only the Bank's stack is sold: worn copies stay worn, and a carried consumable reads the Bank's count.
     const sell = () => {
         sellBankStack(entry.id);
@@ -99,8 +119,9 @@ export const ItemDrawerBody = ({ entry }) => {
                     </div>
                 </ArrowScrollList>
             </div>
-            {/* 6. The actions (Sell) and, at the very foot, collected this run. */}
+            {/* 6. The actions (Use, Sell) and, at the very foot, collected this run. */}
             <footer className="shrink-0 flex flex-col gap-2 px-3 pt-2 pb-3 border-t border-gi-border/40">
+                {usable && !confirming && <ItemUseAmounts count={count} amount={useCount} onAmount={setAmount} />}
                 <div data-item-drawer-actions className="flex flex-wrap items-center gap-2">
                     {confirming ? (
                         <>
@@ -115,11 +136,25 @@ export const ItemDrawerBody = ({ entry }) => {
                             </KitButton>
                         </>
                     ) : (
-                        <KitButton tone={KIT_BUTTON_TONE.MAIN} onClick={() => setConfirming(true)} buttonClassName="py-1 px-3 text-xs" data-item-drawer-sell>
-                            {t('bank.drawer.sell')}
-                        </KitButton>
+                        <>
+                            {usable && (
+                                <KitButton
+                                    tone={KIT_BUTTON_TONE.MAIN}
+                                    onClick={use}
+                                    buttonClassName="py-1 px-3 text-xs"
+                                    title={t('bank.drawer.useTip', { count: useCount.toLocaleString('en-US'), item: template.name })}
+                                    data-item-drawer-use
+                                >
+                                    {t('bank.drawer.use', { count: useCount.toLocaleString('en-US') })}
+                                </KitButton>
+                            )}
+                            <KitButton tone={KIT_BUTTON_TONE.MAIN} onClick={() => setConfirming(true)} buttonClassName="py-1 px-3 text-xs" data-item-drawer-sell>
+                                {t('bank.drawer.sell')}
+                            </KitButton>
+                        </>
                     )}
                 </div>
+                {lastUse && !confirming && <ItemUseResult result={lastUse} />}
                 <div data-item-drawer-collected className="ui-text-small text-gi-muted tabular-nums">
                     {t('bank.drawer.collected', { count: collected.toLocaleString('en-US') })}
                 </div>
