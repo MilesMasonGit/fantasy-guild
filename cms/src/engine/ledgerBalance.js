@@ -108,6 +108,9 @@ export function balanceText(result, { moves = 15 } = {}) {
         for (const c of g.rows.slice(0, g.cause === CANT_FIX.HALL || g.cause === CANT_FIX.LUCK ? 3 : 20)) lines.push(`  - ${c.message}`);
         if ((g.cause === CANT_FIX.HALL || g.cause === CANT_FIX.LUCK) && g.rows.length > 3) lines.push(`  - and ${g.rows.length - 3} more`);
     }
+    const gaps = result.gaps || [];
+    lines.push(`Levels the XP lever leaves to new content: ${gaps.length}.${gaps.length ? ' Raising the work there would out-pay a later work at its own levels:' : ''}`);
+    for (const g of gaps) lines.push(`- ${g.why} (held at ${g.xp} XP a cycle)`);
     return lines.join('\n');
 }
 

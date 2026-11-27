@@ -58,14 +58,18 @@ describe('the balancing preview', () => {
         expect(wall.message).toMatch(/needs a (new )?source/i);
     });
 
-    it('puts back an XP proposal whose levels another source took over: only numbers that set a level stay', () => {
+    it('never raises a source into the levels another carries: the Herbs stay under the Tonic, and their early levels are a gap', () => {
         const c = balanceContent();
-        // The Tonic carries Alchemy 3 on, too slowly; once both are raised the Herbs carry its levels too. That
-        // takes a curve that slows faster than the XP table grows: 12 % a level, past the owner's range.
+        // The Tonic carries Alchemy 3 on, too slowly; raised to follow its own levels, the Herbs would carry the
+        // Tonic's too. That takes a curve that slows faster than the XP table grows: 12 % a level, past the owner's range.
         c.recipes.find(x => x.id === 'recipe_tonic').xp = 2;
         const r = proposeBalance(c, { ...CAMP_ONLY, paceRule: { stepPct: 12, maxPct: 12 } });
-        expect(proposalOf(r, 'token:token_herbs', 'config.xp')).toBeTruthy();
-        expect(proposalOf(r, 'recipe:recipe_tonic', 'xp')).toBeNull();
+        const herbs = proposalOf(r, 'token:token_herbs', 'config.xp');
+        const tonic = proposalOf(r, 'recipe:recipe_tonic', 'xp');
+        expect(herbs).toBeTruthy();
+        expect(tonic).toBeTruthy();
+        expect(herbs.to).toBeLessThan(tonic.to);
+        expect(r.gaps).toEqual([expect.objectContaining({ skill: 'alchemy', fromLevel: 1, key: 'token:token_herbs', xp: herbs.to })]);
         expect(r.after.walls.filter(w => w.skill === 'alchemy')).toEqual([]);
     });
 

@@ -21,7 +21,9 @@ import { SKILLS, SKILL_LAYERS } from '../../../../src/config/registries/skillReg
  * - **XP a cycle**: for each skill, the levels where one source is the best at Maxed are worked at
  *   that source's XP; its XP is scaled so those levels take the curve's time. Where the curve and
  *   the XP a level needs part by more than the wall factor inside one source's levels, only the
- *   first stretch is followed and the rest is reported: one number cannot follow both.
+ *   first stretch is followed and the rest is reported: one number cannot follow both. A raise
+ *   stops short of out-paying, at any level, the best other work where another work carries the
+ *   levels (BALANCE_RULES section 1); the levels it then leaves slow are reported as `gaps`.
  * - **Costs and times**: a one-off step far longer than the pace allows (a Shop price, a build's
  *   inputs or time, a growth) is cut to the wait the pace allows there.
  * - **Coins** (brief 870 C3): a price that asks coins (a Shop Token's `shop.coins`, a Guild Hall
@@ -221,6 +223,8 @@ export function balanceSummary({ pace, ledger }) {
  * @returns {{ before, after, proposals, cantFix, rounds }} `before`/`after` from {@link balanceSummary};
  *   `proposals` `[{ key, kind, id, name, field, label, lever, from, to, why }]`, each field once;
  *   `cantFix` `[{ kind: 'wall'|'stage'|'unlock'|'boost', key, skill?, name, cause, message }]`
+ *   `gaps` `[{ skill, fromLevel, toLevel, key, name, xp, wanted, why }]`: levels an XP raise would follow only by
+ *   out-paying a later work, held at `xp` (`toLevel` the first level past them): they need new content
  */
 export function proposeBalance(content, rawSettings = null, { rounds = DEFAULT_ROUNDS } = {}) {
     const settings = settingsOf(rawSettings);
@@ -229,7 +233,7 @@ export function proposeBalance(content, rawSettings = null, { rounds = DEFAULT_R
     const before = balanceSummary(first);
     // The passes change only the copy; until the first change, the authored content's pace stands for it.
     const state = {
-        settings, original, first, content: structuredClone(content), eval: first, proposals: new Map(), capped: new Map()
+        settings, original, first, content: structuredClone(content), eval: first, proposals: new Map(), capped: new Map(), gaps: new Map()
     };
 
     let used = 0;
@@ -250,9 +254,13 @@ export function proposeBalance(content, rawSettings = null, { rounds = DEFAULT_R
     const after = kept.length ? balanceSummary(state.eval) : before;
     state.final = { bands: null };
     const proposals = kept.map(({ problem, result, ...p }) => ({ ...p, why: [problem, result ? result(state, p) : null].filter(Boolean).join(' ') }));
+    const live = new Set(finalBands(state).map(b => `${b.kind}:${b.id}|${b.field}`));
+    const gaps = [...state.gaps].filter(([fieldId]) => live.has(fieldId)).map(([, gap]) => gap)
+        .sort((a, b) => a.skill.localeCompare(b.skill) || a.fromLevel - b.fromLevel);
     return {
         before, after, proposals,
         cantFix: explain(state, after),
+        gaps,
         rounds: used
     };
 }
@@ -485,23 +493,81 @@ function xpBands(state) {
     return [...groups.values()];
 }
 
+/**
+ * The most XP a cycle a band's field can take without its work out-paying, at the curve's player,
+ * the best other work at a level another work's XP field carries, in the authored content or now:
+ * `{ to, over: { name, level } }`, the highest whole number strictly under that rate (read as
+ * proportional to XP a cycle), null when there is no such level.
+ * ⚠️ Strictly under: on a tie the lower gate is the best source, so an equal rate takes the levels.
+ */
+function xpCeiling(state, g, fieldId) {
+    const { pace } = state.eval;
+    const idOf = (w) => {
+        const f = xpFieldOf(state.content, w);
+        return f ? `${f.kind}:${f.id}|${f.field}` : null;
+    };
+    const others = new Set();
+    for (const p of [state.first.pace, pace]) {
+        for (const row of p.trackOf(g.skill).levels) {
+            const src = row.source[TARGET];
+            if (src?.work && src.xp > 0 && idOf(src.work) !== fieldId) others.add(row.level);
+        }
+    }
+    let best = null;
+    for (const row of pace.trackOf(g.skill).levels) {
+        if (!others.has(row.level)) continue;
+        let own = 0;
+        let other = null;
+        for (const r of pace.xpSourcesAt(g.skill, row.level, TARGET, row.tier)) {
+            if (idOf(r.work) === fieldId) own = Math.max(own, r.xp);
+            else if (!other || r.xp > other.xp) other = r;
+        }
+        if (!(own > 0) || !other) continue;
+        const f = other.xp / own;
+        if (!best || f < best.f) best = { f, level: row.level, work: other.work };
+    }
+    if (!best) return null;
+    return { to: Math.max(1, Math.ceil(g.value * best.f) - 1), over: { name: pace.workName(best.work), level: best.level } };
+}
+
 function xpPass(state) {
     const tol = state.settings.tolerancePct / 100;
     let changed = false;
     for (const g of xpBands(state)) {
         const R = g.ratio;
         if (!(R > 0) || !Number.isFinite(R)) continue;
-        if (R >= 1 / (1 + tol) && R <= 1 + tol) continue;
         const authored = Number(getPath(recordOf(state.original, g.kind, g.id), g.field)) || g.value;
+        const fieldId = `${g.kind}:${g.id}|${g.field}`;
+        const ceiling = xpCeiling(state, g, fieldId);
+        // The ceiling only stops a raise; it never takes a work below its authored number.
+        const roof = ceiling ? Math.max(authored, ceiling.to) : Infinity;
+        const onPace = R >= 1 / (1 + tol) && R <= 1 + tol;
+        // ⚠️ Checked on pace too: a work raised in an earlier round can out-pay one lowered since.
+        if (onPace && g.value <= roof) {
+            state.gaps.delete(fieldId);
+            continue;
+        }
         const lo = Math.max(1, Math.ceil(authored / MAX_XP_FACTOR));
         const hi = Math.floor(authored * MAX_XP_FACTOR);
-        const wanted = Math.round(g.value * R);
-        const to = Math.min(hi, Math.max(lo, wanted));
+        const wanted = onPace ? g.value : Math.round(g.value * R);
+        const limited = Math.min(hi, Math.max(lo, wanted));
         const first = g.head[0].level;
         const last = g.head[g.head.length - 1].level + 1;
         const name = state.eval.pace.workName(g.work);
-        const fieldId = `${g.kind}:${g.id}|${g.field}`;
-        if (wanted > hi || wanted < lo) {
+        const to = Math.min(limited, roof);
+        const slow = to < limited ? g.head.filter(r => r.ratio * g.value / to > 1 + tol) : [];
+        if (slow.length) {
+            const from = slow[0].level;
+            const upTo = slow[slow.length - 1].level + 1;
+            const over = ceiling.over;
+            state.gaps.set(fieldId, {
+                skill: g.skill, fromLevel: from, toLevel: upTo, key: entryKeyOf(g.kind, g.id), name, xp: to, wanted: limited,
+                why: `${PACE_TEXT.skill(g.skill)} ${from} → ${upTo}: ${name} would need ${limited} XP a cycle to follow the curve there, but above ${to} it would out-pay ${over.name}, the best ${AT_TARGET} work at ${PACE_TEXT.skill(g.skill)} ${over.level}, and take its levels. These levels need a work of their own.`
+            });
+        } else {
+            state.gaps.delete(fieldId);
+        }
+        if (to === limited && (wanted > hi || wanted < lo)) {
             state.capped.set(fieldId, {
                 kind: 'xp', key: entryKeyOf(g.kind, g.id), name, cause: CANT_FIX.LIMIT,
                 message: `${name}: ${PACE_TEXT.skill(g.skill)} ${first} → ${last} takes ${PACE_TEXT.times(R)} the curve's time on it; its XP a cycle would need to be ${wanted}, and the proposal stops at ${to} (${MAX_XP_FACTOR}× its authored ${authored} either way). The source itself is too ${R > 1 ? 'slow' : 'fast'} for a number to fix.`
