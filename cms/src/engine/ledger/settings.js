@@ -74,16 +74,17 @@ const BUDGET_KINDS = BOOST_BUDGET_KINDS.map((k) => k.id);
 /**
  * The boost budget (BALANCE_RULES section 5, owner 2026-11-07): what Typical and Maxed hold at the
  * opening of each tier, in percent, by kind: speed (the cut in work or growth time), XP, yield (more
- * of the work's main output a cycle) and rare finds. Copper's row serves tiers 0 and 1.
+ * of the work's main output a cycle) and rare finds. Copper's row serves tiers 0 and 1. The yield
+ * column is the balancer's of 2026-11-26, Typical three quarters of it.
  */
 const DEFAULT_BOOST_BUDGET = Object.freeze([
-    [0, [15, 20], [7.5, 10], [2, 27], [0, 100]],
-    [2, [22.5, 30], [7.5, 10], [41, 77], [0, 100]],
-    [3, [26.25, 35], [11.25, 15], [68, 110], [0, 100]],
-    [4, [30, 40], [11.25, 15], [100, 150], [50, 150]],
-    [5, [33.75, 45], [15, 20], [138, 197], [50, 150]],
-    [6, [37.5, 50], [15, 20], [183, 254], [50, 250]],
-    [7, [45, 60], [15, 20], [300, 400], [50, 250]],
+    [0, [15, 20], [7.5, 10], [7.5, 10], [0, 100]],
+    [2, [22.5, 30], [7.5, 10], [45, 60], [0, 100]],
+    [3, [26.25, 35], [11.25, 15], [45, 60], [0, 100]],
+    [4, [30, 40], [11.25, 15], [82.5, 110], [50, 150]],
+    [5, [33.75, 45], [15, 20], [82.5, 110], [50, 150]],
+    [6, [37.5, 50], [15, 20], [120, 160], [50, 250]],
+    [7, [45, 60], [15, 20], [157.5, 210], [50, 250]],
 ].map(([tier, ...cells]) => Object.freeze({
     tier, ...Object.fromEntries(BUDGET_KINDS.map((kind, i) => [kind, Object.freeze({ typical: cells[i][0], maxed: cells[i][1] })])),
 })));

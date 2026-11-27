@@ -1,6 +1,7 @@
 // the progression ledger's pace: supply, level times and path time at each profile, and checks D
 
-import { buildRateBook, LIFECYCLE, WORK } from './rates.js';
+import { buildRateBook, LIFECYCLE, WORK, FACTOR } from './rates.js';
+import { EFFECT_TYPES } from '../../../../src/systems/effects/constants.js';
 import { buildProfiles, targetKey, PROFILE, PROFILES, PROFILE_TEXT, BOOST_KIND, BOOST_KIND_TEXT, boostKindOf, BEFORE_HALL, pickKindOf, RARE_FIND_KINDS, gainOf, batchPaybackOf, repeatedByHero } from './profiles.js';
 import { starAddsRate } from './hall.js';
 import { settingsOf, minutesPerLevelAt, minutesToReach, formatMinutes, levelAtMinutes, coinMinutesAt, COIN_CURVE, boostBudgetAt, BOOST_BUDGET_KINDS, heroesAt, chainHeroesAt, paybackHoursAt } from './settings.js';
@@ -2662,6 +2663,24 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         const next = settings.tierLevels.find(p => p.tier > tier && p.level > from);
         return Math.max(from, next ? Math.min(level, next.level - 1) : level);
     };
+    /**
+     * Boosts the budget does not size (the balancer, 2026-11-26): a world event's Token and a factor that
+     * moves only bonus drops. A profile's rate is read again with them switched off, unless Bare holds
+     * them too (the work's own). Mastery tracks are not rated at all (`rates.js` reads none).
+     */
+    const eventTokens = new Set(Object.values(content?.events || {}).map(e => e?.typeId).filter(Boolean));
+    const unbudgeted = (factor) => {
+        if (!factor?.on) return false;
+        const axes = list(factor.axes);
+        if (axes.length && axes.every(a => a === EFFECT_TYPES.BONUS_DROP)) return true;
+        const id = factor.kind === FACTOR.SUPPORT ? String(factor.id).slice(FACTOR.SUPPORT.length + 1) : null;
+        return !!id && (eventTokens.has(id) || list(rates.token(id)?.tags).includes('Event'));
+    };
+    function budgetedRate(target, chosen, bare) {
+        const own = new Set(list(bare.factors).filter(f => f.on).map(f => f.id));
+        const off = list(chosen.rate?.factors).filter(f => unbudgeted(f) && !own.has(f.id)).map(f => f.id);
+        return off.length ? rates.rateOf(target, { ...chosen.setup, off: [...list(chosen.setup?.off), ...off] }) : chosen.rate;
+    }
     let budgetMemo = null;
     /**
      * Every boost the profiles hold, counted against the boost budget (BALANCE_RULES section 5): for
@@ -2686,7 +2705,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             const entryTier = Math.max(work.tier, effTier(work.entry) ?? work.tier);
             const cell = boostBudgetAt(settings, levelInTier(entryTier, level));
             for (const profile of [PROFILE.TYPICAL, PROFILE.MAXED]) {
-                const totals = boostTotals(bare, profiles.profileOf(work.target, profile, work.tier).rate);
+                const totals = boostTotals(bare, budgetedRate(work.target, profiles.profileOf(work.target, profile, work.tier), bare));
                 for (const { id: kind } of BOOST_BUDGET_KINDS) {
                     const pct = totals[kind];
                     if (pct === null || !(pct > 0.05)) continue;

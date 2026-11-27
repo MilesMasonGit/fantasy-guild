@@ -228,13 +228,48 @@ describe('the boost budget', () => {
     it('⭐ holds BALANCE_RULES section 5\'s table, the 65 % speed cap its last row', () => {
         const s = settingsOf(null);
         expect(s.boostBudget.map(r => r.tier)).toEqual([0, 2, 3, 4, 5, 6, 7]);
-        expect(s.boostBudget[0]).toEqual({ tier: 0, speed: { typical: 15, maxed: 20 }, xp: { typical: 7.5, maxed: 10 }, yield: { typical: 2, maxed: 27 }, rare: { typical: 0, maxed: 100 } });
-        expect(s.boostBudget[6]).toEqual({ tier: 7, speed: { typical: 45, maxed: 60 }, xp: { typical: 15, maxed: 20 }, yield: { typical: 300, maxed: 400 }, rare: { typical: 50, maxed: 250 } });
+        expect(s.boostBudget[0]).toEqual({ tier: 0, speed: { typical: 15, maxed: 20 }, xp: { typical: 7.5, maxed: 10 }, yield: { typical: 7.5, maxed: 10 }, rare: { typical: 0, maxed: 100 } });
+        expect(s.boostBudget[6]).toEqual({ tier: 7, speed: { typical: 45, maxed: 60 }, xp: { typical: 15, maxed: 20 }, yield: { typical: 157.5, maxed: 210 }, rare: { typical: 50, maxed: 250 } });
         expect(s.speedCapPct).toBe(65);
         // Speed and XP climb level by level between tier openings; yield and rare finds step.
-        expect(boostBudgetAt(s, 25)).toMatchObject({ speed: { typical: 24.375, maxed: 32.5 }, yield: { typical: 41, maxed: 77 } });
+        expect(boostBudgetAt(s, 25)).toMatchObject({ speed: { typical: 24.375, maxed: 32.5 }, yield: { typical: 45, maxed: 60 } });
         expect(boostBudgetAt(s, 1)).toMatchObject({ speed: { typical: 15, maxed: 20 } });
         expect(boostBudgetAt(s, 95)).toMatchObject({ speed: { typical: 45, maxed: 60 } });
+    });
+
+    it('defaults hold the balancer yield column (2026-11-26), three quarters of it at Typical', () => {
+        const s = settingsOf(null);
+        const maxed = { 0: 10, 2: 60, 3: 60, 4: 110, 5: 110, 6: 160, 7: 210 };
+        for (const r of s.boostBudget) {
+            expect(r.yield.maxed).toBe(maxed[r.tier]);
+            expect(r.yield.typical).toBe(0.75 * r.yield.maxed);
+        }
+    });
+
+    it('leaves world events and bonus drops out of the boost budget check', () => {
+        // A Rush Hut cuts the vein's work 70 %: over the cap. Tagged a world event, it is not counted.
+        const rush = (tags) => {
+            const c = paceContent();
+            c.tokens.token_rush = { id: 'token_rush', name: 'Rush Hut', tokenType: 'buff', tags, uses: null, requiresHero: false, config: null, statements: [{ id: 'stm_rush', keyword: 'provides', to: { mode: 'id', value: 'token_vein' }, reach: 'nearby', payload: { type: 'WORK_TIME', bucket: 'percentage', value: -0.7 } }] };
+            c.recipes.push({ id: 'recipe_build_rush', name: 'Build Rush Hut', skill: 'construction', levelRequirement: 1, xp: 5, durationMs: 30000, foundationKinds: ['wood'], inputs: [{ itemId: 'item_oak_wood', quantity: 5 }], outputs: [{ tokenId: 'token_rush', chance: 100, minQty: 1, maxQty: 1 }] });
+            return paceOf(c).budgetRows().find(r => r.work.key === 'token_vein||' && r.kind === 'speed' && r.profile === PROFILE.MAXED);
+        };
+        expect(rush([]).pct).toBeGreaterThan(65);
+        expect(rush(['Event'])?.pct ?? 0).toBeLessThan(65);
+        // A Gem Hut adds a bonus drop of the gem the vein already finds now and then: no rare-finds total from it.
+        const gems = (grant) => {
+            const c = paceContent();
+            c.items.item_gem = { id: 'item_gem', name: 'Gem', type: 'material', plan: { tier: 0 } };
+            c.tokens.token_vein.config.outputs.push({ itemId: 'item_gem', chance: 1, minQty: 1, maxQty: 1 });
+            c.tokens.token_gem_hut = { id: 'token_gem_hut', name: 'Gem Hut', tokenType: 'buff', tags: [], uses: null, requiresHero: false, config: null, statements: [grant] };
+            c.recipes.push({ id: 'recipe_build_gem_hut', name: 'Build Gem Hut', skill: 'construction', levelRequirement: 1, xp: 5, durationMs: 30000, foundationKinds: ['wood'], inputs: [{ itemId: 'item_oak_wood', quantity: 5 }], outputs: [{ tokenId: 'token_gem_hut', chance: 100, minQty: 1, maxQty: 1 }] });
+            return paceOf(c).budgetRows().find(r => r.work.key === 'token_vein||' && r.kind === 'rare' && r.profile === PROFILE.MAXED);
+        };
+        // The same gems doubled half the time count as rare finds; as a bonus drop they are not counted.
+        const doubled = gems({ id: 'stm_double', keyword: 'provides', to: { mode: 'id', value: 'token_vein' }, reach: 'nearby', payload: { type: 'DOUBLE_DROP', bucket: 'flat', value: 50, category: 'item_gem' } });
+        expect(doubled.pct).toBeGreaterThan(40);
+        const bonus = gems({ id: 'stm_gem', keyword: 'grants', to: { mode: 'id', value: 'token_vein' }, reach: 'nearby', payload: { type: 'BONUS_DROP', itemId: 'item_gem', quantity: 1, chance: 5 } });
+        expect(bonus?.pct ?? 0).toBeLessThan(1);
     });
 
     it('defaults hold three quarters of each speed and XP boost at Typical', () => {
