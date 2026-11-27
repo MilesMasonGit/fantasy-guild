@@ -174,3 +174,22 @@ ledger to time a real work site and a real roster, and the first needs the spaci
 - **The boost budget restated by places**: the same building all game and more of them (a Faster Work
   building is 5 %, one at copper to four at darkmetal); a typical player holds three quarters of each
   boost, ending about 1.4x behind optimized; XP buildings are four places at 2.5 %.
+
+## The boosts interview (owner, 2026-11-26)
+
+*After the combined trial of the first number pack showed the live game's boosts at about twice the
+budget. These replace three of the rulings above.*
+
+- **The first number pack waits for the boosts pack**; they land together, then one coin reset.
+- **Only what can be held at once counts**: one consumable active in all (a drink or a potion), a site
+  leans one or two ways, perks and Hall stars always on.
+- **Guild Hall stars are small steps**: a star's ranks add up to about 10 % of its kind. This replaces
+  the Hall carrying most of the yield.
+- **Nodes: about 15 seconds of work, back in about a minute; 4 or 5 nodes keep a hero busy.** This
+  replaces 30 seconds and two nodes. A gathering site then has about 5 places for buildings.
+- **Bigger yield buildings**: a Double Output building is +50 %, four of them +200 %; raw counts keep
+  doubling every 40 levels.
+- **A station's upgrade step is worth one Faster Work building** (5 %) and takes one of the four.
+- **The budget's totals are unchanged** (a speed-leaning hero: 60 % off work time and +20 % XP at
+  darkmetal, 1.4x to 3x over a hero with no boosts), so the first pack's XP stands.
+

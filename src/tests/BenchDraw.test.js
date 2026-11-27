@@ -9,7 +9,7 @@ import {
     parseArgs, metricsOf, rejectReason, aggregate, costTable, judge, compareToBaseline, settingsMismatch, cpuPlan, askedRates,
     toleranceFor, abOrder, DRAW_SWITCHES, TOLERANCE, baselineEntry, SCENE_IDS, EXTRA_SCENE_IDS
 } from '../../bench/browser/drawLib.mjs';
-import { capPlaced, spawnRoom, SHIPPED_MAT_CELLS } from '../../bench/scenarios/cap.mjs';
+import { capPlaced, spawnRoom } from '../../bench/scenarios/cap.mjs';
 import { REALISTIC_PLACED } from '../../bench/scenarios/realistic.mjs';
 
 const report = (over = {}) => ({
@@ -84,12 +84,14 @@ describe('the cap boards', () => {
         expect(base).toHaveLength(48);
         expect(base.slice(0, 39)).toEqual(REALISTIC_PLACED);
         expect(base.slice(39)).toEqual(REALISTIC_PLACED.slice(0, 9));
-        // 256 wants 95 placed; the shipped mat has 72 free cells, and spawners make up the rest.
-        expect(capPlaced(256)).toHaveLength(SHIPPED_MAT_CELLS);
+        expect(capPlaced(256)).toHaveLength(95);
+        // Held to fewer cells, the spawners make up the rest.
+        expect(capPlaced(256, 72)).toHaveLength(72);
     });
 
     it('have the spawners to fill the rest of the mat up to the cap', () => {
         for (const cap of [128, 153, 256]) expect(capPlaced(cap).length + spawnRoom(capPlaced(cap))).toBeGreaterThanOrEqual(cap);
+        expect(capPlaced(256, 72).length + spawnRoom(capPlaced(256, 72))).toBeGreaterThanOrEqual(256);
         // S2's own mix is kept where it suffices.
         expect(capPlaced(128).filter(t => t === 'bench_forest')).toHaveLength(4);
     });

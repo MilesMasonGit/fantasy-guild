@@ -75,7 +75,7 @@ The base times (6, 8 and 12 seconds) are starting values (agent's call). Builds,
 
 **A make step takes longer the more bars it uses**: seconds × (1 + 0.5 × (count − 1)). A Chestplate (5 bars) takes 3x a Dagger (1 bar): about 40 s for a Copper Chestplate, 69 s for a Darkmetal one. *Owner, 2026-11-25, raised from 0.2:* at 0.2 a bar spent on Daggers earned 2.8x the XP of a bar spent on Chestplates, so a guild short on ore ground Daggers; at 0.5 it is 1.7x, still the thrifty choice and no longer the only sensible one.
 
-**The rest rule** (owner, 2026-11-25, replacing "busy at least 75 %"): **a lone hero at one node works in bursts and waits, busy about half the time, and a node is back in about 30 seconds.** So a node's uses × its cycle is about 30 seconds of work (five uses of 6 seconds), then about 30 seconds of rest or regrowth. **A second node in reach keeps the hero fully busy**: a camp doubles a gatherer, and nodes past that are room for more heroes. ⚠️ Today's nodes are far from it: an Oak Tree is 15 seconds of work and a 5-minute stump (busy 5 %), a Copper Vein 15 seconds and a minute's rest (busy 20 %); the number pack brings them to the rule. The reference set-ups: bare is one node (half busy), typical and optimized a camp with two or more (fully busy).
+**The rest rule** (owner, 2026-11-26, replacing the 30 seconds and two nodes ruled the day before: "We can make the node refresh take longer. I want the player to ideally need 4 or 5 nodes to keep them busy all the time."): **a node gives about 15 seconds of work and is back in about a minute.** A hero alone at one node works about a fifth of the time; **a camp with 4 or 5 nodes keeps a hero fully busy**, about 4.5 times faster, and nodes past that are room for more heroes. Regrowth boosts keep their job: each one lets a camp stay busy on fewer nodes, which frees a place for a building. ⚠️ Today's nodes are far from it (an Oak Tree is 15 seconds of work and a 5-minute stump); the number pack brings them to the rule. The reference set-ups: bare is one node, typical and optimized a camp with 4 or 5.
 
 ## 3. Ingredient counts
 
@@ -149,12 +149,14 @@ The base times (6, 8 and 12 seconds) are starting values (agent's call). Builds,
 
 | Kind | Shared out |
 |---|---|
-| Speed | Faster Work buildings −20 % (about four places at 5 % each), skill perks −15 %, drink −20 %, Hall stars −5 % (owner, 2026-11-26: drinks are twice as strong and the extra comes from buildings; perks took 10 % of the stars' share, owner 2026-11-21, [concept_milestone_perks.md](../active/concept_milestone_perks.md)). A station's own upgrade counts inside the buildings' share |
-| Yield | Double Output building (a sure double at most) +100 %, Hall stars +200 %, camp variants and perks +100 % |
-| XP | More XP buildings +10 % (four places at 2.5 % each), drink +10 % (owner, 2026-11-26: the buildings' share doubled, taken from the Hall stars, which no longer carry an XP percentage) |
+| Speed | Faster Work buildings and station steps −20 % (four at 5 %), skill perks −15 %, Guild Hall stars −10 %, the one consumable as a speed drink −15 % (owner, 2026-11-26) |
+| Yield | Double Output buildings +200 % (four at +50 %; owner, 2026-11-26: "Bigger yield buildings"), Guild Hall stars +10 %, camp variants and perks the rest (about +190 % by the table: ⚠️ not yet matched by content, so late chains need more than 2 gatherers until it is) |
+| XP | More XP buildings +10 % (four at 2.5 %), Guild Hall stars +10 %. An XP drink or potion takes the speed drink's place |
 | Rare finds | A rare-find potion +100 %, rising to +200 % for late potions (owner); a Rare Finds building +50 % (owner), from mythril, when the first Rare Finds variants come |
 
 ⚠️ **Today's Hall is over budget on XP**: its Lore stars give +15 % XP (Builder's Lore +30 %) in the first tiers, where the whole XP budget is +10 %. The paper pass brings them in. A Double Output building can give at most +100 % (a sure double), so most late yield is the Hall's.
+
+**Only what can be held at once counts** (owner, 2026-11-26: "all budgets can't be active at the same time. A hero can only have one potion active"). **A hero has one drink active, and drinks, potions and elixirs are all drinks** (owner, 2026-11-26: "One drink, one other type of boost item (such as scrolls). Drinks, potions, elixirs, these are all the same. Consumables like poisons, bait, arrows, motes all don't provide buffs so they're different."). A second boost item of another type, such as a scroll, may be held beside it; none is designed yet, and it will need its own share when one is. Poisons, bait, arrows and Motes are not boosts and are not limited. ⚠️ The game today allows one drink and any number of work potions and elixirs together (T-738); a site leans one or two ways; perks and Guild Hall stars are always on. The table's totals are a speed-leaning hero's: the one consumable is a speed drink, and a hero who takes an XP, yield or rare-finds potion gives the speed drink up. **Guild Hall stars are small steps**: all the ranks of one star add up to about 10 % of its kind (owner: "Hall stars are meant for small incremental gains, and the buildings and potions are meant for larger buffs").
 
 **Consumables last a number of cycles, and crafts make batches** (owner, after the review: "A dose is meant to last a number of cycles, not time. But also we will make batches."). **A batch must pay back at least 4x**: the work time the whole batch saves (or the finds it adds) is at least four times the hero time it took to make, its ingredients included. **A drink or a work potion lasts 25 work cycles, a craft makes 5, and it is twice as strong** (owner, 2026-11-26: "I prefer shorter and stronger, but for both drinks and potions"; it replaces the 50 cycles ruled on 2026-11-25). One craft covers 125 cycles at double strength, the same payback as 250 at single: at least 4x for every planned drink but the level-95 Sunset Punch, a little short. A drink then lasts roughly 4 to 8 minutes of work and a hero gets through 8 to 14 an hour. ⚠️ Today a drink lasts 10 cycles and a work potion 1 (`consumableRule.js`): the 25 lands with the first number pack (T-338 part 1).
 
@@ -162,7 +164,7 @@ The base times (6, 8 and 12 seconds) are starting values (agent's call). Builds,
 
 | Rule | Ruling |
 |---|---|
-| **Places** | **Reach 240 u, Tokens at least 128 u apart (edges touching): 12 places round a node** (owner, 2026-11-26, [concept_token_spacing.md](../active/concept_token_spacing.md), brief 890). A typical site spends about 4 on its camp, a second node or two and a spawner, leaving **about 8 for buildings** |
+| **Places** | **Reach 240 u, Tokens at least 128 u apart (edges touching): 12 places round a node** (owner, 2026-11-26, [concept_token_spacing.md](../active/concept_token_spacing.md), brief 890). A maker's station has about 8 places for buildings. **A gathering site spends 6 or 7 on its camp, its spawner and its 4 or 5 nodes, leaving about 5 for buildings**, so gatherers choose harder than makers |
 | **Choosing** | **A perfect site cannot max every kind**: about 4 places max one kind (speed, yield, XP or rare finds), so a site leans one or two ways. One building's number is the kind's building share ÷ 4 |
 | **Typical** | **A typical player fills most of the places** (6 or more). Players differ by which boosts they pick, not by how many they fit |
 | **Station upgrades** | **A station's own upgrade is a boost** and shares the tier's budget with the buildings round it. Today's upgraded stations run up to 60 % faster by themselves; they come down to the budget |
@@ -171,9 +173,9 @@ The base times (6, 8 and 12 seconds) are starting values (agent's call). Builds,
 
 | Kind | One building | Copper | Iron | Silver | Mythril | Gold | Adamantine | Darkmetal |
 |---|---|---|---|---|---|---|---|---|
-| Faster Work | 5 % off work time | 1 | 2 | 2 | 3 | 3 | 3 | 4 |
+| Faster Work, or a station's own upgrade step | 5 % off work time | 1 | 2 | 2 | 3 | 3 | 3 | 4 |
 | More XP | +2.5 % XP | 2 | 2 | 3 | 3 | 4 | 4 | 4 |
-| Double Output | +25 % yield | 0 | 1 | 1 | 2 | 2 | 3 | 4 |
+| Double Output | +50 % yield | 0 | 1 | 1 | 2 | 2 | 3 | 4 |
 | Rare Finds | +12.5 % rare finds (balancer's call: the +50 % ruled for one building, over four places) | 0 | 0 | 0 | 2 | 2 | 4 | 4 |
 
 *How many an optimized site holds, from the tier's budget for buildings ÷ one building. A site has about 8 places, so it cannot hold four of every kind: at darkmetal, two kinds in full or a mix. A station's own upgrade takes Faster Work's share when it has one.*
@@ -231,7 +233,7 @@ The base times (6, 8 and 12 seconds) are starting values (agent's call). Builds,
 | **Heroes** | 8, the game's limit. Skills are each hero's own: 8 heroes with 20 skills each |
 | **What they do** | **A few chains at a time**: two or three supply chains staffed at once, the guild moving between chains over days. A skill climbs only while its chain is staffed |
 | **A chain** | One maker and **about 2 gatherers, at every tier**; yield boosts grow with the tier to hold it there (section 5) |
-| **A gatherer** | Bare: one node, busy half the time. Typical and optimized: a camp with two or more nodes in reach, fully busy (section 2) |
+| **A gatherer** | Bare: one node, busy about a fifth of the time. Typical and optimized: a camp with 4 or 5 nodes in reach, fully busy (section 2) |
 | **A typical player** | **Buys what pays back soon**: of the boosts that exist, those that earn back their price within about 2 hours of play, a day for Hall stars (the ledger's Typical). The Dials page's "half of every boost" is a planning estimate only, used until the content is in the CMS |
 | **Heroes by tier** | **About one a tier** (owner, 2026-11-26): one at copper, two at iron, on to eight at darkmetal. An early chain is one or two heroes doing everything in turn, and early arrivals are counted that way |
 | **Who levels a skill** | **Two or three heroes share each job** (owner, 2026-11-26), so the guild climbs each skill two or three times |

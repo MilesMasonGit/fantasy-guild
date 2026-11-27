@@ -30,6 +30,8 @@ the owner's target is **at most 12 Tokens in one reach**. Today 30 fit.*
 
 ## For the balancer
 
-Reach 240 u, closest spacing 128 u: **12 places** around a node. A typical work site spends about 4
-on the camp, a second node or two and a spawner, leaving **about 8 for buildings, at most about 4 of
-one boost kind** (owner, confirmed 2026-11-26; BALANCE_RULES sections 5 and 8 stand).
+Reach 240 u, closest spacing 128 u: **12 places** around a node. **Amended by the owner later on
+2026-11-26** (balancer's interview): a node gives 15 seconds of work and is back in a minute, so a
+gatherer needs **4 or 5 nodes** to stay busy, and a **gathering site has about 5 places for
+buildings**; **a maker's station about 8**. (The first answer, about 4 places on nodes and 8 for
+buildings, is replaced.) BALANCE_RULES sections 2, 5 and 8 hold the numbers.

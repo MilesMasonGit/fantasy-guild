@@ -1,94 +1,99 @@
 {
   "version": 1,
-  "savedAt": "2026-10-26T12:00:00.000Z",
+  "savedAt": "2026-11-26T23:11:02.476Z",
   "mat": {
-    "w": 1760,
-    "h": 1126
+    "w": 1920,
+    "h": 1040
   },
   "hall": {
-    "x": 880,
-    "y": 563
+    "x": 960,
+    "y": 520
   },
   "tokens": [
     {
       "typeId": "token_oak_forest",
-      "x": 379,
-      "y": 253
-    },
-    {
-      "typeId": "token_copper_mine",
-      "x": 1364,
-      "y": 740
+      "x": 300,
+      "y": 170
     },
     {
       "typeId": "token_oak_tree",
-      "x": 250,
-      "y": 190
+      "x": 170,
+      "y": 110
     },
     {
       "typeId": "token_oak_tree",
-      "x": 505,
-      "y": 195
+      "x": 430,
+      "y": 110
     },
     {
       "typeId": "token_oak_tree",
-      "x": 290,
-      "y": 375
+      "x": 190,
+      "y": 290
     },
     {
       "typeId": "token_oak_tree",
-      "x": 480,
-      "y": 360
+      "x": 410,
+      "y": 290
     },
     {
       "typeId": "token_copper_ore_vein",
-      "x": 1235,
-      "y": 670
+      "x": 1484,
+      "y": 429
     },
     {
       "typeId": "token_copper_ore_vein",
-      "x": 1495,
-      "y": 670
+      "x": 1379,
+      "y": 192
     },
     {
       "typeId": "token_coal_vein",
-      "x": 1250,
-      "y": 860
+      "x": 1637,
+      "y": 219
     },
     {
       "typeId": "token_coal_vein",
-      "x": 1480,
-      "y": 860
+      "x": 1774,
+      "y": 158
     },
     {
       "typeId": "token_stone_outcrop",
-      "x": 1365,
-      "y": 965
+      "x": 1516,
+      "y": 131
+    },
+    {
+      "typeId": "token_stone_outcrop",
+      "x": 1621,
+      "y": 368
     },
     {
       "typeId": "token_redberry_bush",
-      "x": 680,
-      "y": 230
+      "x": 1290,
+      "y": 720
     },
     {
-      "typeId": "token_wild_wheat_patch",
-      "x": 1120,
-      "y": 250
+      "typeId": "token_redberry_bush",
+      "x": 1300,
+      "y": 860
+    },
+    {
+      "typeId": "token_wheat_field",
+      "x": 1420,
+      "y": 780
     },
     {
       "typeId": "token_goblin_camp",
-      "x": 400,
+      "x": 640,
       "y": 890
     },
     {
       "typeId": "token_scrap_heap",
-      "x": 660,
-      "y": 600
+      "x": 1100,
+      "y": 430
     },
     {
       "typeId": "token_small_slime",
-      "x": 690,
-      "y": 800
+      "x": 840,
+      "y": 640
     }
   ],
   "bank": {
