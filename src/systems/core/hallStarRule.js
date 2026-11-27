@@ -10,6 +10,7 @@ import { KEYWORD } from '../effects/statements.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import { hallRulesOf, xpForEveryoneOf, RETIRED_AXIS, NEVER_ON_GUILD, CARRIED_ONLY_AXIS } from '../progression/hallModifiers.js';
 import { isCombatStyleScope, isDoseKindScope } from '../../config/registries/modifierPalette.js';
+import { isCapFixed, getCategoryInfo } from '../../config/registries/equipmentCategories.js';
 
 /** A Provides rule's palette row when its axis is retired (Camp Reach), else null. */
 function retiredEntryOf(statement) {
@@ -100,6 +101,9 @@ export function hallStarFindings({ sky, items = {}, tokens = {} } = {}) {
                 }
                 if (entry?.categories === 'doseKind' && !isDoseKindScope(statement.payload?.category)) {
                     push(star, 'ranks', `rank ${r} has a ${entry.label} rule narrowed to "${statement.payload.category}", which is no kind of dose, so it reaches nothing. Pick Drink, Potion or Fight elixir, or no kind, in the CMS.`);
+                }
+                if (entry?.type === EFFECT_TYPES.LOADOUT_SLOTS && isCapFixed(statement.payload?.category)) {
+                    push(star, 'ranks', `rank ${r} has a ${entry.label} rule for ${getCategoryInfo(statement.payload.category).label}, which a star never raises: a hero carries one drink, potion or elixir at a time, so the rule does nothing. Pick another kind in the CMS.`);
                 }
                 if (entry?.retired && !retiredOnly) push(star, 'ranks', `rank ${r} has a ${entry.label} rule, retired: ${retiredWhy(entry)}, so the rule does nothing. Delete the rule in the CMS.`);
             }
