@@ -445,3 +445,143 @@ T-640 — Three small calls — 939f3d05 — 2026-11-23
 T-641 — Heroes and Bank leftovers — 939f3d05 — 2026-11-23
 T-643 — No more specialist skills, just skills — 939f3d05 — 2026-11-23
 T-304 — Tailor, a 21st skill — 939f3d05 — 2026-11-23
+T-012 — Transforms keep pushing neighbours (owner decided keep; nothing to build) — 5f8ea1b03 — 2026-11-02
+T-334 — DropLap test follows the Swift Laps Sync; QA mirror star retired — d5a5fa9e — 2026-11-07
+T-400 — Lore XP stars deleted in the CMS and Synced (50 to 37 Hall stars) — 9cb64c835 — 2026-11-11
+T-401 — Restocks keyword removed from the engine and CMS — a0ef73801 — 2026-11-12
+T-404 — A rule narrowed to a skill names it in rule text — 0eb5b66c2 — 2026-11-12
+T-406 — Needs row shows a cycle's cost after Efficiency (600 B3) — 109ab4e4f — 2026-11-12
+T-295 — Loot flight trail with sparkles, burst and number pop (840) — 8ef5e09ad — 2026-11-24
+T-305 — Content roadmap in the CMS as Planned stubs — ba1ade604 — 2026-11-26
+T-306 — Sell replaces Discard, always confirms (870 C1) — 3a7c9ac3e — 2026-11-25
+T-307 — One building per skill (630 B1 and the 21 Nov packs) — 18b0ab433 — 2026-11-13
+T-383 — Smooth curve as one rule, Maxed as the curve player, boost budget (880 L3) — e3404ceee — 2026-11-26
+T-526 — Shrimp Trawler Potion retired in the alchemy pack — 91a81c89a — 2026-11-22
+T-530 — Limes warns about Defeat before the first fight (735 V4) — 480f1a16e — 2026-11-24
+T-532 — Only the nine damage types carry numbers (740 C2) — 2e0127ae5 — 2026-11-24
+T-539 — Enemy effects are Passive or Active; Venomous retired (740 C4) — 3a7c9ac3e — 2026-11-25
+T-540 — Enemy kinds are library effects; code presets removed (740 C5) — 4ae3f51c3 — 2026-11-26
+T-542 — Status leftovers retired; STATUS_STACK_LIMIT named and shown — 3a7c9ac3e — 2026-11-25
+T-548 — Enemy leftovers (hostile, budgetScale, traits, enemy XP) removed — 3a7c9ac3e — 2026-11-25
+T-544 — An enemy's Token card shows everything; kinds once fought (740 C8) — e61a40a21 — 2026-11-24
+T-550 — A kill is a combat cycle (740 C7) — 35be342b2 — 2026-11-23
+T-551 — Giant Harvest is Farming only (740 C7) — 35be342b2 — 2026-11-23
+T-552 — On Kill only (740 C7) — 35be342b2 — 2026-11-23
+T-554 — Loot leftovers (740 C7) — 35be342b2 — 2026-11-23
+T-556 — Health bars green, amber, red (740 C9) — e61a40a21 — 2026-11-24
+T-557 — One hit look for window and mat (740 C9) — e61a40a21 — 2026-11-24
+T-562 — Every open fight button lit (740 C9) — e61a40a21 — 2026-11-24
+T-558 — Elixir logged at once (740 C10) — 877b0d310 — 2026-11-25
+T-559 — Defeated both ways (740 C10) — 877b0d310 — 2026-11-25
+T-560 — Defeats lead the away summary (740 C10) — 877b0d310 — 2026-11-25
+T-563 — Combat screen leftovers (740 C10) — 877b0d310 — 2026-11-25
+T-566 — All 20 weapons ask a style level by metal — 91a81c89a — 2026-11-22
+T-567 — Enemy styles spread out — 91a81c89a — 2026-11-22
+T-568 — Weapon tier table moved to an authoring rule (750 S4) — 3260be576 — 2026-11-25
+T-569 — One text per combat style (750 S5) — 3260be576 — 2026-11-25
+T-573 — One ammo rule for arrows, Motes and Kunai (750 S2) — 3260be576 — 2026-11-25
+T-579 — One ammo rule, Motes (750 S2) — 3260be576 — 2026-11-25
+T-586 — One ammo rule, Kunai (750 S2) — 3260be576 — 2026-11-25
+T-575 — Ranged leftovers (750 S4) — 3260be576 — 2026-11-25
+T-581 — Magic leftovers (750 S4) — 3260be576 — 2026-11-25
+T-580 — Leather has no Magic cut — 91a81c89a — 2026-11-22
+T-584 — Crit chance capped at 75 % (750 S1) — 3260be576 — 2026-11-25
+T-587 — Poisons for Stealth weapons, for N attacks (code) — 3260be576 — 2026-11-25
+T-597 — Every wood has a spawner Forest; Saplings gone — 91a81c89a — 2026-11-22
+T-604 — The Fish Shoal is a fishing spot like other water (850) — d2fa38664 — 2026-11-25
+T-623 — Out of bait, the hero leaves and says so (770 G1) — 6ddec2ae9 — 2026-11-23
+T-629 — Out of seed, the hero leaves and says so (770 G1) — 6ddec2ae9 — 2026-11-23
+T-626 — Every listed wood, stone and fruit has a recipe — 91a81c89a — 2026-11-22
+T-628 — A resting vein is its own ore greyed with a countdown — d5cd28dde — 2026-11-22
+T-632 — The six making-plan parts Synced — 91a81c89a — 2026-11-22
+T-633 — Four stations retired — 939f3d05c — 2026-11-23
+T-634 — Construction variants at 20, 40, 60; Town Square at 85 — 91a81c89a — 2026-11-22
+T-639 — Item tooltip lists its effects (790 W4) — a59c430d1 — 2026-11-23
+T-644 — Hero sheet lines for Faith, Crime, Summoning and Science (810 K2) — 8d88fadb1 — 2026-11-25
+T-684 — Fishing spots come and go (850 F1) — d2fa38664 — 2026-11-25
+T-685 — Catch rules (850 F2) — d2fa38664 — 2026-11-25
+T-686 — Fishing Hut and spot rate (850 F3) — d2fa38664 — 2026-11-25
+T-687 — Fishing spot card (850 F4) — d2fa38664 — 2026-11-25
+T-688 — Gathering ends by chance (860 R1) — d2fa38664 — 2026-11-25
+T-689 — Forests own their trees (860 R2) — d2fa38664 — 2026-11-25
+T-690 — Gathering Foundations (860 R3) — d2fa38664 — 2026-11-25
+T-698 — Green Thumb speeds a Forest's own regrowth — d2fa38664 — 2026-11-25
+T-692 — Catch XP per fish — b9ae62849 — 2026-11-25
+T-693 — Mid-tick arrivals worked only from arrival — 6aa3552dd — 2026-11-25
+T-694 — The pack gate finishes again — 17640d6ad — 2026-11-24
+T-696 — Small-tickets merge — 37c5fb282 — 2026-11-25
+T-707 — Small-tickets merge — 37c5fb282 — 2026-11-25
+T-708 — Small-tickets merge — 37c5fb282 — 2026-11-25
+T-709 — Small-tickets merge — 37c5fb282 — 2026-11-25
+T-711 — Small-tickets merge — 37c5fb282 — 2026-11-25
+T-697 — Ledger report in about 15 s — ab180f724 — 2026-11-26
+T-710 — The game-time effect clock is retired — 9e803ef5e — 2026-11-25
+T-700 — Coins basics (870 C1) — 3a7c9ac3e — 2026-11-25
+T-701 — Coins as a cost (870 C2) — 53ffa7c99 — 2026-11-25
+T-702 — Ledger prices coins (870 C3) — 4e7ee3171 — 2026-11-25
+T-703 — Coin pack Synced (amounts the balancer's) — 4ed8fec4f — 2026-11-26
+T-704 — Quiet effect for the Hideout (810 K4) — deee4c895 — 2026-11-25
+T-705 — Five Faith blessings — d2a88daf8 — 2026-11-25
+T-706 — Enemy roster pack Synced — 8706ea54a — 2026-11-26
+T-713 — Two coin curves (900 B3) — 8f36ca91a — 2026-11-26
+T-260 — Weapon Tier field; Recruits hold tier-1 weapons (tiers by owner moot after brief 270) — 79c6b01c — 2026-10-27
+T-008 — Moot: Scouting Flags retired (260 O2) — 5362944b0 — 2026-10-29
+T-014 — Moot: tutorial quests gone, quests cut; Limes lessons teach now — 9f3f199d7 — 2026-11-25
+T-175 — Dropped: collectors cut by the owner — - — 2026-11-25
+T-176 — Moot: quests cut (brief 170) — 9f3f199d7 — 2026-11-25
+T-261 — Enemies never show a charges count (250) — e5c7e0345 — 2026-10-28
+T-262 — A waiting choice swaps its ! for the gear on hover (250) — 7677dae85 — 2026-10-28
+T-263 — One plate for every Token, rings retired (250) — 2fc12732a — 2026-10-28
+T-415 — Lifting a fought enemy ends the fight (650 H4) — f68ff0dec — 2026-11-17
+T-421 — Out-of-fight eating on game time (650 H4) — e0534ce83 — 2026-11-17
+T-495 — Effect names explain themselves on hover (790 W4) — 3e84900c8 — 2026-11-23
+T-499 — An item's tooltip lists its effects (790 W4) — 3e84900c8 — 2026-11-23
+T-503 — Expired against Demolished; one away line per kind (795 M3) — d973aba4e — 2026-11-23
+T-506 — Away news told once (795 M3) — d973aba4e — 2026-11-23
+T-507 — Bank-full and stack-full banners clear themselves (795 M3) — d973aba4e — 2026-11-23
+T-646 — Motherlode perk (800) — bf09ea6ec — 2026-11-25
+T-647 — Grove Feller perk (800) — bf09ea6ec — 2026-11-25
+T-648 — Master Angler perk (800) — bf09ea6ec — 2026-11-25
+T-649 — Evergreen perk (800) — bf09ea6ec — 2026-11-25
+T-650 — Many Hands: a second recipe on its own clock (800) — a8f55039d — 2026-11-25
+T-651 — Salvage and Master Builder (800) — bb96ee3b5 — 2026-11-25
+T-652 — Second Wind (800) — e95fd4711 — 2026-11-25
+T-653 — Unbreakable (800) — e95fd4711 — 2026-11-25
+T-654 — Twin Shot, Double Cast, Shadowstep (800) — e95fd4711 — 2026-11-25
+T-655 — Level-up flash (800) — 7736302eb — 2026-11-24
+T-657 — Gear Swing Time counts in attack timing (750 S6) — 40860bcaa — 2026-11-25
+T-658 — Taming leaves the skill list (810 K1) — 65ceffb39 — 2026-11-25
+T-659 — Faith: offerings keep a shrine lit (810 K3) — d2a88daf8 — 2026-11-25
+T-660 — Crime: the Hideout steals from a camp in reach (810 K4) — deee4c895 — 2026-11-25
+T-661 — Summoning: one Summoned worker per Circle (810 K5) — 57dfec248 — 2026-11-25
+T-662 — Science: a Laboratory studies a node (810 K6) — 3c04403b6 — 2026-11-25
+T-664 — The game is called Tabletop Guild (820) — 995366c01 — 2026-11-24
+T-665 — Drag only; right-click inspects (830 D1) — 39f8037f9 — 2026-11-23
+T-666 — Token card with a tail (830 D2) — 0d276e3c8 — 2026-11-23
+T-667 — Mat marks and work bar (830 D3) — a27fc7a25 — 2026-11-24
+T-668 — Job areas centred, no ring line (830 D4) — c7b2176f9 — 2026-11-23
+T-669 — Reach rings after a rest (830 D5) — b7cb8e8a2 — 2026-11-23
+T-670 — Frameless top bar and Controls strip (830 D6) — ec3e105ce — 2026-11-24
+T-671 — Banner corner with show and hide (830 D7) — 8425e20b1 — 2026-11-23
+T-673 — Loot lands at the edge of its job area (830 D8) — 0ff599161 — 2026-11-24
+T-672 — Loot flight trail (840) — fe0e2a736 — 2026-11-24
+T-718 — Token spacing ruled and built as 890 S1 to S3 — 1d9aaff0f — 2026-11-26
+T-721 — Tokens 128 u apart, no overlap (890 S1) — c67e94252 — 2026-11-26
+T-722 — One Token size (890 S2) — a298a2daa — 2026-11-26
+T-723 — New Starter Camp, one clump per gathering skill (890 S3) — 1444b3986 — 2026-11-26
+T-716 — The reference guild (900 B1) — f0813393a — 2026-11-26
+T-717 — Three ledger checks (900 B4) — 3b9064246 — 2026-11-26
+T-724 — pack numbers writer and ledger --with-planned (900 B5) — e6dc66375 — 2026-11-26
+T-712 — The FS bench uses fixture spot kinds only — 77c7e01b9 — 2026-11-25
+T-719 — Engine speed pass (S7 -16 %, same work) — ac6ac79be — 2026-11-26
+T-725 — Bench boards rebuilt for 128 u spacing — 4559c3f3c — 2026-11-26
+T-728 — The QA panel gives Coins — 7b4ec45d1 — 2026-11-26
+T-729 — Output pin; Bait timed as a prepare step — 12f2c41ba — 2026-11-26
+T-730 — The balance preview follows a stage's way out — 257d98d45 — 2026-11-26
+T-731 — Coin curve prices on a worker selling — 6609c46c3 — 2026-11-26
+T-733 — Typical's 4x drink gate, chain-xp in gathering hours — 80c3e6a16 — 2026-11-26
+T-736 — pack boosts writer (900 B6) — 38d4bd199 — 2026-11-26
+T-737 — Nodes at 15 s and 60 s back (900 B7) — 1046c9dab — 2026-11-26
+T-738 — One drink at a time (910 W1) — bcf54de90 — 2026-11-26
+T-150 — Built then superseded by the owner's job-flag pick — 0b26987f1 — 2026-10-29
+T-361 — Moot: superseded by T-710 (effect clock retired) — 9e803ef5e — 2026-11-25
