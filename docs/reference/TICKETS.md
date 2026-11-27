@@ -34,7 +34,6 @@ here.
 
 | ID | What | Origin |
 |---|---|---|
-| T-752 | P4 | open | *For: director (builder-lite).* **Remove the CMS Gemini Generate button and the generator** (owner 2026-11-27: a). Was: keep it? Its import step called store actions that no longer exist and was removed (2026-11-27); the window now only previews, and its prompts still describe the old item, task and station shapes. (a) Recommended: remove the button and the generator. (b) Keep the preview as it is. (c) Rebuild it to write Planned entries in today's shapes (a brief). | clean-up builder 2026-11-27 |
 | T-007 | **Coal Vein at 4 s**: accept, re-tag its purpose from gold to items (~3 s), or leave for the simulator rework? | FB §5.1 |
 | T-010 | **Speech bubble audit**: add/remove list for `docs/reference/speech_bubble_lines.md`. | FB §5.5 |
 | T-011 | **Watch by eye** (no agent has seen these on screen): Token hit animations + transform glow, loot flight to the Hall, Shop drawer, countdown badge. | FB §5.6 |
@@ -206,7 +205,6 @@ The findings' full write-ups are in `docs/active/review/D1_the_mat.md` to `D4_sc
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
 | T-067 | P3 | open | Skipped tests: the Map-burst rule skips still need a ruling or deletion. | CR3-554 |
-| T-116 | P3 | open | The CMS content generator still writes the retired task/area effect vocabulary (`targetCategory` enum ALL/COMBAT/MELEE/MINING/INDUSTRY/NATURE/CRAFTING in `contentGenerator.js`); only its skill list follows the registry. Its prompt also still teaches energy costs and the per-level skill multiplier (`contentGenerator.js`, `useGlobalStore.js` defaults), both retired. It is still reachable from the CMS's Generate button, so rewriting the prompt is a design call, not dead code. | brief 20 R3 |
 
 ## 3. Parked — don't work on these without a reason
 

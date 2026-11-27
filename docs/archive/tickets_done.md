@@ -603,3 +603,5 @@ T-141 — a respawning Token also sold at the Shop warns — 455cb9291 — 2026-
 T-481 — FarmingHarvest pins its regrown harvest roll, green on seeds a to g — 455cb9291 — 2026-11-27
 T-677 — the CMS generator's dead import removed — 455cb9291 — 2026-11-27
 T-747 — owner (a): a fight under way may be pushed by a spawn; GDD wording fixed — 5aa1c61bd — 2026-11-27
+T-752 — the CMS Generate button and the Gemini generator removed (owner a) — a605afe58 — 2026-11-27
+T-116 — moot: the generator it named is removed — a605afe58 — 2026-11-27
