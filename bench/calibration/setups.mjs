@@ -130,16 +130,16 @@ export const SETUPS = [
     },
     {
         id: 'forest-potions',
-        name: 'The forest again, the forester on Lemonade (+10 % Forestry yield) and Birdwatcher potions (25 % Bird Nest)',
+        name: 'The forest again, the forester on Birdwatcher potions (25 % Bird Nest): one drink at a time, so no Lemonade beside it',
         warmupMs: 30 * 60_000,
-        compare: { items: ['item_oak_wood', 'item_oak_seedling', 'item_bird_nest'], skills: ['forestry'], spent: ['item_lemonade', 'item_birdwatcher'] },
-        works: [{ target: { token: 'token_oak_tree' }, setup: { level: 10, supports: ['token_oak_forest'], family: { spawner: 'token_oak_forest' }, consumables: ['item_lemonade', 'item_birdwatcher'] } }],
-        bank: { item_oak_seedling: 100, item_lemonade: 1000, item_birdwatcher: 10000 },
+        compare: { items: ['item_oak_wood', 'item_oak_seedling', 'item_bird_nest'], skills: ['forestry'], spent: ['item_birdwatcher'] },
+        works: [{ target: { token: 'token_oak_tree' }, setup: { level: 10, supports: ['token_oak_forest'], family: { spawner: 'token_oak_forest' }, consumables: ['item_birdwatcher'] } }],
+        bank: { item_oak_seedling: 100, item_birdwatcher: 10000 },
         build({ place, hero, order, prefillSpawners }) {
             place('token_oak_forest', FOREST.x, FOREST.y);
             const camp = place('token_logging_camp', FOREST.x + 128, FOREST.y);
             prefillSpawners();
-            const forester = hero('Forester', { forestry: 10 }, ['item_copper_woodaxe', 'item_lemonade', 'item_birdwatcher']);
+            const forester = hero('Forester', { forestry: 10 }, ['item_copper_woodaxe', 'item_birdwatcher']);
             order(forester, camp);
         }
     },
