@@ -3162,11 +3162,6 @@
         "tier": 2,
         "note": "Tier inferred (ledger first fill, to confirm): follows what it makes (item_torch, Starter Camp)."
       },
-      "recipe_search_bird_nest": {
-        "status": "live",
-        "tier": 0,
-        "note": "Starter Camp (owner 2026-10-30): made or found in the camp today; the plan follows the content for now."
-      },
       "recipe_fine_fishing_rod": {
         "status": "live",
         "tier": 0,

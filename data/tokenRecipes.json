@@ -6041,259 +6041,6 @@
     "id": "recipe_muily2pg"
   },
   {
-    "id": "recipe_search_bird_nest",
-    "name": "Search a Bird Nest",
-    "skill": "crafting",
-    "levelRequirement": 1,
-    "requiresContext": [],
-    "inputs": [
-      {
-        "itemId": "item_bird_nest",
-        "quantity": 1
-      }
-    ],
-    "outputs": [
-      {
-        "itemId": "item_wheat_seed",
-        "chance": 100,
-        "minQty": 1,
-        "maxQty": 2,
-        "baseQty": {
-          "min": 1,
-          "max": 2
-        },
-        "variable": false
-      },
-      {
-        "itemId": "item_oak_seedling",
-        "chance": 40,
-        "minQty": 1,
-        "maxQty": 1,
-        "baseQty": {
-          "min": 1,
-          "max": 1
-        },
-        "variable": true
-      },
-      {
-        "itemId": "item_apple_seed",
-        "chance": 30,
-        "minQty": 1,
-        "maxQty": 1,
-        "baseQty": {
-          "min": 1,
-          "max": 1
-        },
-        "variable": true
-      },
-      {
-        "itemId": "item_lavender_seed",
-        "chance": 25,
-        "minQty": 1,
-        "maxQty": 1,
-        "baseQty": {
-          "min": 1,
-          "max": 1
-        },
-        "variable": true
-      },
-      {
-        "itemId": "item_potato_seed",
-        "chance": 100,
-        "minQty": 1,
-        "maxQty": 2,
-        "baseQty": {
-          "min": 1,
-          "max": 2
-        },
-        "variable": false
-      },
-      {
-        "itemId": "item_carrot_seed",
-        "chance": 25,
-        "minQty": 1,
-        "maxQty": 1,
-        "baseQty": {
-          "min": 1,
-          "max": 1
-        },
-        "variable": true
-      },
-      {
-        "itemId": "item_onion_seed",
-        "chance": 25,
-        "minQty": 1,
-        "maxQty": 1,
-        "baseQty": {
-          "min": 1,
-          "max": 1
-        },
-        "variable": true
-      },
-      {
-        "itemId": "item_celery_seed",
-        "chance": 25,
-        "minQty": 1,
-        "maxQty": 1,
-        "baseQty": {
-          "min": 1,
-          "max": 1
-        },
-        "variable": true
-      },
-      {
-        "itemId": "item_leek_seed",
-        "chance": 25,
-        "minQty": 1,
-        "maxQty": 1,
-        "baseQty": {
-          "min": 1,
-          "max": 1
-        },
-        "variable": true
-      },
-      {
-        "itemId": "item_turnip_seed",
-        "chance": 10,
-        "minQty": 1,
-        "maxQty": 1,
-        "baseQty": {
-          "min": 1,
-          "max": 1
-        },
-        "variable": true
-      },
-      {
-        "itemId": "item_cabbage_seed",
-        "chance": 10,
-        "minQty": 1,
-        "maxQty": 1,
-        "baseQty": {
-          "min": 1,
-          "max": 1
-        },
-        "variable": true
-      },
-      {
-        "itemId": "item_garlic_seed",
-        "chance": 10,
-        "minQty": 1,
-        "maxQty": 1,
-        "baseQty": {
-          "min": 1,
-          "max": 1
-        },
-        "variable": true
-      },
-      {
-        "itemId": "item_tomato_seed",
-        "chance": 10,
-        "minQty": 1,
-        "maxQty": 1,
-        "baseQty": {
-          "min": 1,
-          "max": 1
-        },
-        "variable": true
-      },
-      {
-        "itemId": "item_corn_seed",
-        "chance": 10,
-        "minQty": 1,
-        "maxQty": 1,
-        "baseQty": {
-          "min": 1,
-          "max": 1
-        },
-        "variable": true
-      },
-      {
-        "itemId": "item_emberroot_seed",
-        "chance": 10,
-        "minQty": 1,
-        "maxQty": 1,
-        "baseQty": {
-          "min": 1,
-          "max": 1
-        },
-        "variable": true
-      },
-      {
-        "itemId": "item_voidcap_seed",
-        "chance": 10,
-        "minQty": 1,
-        "maxQty": 1,
-        "baseQty": {
-          "min": 1,
-          "max": 1
-        },
-        "variable": true
-      },
-      {
-        "itemId": "item_mint_seed",
-        "chance": 25,
-        "minQty": 1,
-        "maxQty": 1,
-        "baseQty": {
-          "min": 1,
-          "max": 1
-        },
-        "variable": true
-      },
-      {
-        "itemId": "item_rose_seed",
-        "chance": 10,
-        "minQty": 1,
-        "maxQty": 1,
-        "baseQty": {
-          "min": 1,
-          "max": 1
-        },
-        "variable": true
-      },
-      {
-        "itemId": "item_mandrake_seed",
-        "chance": 10,
-        "minQty": 1,
-        "maxQty": 1,
-        "baseQty": {
-          "min": 1,
-          "max": 1
-        },
-        "variable": true
-      },
-      {
-        "itemId": "item_moonpetal_seed",
-        "chance": 10,
-        "minQty": 1,
-        "maxQty": 1,
-        "baseQty": {
-          "min": 1,
-          "max": 1
-        },
-        "variable": true
-      },
-      {
-        "itemId": "item_starflower_seed",
-        "chance": 10,
-        "minQty": 1,
-        "maxQty": 1,
-        "baseQty": {
-          "min": 1,
-          "max": 1
-        },
-        "variable": true
-      }
-    ],
-    "durationMs": 8000,
-    "stationChargeCost": 1,
-    "xp": 3,
-    "sim": {
-      "tempo": "fast",
-      "purpose": "iph"
-    }
-  },
-  {
     "name": "Fine Fishing Rod",
     "skill": "crafting",
     "levelRequirement": 16,
@@ -9087,7 +8834,7 @@
       },
       {
         "itemId": "item_turnip_seed",
-        "chance": 22,
+        "chance": 25,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
@@ -9150,7 +8897,7 @@
       },
       {
         "itemId": "item_cabbage_seed",
-        "chance": 22,
+        "chance": 25,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
@@ -9276,7 +9023,7 @@
       },
       {
         "itemId": "item_tomato_seed",
-        "chance": 30,
+        "chance": 35,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
@@ -9590,7 +9337,7 @@
       },
       {
         "itemId": "item_rose_seed",
-        "chance": 17,
+        "chance": 18,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
@@ -9654,7 +9401,7 @@
       },
       {
         "itemId": "item_mandrake_seed",
-        "chance": 22,
+        "chance": 25,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
