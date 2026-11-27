@@ -50,6 +50,7 @@ All of tonight's worktrees are merged and removed. `b16` is the scratch join wor
 
 ## Lessons this session
 
+- **Unlink junctions with the PowerShell tool, never from bash** (27 Nov): a bash `cmd //c rmdir` with doubled backslashes failed and the bash-quoted PowerShell reparse scan reported 0 with the junctions still there; `git worktree remove --force` then deleted about 35 packages through `cms/node_modules` (restored with `npm install` in `cms`, lock file unchanged). In PowerShell: `Get-Item` each `node_modules` path, check `LinkType` is Junction, `cmd /c rmdir`, check it is gone, scan with `Where-Object { $_.LinkType }`, then remove.
 - **Never put `git merge --ff-only` behind a pipe**; run it bare.
 - **Other sessions push docs to main between gates**: merge `--no-ff` after checking the new commits are docs only.
 - **After an owner Sync, build the branch from main and merge the feature into it** (the data/code hook).
