@@ -646,7 +646,7 @@ function completeCycle(instance, def, io, heroId, config = def.config, overMs = 
     EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, finished);
 
     // Cheap tally, used by the Token-type statistics surface.
-    const counts = GameState.state?.collection?.cardUseCounts;
+    const counts = GameState.state?.collection?.cyclesByTokenType;
     if (counts) counts[instance.typeId] = (counts[instance.typeId] || 0) + 1;
     if (!failed && io.recipe?.id) noteRecipeMade(io.recipe.id);
 

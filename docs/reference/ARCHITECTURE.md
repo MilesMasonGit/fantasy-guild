@@ -271,7 +271,8 @@ point** (`board.tokens`, `:56`), heroes' orders in `board.flags` (`:63`), floor 
    version is not exactly `GAME_VERSION` = `'0.8.2'` is refused** (`SaveMigration.js:28-30`,
    `StateSchema.js:40`); reworks break saves on purpose (`StateSchema.js:8-39`). The slot screen
    shows such a save as an older version, with no Load (`SaveSlotHelper.getSlotInfo`'s `outdated`). For a current
-   save it back-fills missing keys two levels deep from `INITIAL_STATE` (`:35-63`), converts
+   save it first moves a field an older save holds under an old name to its new one
+   (`RENAMED_FIELDS`: `collection.cardUseCounts` is now `cyclesByTokenType`), then back-fills missing keys two levels deep from `INITIAL_STATE` (`:35-63`), converts
    old flags to orders, and drops retired fields (`currency`, `cartographer`, Vault/Tray board
    fields, retired upgrade ranks, old sprite names) (`:65-121`). Last, it follows the CMS's
    renames (`data/renames.json`, `src/systems/core/followRenames.js`): an item, Token or effect id
@@ -628,7 +629,7 @@ names or comments only.
 
 | Name in comments or docs | Reality |
 |---|---|
-| **Cards, decks, the Area Deck Loop** | Gone since the 0.6.0 playmat rework (`StateSchema.js:13-21`). Residue: `DeckDndProvider`/`DeckDndContext` (`src/ui/dnd/DndKit.jsx:242,392`); `collection.cardUseCounts` is **live** under an old name (completed cycles per Token type, `BoardRunner.js:392`). `TokenCard.jsx`, `EnemyCard.jsx`, `ArrivalCard.jsx` are UI panels, not cards. A card-era `data/effects.json` must not return (`DatabaseManager.js:13-14`). |
+| **Cards, decks, the Area Deck Loop** | Gone since the 0.6.0 playmat rework (`StateSchema.js:13-21`). Residue: `DeckDndProvider`/`DeckDndContext` (`src/ui/dnd/DndKit.jsx:242,392`). `TokenCard.jsx`, `EnemyCard.jsx`, `ArrivalCard.jsx` are UI panels, not cards. A card-era `data/effects.json` must not return (`DatabaseManager.js:13-14`). |
 | **Tiles as a grid on the mat** | No mat grid: Tokens sit at points (`StateSchema.js:28-35,56`, `MatPlacement.js` header). Residue: `TileModifiers`, `TILE_CHANGED`, `TILE_EVENT_ALERT`, "tile aggregators"; the word "tile" appears on 437 non-test lines in 111 files. `FreeMatGuards.test.js` forbids a `tile` field in engine event payloads (`boardEvents.js:8-11`). |
 | **"Tile" caveat** (`docs/archive/review_v3/code_review_v3_master_plan.md` §2.D) | Legitimate grids still exist: the **terrain cell lattice** under the ground picture (`src/ui/components/board/terrain/TerrainLattice.js`, 32 u cells; it no longer uses the word "tile" at all, 0 hits, against 122 in that review), sprite sheets (`sprite-manifest.js` has 0 "tile" hits now too), and **the hex world map** (`src/systems/world/hex.js`; "tile" is its art word, `WorldMap.jsx`, `worldPicture.js`). **§2.D is stale on the Guild Hall**: it is no longer a 7×7 board but a web of stars at unit coordinates around the Hall (`GuildHallBoard.jsx` `WEB_W`/`WEB_UNIT_PX`, `config/guildUpgrades.js`); no 7×7 Hall grid was found. |
 | **Exploration** | No system. Only a retired skill id "Explore" in a comment (`src/systems/core/unknownRefRule.js:20`) and the word "exploring" in a `QuestManager.js` comment. |

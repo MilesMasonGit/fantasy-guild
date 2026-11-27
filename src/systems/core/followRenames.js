@@ -282,7 +282,7 @@ function worldFollowing(world, ids) {
 
 /** The collection's maps keyed by an item id, and those keyed by a Token type id. */
 const ITEM_KEYED = ['discoveredItems', 'itemLifetimeCounts'];
-const TOKEN_KEYED = ['discoveredEnemies', 'enemyKillCounts', 'cardUseCounts', 'tokensHad', 'tokensBuilt'];
+const TOKEN_KEYED = ['discoveredEnemies', 'enemyKillCounts', 'cyclesByTokenType', 'tokensHad', 'tokensBuilt'];
 
 function collectionFollowing(collection, { item, token }) {
     if (!isPlainObject(collection)) return collection;

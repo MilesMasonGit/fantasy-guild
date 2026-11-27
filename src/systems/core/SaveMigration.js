@@ -36,6 +36,9 @@ export function migrateState(state, savedVersion) {
     // Flags and Work Permissions became orders: an old save's boards and heroes are brought over
     // before the backfill below, which would otherwise stamp its boards as already made for orders (`migrateStateToOrders`, below).
     let migrated = { ...migrateStateToOrders(state) };
+    // ⚠️ Before the backfill, which would otherwise give a renamed field an empty value under its
+    // new name and leave the save's counts under the old one.
+    migrated = withRenamedFields(migrated);
 
     // Backfill missing keys from INITIAL_STATE, two levels deep: the top-level
     // sections, and each section's own fields.
@@ -318,6 +321,31 @@ export function withRenamedUpgrades(state) {
         delete kept[old];
     }
     return { ...state, progress: { ...state.progress, guildUpgrades: kept } };
+}
+
+/**
+ * Fields an older save holds under an old name, by section: the completed cycles per Token type
+ * were named for the cards. A value under the new name, when the save holds both, wins.
+ */
+export const RENAMED_FIELDS = Object.freeze({
+    collection: Object.freeze({ cardUseCounts: 'cyclesByTokenType' })
+});
+
+/** A state whose fields are under their current names ({@link RENAMED_FIELDS}). */
+export function withRenamedFields(state) {
+    let out = state;
+    for (const [key, renames] of Object.entries(RENAMED_FIELDS)) {
+        const section = out?.[key];
+        if (!isPlainObject(section) || !Object.keys(renames).some(old => old in section)) continue;
+        const kept = { ...section };
+        for (const [old, name] of Object.entries(renames)) {
+            if (!(old in kept)) continue;
+            kept[name] = kept[name] ?? kept[old];
+            delete kept[old];
+        }
+        out = { ...out, [key]: kept };
+    }
+    return out;
 }
 
 /**

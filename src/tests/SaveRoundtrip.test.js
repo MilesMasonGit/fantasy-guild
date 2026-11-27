@@ -41,7 +41,7 @@ describe('Save serialize/migrate roundtrip (CR-053)', () => {
 
     it('survives a JSON write/read cycle with gameplay values intact', () => {
         GameState.state.time.gameTimeMs = 1234;   // a plain number to round-trip (gold left the save in 9.4, the Guild Hall Map counter in 9.1)
-        GameState.state.collection.cardUseCounts = { token_forest: 17 };
+        GameState.state.collection.cyclesByTokenType = { token_forest: 17 };
 
         // Board state is the thing a lost save would cost the player now: the
         // Tokens they placed, their remaining charges, and who is working what.
@@ -58,7 +58,7 @@ describe('Save serialize/migrate roundtrip (CR-053)', () => {
         const migrated = migrateState(revived.state, revived.version);
 
         expect(migrated.time.gameTimeMs).toBe(1234);
-        expect(migrated.collection.cardUseCounts).toEqual({ token_forest: 17 });
+        expect(migrated.collection.cyclesByTokenType).toEqual({ token_forest: 17 });
 
         // A coordinate of 0 is a real point — a save that dropped it because
         // the value is falsy would silently move a Token.
@@ -71,6 +71,31 @@ describe('Save serialize/migrate roundtrip (CR-053)', () => {
         // An unlimited-use Token stores null charges and must not come back as
         // 0, which would read as depleted.
         expect(migrated.board.tokens.tok_b.usesRemaining).toBeNull();
+    });
+
+    it('loads the cycles per Token type an older save holds under their old name, and saves only the new one', () => {
+        const old = JSON.parse(JSON.stringify(GameState.serialize()));
+        delete old.state.collection.cyclesByTokenType;
+        old.state.collection.cardUseCounts = { token_forest: 17, token_sawmill: 3 };
+
+        const migrated = migrateState(old.state, old.version);
+        expect(migrated.collection.cyclesByTokenType).toEqual({ token_forest: 17, token_sawmill: 3 });
+        expect('cardUseCounts' in migrated.collection).toBe(false);
+
+        GameState.state = migrated;
+        const resaved = GameState.serialize().state.collection;
+        expect(resaved.cyclesByTokenType).toEqual({ token_forest: 17, token_sawmill: 3 });
+        expect('cardUseCounts' in resaved).toBe(false);
+    });
+
+    it('keeps the new name\'s counts when a save holds both names', () => {
+        const old = JSON.parse(JSON.stringify(GameState.serialize()));
+        old.state.collection.cyclesByTokenType = { token_forest: 5 };
+        old.state.collection.cardUseCounts = { token_forest: 17 };
+
+        const migrated = migrateState(old.state, old.version);
+        expect(migrated.collection.cyclesByTokenType).toEqual({ token_forest: 5 });
+        expect('cardUseCounts' in migrated.collection).toBe(false);
     });
 
     it('keeps what waits for room: the Token a station made and the enemies an arrival keeps waiting', () => {

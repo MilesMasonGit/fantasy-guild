@@ -156,7 +156,7 @@ describe('a Neighbours variant on the mat', () => {
 
         // 8 s cycles against 10 s over 100 s: about 12 against 10, whatever the short walk up.
         for (let t = 0; t < 100000; t += 100) BoardRunner.tick(100);
-        const counts = GameState.state.collection.cardUseCounts;
+        const counts = GameState.state.collection.cyclesByTokenType;
         expect(counts[wood.typeId]).toBeGreaterThanOrEqual(8);
         expect(counts[mine.typeId]).toBeGreaterThanOrEqual(counts[wood.typeId] + 2);
     });

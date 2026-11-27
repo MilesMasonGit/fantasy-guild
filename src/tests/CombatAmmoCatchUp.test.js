@@ -143,7 +143,7 @@ const end = ({ ids }, seen) => ({
     }),
     enemies: BoardState.tokens().filter(t => t.typeId.startsWith('amc_')).map(t => `${t.typeId}:${t.fightHp?.current ?? 'whole'}`),
     left: ['amc_arrow', 'amc_mote', 'amc_kunai', 'amc_poison'].map(id => InventoryManager.getItemCount(id)),
-    kills: GameState.state.collection?.cardUseCounts?.amc_small || 0,
+    kills: GameState.state.collection?.cyclesByTokenType?.amc_small || 0,
     draws: stream.draws,
     seen
 });
