@@ -155,8 +155,10 @@ describe('rare-find boosts have their own strength targets', () => {
         const rows = rowsOf(withoutBeer(luckyPace()), ONE_A_KIND);
         const potion = rows.find((r) => r.kind === 'rareConsumable');
         const charm = rows.find((r) => r.kind === 'rareSupport');
-        // With the Beer on offer a hero holds it instead of the Luck Potion.
-        const beer = rowsOf(luckyPace(), ONE_A_KIND).find((r) => r.kind === 'consumable');
+        // With the Beer on offer and a slow Luck Potion (a 5 min brew), a hero holds the Beer instead.
+        const slowLuck = luckyPace();
+        slowLuck.recipes.find((r) => r.id === 'recipe_luck_potion').durationMs = 300000;
+        const beer = rowsOf(slowLuck, ONE_A_KIND).find((r) => r.kind === 'consumable');
         expect(potion).toMatchObject({ names: ['Luck Potion'], target: 100 });
         expect(charm).toMatchObject({ names: ['Lucky Charm'], target: 50 });
         // Measured on the finds: +100 % and +50 % Gems, not their slice of the vein's whole worth.
