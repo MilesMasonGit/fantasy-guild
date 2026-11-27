@@ -693,7 +693,16 @@ describe('EconSim — the lever policy over the shipped corpus', () => {
     });
 
     it('leaves every tuned cycle inside whole seconds', () => {
-        for (const ms of result.cycleTimes.values()) expect(ms % 1000).toBe(0);
+        // A pinned cycle is not tuned: the simulator keeps the time written on it (a number pack
+        // writes the balance rules' tenths of a second), and says so in a time-pinned row.
+        const pinned = new Set(result.rows.filter(r => r.code === 'time-pinned').map(r => r.entityId));
+        let tuned = 0;
+        for (const [id, ms] of result.cycleTimes) {
+            if (pinned.has(id)) continue;
+            tuned++;
+            expect(ms % 1000, `${id} runs ${ms} ms`).toBe(0);
+        }
+        expect(tuned).toBeGreaterThan(0);
     });
 
     it('never turns a 100%-chance output into a random one', () => {

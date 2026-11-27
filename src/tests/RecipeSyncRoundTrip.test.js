@@ -11,6 +11,7 @@ import {
     RETIRED_OUTPUT_FIELDS,
 } from '../../cms/src/engine/sim/writeBack.js';
 import { expandAll } from '../systems/effects/effectLibrary.js';
+import { workspaceDials } from '../../cms/src/engine/sim/dials.js';
 
 /**
  * The CMS → game recipe sync.
@@ -46,7 +47,7 @@ function poolsFromFile(list) {
     return pools;
 }
 
-/** Re-solve a pool set exactly the way `recalculateEconomy` does. */
+/** Re-solve a pool set exactly the way `recalculateEconomy` does, with the dials a Sync runs (the balance rules on). */
 function solve(recipePools, { items = {}, tokens = {} } = {}) {
     const migrated = migrateLegacyIntent({ tokens, recipePools });
     const recipes = {};
@@ -56,7 +57,7 @@ function solve(recipePools, { items = {}, tokens = {} } = {}) {
             recipes[id] = { ...r, id, skill: r.skill || skillId };
         });
     }
-    const sim = runSim({ items, tokens: migrated.tokens, recipes });
+    const sim = runSim({ items, tokens: migrated.tokens, recipes }, workspaceDials());
     return applyRecipePoolResults(migrated.recipePools, sim);
 }
 

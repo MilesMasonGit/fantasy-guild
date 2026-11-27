@@ -16,6 +16,7 @@ import { runSim } from '../../cms/src/engine/sim/simRunner.js';
 import {
     migrateLegacyIntent, applyItemResults, RETIRED_ITEM_FIELDS,
 } from '../../cms/src/engine/sim/writeBack.js';
+import { workspaceDials } from '../../cms/src/engine/sim/dials.js';
 
 // ⚠️ Read from `data/` directly rather than through the item registry. The
 // registry is the merge of shipped content and the test fixtures, and the rules
@@ -27,8 +28,9 @@ import shippedRecipes from '../../data/tokenRecipes.json';
 
 /**
  * Re-derive the shipped corpus's item values from its authored intent, the same
- * way `recalculateEconomy` does. Cached: the passes are pure and the corpus is
- * a module constant, so one solve serves every assertion.
+ * way `recalculateEconomy` does, with the dials a Sync runs (`workspaceDials`: the
+ * balance rules on). Cached: the passes are pure and the corpus is a module
+ * constant, so one solve serves every assertion.
  */
 let solvedCorpus = null;
 function solveShippedCorpus() {
@@ -46,7 +48,7 @@ function solveShippedCorpus() {
         });
     }
 
-    const sim = runSim({ items: shippedItems, tokens: migrated.tokens, recipes });
+    const sim = runSim({ items: shippedItems, tokens: migrated.tokens, recipes }, workspaceDials());
     solvedCorpus = {
         items: applyItemResults(shippedItems, sim),
         recipeIds: new Set(Object.keys(recipes)),
