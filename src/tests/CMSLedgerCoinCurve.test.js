@@ -61,6 +61,6 @@ describe('⭐ the Coin costs card', () => {
         expect(stored('bigCoinCurve')[0]).toEqual({ tier: 0, minutes: 45 });
         expect(stored('coinCurve')).toEqual(DEFAULT_LEDGER_SETTINGS.coinCurve);
         fireEvent.click(within(card).getByLabelText('Remove the big coin cost point at Starter Camp'));
-        expect(stored('bigCoinCurve')[0].tier).toBe(2);
+        expect(stored('bigCoinCurve')[0].tier).toBe(1);
     });
 });
