@@ -259,7 +259,7 @@ function checkUseWorth(entity, { elections, useLevels, values, dials, rows }) {
                 : "A Use's drops together are worth the item used, but every drop takes its value from another source, and nothing moves a Use's drops.",
             remedies: [
                 "Re-author the Use's drops (their chances or amounts) so they are worth about the item.",
-                'Re-elect one of its drops to the Use, so the Use prices it from the item.',
+                'Nothing, if using the item is meant to pay more, or less, than selling it.',
             ],
             detail: { worth, total, band, anchors },
         }
