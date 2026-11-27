@@ -127,19 +127,22 @@ describe('the profiles', () => {
 
         const typical = vein(PROFILE.TYPICAL);
         const ids = typical.chosen.map(c => c.id);
-        // Beer pays as it is drunk (+10 % XP); the camp and each of four Mines pay back in minutes (four 25 % doubles: a sure double, in yield's four places).
-        expect(ids).toEqual(expect.arrayContaining(['item_beer', 'token_mining_camp', 'token_mine']));
+        // The camp and each of four Mines pay back in minutes (four 25 % doubles: a sure double, in yield's four places).
+        expect(ids).toEqual(expect.arrayContaining(['token_mining_camp', 'token_mine']));
+        // Beer's +10 % XP pays back under 4x its brewing: Typical leaves it, Maxed drinks it.
+        expect(ids).not.toContain('item_beer');
+        expect(typical.declined).toEqual(['item_beer']);
         expect(typical.chosen.filter(c => c.id === 'token_mine')).toHaveLength(4);
         // The Gold Statue's 1 % for 1000 wood never pays back within the two hours.
         expect(ids).not.toContain('token_statue');
         expect(typical.chosen.find(c => c.id === 'token_mine').payback).toBeLessThan(2);
         // The camp's two veins (the sparse layout), 240 cycles an hour each.
         expect(typical.items.item_copper_ore).toBeCloseTo(480 * 1.5 * 2);
-        expect(typical.xp.mining).toBeCloseTo(480 * 1.1);
+        expect(typical.xp.mining).toBeCloseTo(480);
 
         // Maxed takes everything that lifts the vein and has a place: the Mines fill yield's four, so the Statue's yield has none.
         const maxed = vein(PROFILE.MAXED);
-        expect(maxed.chosen.map(c => c.id)).toEqual(expect.arrayContaining(ids));
+        expect(maxed.chosen.map(c => c.id)).toEqual(expect.arrayContaining([...ids, 'item_beer']));
         expect(maxed.chosen.map(c => c.id)).not.toContain('token_statue');
         expect(maxed.items.item_copper_ore).toBeGreaterThanOrEqual(typical.items.item_copper_ore);
         const roomy = buildPace(paceContent(), buildLedger(paceContent()), { sitePlaces: { buildings: 8, perKind: 5 } });
@@ -237,8 +240,8 @@ describe('a loop through the drinks', () => {
         return c;
     };
     /** A fresh pace for the content, with `first` asked before anything else. */
-    const paceAsked = (c, first) => {
-        const pace = buildPace(c, buildLedger(c), null);
+    const paceAsked = (c, first, settings = null) => {
+        const pace = buildPace(c, buildLedger(c), settings);
         pace.rateAt(first, PROFILE.MAXED);
         return pace;
     };
@@ -246,11 +249,13 @@ describe('a loop through the drinks', () => {
 
     it('a profile weighs what a boost spends against the guild one profile down, so the question asked first changes nothing', () => {
         const c = content(0.2);
-        const teaFirst = paceAsked(c, TEA);
+        // A batch factor every drink meets, so Typical drinks what its own weighing takes.
+        const anyBatch = { batchPayback: 1e-6 };
+        const teaFirst = paceAsked(c, TEA, anyBatch);
         // The Oak's choices weigh its Tea, so asking the Oak first asks Tea's choices inside the Oak's: a
         // loop. Read at its own profile's supply, the loop stood the Oak in at Bare, Tea was short of wood
         // either way, and the Elixir's own shortage hid behind it.
-        const oakFirst = paceAsked(c, { token: 'token_oak' });
+        const oakFirst = paceAsked(c, { token: 'token_oak' }, anyBatch);
         for (const profile of PROFILES) expect(setupOf(oakFirst.rateAt(TEA, profile))).toEqual(setupOf(teaFirst.rateAt(TEA, profile)));
 
         const typical = oakFirst.rateAt(TEA, PROFILE.TYPICAL);

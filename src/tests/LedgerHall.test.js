@@ -32,6 +32,8 @@ const world = (settings = null) => {
     return buildPace(c, buildLedger(c), settings);
 };
 const VEIN = { token: 'token_vein' };
+/** A batch factor every drink meets: Typical drinks what its own weighing takes, as these tests were written for. */
+const ANY_BATCH = { batchPayback: 1e-6 };
 
 describe('the rate calculator reads a star the setup holds', () => {
     const book = () => buildRateBook(content());
@@ -99,7 +101,7 @@ describe('the profiles and the Hall', () => {
     });
 
     it('Typical buys the ranks that pay back at Typical, opening a star through the cheapest stars before it', () => {
-        const pace = world();
+        const pace = world(ANY_BATCH);
         const typical = pace.rateAt(VEIN, PROFILE.TYPICAL, 0);
         const hall = typical.chosen.filter(c => c.kind === 'hall');
         expect(hall.map(c => c.id)).toEqual(['ph_deep:1', 'ph_lore:2']);
@@ -250,7 +252,7 @@ describe('every rank\'s payback at Typical, and the price the ledger proposes', 
 
 describe('the per-skill breakdown shows the Hall\'s share', () => {
     it('at Typical and at Maxed, one name per star at the rank held', () => {
-        const mining = world().breakdown().find(r => r.skill === 'mining');
+        const mining = world(ANY_BATCH).breakdown().find(r => r.skill === 'mining');
         expect(mining.profiles.typical.kinds.hall.names).toEqual(['Lore 2', 'Quick Picks 1', 'Deep Veins 1']);
         expect(mining.profiles.typical.kinds.hall.gain).toBeGreaterThan(1);
         expect(mining.profiles.maxed.kinds.hall.names).toEqual(['Lore 2', 'Quick Picks 1', 'Deep Veins 1', 'Gold Leaf 1']);

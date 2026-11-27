@@ -20,6 +20,8 @@ import { WORLD_FIXTURE_TABLES, worldWorkspace, contentOf as worldContentOf } fro
  */
 
 const paceOf = (content = paceContent(), settings = null) => buildPace(content, buildLedger(content), settings);
+/** A batch factor every drink meets: Typical drinks what its own weighing takes, as these tests were written for. */
+const ANY_BATCH = { batchPayback: 1e-6 };
 
 describe('the pace curve is one rule', () => {
     it('⭐ is 3 minutes at level 1, each level 6.25 % longer: BALANCE_RULES section 1\'s points', () => {
@@ -161,7 +163,7 @@ describe('supply counts the gatherers a crafter needs', () => {
     });
 
     it('a drink or potion a boost spends is brewed by one hero, and counts no gatherer', () => {
-        const pace = paceOf();
+        const pace = paceOf(paceContent(), ANY_BATCH);
         // Typical drinks Beer at the vein: one brewer at the Still, not counted as the vein's gatherer.
         const vein = pace.rateAt({ token: 'token_vein' }, PROFILE.TYPICAL);
         expect(vein.chosen.map(c => c.id)).toContain('item_beer');
@@ -249,7 +251,7 @@ describe('the boost budget', () => {
 
     it('⭐ counts every boost a profile holds against its cell, and finds a total over it', () => {
         // Beer's +10 % XP is the whole of copper's XP budget at Maxed: within it. Typical drinks it too, twice its 5 %.
-        const pace = paceOf();
+        const pace = paceOf(paceContent(), ANY_BATCH);
         const vein = pace.budgetRows().filter(r => r.work.key === 'token_vein||');
         const xp = vein.find(r => r.kind === 'xp' && r.profile === PROFILE.MAXED);
         expect(xp.pct).toBeCloseTo(10);

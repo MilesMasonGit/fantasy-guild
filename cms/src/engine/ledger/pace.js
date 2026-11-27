@@ -1,7 +1,7 @@
 // the progression ledger's pace: supply, level times and path time at each profile, and checks D
 
 import { buildRateBook, LIFECYCLE, WORK } from './rates.js';
-import { buildProfiles, targetKey, PROFILE, PROFILES, PROFILE_TEXT, BOOST_KIND, BOOST_KIND_TEXT, boostKindOf, BEFORE_HALL, pickKindOf, RARE_FIND_KINDS } from './profiles.js';
+import { buildProfiles, targetKey, PROFILE, PROFILES, PROFILE_TEXT, BOOST_KIND, BOOST_KIND_TEXT, boostKindOf, BEFORE_HALL, pickKindOf, RARE_FIND_KINDS, gainOf, batchPaybackOf, repeatedByHero } from './profiles.js';
 import { starAddsRate } from './hall.js';
 import { settingsOf, minutesPerLevelAt, minutesToReach, formatMinutes, levelAtMinutes, coinMinutesAt, COIN_CURVE, boostBudgetAt, BOOST_BUDGET_KINDS, heroesAt, chainHeroesAt, paybackHoursAt } from './settings.js';
 import { ledgerCoinWorth } from './coins.js';
@@ -438,6 +438,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     profiles = buildProfiles(rates, {
         tierOf: tierOfKey, unitHours, costHours, hallUnitHours, horizonHours: () => settings.paybackHours, hallHorizonHours: () => settings.hallPaybackHours,
         hallCoinHours: (coins, cap) => coinCostHours(coins, BEFORE_HALL, cap),
+        batchPayback: settings.batchPayback,
         campNodes: settings.layouts[settings.layout],
         campSpawners: settings.layoutSpawners[settings.layout],
         sitePlaces: settings.sitePlaces,
@@ -2574,7 +2575,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             if (work.tier === null || !counted(work.entry)) continue;
             const ctx = profiles.contextOf(work.target);
             // A build is done once and Passive Production is no hero's: a batch is drunk over repeatable work.
-            if (!ctx.consumables.length || ctx.kind === WORK.PASSIVE || ctx.kind === WORK.FIGHT || ctx.kind === WORK.BUILD) continue;
+            if (!ctx.consumables.length || !repeatedByHero(ctx.kind)) continue;
             for (const id of ctx.consumables) {
                 const key = itemKey(id);
                 const tier = tierOfKey(key);
@@ -2586,19 +2587,12 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                 const mates = new Set(offers.filter(o => o.id === id || (offer.slot && o.slot === offer.slot)).map(o => o.id));
                 const typical = profiles.profileOf(work.target, PROFILE.TYPICAL, cap).setup;
                 const base = { ...typical, consumables: list(typical.consumables).filter(c => !mates.has(c)) };
-                const r0 = rates.rateOf(work.target, base);
                 const r1 = rates.rateOf(work.target, offer.apply(base));
-                const doses = r1?.boostInputs?.[id] || 0;
-                if (!r0?.ok || !r1?.ok || !(doses > 0)) continue;
-                const unit = unitHours(id, cap);
-                if (!Number.isFinite(unit)) continue;
-                const gain = gainOf(r0, r1, (item) => unitHours(item, cap));
-                if (!(gain > 1e-9)) continue;
-                const spends = doses * unit;
-                const ratio = spends > 0 ? gain / spends : Infinity;
+                const b = batchPaybackOf(rates.rateOf(work.target, base), r1, id, (item) => unitHours(item, cap));
+                if (!b) continue;
                 const prev = best.get(id);
-                if (!prev || ratio > prev.ratio) {
-                    best.set(id, { item: id, name: nameOf(key), tier: effTier(key) ?? tier, cap, work, gain, doses, doseCycles: r1.cyclesPerHour / doses, unitHours: unit, spends, ratio });
+                if (!prev || b.ratio > prev.ratio) {
+                    best.set(id, { item: id, name: nameOf(key), tier: effTier(key) ?? tier, cap, work, ...b, doseCycles: r1.cyclesPerHour / b.doses });
                 }
             }
         }
@@ -2914,27 +2908,6 @@ export function roundUp(n) {
 }
 
 /**
- * How much better a rate is than another: the larger of its items' worth (each at the hours one
- * takes) and its XP, as a fraction (0.25 is 25 % better). What it spends is the boost's price, not
- * its strength, so it is left out.
- */
-export function gainOf(r0, r1, unitHours) {
-    if (!r0?.ok || !r1?.ok) return 0;
-    const worth = (r) => {
-        let w = 0;
-        for (const [item, n] of Object.entries(r.items || {})) { const h = unitHours(item); if (Number.isFinite(h)) w += n * h; }
-        return w;
-    };
-    const xp = (r) => Object.values(r.xp || {}).reduce((a, b) => a + b, 0);
-    const w0 = worth(r0);
-    const w1 = worth(r1);
-    const items = w0 > 0 ? w1 / w0 - 1 : 0;
-    const x0 = xp(r0);
-    const xpGain = x0 > 0 ? xp(r1) / x0 - 1 : 0;
-    return Math.max(items, xpGain);
-}
-
-/**
  * What one rate's boosts add to another's, by the boost budget's kinds, in percent (null where a
  * kind can be read on nothing): speed the cut in work time, or in a node's growth or rest where that
  * is cut more (Farming's growth counts as speed); XP a cycle's XP; yield a cycle's main output (what
@@ -2977,4 +2950,4 @@ export function findsGainOf(r0, r1) {
     return top;
 }
 
-export { PROFILE, PROFILES, PROFILE_TEXT };
+export { PROFILE, PROFILES, PROFILE_TEXT, gainOf };

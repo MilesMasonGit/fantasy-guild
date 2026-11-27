@@ -84,6 +84,36 @@ describe("a drink or work potion's batch pays back at least 4x its making", () =
     });
 });
 
+describe('Typical takes a drink or work potion only where its batch pays back', () => {
+    const takes = (pace, row, profile) => (pace.profiles.profileOf(row.work.target, profile, row.cap).setup.consumables || []).includes(row.item);
+    // Three beers a brew: worth its making (Typical's own weighing alone would take it), short of 4x.
+    const threeBeers = () => {
+        const c = ruleContent({ sky: false });
+        const brew = c.recipes.find(r => r.id === 'recipe_beer').outputs[0];
+        brew.minQty = brew.maxQty = 3;
+        return c;
+    };
+
+    it('Typical leaves a drink whose batch pays back under the factor; Maxed still takes it; Bare takes none', () => {
+        const pace = paceOf(threeBeers());
+        const beer = pace.batchPaybackRows().find(r => r.item === 'item_beer');
+        expect(beer.ratio).toBeGreaterThan(1);
+        expect(beer.ratio).toBeLessThan(settingsOf().batchPayback);
+        expect(takes(pace, beer, 'typical')).toBe(false);
+        expect(takes(pace, beer, 'maxed')).toBe(true);
+        expect(takes(pace, beer, 'bare')).toBe(false);
+    });
+
+    it('a factor its batch meets lets Typical take it, by the same measure as the batch-payback check', () => {
+        const ratio = paceOf(threeBeers()).batchPaybackRows().find(r => r.item === 'item_beer').ratio;
+        const low = paceOf(threeBeers(), { batchPayback: ratio * 0.99 });
+        const beer = low.batchPaybackRows().find(r => r.item === 'item_beer');
+        expect(beer.ratio).toBeCloseTo(ratio);
+        expect(takes(low, beer, 'typical')).toBe(true);
+        expect(takes(paceOf(threeBeers(), { batchPayback: ratio * 1.01 }), beer, 'typical')).toBe(false);
+    });
+});
+
 describe("a Guild Hall rank's payback over all the work it boosts, on the payback curve", () => {
     const rowOf = (pace, id, rank) => pace.hallGuildPaybacks().find(r => r.id === id && r.rank === rank);
     const twoHeroes = { heroesByTier: [{ tier: 0, heroes: 2 }] };

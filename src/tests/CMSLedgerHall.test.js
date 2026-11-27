@@ -133,6 +133,8 @@ describe('the Ledger tab', { timeout: 20000 }, () => {
     });
 
     it('the Pace page: Mining\'s breakdown shows the Hall\'s share at Typical and at Maxed', () => {
+        // A batch factor every drink meets, so Typical drinks its Beer and Maxed levels at its own setup.
+        store().hydrate({ ...hallWorkspace(), planSettings: { batchPayback: 1e-6 } });
         const view = mount();
         fireEvent.click(view.getByRole('tab', { name: 'Pace' }));
         const shares = [...view.container.querySelectorAll('[data-breakdown="mining|0"] [data-hall-share]')].map(el => el.textContent);
