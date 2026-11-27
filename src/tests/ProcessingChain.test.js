@@ -178,7 +178,7 @@ describe('The Processing chain in shipped data (7.5)', () => {
             // Its old kind narrows nothing now, nor does the Tannery's: each offers the whole skill. Bait is
             // a Fishing recipe (the Bait Shed's); the lures are Crafting's.
             expect(poolNames('token_workbench')).toEqual(expect.arrayContaining([
-                'Charcoal', 'Fine Fishing Rod', 'Fishing Rod', 'Search a Bird Nest', 'Torch', 'Trap', 'Fly Lure', 'Spinner Lure',
+                'Charcoal', 'Fine Fishing Rod', 'Fishing Rod', 'Torch', 'Trap', 'Fly Lure', 'Spinner Lure',
                 'Glow Lure', 'Leather', 'Leather Chest', 'Leather Hat',
             ]));
             expect(poolNames('token_tannery')).toEqual(poolNames('token_workbench'));

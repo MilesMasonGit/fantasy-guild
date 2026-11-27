@@ -16,6 +16,7 @@ import { getItem, getAllItems, registerItems } from '../config/registries/itemRe
 import { starterToolIds, toolOf, toolMeets } from '../config/registries/toolKinds.js';
 import { matW, matH } from '../config/matGeometry.js';
 import { catchPoolsOf } from '../config/registries/catchPools.js';
+import { itemUseDropsOf } from '../config/registries/itemUse.js';
 import { stationSkillOf } from '../systems/effects/statements.js';
 import {
     getUpgradeDef, getUpgradePrice, WISHING_WELL_STAR
@@ -291,6 +292,8 @@ function reachable({ maxPlane = 2 } = {}) {
         for (const id of [...items]) {
             // A consumable's effect works on whoever uses it, so its bonus drops come with it.
             for (const bonus of effectYields(getItem(id)).items) items.add(bonus);
+            // An item used from the Bank opens into its drops: no hero, no tool.
+            for (const d of itemUseDropsOf(getItem(id))) items.add(d.itemId);
         }
         const well = getUpgradeDef(WISHING_WELL_STAR);
         if (well && have(getUpgradePrice(well, 0))) for (const id of wellItems()) items.add(id);
