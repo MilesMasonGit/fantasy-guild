@@ -26,7 +26,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-751**
+**Next free number: T-752**
 
 ---
 
@@ -47,10 +47,10 @@ here.
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
+| T-751 | P2 | blocked | *For: director (engineer).* **Recalculate prices an item's Use**: a Use's drops together are worth the item used, split by scarcity as a recipe's co-outputs are (BALANCE_RULES section 7), with no labour term (a Use takes no hero and no time). Without it, retiring Search a Bird Nest leaves 17 seeds with no value or coin worth and a no-source Critical. Blocked: after the balancer's round 2 lands, before the coin reset (balancer 2026-11-27). Until it is on main the Bird Nest pack keeps the Search recipe beside the Use. | 400 B4 engineer, balancer 2026-11-27 |
 | T-748 | P4 | blocked | *For: balancer, then director.* **Typical re-judges a drink as its setup grows** and drops it once it stops paying back, rather than judging it once early against a slow, nearly bare setup (the gate reads 2 to 8x what the same drink reads on the finished setup). A rule change to the reference guild: blocked until the three packs and the coin reset land; the balancer puts it to the owner as multiple choice with T-734 part B. | T-739 builder, balancer 2026-11-27 |
 | T-749 | P4 | open | *For: director (builder-lite).* **The batch-payback check row shows a second number, the drink on Typical's finished setup**, beside the gate's own ratio: information only, no finding on it (`batchPaybackRows` in `cms/src/engine/ledger/pace.js`). | balancer 2026-11-27 |
 | T-745 | P4 | open | *For: director.* **A fight step let go part-way can leave an enemy inside the spacing**: if its hero is sent elsewhere during the second or so of the step, the enemy stays where it got to (`EnemyMotion`), which may be closer than 128 u to a Token it was passing. 0 times on every board measured. Fix: the enemy finishes its walk to its held spot. | T-726 engineer 2026-11-27 |
-| T-746 | P3 | open | *For: director (builder-lite).* **The CMS connectivity audit does not report a missing required Hall star** (Bunk Beds, Bank Tabs, the Wishing Well): the game's boot audit does (`hallRequiredFindings`), the CMS's does not; add it there. | T-740 builder 2026-11-27 |
 | T-741 | P2 | open, after the boosts pack | *For: content agent.* **The Hall star plan** (brief 620 C1 and C2, never written; owner 2026-11-27: the content agent, after the balancer's boosts pack is Synced, so stars are sized by the budget from the start): every skill's constellation gets its Speed, Yield, Growth, Double Loot, Preservation, Refresh and Giant Harvest stars, four combat constellations, Lucky stars per gathering skill, and today's 40 stars retuned. Today no star uses Giant Harvest, XP for Everyone, Preservation, Refresh, Double Loot or the combat effects (`data/hallStars.json`). A list to the owner, then a pack. | brief 620 C1, C2 |
 | T-742 | P3 | open | *For: content agent.* **The War Camp Token and the Prospector's Camp** (brief 630 C1 and C3 leftovers; owner 2026-11-27): the War Camp rule is in the code (630 B2) but no War Camp Token exists to build; the Prospector's Camp is the Mining variant adding Lucky, unblocked since T-336. Owner 2026-11-27: the Bait Shop and the Fish Market are dropped. Fletcher's Lodge, Enchanter's Tower and Tailor's Shop still wait for their skills (T-572, T-577, T-578). A pack for the owner. | brief 630 |
 | T-743 | P3 | open | *For: content agent.* **The opening's last two pieces** (brief 480 L2 remainder; owner 2026-11-27: keep): the Starter Camp starts with an **empty Bank** (today oak, seedlings, wheat seed and shrimp), and **Bunk Beds' first rank buys the second hero** and is no longer free. ⚠️ Check against the new Starter Camp (890 S3) and the Limes lessons (T-682) that nothing strands a new game, seedlings included; bring the numbers to the owner. The rest of L2 is on main or replaced by 890 S3. A pack for the owner. | brief 480 L2 |
