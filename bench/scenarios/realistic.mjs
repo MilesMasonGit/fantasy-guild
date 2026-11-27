@@ -1,6 +1,7 @@
-// The board builder shared by S2, S3, S5 and S6 (and the S2 list itself).
+// The board builder shared by S2, S3, S5 and S6 (and the S2 list itself), and the layout every board
+// of S2's mix uses (`layoutSlots`: the cap boards and the envelope boards too).
 //
-// S2's board, on the reference 11-step mat (1760 × 1126 u, pinned: `referenceMat.mjs`):
+// S2's board, on S2's 16-step mat (2560 × 1638 u, pinned: `referenceMat.mjs`):
 //   * the Guild Hall in the middle;
 //   * 39 more PLACED Tokens: 20 producers,
 //     3 fed mills, 3 unfeedable smelters, 3 passives, 2 nearby buffs,
@@ -17,7 +18,7 @@
 // 2.5 s sweep on to stand in for them; without it the Bank barely changes and
 // every Bank-driven path (CR3-002, CR3-029) would be idle.
 
-import { pinMat, REFERENCE_STEPS } from './referenceMat.mjs';
+import { pinMat, S2_MAT } from './referenceMat.mjs';
 
 /** S2's placed Tokens besides the Hall, in placement order. */
 export const REALISTIC_PLACED = [
@@ -33,44 +34,82 @@ export const REALISTIC_PLACED = [
 
 const STEP = 160;
 const MARGIN = 80;
-const CLEARING = 352;
+
+/**
+ * How far from a spawner no other placed Token stands, by kind (`fixtures.spawnerKind`). A Forest or
+ * a Quarry plants within its reach, and alone on the mat its ten land within 224 u of it, so nothing
+ * placed within 224 + 128 u (a Token's width) takes a spot a tree could use: the twelve cells within
+ * two steps stay free. An enemy camp's spawns land one Token's width out, 128 u, so the eight cells
+ * round it stay free (128 + 128 u).
+ */
+const CLEARING = { planter: 352, camp: 256 };
+
+/**
+ * How far apart two spawners stand: two Forests or Quarries two reaches (480 u), so their reaches
+ * never overlap; an enemy camp a reach and a Token's width (368 u) from any other spawner.
+ */
+const PLANTERS_APART = 480;
+const CAMP_APART = 368;
+
+/** How far in from every edge a spawner stands: a reach, so all of it lies on the mat. */
 const EDGE = 240;
 
-/** The lattice cell nearest the middle of a `w` x `h` mat, where the Hall stands. */
-export function hallCell(w, h, step = STEP, margin = MARGIN) {
-    return { x: margin + step * Math.floor(Math.floor((w - 2 * margin) / step) / 2), y: margin + step * Math.floor(Math.floor((h - 2 * margin) / step) / 2) };
+/** The Hall is a 2×2, 80 u wider than a Token (art radius 144 u against 64 u). */
+const HALL_WIDER = 80;
+
+/** The lattice cell nearest the middle of a `w` × `h` mat, where the Hall stands. */
+export function hallCell(w, h) {
+    return {
+        x: MARGIN + STEP * Math.floor(Math.floor((w - 2 * MARGIN) / STEP) / 2),
+        y: MARGIN + STEP * Math.floor(Math.floor((h - 2 * MARGIN) / STEP) / 2)
+    };
 }
 
 /**
- * Cells for a list of placed Tokens on a `step` lattice (EXPERIMENT).
+ * Cells for a board's placed Tokens on the 160 u lattice, without the Hall's own cell and its four
+ * side cells. Every Token stands at least 160 u from the next, so legally (128 u, edges touching).
+ *
+ * ⚠️ At 128 u a Forest fits its ten trees only with its reach free: on a lattice of placed Tokens a
+ * spawn fits only in a free cell's middle. So the spawners come first, each in its own clearing
+ * ({@link CLEARING}), a reach in from the edge and apart from the others ({@link PLANTERS_APART});
+ * then the rest in list order on the "even" cells, leaving the odd ones as room for spawns, any
+ * overflow taking odd cells from the far end, never inside a clearing.
+ *
+ * `squeeze`: when the mat has no room for every spawner's clearing and the rest, the most spawners
+ * (in list order) that leave room for the rest get theirs, and the others stand on ordinary cells
+ * among the placed Tokens, where they find little room or none: a full mat. Without it a board that
+ * does not fit throws.
+ *
+ * @returns {{slots: Array<{x: number, y: number}>, rest: Array<{x: number, y: number}>, cleared: number}}
+ *          a cell per Token of `list`, the cells left free outside the clearings, and how many
+ *          spawners have a clearing
  */
-export function layoutSlots(fixtures, { w, h, hall, list, step = STEP, margin = MARGIN, clearing = CLEARING, campClearing = 240, edge = EDGE, apart = 480, campApart = 368, fallback = false }) {
-    const cells = fixtures.lattice(w, h, step, margin).filter(p => Math.hypot(p.x - hall.x, p.y - hall.y) > step * 1.0625);
-    const col = (p) => Math.round((p.x - margin) / step);
-    const row = (p) => Math.round((p.y - margin) / step);
+export function layoutSlots(fixtures, { w, h, hall, list, squeeze = false }) {
+    const cells = fixtures.lattice(w, h, STEP, MARGIN).filter(p => Math.hypot(p.x - hall.x, p.y - hall.y) > STEP * 1.0625);
+    const col = (p) => Math.round((p.x - MARGIN) / STEP);
+    const row = (p) => Math.round((p.y - MARGIN) / STEP);
     const even = cells.filter(p => (col(p) + row(p)) % 2 === 0);
     const odd = cells.filter(p => (col(p) + row(p)) % 2 === 1).reverse();
     const order = [...even, ...odd];
     const near = (a, b, r) => Math.hypot(a.x - b.x, a.y - b.y) < r;
-    const inside = (p) => p.x >= edge && p.y >= edge && p.x <= w - edge && p.y <= h - edge;
+    const inside = (p) => p.x >= EDGE && p.y >= EDGE && p.x <= w - EDGE && p.y <= h - EDGE;
+    const kinds = list.map(t => fixtures.spawnerKind(t));
+
     const attempt = (most) => {
         const taken = new Set();
         const spawners = [];
-        const cleared = (p) => spawners.some(q => near(p, q, q.clear));
+        const cleared = (p) => spawners.some(q => near(p, q, CLEARING[q.kind]));
         const slots = new Array(list.length);
-        // Pass 1: spawners their clearings, the first `most` of them.
         list.forEach((typeId, i) => {
-            const kind = fixtures.spawnerKind(typeId);
+            const kind = kinds[i];
             if (!kind || spawners.length >= most) return;
-            const clear = kind === 'planter' ? clearing : campClearing;
-            const gapTo = (q) => (kind === 'planter' && q.kind === 'planter' ? apart : campApart);
-            const cell = order.find(p => inside(p) && !spawners.some(q => near(p, q, gapTo(q))) && !near(p, hall, clear + 80));
+            const apart = (q) => (kind === 'planter' && q.kind === 'planter' ? PLANTERS_APART : CAMP_APART);
+            const cell = order.find(p => inside(p) && !near(p, hall, CLEARING[kind] + HALL_WIDER) && !spawners.some(q => near(p, q, apart(q))));
             if (!cell) return;
-            spawners.push({ x: cell.x, y: cell.y, clear, kind });
+            spawners.push({ x: cell.x, y: cell.y, kind });
             taken.add(cell);
             slots[i] = cell;
         });
-        // Pass 2: the rest, outside every clearing.
         for (let i = 0; i < list.length; i++) {
             if (slots[i]) continue;
             const cell = order.find(p => !taken.has(p) && !cleared(p));
@@ -80,12 +119,13 @@ export function layoutSlots(fixtures, { w, h, hall, list, step = STEP, margin = 
         }
         return { slots, rest: order.filter(p => !taken.has(p) && !cleared(p)), cleared: spawners.length };
     };
-    const count = list.filter(t => fixtures.spawnerKind(t)).length;
-    for (let most = count; most >= (fallback ? 0 : count); most--) {
+
+    const count = kinds.filter(Boolean).length;
+    for (let most = count; most >= (squeeze ? 0 : count); most--) {
         const got = attempt(most);
-        if (got && (fallback || got.cleared === count)) return got;
+        if (got && (squeeze || got.cleared === count)) return got;
     }
-    throw new Error(`board: ${list.length} placed Tokens with ${count} spawners do not fit a ${w} x ${h} mat`);
+    throw new Error(`board: ${list.length} placed Tokens, ${count} of them spawners, do not fit a ${w} × ${h} mat with every spawner's clearing`);
 }
 
 /**
@@ -95,7 +135,9 @@ export function layoutSlots(fixtures, { w, h, hall, list, step = STEP, margin = 
  * @param {object} [options]
  * @param {string[]} [options.placed] placed Tokens besides the Hall, in order
  * @param {string[]} [options.extra]  more placed Tokens, after `placed`
- * @param {number}   [options.matSteps] mat size (Mat Tuner, 6–20) at the reference aspect; 11 is the reference
+ * @param {{steps: number, aspect: number}} [options.mat] the mat (`referenceMat.mjs`); S2's by default
+ * @param {boolean}  [options.squeeze] spawners the mat has no clearing for stand among the rest
+ *        ({@link layoutSlots}); otherwise a board that does not fit throws
  * @param {string[]} [options.late] placed AFTER the spawners are filled, on the
  *        next free cells — the board-reach aura goes here, so the prefill is not
  *        itself a few thousand whole-mat rebuilds (it would take seconds; that
@@ -104,25 +146,23 @@ export function layoutSlots(fixtures, { w, h, hall, list, step = STEP, margin = 
  *        override); the spawners then fill the mat up to it and wait, as they do
  *        for a player at the cap. Unset: lifted out of the way (2000).
  */
-export function buildBoard({ fixtures, setMatTuning }, { placed = REALISTIC_PLACED, extra = [], late = [], matSteps = REFERENCE_STEPS, cap = null, step = STEP, margin = MARGIN, aspect, clearing = CLEARING, campClearing, edge = EDGE, apart, campApart, fallback } = {}) {
-    const { placeAt, makeHeroes, orderAt, lattice } = fixtures;
+export function buildBoard({ fixtures, setMatTuning }, { placed = REALISTIC_PLACED, extra = [], late = [], mat = S2_MAT, squeeze = false, cap = null } = {}) {
+    const { placeAt, makeHeroes, orderAt } = fixtures;
 
-    const { w, h } = pinMat(setMatTuning, matSteps, aspect);
-    const STEP = step;
-    const MARGIN = margin;
-    // ⚠️ These boards hold more than the game's Token cap (80, spawned Tokens included), so the
-    // cap is lifted: with it, the spawners stall at 80 and every scenario measures a lighter
-    // board than its baseline timings (S3 would lose a third of its Tokens).
+    const { w, h } = pinMat(setMatTuning, mat.steps, mat.aspect);
+    // ⚠️ These boards hold more than the game's Token cap (128, spawned Tokens included), so the
+    // cap is lifted: with it, the spawners stall at 128 and every scenario measures a lighter
+    // board than its baseline timings (S3 would lose more than half its Tokens).
     setMatTuning('tokenCap', cap ?? 2000);
-    const hall = hallCell(w, h, STEP, MARGIN);
+    const hall = hallCell(w, h);
 
     // Loot sweeps into the Bank every 2.5 s, as an attentive player would.
     fixtures.settings.set('gameplay.autoCollectLoot', true);
 
     placeAt('bench_hall', hall.x, hall.y);
 
-    const { slots, rest } = layoutSlots(fixtures, { w, h, hall, list: [...placed, ...extra], step: STEP, margin: MARGIN, clearing, campClearing, edge, apart, campApart, fallback });
     const list = [...placed, ...extra];
+    const { slots, rest } = layoutSlots(fixtures, { w, h, hall, list, squeeze });
     const tokens = list.map((typeId, i) => placeAt(typeId, slots[i].x, slots[i].y));
 
     // The smelters' first two cycles: 4 coal. Then they are dry.

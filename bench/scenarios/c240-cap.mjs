@@ -1,3 +1,3 @@
-// C240: S2's mix at cap 240 on the shipped mat (`cap.mjs`). At the 30 % overlap the mat holds
-// about this many Tokens, so the spawners meet the Token cap and a full mat by turns.
+// C240: S2's mix at cap 240 on the cap mat (`cap.mjs`), which holds about 250 of it: the board
+// reaches its cap and stays there, the spawners held by it.
 export { cap240 as default } from './cap.mjs';

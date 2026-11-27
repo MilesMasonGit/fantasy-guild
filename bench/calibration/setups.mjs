@@ -13,6 +13,9 @@ const STEP = 160;
 /** Where the inert stand-in Hall stands: heroes start there and walk out. */
 const HALL = { x: 240, y: 240 };
 
+/** Where the forest setups' Oak Forest stands: 76 u of room to the mat's left edge for a tree (64 u), well clear of the Hall. */
+const FOREST = { x: 140, y: 700 };
+
 /** A Guild Hall star as `data/hallStars.json` holds one, with a single rank holding one rule. */
 function hallStar(id, name, type, value, { category, to } = {}) {
     return {
@@ -88,9 +91,12 @@ export const SETUPS = [
         // Seedlings pay the Forest's spawns and each stump's regrowth; the trees drop more as they are felled.
         bank: { item_oak_seedling: 100 },
         build({ place, hero, order, prefillSpawners }) {
-            place('token_oak_forest', 800, 560);
-            // 120 u from the Forest: its saplings land in a ring about 84 u around it, so the camp's standard 240 u reach covers them all (one step, 160 u, strands the far side).
-            const camp = place('token_logging_camp', 920, 560);
+            // ⚠️ The Forest stands against the mat's left edge and the camp beside it, edges touching (128 u). Its four
+            // trees land 128 u round it, from the camp's side on, and the edge takes the place opposite the camp, which
+            // lies 256 u from it, past the camp's standard 240 u reach: so all four stand within the reach (the
+            // farthest 229 u). Out in the open the fourth tree takes that place and is never worked.
+            place('token_oak_forest', FOREST.x, FOREST.y);
+            const camp = place('token_logging_camp', FOREST.x + 128, FOREST.y);
             prefillSpawners();
             const forester = hero('Forester', { forestry: 10 }, ['item_copper_woodaxe']);
             order(forester, camp);
@@ -130,8 +136,8 @@ export const SETUPS = [
         works: [{ target: { token: 'token_oak_tree' }, setup: { level: 10, supports: ['token_oak_forest'], family: { spawner: 'token_oak_forest' }, consumables: ['item_lemonade', 'item_birdwatcher'] } }],
         bank: { item_oak_seedling: 100, item_lemonade: 1000, item_birdwatcher: 10000 },
         build({ place, hero, order, prefillSpawners }) {
-            place('token_oak_forest', 800, 560);
-            const camp = place('token_logging_camp', 920, 560);
+            place('token_oak_forest', FOREST.x, FOREST.y);
+            const camp = place('token_logging_camp', FOREST.x + 128, FOREST.y);
             prefillSpawners();
             const forester = hero('Forester', { forestry: 10 }, ['item_copper_woodaxe', 'item_lemonade', 'item_birdwatcher']);
             order(forester, camp);
