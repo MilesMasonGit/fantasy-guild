@@ -215,6 +215,12 @@ export function prefillSpawners(maxRounds = 50) {
     return landed;
 }
 
+/** What kind of spawner `typeId` is: 'camp' (an enemy camp), 'planter' (any other: it lands its spawns within its reach), or null. */
+export function spawnerKind(typeId) {
+    if (!SpawnerSystem.isSpawner(getTokenType(typeId))) return null;
+    return SpawnerSystem.isEnemyCampType(typeId) ? 'camp' : 'planter';
+}
+
 /** The first of `points` where a Token of `typeId` may legally stand (or any spot near the first). */
 export function freeSpot(typeId, points) {
     for (const p of points) {
