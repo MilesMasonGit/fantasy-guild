@@ -180,7 +180,7 @@ export { findUnknownRefs } from '../../../src/systems/core/unknownRefRule.js';
 export { gearDefenceFindings } from '../../../src/systems/core/gearDefenceRule.js';
 export { effectStackFindings } from '../../../src/systems/core/effectStackRule.js';
 // Guild Hall stars that cannot open, name what is gone, or carry a rule the guild cannot hold (a retired Camp Reach star). The game's own rule and wording.
-export { hallStarFindings } from '../../../src/systems/core/hallStarRule.js';
+export { hallStarFindings, hallRequiredFindings } from '../../../src/systems/core/hallStarRule.js';
 
 // Gathering tools: the kinds an item's Tool and a Token's Needs tool may name, and the content checks for them. The game's own vocabulary, rule and wording.
 export {

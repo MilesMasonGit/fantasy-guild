@@ -1,4 +1,4 @@
-import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs, toolFindings, crimeFindings, stealOf, spotFindings, summonFindings, fishFindings, catchItemIds, baitItemIds, rareTableOf, perkFindings, masteryFindings, gearDefenceFindings, effectStackFindings, hallStarFindings, coinWorthFindings, coinCostFindings } from '../utils/constants';
+import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs, toolFindings, crimeFindings, stealOf, spotFindings, summonFindings, fishFindings, catchItemIds, baitItemIds, rareTableOf, perkFindings, masteryFindings, gearDefenceFindings, effectStackFindings, hallStarFindings, hallRequiredFindings, coinWorthFindings, coinCostFindings } from '../utils/constants';
 import { eventProblems, EVENT_BIOMES } from '../../../src/config/eventTable.js';
 import { STANDS_ON_CHOICES } from '../../../src/systems/atlas/TerrainMap.js';
 
@@ -215,6 +215,17 @@ export function auditConnectivity(entities, solverRefusals = []) {
         issueType: 'Data Integrity',
         severity: 'Warning',
         details: f.message.charAt(0).toUpperCase() + f.message.slice(1),
+      });
+    }
+    // The game reads Bunk Beds, Bank Tabs and the Wishing Well by id and has no stand-in, so a sky without one is Critical, as the boot audit's error.
+    for (const f of hallRequiredFindings({ sky: hallSky })) {
+      issues.push({
+        entityId: f.entityId,
+        entityName: f.entityName,
+        entityType: f.entityType,
+        issueType: 'Data Integrity',
+        severity: 'Critical',
+        details: `${f.entityId} ${f.message}`,
       });
     }
   }
