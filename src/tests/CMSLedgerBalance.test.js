@@ -102,6 +102,28 @@ describe('the proposals as a change pack', () => {
         expect(ws).toEqual(balanceWorkspace());
     });
 
+    it('levers keep only those levers edits, no option keeps all, an unknown lever throws', () => {
+        const ws = balanceWorkspace();
+        const result = workspaceBalance(ws);
+        const coin = { ...result.proposals.find(p => p.kind === 'token'), lever: LEVER.COINS, field: 'shop.price.0.quantity' };
+        const mixed = { ...result, proposals: [...result.proposals, coin] };
+        const present = [...new Set(mixed.proposals.map(p => p.lever))];
+        expect(present.length).toBeGreaterThan(1);
+        const lever = present.find(l => l !== LEVER.COINS);
+        const kept = balancePack(ws, mixed, { levers: [lever], createdAt: '2026-11-02T12:00:00Z' });
+        const keptIds = new Set(mixed.proposals.filter(p => p.lever === lever).map(p => `${p.kind}:${p.id}`));
+        expect(kept.entries.length).toBeGreaterThan(0);
+        for (const e of kept.entries) {
+            expect(keptIds.has(`${e.kind}:${e.id}`)).toBe(true);
+            expect(e.note).not.toContain(`${coin.label} (${coin.field})`);
+        }
+        expect(kept.intent).toBeUndefined();
+        const all = balancePack(ws, mixed, { createdAt: '2026-11-02T12:00:00Z' });
+        expect(balancePack(ws, mixed, { levers: present, createdAt: '2026-11-02T12:00:00Z' }).entries).toEqual(all.entries);
+        expect(balancePack(ws, result, { levers: null, createdAt: '2026-11-02T12:00:00Z' })).toEqual(balancePack(ws, result, { createdAt: '2026-11-02T12:00:00Z' }));
+        expect(() => balancePack(ws, result, { levers: ['xp', 'nope'] })).toThrow(/Unknown lever nope\. Valid levers: xp, cost, time, boost, coins/);
+    });
+
     it('the agents\' tool never writes a preview into the owner\'s inbox', () => {
         const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'l9-'));
         const from = path.join(dir, 'workspace.json');

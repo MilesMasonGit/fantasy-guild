@@ -148,11 +148,19 @@ function xpIsDerived(kind, record) {
  * the CMS never writes it.
  * ⚠️ An XP number on a record Recalculate derives is pinned (`sim.xpPinned`): Sync runs Recalculate,
  * so without the pin the number would be put back.
+ * `levers` keeps only the proposals of those levers (an unknown name throws). The pack then declares
+ * no stage intent: the result's stages were measured with every proposal applied, not the kept ones.
  */
-export function balancePack(state, result, { id = null, createdAt = new Date().toISOString() } = {}) {
-    const applied = applyProposals(contentOf(state), result.proposals);
+export function balancePack(state, result, { id = null, createdAt = new Date().toISOString(), levers = null } = {}) {
+    const valid = Object.values(LEVER);
+    if (levers) {
+        const bad = levers.filter((l) => !valid.includes(l));
+        if (bad.length) throw new Error(`Unknown lever ${bad.join(', ')}. Valid levers: ${valid.join(', ')}.`);
+    }
+    const proposals = levers ? result.proposals.filter((p) => levers.includes(p.lever)) : result.proposals;
+    const applied = applyProposals(contentOf(state), proposals);
     const byEntity = new Map();
-    for (const p of result.proposals) {
+    for (const p of proposals) {
         const k = `${p.kind}:${p.id}`;
         if (!byEntity.has(k)) byEntity.set(k, { kind: p.kind, id: p.id, list: [] });
         byEntity.get(k).list.push(p);
@@ -174,7 +182,7 @@ export function balancePack(state, result, { id = null, createdAt = new Date().t
     const tol = state.planSettings?.tolerancePct ?? 25;
     // ⚠️ The pack gate measures a stage by its full content: the stages the numbers move are declared by it, not by the way out.
     const stages = [];
-    for (const after of result.after.stages) {
+    for (const after of levers ? [] : result.after.stages) {
         const was = result.before.stages.find((s) => s.tier === after.tier)?.content.hours;
         const now = after.content.hours;
         if (!(was > 0) || !(now > 0) || !Number.isFinite(was) || !Number.isFinite(now)) continue;

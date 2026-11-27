@@ -18,7 +18,7 @@
  *       The Ledger's World plan over many worlds (src/engine/ledgerWorld.js): generates seeds 1 to
  *       n (100 by default) and says how many pass checks F, what fails in how many worlds, the
  *       per-skill bands and the price spreads per ring.
- *   node cms/changePackTool.mjs balance [--from <workspace.json>] [--out <pack.json>] [--json <result.json>]
+ *   node cms/changePackTool.mjs balance [--from <workspace.json>] [--out <pack.json>] [--levers=<a,b>] [--json <result.json>]
  *       The Ledger's balancing preview (src/engine/ledgerBalance.js): the stages and walls before
  *       and after the numbers it proposes, the largest moves, and what numbers cannot fix. --out
  *       writes the proposals as a change pack (never into cms/incoming/: a preview is not for the
@@ -97,6 +97,8 @@ if (cmd === 'balance') {
             process.exit(2);
         }
     }
+    const leverFlag = args.find((a) => a.startsWith('--levers='));
+    const levers = leverFlag ? leverFlag.slice('--levers='.length).split(',').map((l) => l.trim()).filter(Boolean) : null;
     const { source, workspace } = loadWorkspace(opt('--from'));
     const { createServer } = await import('vite');
     const server = await createServer({
@@ -105,6 +107,12 @@ if (cmd === 'balance') {
     });
     try {
         const balance = await server.ssrLoadModule('/src/engine/ledgerBalance.js');
+        const valid = Object.values(balance.LEVER);
+        const unknown = (levers || []).filter((l) => !valid.includes(l));
+        if (levers && (!levers.length || unknown.length)) {
+            console.error(`Refused: ${unknown.length ? `unknown lever ${unknown.join(', ')}` : '--levers names no lever'}. Valid levers: ${valid.join(', ')}.`);
+            process.exit(2);
+        }
         const result = balance.workspaceBalance(workspace);
         console.log(`Against ${source}. Worked out in ${(result.ms / 1000).toFixed(1)} s, ${result.rounds} round(s).`);
         console.log(balance.balanceText(result));
@@ -113,10 +121,14 @@ if (cmd === 'balance') {
             console.log(`The whole preview written to ${opt('--json')}.`);
         }
         if (opt('--out')) {
-            const pack = balance.balancePack(workspace, result);
+            const pack = balance.balancePack(workspace, result, levers ? { levers } : {});
             fs.writeFileSync(opt('--out'), JSON.stringify(pack, null, 2) + '\n');
             const check = validatePack(pack);
             console.log(`Change pack written to ${opt('--out')}: ${pack.entries.length} entr${pack.entries.length === 1 ? 'y' : 'ies'}${check.ok ? '' : ` (the CMS would refuse it: ${check.errors.join(' ')})`}.`);
+            if (levers) {
+                const left = result.proposals.filter((p) => !levers.includes(p.lever)).length;
+                console.log(`The pack kept the levers ${levers.join(', ')} and left out ${left} proposal${left === 1 ? '' : 's'} of other levers (it declares no stage intent).`);
+            }
         }
     } finally {
         await server.close();
@@ -151,7 +163,7 @@ if (cmd === 'coins') {
 if (!['check', 'stamp', 'gate'].includes(cmd) || !file) {
     console.log('Usage: node cms/changePackTool.mjs check|stamp|gate <pack.json> [--from <workspace.json>] [--write]');
     console.log('       node cms/changePackTool.mjs world [--seeds <n>] [--from <workspace.json>]');
-    console.log('       node cms/changePackTool.mjs balance [--from <workspace.json>] [--out <pack.json>] [--json <result.json>]');
+    console.log('       node cms/changePackTool.mjs balance [--from <workspace.json>] [--out <pack.json>] [--levers=<a,b>] [--json <result.json>]');
     console.log('       node cms/changePackTool.mjs coins [--from <workspace.json>] [--rows <n>] [--json <result.json>]');
     process.exit(2);
 }
