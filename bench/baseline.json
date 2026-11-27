@@ -22,7 +22,67 @@
       "acceptWorkChange": null,
       "events": false
     },
-    "note": "Medians of the timing runs, and each scenario's work fingerprint. Re-take on a quiet machine: npm run bench -- --save-baseline"
+    "note": "Medians of the timing runs, and each scenario's work fingerprint. Re-take on a quiet machine: npm run bench -- --save-baseline",
+    "workChanges": [
+      {
+        "ticket": "T-337",
+        "commit": "83c2fb619",
+        "branch": "merge/rulebook-on",
+        "dirty": false,
+        "date": "2026-11-27T09:03:56.026Z",
+        "node": "v24.11.1",
+        "scenarios": {
+          "S1": [
+            "heroXp",
+            "heroHash"
+          ],
+          "S2": [
+            "heroXp",
+            "heroHash"
+          ],
+          "S3": [
+            "heroXp",
+            "heroHash"
+          ],
+          "S5": [
+            "heroXp",
+            "heroHash"
+          ],
+          "S6": [
+            "heroXp",
+            "heroHash"
+          ],
+          "S7": [
+            "heroXp",
+            "heroHash"
+          ],
+          "S8": [
+            "heroXp",
+            "heroHash"
+          ],
+          "S8L": [
+            "heroXp",
+            "heroHash"
+          ],
+          "S8F": [
+            "heroXp",
+            "heroHash"
+          ],
+          "C240": [
+            "heroXp",
+            "heroHash"
+          ],
+          "C256": [
+            "heroXp",
+            "heroHash"
+          ],
+          "FS": [
+            "heroXp",
+            "heroHash"
+          ]
+        }
+      }
+    ]
   },
   "scenarios": {
     "S1": {
@@ -32,12 +92,12 @@
         "tokens": 6,
         "uses": 22942,
         "bankItems": 0,
-        "heroXp": 61526,
+        "heroXp": 56885,
         "sprites": 1,
         "gameTimeMs": 700000,
         "tokensHash": "8fe411d6",
         "bankHash": "811c9dc5",
-        "heroHash": "dd195239",
+        "heroHash": "7b7e9558",
         "spriteHash": "4471dfc9",
         "binHash": "811c9dc5",
         "randomDraws": 304
@@ -53,12 +113,12 @@
         "tokens": 100,
         "uses": 124894,
         "bankItems": 419,
-        "heroXp": 491115,
+        "heroXp": 453987,
         "sprites": 1,
         "gameTimeMs": 400000,
         "tokensHash": "e89b099a",
         "bankHash": "7f96a417",
-        "heroHash": "a99c8a8d",
+        "heroHash": "35efcf17",
         "spriteHash": "82a6e28c",
         "binHash": "811c9dc5",
         "randomDraws": 1896
@@ -74,12 +134,12 @@
         "tokens": 302,
         "uses": 706151,
         "bankItems": 109,
-        "heroXp": 490518,
+        "heroXp": 453390,
         "sprites": 1,
         "gameTimeMs": 80000,
         "tokensHash": "21b5c529",
         "bankHash": "a5c769dd",
-        "heroHash": "09f67464",
+        "heroHash": "d04e71c5",
         "spriteHash": "f07e7ca8",
         "binHash": "811c9dc5",
         "randomDraws": 808
@@ -129,12 +189,12 @@
         "tokens": 103,
         "uses": 125002,
         "bankItems": 212,
-        "heroXp": 490734,
+        "heroXp": 453606,
         "sprites": 2,
         "gameTimeMs": 200000,
         "tokensHash": "34b9e279",
         "bankHash": "f5431641",
-        "heroHash": "a54c402e",
+        "heroHash": "93819335",
         "spriteHash": "5477523a",
         "binHash": "811c9dc5",
         "randomDraws": 990
@@ -150,12 +210,12 @@
         "tokens": 100,
         "uses": 124105,
         "bankItems": 1999,
-        "heroXp": 493971,
+        "heroXp": 456843,
         "sprites": 2,
         "gameTimeMs": 1900000,
         "tokensHash": "2e7a1d93",
         "bankHash": "ebb79fd2",
-        "heroHash": "dae3d339",
+        "heroHash": "7b5d01ff",
         "spriteHash": "996676fc",
         "binHash": "811c9dc5",
         "randomDraws": 8485
@@ -172,12 +232,12 @@
         "tokens": 38,
         "uses": 31291,
         "bankItems": 180,
-        "heroXp": 101333,
+        "heroXp": 87649,
         "sprites": 40,
         "gameTimeMs": 180000,
         "tokensHash": "25cf8089",
         "bankHash": "d5b4e4ae",
-        "heroHash": "b8e2793f",
+        "heroHash": "fc9d19e4",
         "spriteHash": "34b03be8",
         "binHash": "811c9dc5",
         "randomDraws": 886
@@ -192,12 +252,12 @@
         "tokens": 100,
         "uses": 123159,
         "bankItems": 3911,
-        "heroXp": 497395,
+        "heroXp": 460267,
         "sprites": 1,
         "gameTimeMs": 3700000,
         "tokensHash": "563c12b7",
         "bankHash": "03b68e26",
-        "heroHash": "a6e96200",
+        "heroHash": "8acfdd4d",
         "spriteHash": "1e3b0b90",
         "binHash": "811c9dc5",
         "randomDraws": 16547,
@@ -214,12 +274,12 @@
         "tokens": 100,
         "uses": 123159,
         "bankItems": 3911,
-        "heroXp": 497395,
+        "heroXp": 460267,
         "sprites": 1,
         "gameTimeMs": 3700000,
         "tokensHash": "563c12b7",
         "bankHash": "03b68e26",
-        "heroHash": "a6e96200",
+        "heroHash": "8acfdd4d",
         "spriteHash": "1e3b0b90",
         "binHash": "811c9dc5",
         "randomDraws": 16547,
@@ -236,12 +296,12 @@
         "tokens": 100,
         "uses": 123159,
         "bankItems": 3947,
-        "heroXp": 497395,
+        "heroXp": 460267,
         "sprites": 1,
         "gameTimeMs": 3700000,
         "tokensHash": "563c12b7",
         "bankHash": "803918e6",
-        "heroHash": "210e2832",
+        "heroHash": "fdbd6d17",
         "spriteHash": "ed719256",
         "binHash": "811c9dc5",
         "randomDraws": 16414,
@@ -260,12 +320,12 @@
         "tokens": 241,
         "uses": 279738,
         "bankItems": 432,
-        "heroXp": 491071,
+        "heroXp": 453943,
         "sprites": 2,
         "gameTimeMs": 400000,
         "tokensHash": "54477bbc",
         "bankHash": "e52126e7",
-        "heroHash": "b7a9d5b3",
+        "heroHash": "1b1936d9",
         "spriteHash": "dd1370a6",
         "binHash": "811c9dc5",
         "randomDraws": 1897
@@ -281,12 +341,12 @@
         "tokens": 253,
         "uses": 298862,
         "bankItems": 434,
-        "heroXp": 491079,
+        "heroXp": 453951,
         "sprites": 1,
         "gameTimeMs": 400000,
         "tokensHash": "16230d82",
         "bankHash": "62ddba53",
-        "heroHash": "e727b9db",
+        "heroHash": "dbcb7e3d",
         "spriteHash": "76646585",
         "binHash": "811c9dc5",
         "randomDraws": 1948
@@ -302,12 +362,12 @@
         "tokens": 9,
         "uses": 0,
         "bankItems": 100845,
-        "heroXp": 53614,
+        "heroXp": 49474,
         "sprites": 3,
         "gameTimeMs": 600000,
         "tokensHash": "12b7602a",
         "bankHash": "e881e7ab",
-        "heroHash": "54eb6831",
+        "heroHash": "3c82e400",
         "spriteHash": "aa49e837",
         "binHash": "811c9dc5",
         "randomDraws": 1923
