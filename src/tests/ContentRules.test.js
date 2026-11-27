@@ -17,6 +17,7 @@ import {
     migrateLegacyIntent, applyItemResults, RETIRED_ITEM_FIELDS,
 } from '../../cms/src/engine/sim/writeBack.js';
 import { workspaceDials } from '../../cms/src/engine/sim/dials.js';
+import { hasUse, usedItemOfSource } from '../config/registries/itemUse.js';
 import { createRequire } from 'module';
 import path from 'path';
 
@@ -634,9 +635,10 @@ describe('⚠️ Rule 6 — items carry their derived value and its provenance',
             expect(Number.isInteger(item.value), `${id}'s value ${item.value} is not an integer`).toBe(true);
             const source = item.valueSource;
             expect(source, `${id} has a value but no source`).toBeTruthy();
+            const used = usedItemOfSource(source);
             expect(
-                shippedTokens[source] != null || solved.recipeIds.has(source),
-                `${id}'s valueSource "${source}" is not a Token or a recipe`
+                used ? hasUse(items[used]) : shippedTokens[source] != null || solved.recipeIds.has(source),
+                `${id}'s valueSource "${source}" is not a Token, a recipe or an item's Use`
             ).toBe(true);
         }
     });

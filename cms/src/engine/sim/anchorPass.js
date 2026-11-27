@@ -1,4 +1,4 @@
-/** Economic simulator, pass 2 of 5: ANCHOR. Elects exactly one anchor source per item: the lowest-level source, ties breaking to the more common rarity, then Token before Recipe. A designer can override with an explicit Anchor flag on one output; passive and deferred Token kinds never anchor. Value-independent: nothing here asks what anything is worth. An election is written back to the item's `valueSource` by `sim/writeBack.js`; this pass itself writes nothing, a caller gets a Map. */
+/** Economic simulator, pass 2 of 5: ANCHOR. Elects exactly one anchor source per item: the lowest-level source, ties breaking to the more common rarity, then Token before Recipe before an item's Use (which ranks at the level its item is first had at). A designer can override with an explicit Anchor flag on one output; passive and deferred Token kinds never anchor. Value-independent: nothing here asks what anything is worth. An election is written back to the item's `valueSource` by `sim/writeBack.js`; this pass itself writes nothing, a caller gets a Map. */
 
 import { TOKEN_RARITIES } from '../../../../src/config/registries/tokenConstants.js';
 import { isDeferredKind } from './fieldAdapter.js';
@@ -11,13 +11,23 @@ export function rarityRank(entity) {
     return index === -1 ? 0 : index;
 }
 
+/** A Use loses a tie to a Token or a Recipe at its level: the item it is used from may come from that very source, which must then price the drop it shares with the item, or each would wait on the other. */
+const KIND_RANK = Object.freeze({ token: 0, recipe: 1, use: 2 });
+
 function kindRank(entity) {
-    return entity?.kind === 'recipe' ? 1 : 0;
+    return KIND_RANK[entity?.kind] ?? 0;
+}
+
+/** A candidate's level: its own, or for a Use the level worked out for it (`level` on the record), where none ranks last. */
+function candidateLevel(candidate) {
+    const level = candidate.entity.kind === 'use' ? candidate.level : candidate.entity.level;
+    return Number.isFinite(level) ? level : Infinity;
 }
 
 /** The election comparator: level, rarity, kind, then id. The id comparison makes indistinguishable candidates elect the same one, so re-runs are byte-identical. */
 export function compareCandidates(a, b) {
-    if (a.entity.level !== b.entity.level) return a.entity.level - b.entity.level;
+    const level = candidateLevel(a) - candidateLevel(b);
+    if (level !== 0 && !Number.isNaN(level)) return level;
     const rarity = rarityRank(a.entity) - rarityRank(b.entity);
     if (rarity !== 0) return rarity;
     const kind = kindRank(a.entity) - kindRank(b.entity);
@@ -25,11 +35,16 @@ export function compareCandidates(a, b) {
     return a.entity.id < b.entity.id ? -1 : a.entity.id > b.entity.id ? 1 : 0;
 }
 
+const KIND_WORD = Object.freeze({ token: 'Token', recipe: 'Recipe', use: 'Use' });
+
 function describeReason(candidate, viaFlag) {
     if (viaFlag) return 'explicit anchor flag';
-    const kindWord = candidate.entity.kind === 'recipe' ? 'Recipe' : 'Token';
+    const kindWord = KIND_WORD[candidate.entity.kind] ?? 'Token';
     const rarity = candidate.entity.rarity ?? 'no rarity';
-    return `lowest level (${candidate.entity.level}) · ${rarity} · ${kindWord}`;
+    const level = candidate.entity.kind === 'use'
+        ? `${Number.isFinite(candidate.level) ? candidate.level : 'none'}, its item's`
+        : candidate.entity.level;
+    return `lowest level (${level}) · ${rarity} · ${kindWord}`;
 }
 
 function itemEntries(items) {
@@ -46,7 +61,7 @@ function itemEntries(items) {
  * @param {Map} ctx.skipped  entity id → 'inert' | 'untagged' (from the TIME pass)
  * @param {object|Array} ctx.items  the item corpus, for orphans and stickiness
  * @param {Set<string>} ctx.tokenIds  every Token id, for the Token-output refusal
- * @returns {{ elections: Map, candidates: Map, refused: Set, rows: Array }}
+ * @returns {{ elections: Map, candidates: Map, refused: Set, useLevels: Map, rows: Array }}
  */
 export function runAnchorPass(entities, { skipped = new Map(), items = {}, tokenIds = new Set() } = {}) {
     const rows = [];
@@ -92,6 +107,13 @@ export function runAnchorPass(entities, { skipped = new Map(), items = {}, token
     const itemRecords = new Map(itemEntries(items).map(([id, def]) => [def?.id ?? id, def]));
     // Every item in the corpus, plus anything an output references that the corpus does not contain.
     const allItemIds = [...new Set([...itemRecords.keys(), ...candidates.keys()])].sort();
+
+    const useLevels = levelsOfUses(entities, candidates);
+    for (const list of candidates.values()) {
+        list.forEach((c, i) => {
+            if (c.entity.kind === 'use') list[i] = { ...c, level: useLevels.get(c.entity.id) };
+        });
+    }
 
     const elections = new Map();
 
@@ -176,12 +198,47 @@ export function runAnchorPass(entities, { skipped = new Map(), items = {}, token
             sourceId: elected.entity.id,
             sourceName: elected.entity.name,
             kind: elected.entity.kind,
-            level: elected.entity.level,
+            level: elected.entity.kind === 'use' ? elected.level : elected.entity.level,
             reason: storedCandidate ? `kept: stored election (${describeReason(elected, elected.output.anchor)})` : reason,
             sticky: Boolean(storedCandidate),
             output: elected.output,
         });
     }
 
-    return { elections, candidates, refused, rows };
+    return { elections, candidates, refused, useLevels, rows };
+}
+
+/**
+ * The level each item's Use ranks and is banded at (entity id → level, null when its item has no
+ * source): the level its item is first had at, the lowest of its item's eligible sources, since a Use
+ * is had as soon as its item is. Stickiness and flags play no part: they choose a price, not when an
+ * item is first had.
+ * ⚠️ An item had only through Uses is had at their item's level, worked out first. Uses that feed
+ * each other (A's Use drops B, B's Use drops A) are a loop with no way in through them: inside it,
+ * the Use of an item still being worked out counts as never had.
+ */
+function levelsOfUses(entities, candidates) {
+    const first = new Map();
+    const visiting = new Set();
+    const firstLevel = (itemId) => {
+        if (first.has(itemId)) return first.get(itemId);
+        if (visiting.has(itemId)) return Infinity;
+        visiting.add(itemId);
+        let best = Infinity;
+        for (const c of candidates.get(itemId) || []) {
+            if (c.ineligible) continue;
+            const level = c.entity.kind === 'use' ? firstLevel(c.entity.usedItemId) : c.entity.level;
+            if (level < best) best = level;
+        }
+        visiting.delete(itemId);
+        first.set(itemId, best);
+        return best;
+    };
+    const levels = new Map();
+    for (const entity of entities) {
+        if (entity.kind !== 'use') continue;
+        const level = firstLevel(entity.usedItemId);
+        levels.set(entity.id, Number.isFinite(level) ? level : null);
+    }
+    return levels;
 }

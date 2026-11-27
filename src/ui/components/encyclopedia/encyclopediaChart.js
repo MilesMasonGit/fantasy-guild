@@ -5,6 +5,7 @@ import { stationSkillOf } from '../../../systems/effects/statements.js';
 import { getSkill, isCombatSkill } from '../../../config/registries/skillRegistry.js';
 import { t } from '../../../i18n/index.js';
 import { KIND, EVENT_WAY } from './encyclopediaModel.js';
+import { usedItemOfSource } from '../../../config/registries/itemUse.js';
 
 /**
  * The chart reads left to right around the entry it starts from: its **ways in** come from the
@@ -126,10 +127,12 @@ export function madeBy(book, key) {
     return outs.length === 1 ? outs[0].key : key;
 }
 
-/** The record an item's price comes from (`valueSource`), as a key: the owner's usual way to have it. */
+/** The record an item's price comes from (`valueSource`), as a key: the owner's usual way to have it. An item's Use names the item used. */
 function anchorOf(book, entry) {
     const id = entry?.kind === KIND.ITEM ? entry.def?.valueSource : null;
     if (typeof id !== 'string' || !id) return null;
+    const used = usedItemOfSource(id);
+    if (used) return book.entryOf(itemKey(used)) ? itemKey(used) : null;
     if (book.entryOf(recipeKey(id))) return recipeKey(id);
     if (book.entryOf(tokenKey(id))) return tokenKey(id);
     return null;

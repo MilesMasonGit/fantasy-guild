@@ -5,6 +5,7 @@ import { fishBait } from '../../../../src/config/registries/fishRules.js';
 import { RETIRED_WATER_TOKENS } from '../../../../src/config/registries/fishingSpots.js';
 import { cropTermsOf, fieldOf, stationKindOffers, endTermsOf } from '../../../../src/config/registries/tokenConstants.js';
 import { stationSkillOf, stationKindOf } from '../../../../src/systems/effects/statements.js';
+import { itemUseDropsOf, itemUseSourceId } from '../../../../src/config/registries/itemUse.js';
 
 /** The Token kinds this simulator does not model, plus passives. Such a Token can never anchor an item, but if it has a work cycle it is still seen, as a deferred-scope Info row, so a passive producer is not silently forgotten. */
 export const DEFERRED_TOKEN_TYPES = Object.freeze([
@@ -217,6 +218,40 @@ export function adaptRecipe(def, id = def?.id, crop = false) {
     });
 }
 
+/**
+ * An item's Use as a source (`kind: 'use'`): one copy of the item in, its drops out, read with the
+ * game's own rule (`itemUse.itemUseDropsOf`), so the drops priced are the drops the Bank rolls.
+ * ⚠️ It has no skill, level, cycle, Tempo or Purpose: a Use takes no hero and no time, so no pass
+ * times, tunes or pays it, and its `level` is null. Where a level is wanted (the anchor election, a
+ * band) it is the level its item is first had at (the ANCHOR pass's `useLevels`).
+ */
+export function adaptUse(def, itemId = def?.id) {
+    const drops = itemUseDropsOf(def);
+    if (!drops.length || !itemId) return null;
+    return Object.freeze({
+        id: itemUseSourceId(itemId),
+        name: `${def?.name ?? itemId} (Use)`,
+        kind: 'use',
+        usedItemId: itemId,
+        skill: null,
+        level: null,
+        authoredCycleTimeMs: null,
+        authoredXp: null,
+        inputs: Object.freeze([adaptInput({ itemId, quantity: 1 })]),
+        // Pinned: the drops are authored and rolled as written; nothing moves them.
+        outputs: Object.freeze(drops.map((d) => adaptOutput(d, true))),
+        tempo: null,
+        purpose: null,
+        xpPinned: false,
+        timePinned: false,
+        outputsPinned: true,
+        downcycle: false,
+        rarity: null,
+        tokenType: null,
+        charges: null,
+    });
+}
+
 /** Accept either a keyed object or an array of records, and yield `[id, def]`. */
 function entries(collection) {
     if (!collection) return [];
@@ -250,6 +285,7 @@ export function adaptCorpus({ tokens, recipes, items = {} } = {}) {
     const adapted = [
         ...entries(tokens).map(([id, def]) => adaptToken(def, def?.id ?? id, items)),
         ...entries(recipes).map(([id, def]) => adaptRecipe(def, def?.id ?? id, crops.has(def?.id ?? id))),
+        ...entries(items).map(([id, def]) => adaptUse(def, def?.id ?? id)).filter(Boolean),
     ];
     adapted.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
     return adapted;

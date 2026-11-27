@@ -23,7 +23,7 @@ import { normaliseEventTable, isRunnable } from '../../../config/eventTable.js';
 import { EVENT_WAIT_MIN_MS, EVENT_WAIT_MAX_MS } from '../../../config/eventTiming.js';
 import { allowsTerrain, TERRAIN } from '../../atlas/TerrainMap.js';
 import { coinsOf, shopCoinsOf } from '../../../config/registries/coinCosts.js';
-import { itemUseDropsOf } from '../../../config/registries/itemUse.js';
+import { itemUseDropsOf, usedItemOfSource } from '../../../config/registries/itemUse.js';
 
 /**
  * Two engines over one picture of the content (`buildWorld`), shared by the CMS's ledger views and
@@ -1319,9 +1319,9 @@ const PRODUCING = new Set([HOW.WORK, HOW.CATCH, HOW.DROP, HOW.CRAFT, HOW.TRICKLE
 
 /**
  * The rule a tree follows for one item: the simulator's anchor (`valueSource`, the source the item's
- * price comes from) when it names one that makes it, else the rule that first reaches it if that one
- * produces it, else the first reachable rule that does, else any. Null for an origin (the Bank, a
- * starter tool) or an item nothing makes.
+ * price comes from, an item's Use as `use:<item>`) when it names one that makes it, else the rule
+ * that first reaches it if that one produces it, else the first reachable rule that does, else any.
+ * Null for an origin (the Bank, a starter tool) or an item nothing makes.
  */
 function sourceRule(world, reach, itemId) {
     const key = itemKey(itemId);
@@ -1329,7 +1329,10 @@ function sourceRule(world, reach, itemId) {
     if (!making.length) return null;
     const anchor = world.items[itemId]?.valueSource;
     if (anchor) {
-        const hit = making.find(r => r.via === tokenKey(anchor) || r.via === recipeKey(anchor));
+        const used = usedItemOfSource(anchor);
+        const hit = used
+            ? making.find(r => r.how === HOW.USE && r.via === itemKey(used))
+            : making.find(r => r.via === tokenKey(anchor) || r.via === recipeKey(anchor));
         if (hit) return hit;
     }
     const first = reach?.get(key)?.rule;
