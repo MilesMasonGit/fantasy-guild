@@ -35,7 +35,7 @@ function shippedWorkspace() {
 /** Every number told apart, NaN, the infinities and -0 too. */
 const exact = (v) => JSON.stringify(v, (k, x) => (typeof x === 'number' && (!Number.isFinite(x) || Object.is(x, -0)) ? `#${Object.is(x, -0) ? '-0' : x}` : x));
 
-const numbersOfRate = (r) => (r.ok === false && !('items' in r) ? r : { ok: r.ok, items: r.items, inputs: r.inputs, boostInputs: r.boostInputs, xp: r.xp });
+const numbersOfRate = (r) => (r.ok === false && !('items' in r) ? r : { ok: r.ok, cyclesPerHour: r.cyclesPerHour, items: r.items, inputs: r.inputs, boostInputs: r.boostInputs, xp: r.xp });
 
 /**
  * Setups each work is weighed in: the bare one, each boost on offer on its own, all of them at once,

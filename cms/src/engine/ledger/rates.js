@@ -277,7 +277,7 @@ export function buildRateBook(content = {}) {
         token: tokenDef,
         rateOf: (target, setup) => rateOf(book, target, setup),
         /**
-         * What a rate makes, spends and teaches an hour and whether it runs, `{ ok, items, inputs, xp }`,
+         * What a rate makes, spends and teaches an hour and whether it runs, `{ ok, cyclesPerHour, items, inputs, boostInputs, xp }`,
          * exactly as `rateOf` has them, without the factors and notes: what weighing one boost
          * against another reads. A work the calculator cannot rate comes back refused, as `rateOf` gives it.
          */
@@ -1329,7 +1329,7 @@ export function axisResolverOf(book, target, setup = {}) {
  *     rules reach the work, its lines pay at the Hall)
  *   - `heroes`: how many heroes work it (default 1; only a family can take more than one)
  *   - `off`: factor ids or kinds switched off (`support:token_copper_mine`, `consumable`, …)
- * @param {boolean} [light]  only the numbers a choice weighs: `{ ok, items, inputs, boostInputs, xp }`, as the
+ * @param {boolean} [light]  only the numbers a choice weighs: `{ ok, cyclesPerHour, items, inputs, boostInputs, xp }`, as the
  *   whole rate has them (`book.numbersOf`)
  * @returns {object} the rate, its factors and what it could not read
  */
@@ -1337,7 +1337,7 @@ function rateOf(book, target = {}, setup = {}, light = false) {
     const passiveDef = book.token(target.token);
     if (passiveDef && !text(target.recipe) && workKindOf(passiveDef, null).kind === WORK.PASSIVE) {
         const r = passiveRate(book, passiveDef, setup);
-        return light ? { ok: r.ok, items: r.items, inputs: r.inputs, xp: r.xp } : r;
+        return light ? { ok: r.ok, cyclesPerHour: r.cyclesPerHour, items: r.items, inputs: r.inputs, xp: r.xp } : r;
     }
     const prepared = prepare(book, target, setup, light);
     if (prepared.refused) return prepared.refused;
@@ -1485,7 +1485,7 @@ function rateOf(book, target = {}, setup = {}, light = false) {
     for (const c of life.costs || []) inputs[c.itemId] = (inputs[c.itemId] || 0) + c.perLife * cyclesPerHour / life.cycles;
     const xp = skill ? { [skill]: xpPerCycle * cyclesPerHour } : {};
     const boostInputs = perHour(boostPerCycle);
-    if (light) return { ok: gates.ok, items: perHour(perCycle), inputs, boostInputs, xp };
+    if (light) return { ok: gates.ok, cyclesPerHour, items: perHour(perCycle), inputs, boostInputs, xp };
 
     // Coins a cycle: a kill's Coin drop, raised by Coin Find in reach and dropped in whole coins
     // (`CoinDrops.killCoins`), less what a build pays for its Foundation's coins at the Shop.
