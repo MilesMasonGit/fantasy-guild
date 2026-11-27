@@ -1,23 +1,15 @@
 /**
- * Economic simulator — the dry-run report (phases P3+4, extended in P6).
+ * Economic simulator: the dry-run report.
  *
  * ```
  * node cms/src/engine/sim/dryRun.mjs
  * ```
  *
- * Loads the real `data/*.json`, runs the four built passes, and prints what
- * they decided: every item's elected anchor and why, every derived value, what
- * the lever policy tuned or refused, the churn report, and every row raised,
- * grouped by severity.
- *
- * ## Why a script and not a screen
- *
- * The roadmap's phase P3 had a read-only CMS preview so a developer could
- * review anchor elections before anything wrote. The owner dropped that
- * surface, so this is how the engine's behaviour gets reviewed instead.
- *
- * **It reads `data/` and writes nothing** — no file, no store, no Sync. It is
- * safe to run at any time.
+ * Loads the real `data/*.json`, runs the passes, and prints what they decided:
+ * every item's elected anchor and why, every derived value, what the lever
+ * policy tuned or refused, the churn report, and every row raised, grouped by
+ * severity. It reads `data/` and writes nothing (no file, no store, no Sync),
+ * so it is safe to run at any time.
  *
  * ⚠️ Reading the output: the shipped content is placeholder and its Tempo /
  * Purpose tags are provisional test substrate. Odd numbers and refusals are the

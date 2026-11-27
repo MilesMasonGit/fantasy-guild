@@ -1,8 +1,5 @@
-// State Schema
-// Phase 5: State Foundation
-
 /**
- * StateSchema - Defines initial state and validation for game data
+ * The save's initial state and its validation.
  */
 
 import { BANK_STARTING_SLOTS } from '../config/guildUpgrades.js';
@@ -12,60 +9,30 @@ import { BANK_STARTING_SLOTS } from '../config/guildUpgrades.js';
  * package.json. It names the app version at which the save *structure* last
  * changed, so it only moves when saves genuinely break.
  *
- * '0.2.0' — the Area Deck Loop rework.
- * '0.4.0' — the Hero Dock rework: `state.bench` is removed entirely (the
- *           roster is the whole roster now), and hero equipment moves from two
- *           slots to six. Old saves are refused rather than migrated, matching
- *           the deck-loop precedent (hero_dock_roadmap_v1.md D7 / Phase 0).
- * '0.6.0' — the 7×7 Playmat rework (D-110). Nothing meaningful maps across:
- *           cards become Tokens carrying board state, areas cease to exist
- *           entirely, and heroes lose their area binding. Refused, not
- *           migrated — see playmat_roadmap_v1.md Phase 0 §C.
- * '0.7.0' — the Skill & Class rework (D-253). A hero's shape changes
- *           fundamentally: they hold 6 of 27 skills instead of all 15, six
- *           skill ids are deleted outright, `defense` folds into the single
- *           combat skill, and every hero gains a job. A migration would
- *           produce nonsense heroes, so old saves are refused — see
- *           skill_class_rework_roadmap_v1.md Phase 0.
- * '0.8.0' — Free Playmat slice 1.6a (FP-85). Tokens are stored by instance id
- *           at a point on the mat (`board.tokens`), not by tile, vacancies by
- *           the spot that ran dry, and the terrain fields leave the board.
- *           (Vacancies went again with the Managers, Token Lifecycle 9.2: an
- *           older save's `board.vacancies` is dropped on load, no bump; likewise
- *           the Token Vault and Tray fields, Token Lifecycle 9.3.) Old
- *           saves are refused through the existing version check — no message
- *           of their own, no export, no conversion.
- * '0.8.1' — the Atlas: a save holds every Region the guild has settled
- *           (`atlas`), each with its own board. A pre-Atlas save is refused, not
- *           carried over as a first Region.
- * '0.8.2' — Token spacing (brief 890): Tokens stand edges touching, 128 u apart
- *           at the closest. An older save's boards hold them closer; the owner
- *           chose a fresh start over moving them apart, so it is refused, and the
- *           slot screen says so (`SaveSlotHelper.getSlotInfo`'s `outdated`).
+ * A save of an older schema version is refused, never migrated: the slot screen marks it
+ * (`SaveSlotHelper.getSlotInfo`'s `outdated`). The last bump: Tokens stand
+ * edges touching, 128 u apart at the closest, and an older board holds them
+ * closer.
  */
 export const GAME_VERSION = '0.8.2';
 
 /**
- * The board's default shape, in one place.
- *
- * There used to be three disagreeing copies of this — `INITIAL_STATE.board`,
- * `BoardState.board()` and `SpriteLayer.sprites()` — and no two listed the same
- * fields (CR2-049). Both helpers now call this, so "what is an empty board"
- * has a single answer.
+ * The board's default shape, in one place: `INITIAL_STATE.board`, `BoardState`
+ * and `Atlas` all build from it, so "what is an empty board" has a single answer.
  *
  * See the `board` comment in INITIAL_STATE below for what each field holds.
  */
 export function createEmptyBoard() {
     return {
         // Every Token on the mat, keyed by instance id; each carries its own
-        // point `x`, `y` (mat units) and `placedAt` (Free Playmat 1.6a).
+        // point `x`, `y` (mat units) and `placedAt`.
         tokens: {},
         // Counter behind each Token's `placedAt` — the order Tokens arrived in.
         nextTokenOrder: 0,
         // Each hero's order, keyed by hero id, saved as their flag record: pinned
         // to a Token (`pinnedTo`), or a spot to idle at (`spot`). A hero with no
         // record waits at the Guild Hall. Which Token a flag works is runtime,
-        // except the note below of work a hero had reached (`workClaims`, HM-7).
+        // except the note below of work a hero had reached (`workClaims`).
         flags: {},
         // 1: this board's flags are orders. A board from an older save has none
         // and is brought over as it loads (`SaveMigration.migrateStateToOrders`).
@@ -73,8 +40,7 @@ export function createEmptyBoard() {
         // Counter behind each flag's `plantedAt` — the order flags choose in.
         nextFlagOrder: 0,
         // Which Token each hero had REACHED and was working, and from which
-        // side: `{ heroId: { instanceId, side } }` (Hero Movement M5, HM-7,
-        // amending FP-58). On load a hero here stands back at that Token and
+        // side: `{ heroId: { instanceId, side } }`. On load a hero here stands back at that Token and
         // carries on; everyone else starts beside their flag. Written by
         // `BoardState` on arrival, erased when the hero lets go.
         workClaims: {},
@@ -86,10 +52,9 @@ export function createEmptyBoard() {
         // 1 once `Groves.attachUntethered` has run on this board: an older save's
         // trees have joined the Forest in their reach. 0 reads as not yet.
         groveTethers: 0,
-        // `tokenBank`, `tray`, `nextTrayZ`, `tokenBankSlots`, `tokenTabsUnlocked`
-        // and `tokenGroups` went with the Token Vault and the Tray (Token
-        // Lifecycle 9.3): Tokens live on the mat. `migrateState` drops them
-        // from an older save.
+        // `migrateState` drops an older save's `tokenBank`, `tray`, `nextTrayZ`,
+        // `tokenBankSlots`, `tokenTabsUnlocked` and `tokenGroups`: Tokens live
+        // on the mat.
 
         // No ground on the board: a Region's ground is its stored cell map
         // (`region.terrain`), drawn by `TerrainCanvas`.
@@ -138,8 +103,7 @@ export function createRegionRecord(id = null) {
 }
 
 /**
- * Initial game state for new games
- * This is the complete state structure - all sections must be present
+ * Initial game state for new games: the complete structure, every section present.
  */
 export const INITIAL_STATE = {
     // === Meta ===
@@ -151,12 +115,11 @@ export const INITIAL_STATE = {
         guildName: null        // Named on the new-game screen (`GuildName.js`); null in an older save
     },
 
-    // (No `settings` section: player settings are device-local and owned by
-    // SettingsManager/localStorage. The drifted duplicate that used to live
-    // here was removed in the code-review Wave 5 sweep — CR-011.)
+    // No `settings` section: player settings are device-local, owned by
+    // SettingsManager (localStorage).
 
     // === Heroes ===
-    // The roster is the whole roster — there is no bench (Hero Dock Phase 3).
+    // The roster is the whole roster: there is no bench.
     // `progress.rosterLimit` caps it, and recruiting is refused at the cap.
     // ⚠️ A hero's own shape is NOT declared here — it is owned by
     // `HeroGenerator` (creation) and `HeroRehydration` (load). Fields that only
@@ -176,7 +139,7 @@ export const INITIAL_STATE = {
         // Bank tabs. Extra entries are added ONLY by
         // GuildUpgradeManager._ensureBankTabs when the `bank_tabs` upgrade
         // raises maxTabs, and are named 'bank-tab-2', 'bank-tab-3', … There
-        // are no player-created tabs (owner ruling 2026-08-25, CR2-089).
+        // are no player-created tabs.
         groupOrder: ['default-loot'],   // ['default-loot', 'bank-tab-2', …]
         groupDefs: {
             'default-loot': { title: 'Loot', id: 'default-loot', orderedItems: [] }
@@ -226,7 +189,7 @@ export const INITIAL_STATE = {
     },
 
     // === The Board (the playmat) ===
-    //   tokens      { [id]: { id, typeId, x, y, placedAt, usesRemaining, cycleElapsedMs, selectedRecipeId? } }  (Free Playmat 1.6a)
+    //   tokens      { [id]: { id, typeId, x, y, placedAt, usesRemaining, cycleElapsedMs, selectedRecipeId? } }
     //               + origin 'placed'|'spawned' (absent reads as placed), clocks? { growMs, spawnMs, ... },
     //                 fixture? true on a node a map wrote, fixture? 'camp' on a Token the Starter Camp laid (`BoardState.isFixture`),
     //                 demolish? true on a Token marked for demolition (`Demolition.js`; its progress is cycleElapsedMs),
@@ -244,13 +207,12 @@ export const INITIAL_STATE = {
     //                 returnTo = a caught thief's Hideout, gone back to once the guard they were sent at is beaten (`Flags.goForGuard`)
     //   orders      1                       the flags are orders (an older save's board is migrated as it loads, `SaveMigration.migrateStateToOrders`)
     //   nextFlagOrder number                the next flag's plantedAt
-    //   sprites     [ ... ]                 item loot on the floor (D-40), added Phase 3;
-    //                                       no Token sprites since Token Lifecycle 9.3
+    //   sprites     [ ... ]                 item loot on the floor; never a Token
     //
     // ⚠️ **`flags` is a hero's place on the board, and it is the only copy.**
     // Which Token a flag works is a runtime claim; the save keeps only
     // `workClaims`, a note of work a hero had reached, so a reload can put them
-    // back at it (Hero Movement M5, HM-7, amending FP-58). A hero with no flag
+    // back at it. A hero with no flag
     // is in the Dock; the Dock is still not a data structure.
     board: createEmptyBoard(),
 
@@ -290,7 +252,7 @@ export const INITIAL_STATE = {
         progress: null
     },
 
-    // === The world (brief 330) ===
+    // === The world ===
     // The run's hex world around the Hall, generated whole at a new game and kept as it was made
     // (`world/World.js`; the shape is `world/generate.js`'s). Null in a save made before the world
     // existed: old saves are abandoned, so none is generated for them. ⚠️ Not in REQUIRED_KEYS:
@@ -334,9 +296,8 @@ export function validateSaveData(saveData) {
         return { valid: false, errors };
     }
 
-    // Check required state keys. A null/undefined section counts as missing:
-    // it passes `in` but crashes everything downstream, and the shape checks
-    // below all skip falsy values (found by the CR-008 wiring tests).
+    // A null/undefined section counts as missing: it passes `in` but crashes
+    // everything downstream, and the shape checks below all skip falsy values.
     for (const key of REQUIRED_KEYS) {
         if (!(key in saveData.state)) {
             errors.push(`Missing state.${key}`);
@@ -360,8 +321,7 @@ export function validateSaveData(saveData) {
         }
     }
 
-    // The areaStates validation block was removed with areas. There is
-    // deliberately no deep board check: `migrateState` now backfills a
+    // Deliberately no deep board check: `migrateState` now backfills a
     // section's missing fields before this runs, so a shape check here could
     // never fire.
 
