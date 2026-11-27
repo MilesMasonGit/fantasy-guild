@@ -1,5 +1,6 @@
 import { workspaceReport } from './ledgerReport.js';
 import { ledgerRows } from './ledgerRows.js';
+import { liftPlanned } from './ledgerWithPlanned.js';
 import { PROFILE, PACE_TEXT } from './ledger/pace.js';
 import { minutesPerLevelAt, boostBudgetAt, chainHeroesAt } from './ledger/settings.js';
 import { COMBAT, parseKey } from '../../../src/systems/progression/ledger/engine.js';
@@ -51,6 +52,9 @@ export const NOTES = Object.freeze([
     'boostBudget lists the budget\'s cells by tier and, under over, every total a profile holds over its cell (the boost-budget check).',
     'coins holds the two coin curves (BALANCE_RULES section 7, Ledger settings, minutes of one hero\'s selling from a stage on: everyday for a Shop Token or a Foundation, one level\'s time; big for settling a place or a Guild Hall star, half the payback curve) and every price that asks coins with its curve, its minutes there, the income it is earned at (perHour) and the coins the curve proposes; off marks one beyond the tolerance from it.',
 ]);
+
+/** The note `--with-planned` adds, in place of none: the plain read-out's notes are left as they are. */
+const WITH_PLANNED_NOTE = 'withPlanned: Planned work is timed as if it were live (ledger --with-planned), in this read-out only. Each Planned row keeps planned: true and its Planned status and has its arrival; the pace, the stages, the boost budget and the checks read the Planned entries as live, so a Planned work may set the pace of a level. counts.plannedTimed is how many Planned entries were reached; the rest read never reached.';
 
 const minutes = (hours) => (Number.isFinite(hours) ? round(hours * 60, 3) : null);
 const round = (n, places = 2) => (Number.isFinite(n) ? Math.round(n * 10 ** places) / 10 ** places : null);
@@ -241,11 +245,14 @@ function coinsOf(pace) {
 /**
  * The read-out of a workspace (the collections, as the CMS's store holds them).
  * @param {object} state
- * @param {{ report?: object, layouts?: boolean }} options  a `workspaceReport` already worked out, to reuse;
- *   `layouts: false` leaves out the other layout's days to 99 (a second pace, most of the time), keeping its node check
+ * @param {{ report?: object, layouts?: boolean, withPlanned?: boolean }} options  a `workspaceReport` already worked out, to reuse;
+ *   `layouts: false` leaves out the other layout's days to 99 (a second pace, most of the time), keeping its node check;
+ *   `withPlanned` times Planned work as if it were live, each Planned row still marked (a handed `report` must be of the lifted workspace)
  */
-export function ledgerReadout(state = {}, { report = null, layouts = true } = {}) {
+export function ledgerReadout(state = {}, { report = null, layouts = true, withPlanned = false } = {}) {
     const started = Date.now();
+    const lifted = withPlanned ? liftPlanned(state) : null;
+    if (lifted) state = lifted.state;
     const r = report || workspaceReport(state);
     const { pace, ledger, findings } = r;
     const worksByEntry = new Map();
@@ -261,20 +268,21 @@ export function ledgerReadout(state = {}, { report = null, layouts = true } = {}
     for (const entry of ledgerRows(state)) {
         const key = entry.ledgerKey;
         const at = ledger.reach.get(key) || null;
-        const planned = entry.status === PLAN_STATUS.PLANNED;
+        const planned = lifted ? lifted.keys.has(key) : entry.status === PLAN_STATUS.PLANNED;
+        const untimed = planned && !lifted;
         const works = (worksByEntry.get(key) || []).filter((w) => w.tier !== null).sort((a, b) => a.tier - b.tier);
         const numbers = works.length ? workNumbers(pace, r, works[0]) : null;
         const gate = gateOf(at);
         const arrive = {};
         const path = {};
         for (const [who, profile] of Object.entries(ARRIVAL_PROFILES)) {
-            const a = planned ? null : pace.arrivalOf(key, profile);
+            const a = untimed ? null : pace.arrivalOf(key, profile);
             arrive[who] = a ? minutes(a.hours) : null;
             path[who] = a ? minutes(a.pathHours) : null;
         }
         const site = works.length ? { opt: siteText(pace, r, works[0].target, PROFILE.MAXED), typ: siteText(pace, r, works[0].target, PROFILE.TYPICAL) } : null;
         rows.push({
-            key, id: entry.id, name: entry.name, kind: entry.kind, status: entry.status, planned,
+            key, id: entry.id, name: entry.name, kind: entry.kind, status: planned ? PLAN_STATUS.PLANNED : entry.status, planned,
             tier: entry.tier ?? (Number.isInteger(at?.tier) ? at.tier : null),
             reachTier: Number.isInteger(at?.tier) ? at.tier : null,
             skill: numbers?.skill ?? gate.skill, level: numbers?.level ?? gate.level,
@@ -284,7 +292,7 @@ export function ledgerReadout(state = {}, { report = null, layouts = true } = {}
             via: at?.via ?? at?.rule?.via ?? null, how: at?.how ?? at?.rule?.how ?? null,
             arriveOpt: arrive.opt, arriveTyp: arrive.typ, pathOpt: path.opt, pathTyp: path.typ,
             ...(site ? { site } : {}),
-            ...(planned ? { why: 'planned' } : arrive.typ === null ? { why: at ? 'never reached' : 'not in the ledger' } : {}),
+            ...(untimed ? { why: 'planned' } : arrive.typ === null ? { why: at ? 'never reached' : 'not in the ledger' } : {}),
         });
     }
 
@@ -313,9 +321,10 @@ export function ledgerReadout(state = {}, { report = null, layouts = true } = {}
 
     return {
         format: READOUT_FORMAT, version: READOUT_VERSION,
+        ...(lifted ? { withPlanned: true } : {}),
         profiles: { ...READOUT_PROFILES },
         units: { levelTimes: 'minutes', days: 'days (24 hero-hours)', arrive: 'minutes', seconds: 'seconds an action', xp: 'XP an action', heroMinutes: 'minutes of one hero\'s work' },
-        notes: [...NOTES],
+        notes: [...NOTES, ...(lifted ? [WITH_PLANNED_NOTE] : [])],
         guild: {
             heroes: heroesOf(pace), gatherersPerMaker: pace.settings.gatherersPerMaker, layout: pace.settings.layout, layoutNodes: { ...pace.settings.layouts },
             layoutSpawners: { ...pace.settings.layoutSpawners }, sitePlaces: { ...pace.settings.sitePlaces },
@@ -329,6 +338,7 @@ export function ledgerReadout(state = {}, { report = null, layouts = true } = {}
         checks,
         counts: {
             skills: Object.keys(skills).length, rows: rows.length, planned: rows.filter((x) => x.planned).length,
+            ...(lifted ? { plannedTimed: rows.filter((x) => x.planned && x.arriveTyp !== null).length } : {}),
             checks: checks.length, bySeverity: checks.reduce((m, c) => ({ ...m, [c.severity]: (m[c.severity] || 0) + 1 }), {}),
         },
         ms: Date.now() - started,
@@ -379,5 +389,6 @@ export function readoutText(out) {
     }
     const sev = Object.entries(out.counts.bySeverity).map(([k, n]) => `${n} ${k}`).join(', ') || 'none';
     lines.push('', `${out.counts.rows} entries (${out.counts.planned} Planned, marked), ${out.counts.checks} checks: ${sev}.`);
+    if (out.withPlanned) lines.push(`Planned work timed as if live: ${out.counts.plannedTimed} of ${out.counts.planned} Planned entries timed (the rest never reached); the pace, stages and checks read them as live.`);
     return lines;
 }
