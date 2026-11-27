@@ -17,6 +17,14 @@ import {
     migrateLegacyIntent, applyItemResults, RETIRED_ITEM_FIELDS,
 } from '../../cms/src/engine/sim/writeBack.js';
 import { workspaceDials } from '../../cms/src/engine/sim/dials.js';
+import { createRequire } from 'module';
+import path from 'path';
+
+// The balance solver, for the action time rule (BALANCE_RULES section 2) a number pack pins.
+const solver = createRequire(import.meta.url)(path.resolve(__dirname, '../../.claude/skills/balancer/balance_solver.cjs'));
+const BALANCE = solver.make({});
+/** How far the solver may trim an action's time to pay whole XP, either way (BALANCE_RULES section 1). */
+const WHOLE_XP_TRIM = 0.15;
 
 // ⚠️ Read from `data/` directly rather than through the item registry. The
 // registry is the merge of shipped content and the test fixtures, and the rules
@@ -297,12 +305,40 @@ describe('Rule 4 — cycle times stay in their band', () => {
      * on this field name — a **recipe** carries `levelRequirement` instead
      * (finding B5) — so this must not be copied to recipes unchanged.
      */
-    const tagged = RUNNING.filter((id) => isTempo(TOKENS[id]?.sim?.tempo));
+    // A pinned time (`sim.timePinned`) is the balance rules', written by a number pack: Recalculate
+    // keeps it whatever the Tempo, so it is checked against that rule instead (below).
+    const pinned = RUNNING.filter((id) => TOKENS[id]?.sim?.timePinned === true);
+    const tagged = RUNNING.filter((id) => isTempo(TOKENS[id]?.sim?.tempo) && !pinned.includes(id));
     // Event Tokens are left out: an event node copies the cycle of the Token it
     // imitates (a Copper Comet works like a Copper Ore Vein), so it is paced by
     // that Token's tempo, not by the flat band.
     const untagged = RUNNING.filter((id) => !isTempo(TOKENS[id]?.sim?.tempo)
-        && !(TOKENS[id]?.tags || []).includes('Event'));
+        && !(TOKENS[id]?.tags || []).includes('Event') && !pinned.includes(id));
+
+    describe('pinned Tokens run at the gather time of the balance rules', () => {
+        // A gather is 6 s a little longer every 20 levels (x1.15), trimmed by up to 15 % either way to
+        // pay whole XP, in tenths of a second as the solver writes it.
+        const band = (level) => {
+            const ms = BALANCE.cycle('gather', level) * 1000;
+            return { minMs: Math.round(ms * (1 - WHOLE_XP_TRIM) / 100) * 100, maxMs: Math.round(ms * (1 + WHOLE_XP_TRIM) / 100) * 100 };
+        };
+        it('has pinned Tokens to check', () => {
+            expect(pinned.length).toBeGreaterThan(0);
+        });
+        it.each(pinned)('%s runs within the gather time', (id) => {
+            const cycle = TOKENS[id].config?.cycleTimeMs;
+            const level = TOKENS[id].config?.skillRequired ?? 1;
+            const { minMs, maxMs } = band(level);
+            expect(cycle >= minMs && cycle <= maxMs,
+                `${tokenName(id)} is pinned at ${cycle} ms at level ${level}, outside the gather time ${minMs}-${maxMs} ms`).toBe(true);
+        });
+        it('the gather time rule catches a pinned time a tier out', () => {
+            const { minMs, maxMs } = band(1);
+            expect(BALANCE.cycle('gather', 1) * 1000).toBeGreaterThan(minMs);
+            expect(BALANCE.cycle('gather', 1) * 1000).toBeLessThan(maxMs);
+            expect(band(80).minMs).toBeGreaterThan(maxMs);
+        });
+    });
 
     /**
      * With eight heroes working this is roughly one completion every two or
@@ -321,11 +357,7 @@ describe('Rule 4 — cycle times stay in their band', () => {
             // `it.fails` passes while the assertion fails and fails the day it
             // passes, so when the content is fixed this goes red: delete the
             // entry.
-            const KNOWN_BAND_DRIFT = {
-                // Content drift: authored in the CMS at 5,000 ms and untagged,
-                // below the 10-30 s band (R10 section 4.2, row 1). A CMS number.
-                token_redberry_bush: 'cycle 5 s, below the band'
-            };
+            const KNOWN_BAND_DRIFT = {};
             for (const id of untagged) {
                 const run = KNOWN_BAND_DRIFT[id] ? it.fails : it;
                 run(`${id} runs within the band`, () => {
