@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 
 import { auditConnectivity } from '../../cms/src/engine/connectivityAuditor.js';
+import { hallRequiredFindings } from '../systems/core/hallStarRule.js';
+import { authoredHallSky } from '../config/registries/hallStarRegistry.js';
 import { runSim } from '../../cms/src/engine/sim/simRunner.js';
 
 import tokenData from '../../data/tokens.json';
@@ -172,20 +174,34 @@ describe('CMS connectivity auditor — Guild Hall stars, by the game\'s own rule
         payload: { type, bucket: 'percentage', value }
     });
     const sky = (stars) => ({ constellations: { well: { id: 'well', name: 'The Well' } }, stars });
+    const own = (issues) => issues.filter((i) => i.entityType === 'Hall star' && !/missing from the Guild Hall sky/.test(i.details));
     const star = (id, rules) => ({ id, name: id, constellation: 'well', links: ['hall'], ranks: [{ price: [{ itemId: 'fx_ore', quantity: 5 }], rules }] });
 
     it('names a star carrying only the retired Camp Reach, to delete in the CMS', () => {
         const issues = auditConnectivity({ items, tokens, hallSky: sky({ fx_rails: star('fx_rails', [rule('CAMP_REACH', 0.15)]) }) }, []);
-        const hall = issues.filter((i) => i.entityType === 'Hall star');
+        const hall = own(issues);
         expect(hall).toEqual([expect.objectContaining({
             entityId: 'fx_rails', issueType: 'Data Integrity', severity: 'Warning',
             details: 'Carries only Camp Reach rules, retired: every camp works the one standard reach, so the star gives nothing. Delete the star in the CMS.',
         })]);
     });
 
+    it('names each required star the sky lacks as a Critical, once, and none for the shipped sky', () => {
+        const required = (issues) => issues.filter((i) => i.entityType === 'Hall star' && /missing from the Guild Hall sky/.test(i.details));
+        const shipped = authoredHallSky();
+        expect(required(auditConnectivity({ items, tokens, hallSky: shipped }, []))).toEqual([]);
+
+        const missing = { ...shipped, stars: { ...shipped.stars } };
+        delete missing.stars.wishing_well;
+        expect(required(auditConnectivity({ items, tokens, hallSky: missing }, []))).toEqual([expect.objectContaining({
+            entityId: 'wishing_well', entityType: 'Hall star', issueType: 'Data Integrity', severity: 'Critical',
+            details: 'wishing_well is missing from the Guild Hall sky, and the game reads it by id. Add it in the CMS and Sync.',
+        })]);
+        expect(hallRequiredFindings({ sky: missing })).toHaveLength(1);
+    });
+
     it('says nothing of a sound star, nor of the Hall when the workspace holds no sky', () => {
-        expect(auditConnectivity({ items, tokens, hallSky: sky({ fx_lore: star('fx_lore', [rule('XP_BONUS', 0.1)]) }) }, [])
-            .filter((i) => i.entityType === 'Hall star')).toEqual([]);
+        expect(own(auditConnectivity({ items, tokens, hallSky: sky({ fx_lore: star('fx_lore', [rule('XP_BONUS', 0.1)]) }) }, []))).toEqual([]);
         expect(auditConnectivity({ items, tokens }, []).filter((i) => i.entityType === 'Hall star')).toEqual([]);
     });
 });
