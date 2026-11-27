@@ -24,9 +24,10 @@ import { xpForLevel } from '../../utils/XPCurve.js';
  * Made in memory for this check only (never written to `data/`, gone on reload): a Test Many Hands
  * perk at Crafting 99 beside Crafting's own perks, and a QA Crafter at Crafting 99 who holds it. The
  * scene puts a Workshop on the mat set to Charcoal and, as its second recipe, Leather, with 40 Oak
- * Wood and 4 Hide in the Bank, and sends the QA Crafter to it: both recipes run side by side, the
- * Leather (2 Hide a craft) runs out of Hide after two and its section on the card says Needs Hide
- * while the Charcoal carries on, with no mark on the mat.
+ * Wood and two Leathers' worth of Hide in the Bank (read from the recipe, whose count the balance
+ * rules set), and sends the QA Crafter to it: both recipes run side by side, the Leather runs out of
+ * Hide after two and its section on the card says Needs Hide while the Charcoal carries on, with no
+ * mark on the mat.
  */
 export const QA_MH = Object.freeze({
     STATION: 'token_workbench', FIRST_MAKES: 'item_charcoal', SECOND_MAKES: 'item_leather',
@@ -89,8 +90,10 @@ export function setUpManyHandsScene() {
     StationRecipe.setSelectedRecipe(station, first.id, def);
     if (!StationRecipe.setSecondRecipe(station, second.id, def)) return { ok: false, error: 'The Workshop would not take Leather as its second recipe' };
 
+    const hidePerCraft = (second.inputs || []).find(i => i?.itemId === QA_MH.HIDE)?.quantity;
+    if (!(hidePerCraft >= 1)) return { ok: false, error: 'The Leather recipe asks for no Hide in the content' };
     setBank(QA_MH.WOOD, 40);
-    setBank(QA_MH.HIDE, 4);
+    setBank(QA_MH.HIDE, 2 * hidePerCraft);
     const hero = qaCrafter();
     if (!hero) return { ok: false, error: 'The roster would not take a QA hero' };
     TileModifiers.rebuildAll();

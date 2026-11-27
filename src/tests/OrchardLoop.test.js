@@ -268,7 +268,7 @@ describe('an Orchard plants its own fruit trees within its reach, for free, as a
 });
 
 describe('an Apple Tree from an old save, once the content pack makes it a fruit tree', () => {
-    // The shipped Apple Tree (3 charges, picked by Farming), given the fixture's S8 shape under its
+    // The shipped Apple Tree (picked by Farming), given the fixture's S8 shape under its
     // own id: so a saved instance (charges left, no clocks) loads as is.
     const shipped = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../data/tokens.json'), 'utf8'));
     const list = Array.isArray(shipped) ? shipped : Object.values(shipped.tokens || shipped);
@@ -294,8 +294,9 @@ describe('an Apple Tree from an old save, once the content pack makes it a fruit
         expect(FixedTokens.isFixed(tree)).toBe(true);
         Orders.orderAt('picker', TREE);
         // Picked empty by chance: every roll under its chance, so its first pick is its last.
+        // Run until it rests, for at most three of the shipped tree's cycles (its walk and its pick).
         const rolls = vi.spyOn(Math, 'random').mockReturnValue(0);
-        run(5000);
+        for (let t = 0; t < 3 * today.config.cycleTimeMs && !Respawn.isResting(tree); t += 100) BoardRunner.tick(100);
         rolls.mockRestore();
         expect(BoardState.getTokenById(saved.id)).toBe(tree);
         expect(Respawn.isResting(tree)).toBe(true);

@@ -157,7 +157,14 @@ describe('⭐ Charges on a station or a support', () => {
     });
 
     it('a gathering node that comes back runs out by chance: its chance in place of Charges', () => {
-        // The shipped bush rests and refills, and authors 25 Charges: one in 25 a round until a chance is written.
+        // The shipped bush rests and refills and carries the rest rule's chance, shown as written.
+        const shippedChance = JSON.parse(raw['tokens.json']).token_blackberry_bush.endChance;
+        expect(Number.isFinite(shippedChance)).toBe(true);
+        expect(openEditor('token_blackberry_bush').querySelector('[data-field="end-chance"]').value).toBe(String(shippedChance));
+        cleanup();
+
+        // Fixture: the bush as it was before a chance was written, with 25 Charges: one in 25 a round.
+        useEntityStore.getState().updateToken('token_blackberry_bush', { uses: 25, endChance: undefined });
         const container = openEditor('token_blackberry_bush');
         expect(container.querySelector('[data-field="never-wears"]')).toBeNull();
         expect(container.textContent).not.toContain('Never depletes');

@@ -12,6 +12,12 @@ import { GameState } from '../state/GameState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { ItemStubColumn } from '../ui/components/notifications/ItemStubColumn.jsx';
 import * as ItemStubs from '../systems/notifications/itemStubs.js';
+import shippedRecipes from '../../data/tokenRecipes.json';
+
+// What one Iron Ingot asks, read from the shipped recipe: the counts are the balance rules', not this file's.
+const ingotNeeds = (itemId) => shippedRecipes
+    .find((r) => (r.outputs || []).some((o) => o.itemId === 'item_iron_ingot'))
+    .inputs.find((i) => i.itemId === itemId).quantity;
 
 /**
  * ⭐ The Encyclopedia, search-first (brief 300 E3): a book whose opening page searches everything
@@ -188,19 +194,20 @@ describe('the chart', () => {
         const ore = nodeOf(container, itemKey('item_iron_ore'), 'in');
         act(() => { fireEvent.pointerEnter(ore, { clientX: 10, clientY: 10, pointerType: 'mouse', buttons: 0 }); });
         const tip = document.querySelector('[data-tooltip]')?.textContent || '';
-        expect(tip).toMatch(/Have 4; one Iron Ingot needs 6/);
+        expect(tip).toContain(`Have 4; one Iron Ingot needs ${ingotNeeds('item_iron_ore')}`);
         expect(tip).toMatch(/Collected this run: 4/);
     });
 
     it('a box shows just the need, red when short; a level no hero has is marked on its line', () => {
         GameState.state.heroes = [];
-        InventoryManager.addItem('item_coal', 5);
+        // No ore at all, and just the coal one asks for.
+        InventoryManager.addItem('item_coal', ingotNeeds('item_coal'));
         lookUp(itemKey('item_iron_ingot'));
         const { container } = open();
         const ore = q(nodeOf(container, itemKey('item_iron_ore'), 'in'), '[data-codex-need]');
-        expect([ore.textContent, ore.getAttribute('data-short')]).toEqual(['×6', 'true']);
+        expect([ore.textContent, ore.getAttribute('data-short')]).toEqual([`×${ingotNeeds('item_iron_ore')}`, 'true']);
         const coal = q(nodeOf(container, itemKey('item_coal'), 'in'), '[data-codex-need]');
-        expect([coal.textContent, coal.getAttribute('data-short')]).toEqual(['×2', null]);
+        expect([coal.textContent, coal.getAttribute('data-short')]).toEqual([`×${ingotNeeds('item_coal')}`, null]);
         expect(q(container, '[data-codex-have]')).toBeNull();
         expect(markOf(container, 's<0@').getAttribute('data-codex-req-short')).toBe('true');
         // A fight is never marked: no hero level is checked to fight.

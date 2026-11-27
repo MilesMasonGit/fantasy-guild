@@ -8,6 +8,7 @@ import { getTokenType } from '../config/registries/tokenRegistry.js';
 import { recipesForToken } from '../config/registries/recipePoolRegistry.js';
 import { expandBearer } from '../systems/effects/effectLibrary.js';
 import { stationSkillOf } from '../systems/effects/statements.js';
+import { restRuleEndChance } from '../../cms/src/engine/balanceRules.js';
 
 /**
  * Token Lifecycle slice 7.4 — the Farming chain, pinned from the SHIPPED data
@@ -143,9 +144,11 @@ describe('The Farming chain in shipped data (7.4)', () => {
             expect(familyOf('token_apple_orchard')).toEqual(['token_apple_tree']);
         });
 
-        it('an Apple Tree is Farming, has 3 charges and drops Apples and a 30% Apple Seed', () => {
+        it('an Apple Tree is Farming, runs out by chance by the rest rule and drops Apples and a 30% Apple Seed', () => {
             expect(appleTree.config.skill).toBe('farming');
-            expect(appleTree.uses).toBe(3);   // Q9 pacing: was 5
+            // About 15 s of work a fruiting (BALANCE_RULES section 2): a chance a cycle, not charges.
+            expect(appleTree.uses).toBeUndefined();
+            expect(appleTree.endChance).toBe(restRuleEndChance(appleTree.config.cycleTimeMs));
             const out = byItem(appleTree);
             expect(out.item_apple.chance).toBe(100);
             expect(out.item_apple_seed).toMatchObject({ chance: 30, minQty: 1, maxQty: 1 });

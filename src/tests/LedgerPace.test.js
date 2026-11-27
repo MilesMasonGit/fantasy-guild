@@ -430,10 +430,13 @@ describe('the shipped content', () => {
         const mine = vein.rate.factors.find(f => f.id === 'support:token_copper_mine');
         expect(mine.axes).toContain('DOUBLE_DROP');
         const without = pace.book.rateOf({ token: 'token_copper_ore_vein' }, { ...vein.setup, off: ['support:token_copper_mine'] });
-        // Each Copper Mine in reach is a 25 % double, and Typical stands it in as many places as pay back.
+        // Each Copper Mine in reach is its double drop (the content's number), and Typical stands it in as many places as pay back.
+        const double = content.tokens.token_copper_mine.effects
+            .flatMap(ref => content.effects[ref.effectId].statements)
+            .find(st => st.payload?.type === 'DOUBLE_DROP').payload.value / 100;
         const mines = pace.siteOf({ token: 'token_copper_ore_vein' }, PROFILE.TYPICAL).buildings.find(b => b.id === 'token_copper_mine').count;
         expect(mines).toBeGreaterThan(1);
-        expect(without.items.item_copper_ore).toBeCloseTo(vein.rate.items.item_copper_ore / (1 + 0.25 * mines));
+        expect(without.items.item_copper_ore).toBeCloseTo(vein.rate.items.item_copper_ore / (1 + double * mines));
 
         // Every skill's levels: Maxed never slower than Typical, Typical never slower than Bare.
         for (const skill of pace.skills()) {

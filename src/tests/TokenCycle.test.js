@@ -10,6 +10,11 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
+import { withoutShippedPerks } from './fixtures/noPerks.js';
+
+// The test heroes stand at perk levels, so they would hold the shipped milestone perks (Double Loot
+// on Forestry rolls extra wood): these tests count what a cycle makes, so none.
+withoutShippedPerks();
 
 /**
  * ⭐ **Test layout only** (Free Playmat slice 1.6d-2). The game has no tiles;

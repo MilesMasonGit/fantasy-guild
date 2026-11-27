@@ -39,6 +39,7 @@ import { hallRuleSentence, starAmount, starSentence } from '../systems/progressi
 import { hallStarFindings } from '../systems/core/hallStarRule.js';
 import { tagExplanation } from '../ui/components/drawer/itemTags.js';
 import { gearEffects } from '../ui/components/dock/heroCombatStats.js';
+import { withoutShippedPerks } from './fixtures/noPerks.js';
 
 // ⚠️ These tests are about the stars, not the base lengths: they hold the base at a drink's 10 cycles
 // and a work potion's 1, so the star arithmetic stays readable. The base lengths themselves are
@@ -50,6 +51,9 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
     getQueue: vi.fn(() => [])
 }));
+// The test hero is level 60 in every skill, so it would hold the shipped milestone perks (a Double
+// Loot perk on Forestry rolls extra nests): these tests count what the stars do, so none.
+withoutShippedPerks();
 
 /**
  * Long-lasting Brews and Strong Drink (brief 620 E3): two Guild Hall star effects on what a hero

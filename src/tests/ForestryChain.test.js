@@ -5,6 +5,7 @@ import { familyOf } from '../systems/board/SpawnerSystem.js';
 import { auditLifecycleBlocks } from '../systems/core/lifecycleAudit.js';
 import { SKILLS } from '../config/registries/skillRegistry.js';
 import { expandBearer } from '../systems/effects/effectLibrary.js';
+import { REST_RULE, restRuleEndChance } from '../../cms/src/engine/balanceRules.js';
 
 /**
  * The Forestry chain, pinned from the SHIPPED data (authored through the CMS,
@@ -54,11 +55,12 @@ describe('The Forestry chain in shipped data (7.0, 7.1)', () => {
         expect(build.inputs).toEqual([{ itemId: 'item_oak_seedling', quantity: 3 }]);
     });
 
-    it('a felled Oak Tree regrows into an Oak Stump, which grows back into its Tree in 300 s with a Forest in reach, for free', () => {
+    it('a felled Oak Tree regrows into an Oak Stump, which grows back into its Tree after a rest by the rest rule with a Forest in reach, for free', () => {
         expect(tree.staysPut).toBe(true);
         expect(tree.respawn).toEqual({ mode: 'regrow', into: 'token_oak_stump' });
+        // The rest rule (BALANCE_RULES section 2): a regrowing tree's rest is its Stump's growth.
         expect(stump.grows).toEqual({
-            into: 'token_oak_tree', afterMs: 300000, needsNearby: ['token_oak_forest'],
+            into: 'token_oak_tree', afterMs: REST_RULE.restMs, needsNearby: ['token_oak_forest'],
         });
     });
 
@@ -71,7 +73,9 @@ describe('The Forestry chain in shipped data (7.0, 7.1)', () => {
         const byItem = Object.fromEntries(tree.config.outputs.map((o) => [o.itemId, o]));
         expect(byItem.item_oak_wood.chance).toBe(100);
         expect(byItem.item_oak_seedling.chance).toBe(20);
-        expect(tree.uses).toBe(5);   // Q9 pacing: was 10
+        // It runs out by chance, the rest rule's chance for its cycle (about 15 s of work), not by charges.
+        expect(tree.uses).toBeUndefined();
+        expect(tree.endChance).toBe(restRuleEndChance(tree.config.cycleTimeMs));
     });
 
     it('no Token in the chain needs a tool nearby (TL-2)', () => {

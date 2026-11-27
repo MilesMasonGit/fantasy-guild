@@ -12,6 +12,21 @@ import { SKILLS } from '../config/registries/skillRegistry.js';
 import { getTokenType, getProvidedTagsWithTiers, tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { recipesForToken, registerRecipePools } from '../config/registries/recipePoolRegistry.js';
 import { stationSkillOf } from '../systems/effects/statements.js';
+import { createRequire } from 'module';
+
+// The balance solver, for the count rule (BALANCE_RULES section 3): a raw ingredient's count is its
+// base doubling every 40 levels, ore per bar on a base of 2.
+const solver = createRequire(import.meta.url)(path.resolve(__dirname, '../../.claude/skills/balancer/balance_solver.cjs'));
+const RULES = solver.make({});
+const ORE_PER_BAR_BASE = 2;
+/** Every input is one of `itemIds`, each named once, each a whole count of at least 1. */
+const madeOnlyFrom = (recipe, itemIds) => {
+    expect(recipe.inputs.map((i) => i.itemId)).toEqual(itemIds);
+    for (const i of recipe.inputs) {
+        expect(Number.isInteger(i.quantity), `${recipe.name}: ${i.itemId}`).toBe(true);
+        expect(i.quantity).toBeGreaterThanOrEqual(1);
+    }
+};
 
 /**
  * Token Lifecycle slices 7.5 (Processing) and 6.2 (Academies), pinned from the
@@ -180,11 +195,12 @@ describe('The Processing chain in shipped data (7.5)', () => {
     });
 
     describe('Recipes and fuel (SP-26)', () => {
-        it('Crafting burns no fuel: Charcoal is 2 Oak Wood, a Torch (Crafting 13) is 1 Oak Wood + 1 Charcoal', () => {
+        it('Crafting burns no fuel: Charcoal is Oak Wood alone, a Torch (Crafting 13) is 1 Oak Wood + 1 Charcoal', () => {
             const charcoal = named('Charcoal');
             expect(charcoal.skill).toBe('crafting');
             expect(charcoal.levelRequirement).toBe(1);
-            expect(charcoal.inputs).toEqual([{ itemId: 'item_oak_wood', quantity: 2 }]);
+            // How much wood is the balance rules' count, the content's base: only the wood is pinned here.
+            madeOnlyFrom(charcoal, ['item_oak_wood']);
             expect(charcoal.outputs.map((o) => [o.itemId, o.minQty, o.maxQty])).toEqual([['item_charcoal', 1, 1]]);
 
             const torch = named('Torch');
@@ -196,11 +212,11 @@ describe('The Processing chain in shipped data (7.5)', () => {
             expect(torch.outputs.map((o) => o.itemId)).toEqual(['item_torch']);
         });
 
-        it('Smithing smelts Copper Ingots from 4 Copper Ore and 1 Coal, no Anvil (SP-31)', () => {
+        it('Smithing smelts Copper Ingots from Copper Ore, by the count rule, and Coal, no Anvil (SP-31)', () => {
             const ingot = recipes.find((r) => r.id === 'recipe_copper_ingot');
-            expect(ingot.inputs).toEqual([
-                { itemId: 'item_copper_ore', quantity: 4 }, { itemId: 'item_coal', quantity: 1 },
-            ]);
+            madeOnlyFrom(ingot, ['item_copper_ore', 'item_coal']);
+            // 2 ore a copper bar (BALANCE_RULES section 3).
+            expect(ingot.inputs[0].quantity).toBe(RULES.count(ORE_PER_BAR_BASE, ingot.levelRequirement));
             expect(ingot.requiresContext).toEqual([]);
             expect(ingot.levelRequirement).toBe(1);
         });
@@ -213,7 +229,7 @@ describe('The Processing chain in shipped data (7.5)', () => {
 
             const juice = named('Apple Juice');
             expect(juice.skill).toBe('cooking');
-            expect(juice.inputs).toEqual([{ itemId: 'item_apple', quantity: 4 }]);
+            madeOnlyFrom(juice, ['item_apple']);
             expect(juice.stationKinds ?? []).toEqual([]);
             expect(juice.levelRequirement).toBe(6);
         });
@@ -236,14 +252,15 @@ describe('The Processing chain in shipped data (7.5)', () => {
             expect(others).toEqual([]);
         });
 
-        it('Copper Nails: 1 Copper Ingot + 1 Coal → 2 Nails at any Smithing station from level 5, no anvil needed', () => {
+        it('Copper Nails: 1 Copper Ingot + 1 Coal → 5 Nails at any Smithing station from level 5, no anvil needed', () => {
             const nails = named('Copper Nails');
             expect(nails.skill).toBe('smithing');
             expect(nails.levelRequirement).toBe(5);
             expect(nails.inputs).toEqual([
                 { itemId: 'item_copper_ingot', quantity: 1 }, { itemId: 'item_coal', quantity: 1 },
             ]);
-            expect(nails.outputs.map((o) => [o.itemId, o.minQty, o.maxQty])).toEqual([['item_copper_nails', 2, 2]]);
+            // Nails are 5 a bar (owner, BALANCE_RULES section 3), a count the number pack writes and pins.
+            expect(nails.outputs.map((o) => [o.itemId, o.minQty, o.maxQty])).toEqual([['item_copper_nails', 5, 5]]);
             expect(nails.requiresContext).toEqual([]);
             expect(nails.stationKinds ?? []).toEqual([]);
         });
