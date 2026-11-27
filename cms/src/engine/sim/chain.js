@@ -5,9 +5,10 @@ function gold(value) {
     return Number.isFinite(value) ? `${value}g` : '—';
 }
 
-/** "L1, Medium, GPH" — the three things about a source that set the price. */
+/** "L1, Medium, GPH" — the three things about a source that set the price; an item's Use has none of them. */
 function sourceTag(entity) {
     if (!entity) return '';
+    if (entity.kind === 'use') return 'a Use: no hero, no time';
     const tempo = entity.tempo ? entity.tempo[0].toUpperCase() + entity.tempo.slice(1) : 'untagged';
     const purpose = entity.purpose ? entity.purpose.toUpperCase() : 'untagged';
     return `L${entity.level}, ${tempo}, ${purpose}`;
@@ -24,7 +25,9 @@ function arithmetic(detail, inputs, values) {
         parts.push(`${terms.join(' + ')} in`);
     }
 
-    if (detail.floorEngaged) {
+    if (detail.use) {
+        parts.push('its drops together worth the item, split by scarcity');
+    } else if (detail.floorEngaged) {
         parts.push('craft-margin floor over inputs (its Purpose target was lower)');
     } else {
         parts.push(`${detail.purpose ? detail.purpose.toUpperCase() : 'untagged'} target ${Math.round(detail.targetPerHour)}g/h`);

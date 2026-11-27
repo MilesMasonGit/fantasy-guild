@@ -32,6 +32,8 @@ export function runTempoPass(entities) {
     const rows = [];
 
     for (const entity of entities) {
+        // An item's Use takes no time: nothing to time, nothing skipped. With no timing, the TUNE pass leaves it alone too.
+        if (entity.kind === 'use') continue;
         // No work cycle (`config: null`, or a config that produces nothing): skipped silently, because there is nothing to tag and a row apiece would bury every real row.
         if (isInert(entity)) {
             skipped.set(entity.id, 'inert');

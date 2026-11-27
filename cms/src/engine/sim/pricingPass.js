@@ -58,12 +58,13 @@ function inputValuePerCycle(entity, values) {
  * @param {object} ctx
  * @param {Map} ctx.timing     from the TIME pass
  * @param {Map} ctx.elections  from the ANCHOR pass
+ * @param {Map} ctx.useLevels  from the ANCHOR pass: the level each item's Use is banded at
  * @param {Set} ctx.refused    entity ids refused outright (Token outputs)
  * @param {Map} ctx.skipped    entity id → skip reason
  * @param {object} ctx.dials
  * @returns {{ values: Map, details: Map, downcycles: Map, rows: Array }}
  */
-export function runPricingPass(entities, { timing = new Map(), elections = new Map(), refused = new Set(), skipped = new Map(), dials = DEFAULT_DIALS } = {}) {
+export function runPricingPass(entities, { timing = new Map(), elections = new Map(), useLevels = new Map(), refused = new Set(), skipped = new Map(), dials = DEFAULT_DIALS } = {}) {
     const rows = [];
     const values = new Map();
     const details = new Map();
@@ -95,7 +96,7 @@ export function runPricingPass(entities, { timing = new Map(), elections = new M
         );
         if (ready.length === 0) break;
         for (const id of ready) {
-            priceEntity(byId.get(id), anchoredBy.get(id), { timing, values, details, dials, rows });
+            priceEntity(byId.get(id), anchoredBy.get(id), { timing, useLevels, values, details, dials, rows });
         }
         const done = new Set(ready);
         remaining = remaining.filter(id => !done.has(id));
@@ -108,6 +109,10 @@ export function runPricingPass(entities, { timing = new Map(), elections = new M
 
     for (const entity of downcycleEntities) {
         priceDowncycle(entity, { values, dials, rows, downcycles });
+    }
+
+    for (const entity of entities) {
+        if (entity.kind === 'use') checkUseWorth(entity, { elections, useLevels, values, dials, rows });
     }
 
     return { values, details, downcycles, rows };
@@ -131,21 +136,24 @@ function coOutputsSettled(entity, anchoredItemIds, values, remainingSet, anchore
     return true;
 }
 
-function priceEntity(entity, anchoredItemIds, { timing, values, details, dials, rows }) {
+function priceEntity(entity, anchoredItemIds, { timing, useLevels, values, details, dials, rows }) {
+    // An item's Use takes no hero and no time: its drops together are worth the copy spent, with no labour term and no craft margin.
+    const use = entity.kind === 'use';
     const t = timing.get(entity.id);
-    if (!t) return;
+    if (!t && !use) return;
+    const level = use ? (useLevels.get(entity.id) ?? 1) : entity.level;
 
     const inputValue = inputValuePerCycle(entity, values) ?? 0;
 
-    const targetPerHour = gphAt(entity.level, dials) * purposeGoldFactor(entity.purpose, dials);
-    const targetPerCycle = targetPerHour / t.cyclesPerHour;
+    const targetPerHour = use ? 0 : gphAt(level, dials) * purposeGoldFactor(entity.purpose, dials);
+    const targetPerCycle = use ? 0 : targetPerHour / t.cyclesPerHour;
 
     // Crafted anchors: value × units = input value + target profit per cycle, floored at input value × (1 + craft margin per step).
-    // ⚠️ The floor applies whenever an entity has priced inputs, of either kind: a station Token that eats 4 Oak Wood is as crafted as a recipe, and the passes never branch on entity kind.
+    // ⚠️ The floor applies whenever an entity has priced inputs, Token or recipe: a station Token that eats 4 Oak Wood is as crafted as a recipe. A Use is the one exception: it makes nothing, it opens what is already made.
     let gross = inputValue + targetPerCycle;
     const floor = inputValue * (1 + dials.craftMarginPerStep);
     let floorEngaged = false;
-    if (inputValue > 0 && floor > gross) {
+    if (!use && inputValue > 0 && floor > gross) {
         gross = floor;
         floorEngaged = true;
         rows.push(makeRow(
@@ -175,7 +183,7 @@ function priceEntity(entity, anchoredItemIds, { timing, values, details, dials, 
 
     const remainingTarget = gross - inherited;
     const shares = splitByScarcity(Math.max(remainingTarget, 0), mine.map(o => o.abundance));
-    const band = toleranceFor(entity.level, dials, { isAnchor: true });
+    const band = toleranceFor(level, dials, { isAnchor: true });
 
     mine.forEach((output, i) => {
         // Already set? Then something elected two anchors for one item, which
@@ -189,10 +197,11 @@ function priceEntity(entity, anchoredItemIds, { timing, values, details, dials, 
             itemId: output.itemId,
             sourceId: entity.id,
             sourceName: entity.name,
-            level: entity.level,
+            level,
             purpose: entity.purpose,
-            cycleTimeMs: t.cycleTimeMs,
-            unitsPerHour: (t.outputs.find(o => o.itemId === output.itemId) || {}).unitsPerHour ?? 0,
+            use,
+            cycleTimeMs: t ? t.cycleTimeMs : null,
+            unitsPerHour: t ? (t.outputs.find(o => o.itemId === output.itemId) || {}).unitsPerHour ?? 0 : null,
             targetPerHour,
             inputValue,
             floorEngaged,
@@ -221,6 +230,40 @@ function priceEntity(entity, anchoredItemIds, { timing, values, details, dials, 
             ));
         }
     });
+}
+
+/**
+ * An item's Use whose drops, at the values the run settled, are worth more or less than the copy spent, past the anchor band at its level: one that anchors none of its drops inherits them all from other sources and has nothing left to absorb the difference, and no lever moves a Use's drops.
+ */
+function checkUseWorth(entity, { elections, useLevels, values, dials, rows }) {
+    const usedId = entity.usedItemId;
+    if (!values.has(usedId)) return;
+    const drops = entity.outputs.filter(o => o.itemId);
+    if (!drops.length || drops.some(o => !values.has(o.itemId))) return;
+    const worth = values.get(usedId);
+    const total = drops.reduce((s, o) => s + o.abundance * values.get(o.itemId), 0);
+    const level = useLevels.get(entity.id) ?? 1;
+    const band = toleranceFor(level, dials, { isAnchor: true });
+    if (worth <= 0 || Math.abs(total - worth) / worth <= band) return;
+    const anchors = drops.filter(o => elections.get(o.itemId)?.sourceId === entity.id).map(o => o.itemId);
+    rows.push(makeRow(
+        SEVERITY.INFO,
+        'use-off-worth',
+        `Using one ${usedId} gives ${total.toFixed(2)}g of drops for a ${worth}g item, ${total > worth ? 'more' : 'less'} than it is worth by over ${(band * 100).toFixed(0)}%.`,
+        {
+            entityId: entity.id,
+            itemId: usedId,
+            what: `${entity.name}'s drops are worth ${total.toFixed(2)}g together, and the item used is worth ${worth}g.`,
+            why: anchors.length
+                ? "A Use's drops together are worth the item used; the drops it prices could not take up the difference in whole gold."
+                : "A Use's drops together are worth the item used, but every drop takes its value from another source, and nothing moves a Use's drops.",
+            remedies: [
+                "Re-author the Use's drops (their chances or amounts) so they are worth about the item.",
+                'Re-elect one of its drops to the Use, so the Use prices it from the item.',
+            ],
+            detail: { worth, total, band, anchors },
+        }
+    ));
 }
 
 /**

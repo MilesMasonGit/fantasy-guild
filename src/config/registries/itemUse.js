@@ -52,6 +52,24 @@ export function hasUse(item) {
     return itemUseDropsOf(item).length > 0;
 }
 
+const USE_SOURCE = 'use:';
+
+/**
+ * The id the CMS's Recalculate gives an item's Use as a source, so an item whose price comes from
+ * using another carries it as its `valueSource` (`use:item_bird_nest`). Prefixed, because an item
+ * id is not kept apart from Token and recipe ids.
+ */
+export function itemUseSourceId(itemId) {
+    return `${USE_SOURCE}${itemId}`;
+}
+
+/** The item an `itemUseSourceId` names, or null when `sourceId` names no Use. */
+export function usedItemOfSource(sourceId) {
+    return typeof sourceId === 'string' && sourceId.startsWith(USE_SOURCE) && sourceId.length > USE_SOURCE.length
+        ? sourceId.slice(USE_SOURCE.length)
+        : null;
+}
+
 /**
  * Why an item's authored Use gives nothing, or null when it gives something (or none is written):
  * a `use` whose every line names no item, has no chance, or no amount. For the boot audit and the

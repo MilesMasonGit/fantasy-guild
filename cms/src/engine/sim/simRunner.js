@@ -43,6 +43,7 @@ export function runSim({ tokens = {}, recipes = {}, items = {} } = {}, dialOverr
     const price = runPricingPass(entities, {
         timing: time.timing,
         elections: anchor.elections,
+        useLevels: anchor.useLevels,
         refused: anchor.refused,
         skipped: time.skipped,
         dials,
@@ -84,6 +85,7 @@ export function runSim({ tokens = {}, recipes = {}, items = {} } = {}, dialOverr
         elections: anchor.elections,
         candidates: anchor.candidates,
         refused: anchor.refused,
+        useLevels: anchor.useLevels,
         values: price.values,
         details: price.details,
         downcycles: price.downcycles,

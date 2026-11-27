@@ -33,6 +33,8 @@ export function buildSimAnswers(sim, { tokens = {}, recipes = {} } = {}, ranAt =
     }
 
     for (const entity of sim.entities) {
+        // An item's Use is no Token or recipe: no editor shows an answer for it.
+        if (entity.kind === 'use') continue;
         const written = entity.kind === 'token' ? tokens[entity.id] : recipes[entity.id];
         const tuning = sim.tunings?.get(entity.id) ?? null;
         const timing = sim.timing.get(entity.id) ?? null;
