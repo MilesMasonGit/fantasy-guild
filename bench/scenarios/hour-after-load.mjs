@@ -12,6 +12,11 @@
 // changes nothing), and unless S8L's production is within 1 % of S8F's (1000 ms steps play like
 // 100 ms ticks). Their fingerprints leave the wall-clock time out of ids (`stableIds`): a Token or
 // loot id carries the real time it was made at, which differs by design.
+//
+// ⚠️ The hour is played without the shipped skill perks (`withoutShippedPerks`, as the tests do). A
+// perk that rolls (Forestry's Double Loot) makes the Bank a dice roll, and steps and ticks never draw
+// the same dice, so its luck reads as a step-size difference: up to 1.6 % on seeds 1 to 5, one seed
+// in six outside the gate's 1 %. Perks are content too: a CMS edit of one would move this work.
 
 import { GameState } from '../../src/state/GameState.js';
 import { EventBus } from '../../src/systems/core/EventBus.js';
@@ -25,6 +30,7 @@ import { ENGINE_EVENTS } from '../../src/systems/core/engineEvents.js';
 import { BOARD_EVENTS } from '../../src/systems/board/boardEvents.js';
 import * as MatResize from '../../src/systems/board/MatResize.js';
 import { loadSavedState } from '../../src/systems/core/LoadedState.js';
+import { withoutShippedPerks } from '../../src/tests/fixtures/noPerks.js';
 import { buildRealistic } from './realistic.mjs';
 
 export const HOUR_MS = 3_600_000;
@@ -35,15 +41,22 @@ export const FINGERPRINT = { stableIds: true };
 function totals() {
     const s = GameState.state;
     let bankItems = 0;
-    for (const entry of Object.values(s.inventory?.items || {})) bankItems += Number(entry?.quantity) || 0;
+    const byItem = {};
+    for (const [itemId, entry] of Object.entries(s.inventory?.items || {})) {
+        const quantity = Number(entry?.quantity) || 0;
+        bankItems += quantity;
+        byItem[itemId] = quantity;
+    }
     let heroXp = 0;
     for (const hero of s.heroes || []) {
         for (const skill of Object.values(hero.skills || {})) heroXp += Number(skill?.xp) || 0;
     }
-    return { bankItems, heroXp };
+    return { bankItems, heroXp, byItem };
 }
 
 export function build(ctx) {
+    // Before the heroes are made, so none ever holds one.
+    withoutShippedPerks();
     buildRealistic(ctx);
 }
 
@@ -84,6 +97,11 @@ export async function hourAfterLoad(ctx, play) {
     const runMs = ctx.now() - t0;
     offs.forEach(off => off());
     const after = totals();
+    const bankByItem = {};
+    for (const itemId of new Set([...Object.keys(before.byItem), ...Object.keys(after.byItem)])) {
+        const gain = (after.byItem[itemId] || 0) - (before.byItem[itemId] || 0);
+        if (gain) bankByItem[itemId] = gain;
+    }
 
     return {
         runMs,
@@ -95,6 +113,7 @@ export async function hourAfterLoad(ctx, play) {
             depleted,
             kills
         },
+        bankByItem,
         identity: { cycles, depleted, steps, gameTimeMs: GameState.state.time.gameTimeMs }
     };
 }
