@@ -37,7 +37,7 @@ const fixtureWorkspace = () => ({
             id: 'token_copper_vein', name: 'Copper Vein', uses: 5, respawn: { mode: 'refill', afterMs: 60000 }, sim: { tempo: 'quick', purpose: 'iph' }, plan: live,
             config: { skill: 'mining', skillRequired: 1, cycleTimeMs: 3000, xp: 6, inputs: [], outputs: [range('item_copper_ore', 1, 2), range('item_gem', 1, 1, 5)] },
         },
-        // Its rest is its Stump's regrowth: the end chance on the tree, the 30 s on the Stump, which still needs its Forest.
+        // Its rest is its Stump's regrowth: the end chance on the tree, the 60 s on the Stump, which still needs its Forest.
         token_oak_tree: {
             id: 'token_oak_tree', name: 'Oak Tree', uses: 5, respawn: { mode: 'regrow', into: 'token_oak_stump' }, plan: live,
             config: { skill: 'forestry', skillRequired: 1, cycleTimeMs: 3000, xp: 6, inputs: [], outputs: [range('item_oak_wood', 1, 2)] },
@@ -197,12 +197,12 @@ describe('pack numbers --live', () => {
         expect(run.out).toMatch(/Bait recipes are timed as a prepare step by the solver's rule/);
     });
 
-    it('writes uses and rest by the rest rule: about 30 s of work, back in about 30 s', () => {
+    it('writes uses and rest by the rest rule: about 15 s of work, back in about a minute', () => {
         const v = byId.token_copper_vein.value;
-        // 6 s a cycle: a 20 % chance a cycle that it ends, so five cycles, 30 s, on average.
-        expect(v.endChance).toBe(20);
+        // 6 s a cycle: a 40 % chance a cycle that it ends, so two and a half cycles, 15 s, on average.
+        expect(v.endChance).toBe(40);
         expect('uses' in v).toBe(false);
-        expect(v.respawn).toEqual({ mode: 'refill', afterMs: 30000 });
+        expect(v.respawn).toEqual({ mode: 'refill', afterMs: 60000 });
     });
 
     it('reads a Token\'s plan.split for its outputs', () => {
@@ -210,18 +210,18 @@ describe('pack numbers --live', () => {
         const third = { chance: 33.33, minQty: 1, maxQty: 1, baseQty: { min: 1, max: 1 }, variable: false };
         expect(v.config.outputs).toEqual([{ itemId: 'item_oak_wood', ...third }, { itemId: 'item_fir_wood', ...third }, { itemId: 'item_birch_wood', ...third }]);
         expect(v.config).toMatchObject({ skillRequired: 11, cycleTimeMs: 6600, xp: 3 });
-        expect(v.endChance).toBe(22);
+        expect(v.endChance).toBe(44);
     });
 
     it('writes a regrowing tree\'s end chance, and its rest as its Stump\'s regrowth', () => {
         const v = byId.token_oak_tree.value;
-        expect(v.endChance).toBe(16.7);
+        expect(v.endChance).toBe(33.3);
         expect(v.respawn).toEqual({ mode: 'regrow', into: 'token_oak_stump' });
-        expect(byId.token_oak_stump.value.grows).toEqual({ into: 'token_oak_tree', afterMs: 30000, needsNearby: ['token_oak_forest'] });
+        expect(byId.token_oak_stump.value.grows).toEqual({ into: 'token_oak_tree', afterMs: 60000, needsNearby: ['token_oak_forest'] });
         expect(byId.token_oak_stump.fingerprint).toMatch(/^fp:[0-9a-f]{16}$/);
         const listed = fs.readFileSync(f.unclearFile, 'utf8');
         expect(listed).not.toMatch(/Oak Tree/);
-        expect(run.out).toMatch(/1 Stump given its tree's rest, back in 30 s: Oak Stump/);
+        expect(run.out).toMatch(/1 Stump given its tree's rest, back in 60 s: Oak Stump/);
     });
 
     it('lists, never writes, a Live entry with no match, other ingredients or another output', () => {
@@ -246,7 +246,7 @@ describe('pack numbers --live', () => {
             next = { ...next, ...setValue(next, entry.kind, entry.id, proposedValue(entry)) };
         }
         expect(next.tokens.token_planned_vein).toEqual(ws.tokens.token_planned_vein);
-        expect(next.tokens.token_oak_stump).toEqual({ ...ws.tokens.token_oak_stump, grows: { ...ws.tokens.token_oak_stump.grows, afterMs: 30000 } });
+        expect(next.tokens.token_oak_stump).toEqual({ ...ws.tokens.token_oak_stump, grows: { ...ws.tokens.token_oak_stump.grows, afterMs: 60000 } });
         expect(next.recipePools.crafting.slice(1)).toEqual(ws.recipePools.crafting.slice(1));
         for (const entry of pack.entries) expect(entry.value.plan.status).toBe('live');
     });

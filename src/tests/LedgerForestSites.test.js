@@ -5,6 +5,9 @@ import { buildPace, PROFILE, PACE_TEXT } from '../../cms/src/engine/ledger/pace.
 import { settingsOf } from '../../cms/src/engine/ledger/settings.js';
 import { paceContent } from './fixtures/paceWorld.js';
 
+/** These numbers were worked out for a camp of two nodes, the sparse layout; the pace times the dense one by default. */
+const SPARSE = { layout: 'sparse' };
+
 /**
  * ⭐ A site worked from a spawner (owner, 2026-11-26): a camp at a Forest works the Forest's whole
  * allowance of trees, since a Forest never stands with only two of its trees; one Forest in the sparse
@@ -13,7 +16,7 @@ import { paceContent } from './fixtures/paceWorld.js';
  * eight.
  */
 
-const paceOf = (content, settings = null) => buildPace(content, buildLedger(content), settings);
+const paceOf = (content, settings = null) => buildPace(content, buildLedger(content), { ...SPARSE, ...settings });
 
 const HOUR_MS = 3_600_000;
 const out = (itemId) => ({ itemId, chance: 100, minQty: 1, maxQty: 1 });
@@ -61,14 +64,14 @@ const ONE_TREE = HOUR_MS * 5 / (5 * 3000 + 300000);
 describe('a site worked from a spawner', () => {
     it('⭐ holds the layouts\' spawners and the twelve places round a node in the settings', () => {
         const s = settingsOf(null);
-        expect(s.layoutSpawners).toEqual({ sparse: 1, dense: 2 });
+        expect(s.layoutSpawners).toEqual({ sparse: 1, dense: 1 });
         expect(s.sitePlaces).toEqual({ places: 12, buildings: 8, perKind: 4 });
         expect(settingsOf({ layoutSpawners: { sparse: 3, dense: 1 }, sitePlaces: { places: 0 } })).toMatchObject({
             layoutSpawners: { sparse: 3, dense: 3 }, sitePlaces: { places: 12, buildings: 8, perKind: 4 }
         });
     });
 
-    it('⭐ a camp at a Forest works its whole allowance: one Forest\'s four trees sparse, two Forests\' eight dense', () => {
+    it('⭐ a camp at a Forest works its whole allowance: one Forest\'s four trees in both layouts, two Forests\' eight when set', () => {
         const sparse = paceOf(forestContent());
         const dense = paceOf(forestContent(), { layout: 'dense' });
         // Bare has no camp: one tree.
@@ -76,39 +79,45 @@ describe('a site worked from a spawner', () => {
         const elm = sparse.rateAt(ELM, PROFILE.MAXED);
         expect(elm.setup.camp).toEqual({ id: 'token_logging_camp', members: 4 });
         expect(elm.rate.cyclesPerHour).toBeCloseTo(4 * ONE_TREE, 6);
-        expect(dense.rateAt(ELM, PROFILE.MAXED).setup.camp).toEqual({ id: 'token_logging_camp', members: 8 });
-        expect(dense.rateAt(ELM, PROFILE.MAXED).rate.cyclesPerHour).toBeCloseTo(8 * ONE_TREE, 6);
+        expect(dense.rateAt(ELM, PROFILE.MAXED).setup.camp).toEqual({ id: 'token_logging_camp', members: 4 });
+        const twoForests = paceOf(forestContent(), { layout: 'dense', layoutSpawners: { sparse: 1, dense: 2 } });
+        expect(twoForests.rateAt(ELM, PROFILE.MAXED).setup.camp).toEqual({ id: 'token_logging_camp', members: 8 });
+        expect(twoForests.rateAt(ELM, PROFILE.MAXED).rate.cyclesPerHour).toBeCloseTo(8 * ONE_TREE, 6);
         // A vein's camp keeps the layout's nodes.
         expect(sparse.rateAt(VEIN, PROFILE.MAXED).setup.camp.members).toBe(2);
-        expect(dense.rateAt(VEIN, PROFILE.MAXED).setup.camp.members).toBe(4);
+        expect(dense.rateAt(VEIN, PROFILE.MAXED).setup.camp.members).toBe(5);
         // The spawners a layout stands are a setting.
         expect(paceOf(forestContent(), { layoutSpawners: { sparse: 2, dense: 3 } }).rateAt(ELM, PROFILE.MAXED).setup.camp.members).toBe(8);
     });
 
-    it('⭐ a Forest site\'s camp, Forest and trees stand in its twelve places: seven left for buildings sparse, two dense; a vein site keeps eight', () => {
+    it('⭐ a gathering site\'s camp, spawner and nodes stand in its twelve places: six left for buildings at a Forest and at five veins', () => {
         const sparse = paceOf(forestContent());
         const dense = paceOf(forestContent(), { layout: 'dense' });
-        // Round the tree worked: the camp, the Forest and its three other trees.
-        expect(sparse.siteOf(ELM, PROFILE.MAXED)).toMatchObject({ room: 7, taken: 5 });
-        // The camp, two Forests and seven other trees.
-        expect(dense.siteOf(ELM, PROFILE.MAXED)).toMatchObject({ room: 2, taken: 10 });
+        // BALANCE_RULES section 5: the camp, the Forest and its four trees, the one worked among them.
+        expect(sparse.siteOf(ELM, PROFILE.MAXED)).toMatchObject({ room: 6, taken: 6 });
+        expect(dense.siteOf(ELM, PROFILE.MAXED)).toMatchObject({ room: 6, taken: 6 });
         expect(sparse.siteOf(ELM, PROFILE.MAXED).camp).toEqual({ id: 'token_logging_camp', nodes: 4, spawners: 1 });
-        expect(sparse.siteOf(VEIN, PROFILE.MAXED).room).toBe(8);
-        expect(dense.siteOf(VEIN, PROFILE.MAXED).room).toBe(8);
+        // Two Forests when set: the camp, both and their eight trees.
+        expect(paceOf(forestContent(), { layout: 'dense', layoutSpawners: { sparse: 1, dense: 2 } }).siteOf(ELM, PROFILE.MAXED)).toMatchObject({ room: 1, taken: 11 });
+        // A vein site: its camp and two veins sparse, eight places left (the most a site holds); five veins dense, six left.
+        expect(sparse.siteOf(VEIN, PROFILE.MAXED)).toMatchObject({ room: 8, taken: 3 });
+        expect(dense.siteOf(VEIN, PROFILE.MAXED)).toMatchObject({ room: 6, taken: 6 });
     });
 
     it('⭐ Maxed stands no more buildings round the Forest than its places hold', () => {
         const sparse = paceOf(builtForestContent()).siteOf(ELM, PROFILE.MAXED);
-        expect(sparse.places).toBe(7);
+        expect(sparse.places).toBe(6);
         expect(Math.max(...Object.values(sparse.byKind))).toBeLessThanOrEqual(4);
-        const dense = paceOf(builtForestContent(), { layout: 'dense' }).siteOf(ELM, PROFILE.MAXED);
-        expect(dense.places).toBe(2);
+        const dense = paceOf(builtForestContent(), { layout: 'dense', layoutSpawners: { sparse: 1, dense: 2 } }).siteOf(ELM, PROFILE.MAXED);
+        expect(dense.places).toBe(1);
         // With a site of more places, the eight a site may hold.
         expect(paceOf(builtForestContent(), { sitePlaces: { places: 20 } }).siteOf(ELM, PROFILE.MAXED).places).toBe(8);
     });
 
     it('⭐ the layout check counts a Forest site\'s trees by its Forests', () => {
-        const pace = paceOf(forestContent());
+        // One Forest in both layouts by default: the layout moves nothing.
+        expect(paceOf(forestContent()).layoutRows().find(r => r.work.key === 'token_elm||')).toBeUndefined();
+        const pace = paceOf(forestContent(), { layoutSpawners: { sparse: 1, dense: 2 } });
         const row = pace.layoutRows().find(r => r.work.key === 'token_elm||');
         expect(row.nodes).toEqual({ sparse: 4, dense: 8 });
         expect(row.dense / row.sparse).toBeCloseTo(2, 6);

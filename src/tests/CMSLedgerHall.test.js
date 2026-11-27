@@ -85,7 +85,8 @@ describe('the Ledger tab', { timeout: 20000 }, () => {
         globalThis.fetch = vi.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve({}), text: () => Promise.resolve('') }));
         useEntityStore.setState(empty);
         useSimulationStore.setState({ simRows: [] });
-        store().hydrate(hallWorkspace());
+        // The vein's numbers were worked out for a camp of two nodes: the sparse layout (the pace times the dense one by default).
+        store().hydrate({ ...hallWorkspace(), planSettings: { layout: 'sparse' } });
     });
     afterEach(() => {
         cleanup();

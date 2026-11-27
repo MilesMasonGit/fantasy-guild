@@ -9,7 +9,7 @@ import { respawnOf, growsTermsOf, campOf, fieldOf } from '../../../../src/config
 import { toolOf, toolMeets, toolItemFor } from '../../../../src/config/registries/toolKinds.js';
 import { spotOf, arrivesByItself, spotRateOf } from '../../../../src/config/registries/fishingSpots.js';
 import { getCategoryDef } from '../../../../src/config/registries/equipmentCategories.js';
-import { isSpentCategory, isWorkMoment, workSkillMatches } from '../../../../src/systems/core/consumableRule.js';
+import { isSpentCategory, isWorkMoment, workSkillMatches, doseKindsOf, DOSE } from '../../../../src/systems/core/consumableRule.js';
 import { FACTOR, WORK } from './rates.js';
 import { hallTracksOf, hallGraph, freeRanks, openingPath, starRulesOf, starMovesLap, RATE_AXES } from './hall.js';
 
@@ -26,7 +26,7 @@ import { hallTracksOf, hallGraph, freeRanks, openingPath, starRulesOf, starMoves
  *   (the time it saves is worth more than the time spent making it). Chosen one at a time, the best
  *   payback first, each against what is already chosen.
  * - **Maxed**: every boost the stage offers that lifts the rate, whatever it costs: every support
- *   once, the camp, the best tool, the best drink, every work potion that helps, the best gear for
+ *   once, the camp, the best tool, the best drink or work potion (a hero holds one), the best gear for
  *   each slot, every Guild Hall rank. Only what the guild can make by then is on offer.
  *
  * Whether the guild can feed a boost (make enough of what the boosted work spends) is weighed on
@@ -56,8 +56,8 @@ import { hallTracksOf, hallGraph, freeRanks, openingPath, starRulesOf, starMoves
  * turn (a vein, a Field: the layout's), or, for a node of a spawner's family (a Forest's trees, an
  * Orchard's, a Quarry's outcrops), the whole allowance of each of the layout's `campSpawners`
  * spawners, and stands within reach of them, so its own rules reach them too (a Sawmill's double
- * loot, a Mine Head's quicker rest). The site's `sitePlaces.places` round the node worked hold its
- * camp, its other nodes and its spawners ({@link placesTaken}); the rest hold buildings, at most
+ * loot, a Mine Head's quicker rest). The site's `sitePlaces.places` hold its camp, its spawners and
+ * every node it works, the one worked among them ({@link placesTaken}); the rest hold buildings, at most
  * `sitePlaces.buildings`, at most `sitePlaces.perKind` of them boosting one kind (speed, XP, yield
  * or rare finds, {@link supportKinds}), and the same building may stand in several of them: each
  * copy is chosen as any boost is, Typical's when it pays back, Maxed's while it lifts the rate and
@@ -122,6 +122,14 @@ export function pickKindOf(pick, rate) {
     if (rare && isRareFindFactor(list(rate?.factors).find(f => f.id === pick.factor))) return rare;
     return pick?.kind;
 }
+
+/**
+ * A hero holds one drink-type consumable at a time (owner, 2026-11-26): a drink, a work potion or an
+ * elixir share one place. Poisons, bait, arrows and Motes are not boosts and are not held this way.
+ * ⚠️ The game itself still lets a hero hold a drink beside any number of potions.
+ */
+const DOSE_SLOT = 'dose';
+const HELD_DOSES = new Set([DOSE.DRINK, DOSE.POTION, DOSE.ELIXIR]);
 
 /** The nodes a camp hands one hero by default: the sparse layout's (`settings.layouts`). */
 const DEFAULT_CAMP_NODES = 2;
@@ -391,17 +399,18 @@ export function buildProfiles(book, {
     const siteNodesOf = (ctx) => campNodesOf(book, ctx, { nodes: campNodes, spawners: campSpawners });
 
     /**
-     * The places round the node a work site's own Tokens take, the node itself at the centre: where a
-     * camp may work it, the camp and the layout's other nodes and spawners (a vein's second node; a
-     * Forest and its other trees); else the work's own spawner and the rest of its allowance, or none.
-     * Counted the same whether or not a profile has its camp yet.
+     * The places a work site's own Tokens take (BALANCE_RULES section 5: a gathering site spends 6 or
+     * 7 of its 12 on its camp, its spawner and its 4 or 5 nodes): where a camp may work it, the camp,
+     * the layout's spawners and every node it works, the one worked among them (a vein's camp and its
+     * five veins; a Logging Camp, its Forest and the Forest's four trees); else the work's own spawner
+     * and its whole allowance, or none. Counted the same whether or not a profile has its camp yet.
      */
     function placesTaken(ctx) {
         if (ctx.camps.length) {
             const own = siteNodesOf(ctx);
-            return 1 + own.spawners + (own.nodes - 1);
+            return 1 + own.spawners + own.nodes;
         }
-        if (ctx.family && ctx.kind !== WORK.FIGHT) return allowanceOf(book, ctx.family);
+        if (ctx.family && ctx.kind !== WORK.FIGHT) return 1 + allowanceOf(book, ctx.family);
         return 0;
     }
 
@@ -471,9 +480,11 @@ export function buildProfiles(book, {
         }
         for (const id of ctx.consumables) {
             if (!within(itemTier(id), cap)) continue;
-            const slot = book.items[id]?.equipSlot;
+            const def = book.items[id];
+            const slot = def?.equipSlot;
+            const held = doseKindsOf(slot, statementsOf(expandBearer(def, book.library))).some(k => HELD_DOSES.has(k));
             const capped = getCategoryDef(slot)?.cap === 1;
-            out.push({ kind: BOOST_KIND.CONSUMABLE, id, factor: factorId(BOOST_KIND.CONSUMABLE, id), oneOff: false, slot: capped ? slot : null, apply: (s) => ({ ...s, consumables: [...(s.consumables || []), id] }) });
+            out.push({ kind: BOOST_KIND.CONSUMABLE, id, factor: factorId(BOOST_KIND.CONSUMABLE, id), oneOff: false, slot: held ? DOSE_SLOT : capped ? slot : null, apply: (s) => ({ ...s, consumables: [...(s.consumables || []), id] }) });
         }
         for (const id of ctx.gear) {
             if (!within(itemTier(id), cap)) continue;
@@ -598,7 +609,7 @@ export function buildProfiles(book, {
     /** Slots that hold one: a second offer for a full slot replaces nothing and is skipped. */
     function slotFull(chosen, offer) {
         if (!offer.slot) return false;
-        if (offer.slot === 'tool') return chosen.some(c => c.slot === 'tool');
+        if (offer.slot === 'tool' || offer.slot === DOSE_SLOT) return chosen.some(c => c.slot === offer.slot);
         const cap = getCategoryDef(offer.slot)?.cap;
         if (!Number.isFinite(cap)) return false;
         return chosen.filter(c => c.slot === offer.slot).length >= cap;
@@ -636,9 +647,37 @@ export function buildProfiles(book, {
                 rate = typical.rate;
                 full = typical.rate;
                 chosen = [...typical.chosen];
+                // A hero holds one dose: Typical's gives up its place, and Maxed holds the one that lifts the rate most,
+                // Typical's own and those it declined for their batch on offer whatever they lift.
+                const typicalDose = chosen.find(c => c.slot === DOSE_SLOT);
+                if (typicalDose) {
+                    chosen = chosen.filter(c => c !== typicalDose);
+                    const consumables = [...(setup.consumables || [])];
+                    consumables.splice(consumables.indexOf(typicalDose.id), 1);
+                    setup = { ...setup, consumables };
+                    rate = book.numbersOf(target, setup);
+                    full = null;
+                }
+                const endorsed = new Set([typicalDose?.id, ...typical.declined].filter(Boolean));
+                const doseValue = (r) => valueOf(r, cap, baseXp, { gross: true, profile });
+                let bestDose = null;
+                for (const o of pool) {
+                    if (o.slot !== DOSE_SLOT) continue;
+                    const next = o.apply(setup);
+                    const r = book.numbersOf(target, next);
+                    const gain = doseValue(r) - doseValue(rate);
+                    if (!(gain > 1e-9) && !endorsed.has(o.id)) continue;
+                    if (!bestDose || gain > bestDose.gain) bestDose = { o, next, r, gain };
+                }
+                if (bestDose) {
+                    setup = bestDose.next;
+                    rate = bestDose.r;
+                    full = null;
+                    chosen.push({ kind: bestDose.o.kind, id: bestDose.o.id, factor: bestDose.o.factor, slot: DOSE_SLOT });
+                }
                 for (const id of typical.declined) {
                     const o = pool.find(x => x.kind === BOOST_KIND.CONSUMABLE && x.id === id);
-                    if (!o || slotFull(chosen, o)) continue;
+                    if (!o || o.slot === DOSE_SLOT || slotFull(chosen, o)) continue;
                     setup = o.apply(setup);
                     rate = book.numbersOf(target, setup);
                     full = null;

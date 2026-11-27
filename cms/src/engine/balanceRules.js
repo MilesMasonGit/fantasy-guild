@@ -32,6 +32,24 @@ export const XP_AN_HOUR_AT_LEVEL_1 = 1660;
 /** Gold an hour at level 1. */
 export const WORTH_AN_HOUR_AT_LEVEL_1 = 1200;
 
+/**
+ * The rest rule (section 2, owner 2026-11-26): a node gives about 15 s of work, then is back in about
+ * a minute, so a lone hero at one node works about a fifth of the time and a camp keeps one fully
+ * busy on 4 or 5. The number pack writes it onto gathering Tokens (`numberPack.js`); the ledger
+ * reads the content's own numbers and says the rule in its layout check.
+ */
+export const REST_RULE = Object.freeze({ workMs: 15000, restMs: 60000 });
+
+/** The end chance a cycle, in percent, that makes about the rule's work at a cycle of `cycleMs`: one decimal, 100 at most. */
+export function restRuleEndChance(cycleMs) {
+    return Math.min(100, Math.round(1000 * cycleMs / REST_RULE.workMs) / 10);
+}
+
+/** The share of the time a lone hero at one node by the rule works: its work over its work and rest. */
+export function restRuleBusyShare() {
+    return REST_RULE.workMs / (REST_RULE.workMs + REST_RULE.restMs);
+}
+
 /** The levels the curves run over; outside them a curve holds its end value. */
 export const FIRST_LEVEL = 1;
 export const TOP_LEVEL = 99;

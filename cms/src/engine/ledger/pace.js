@@ -5,6 +5,7 @@ import { buildProfiles, targetKey, PROFILE, PROFILES, PROFILE_TEXT, BOOST_KIND, 
 import { starAddsRate } from './hall.js';
 import { settingsOf, minutesPerLevelAt, minutesToReach, formatMinutes, levelAtMinutes, coinMinutesAt, COIN_CURVE, boostBudgetAt, BOOST_BUDGET_KINDS, heroesAt, chainHeroesAt, paybackHoursAt } from './settings.js';
 import { ledgerCoinWorth } from './coins.js';
+import { restRuleBusyShare } from '../balanceRules.js';
 import { HOW, COMBAT, LUCK_BELOW, parseKey, itemKey, tokenKey, recipeKey, wedgeKey, starKey, spotPoolKey, LEDGER_ENGINE_TEXT } from '../../../../src/systems/progression/ledger/engine.js';
 import { spotOf } from '../../../../src/config/registries/fishingSpots.js';
 import { ringOfStar } from '../../../../src/systems/world/ringStars.js';
@@ -1593,7 +1594,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         for (const row of layoutRows()) {
             const n = row.nodes;
             const by = (layout) => (row.spawner ? ` (${PACE_TEXT.count(row.spawners[layout], nameOf(tokenKey(row.spawner)))})` : '');
-            add('layout', row.work.entry, `${workName(row.work)} at ${AT_TARGET}, worked from ${nameOf(tokenKey(row.camp))}: ${n.sparse} in reach${by('sparse')} make ${PACE_TEXT.rate(row.sparse)} an hour and ${n.dense}${by('dense')} make ${PACE_TEXT.rate(row.dense)} (+${Math.round(row.off * 100)} %, over ±${settings.tolerancePct} %): one hero is not kept busy by ${n.sparse}, so how its site is laid out moves the pace (BALANCE_RULES section 2: a lone hero at one node is busy about half the time).`, {
+            add('layout', row.work.entry, `${workName(row.work)} at ${AT_TARGET}, worked from ${nameOf(tokenKey(row.camp))}: ${n.sparse} in reach${by('sparse')} make ${PACE_TEXT.rate(row.sparse)} an hour and ${n.dense}${by('dense')} make ${PACE_TEXT.rate(row.dense)} (+${Math.round(row.off * 100)} %, over ±${settings.tolerancePct} %): one hero is not kept busy by ${n.sparse}, so how its site is laid out moves the pace (BALANCE_RULES section 2: a lone hero at one node is busy about a fifth of the time, so a camp keeps one busy on ${Math.round(1 / restRuleBusyShare())}).`, {
                 name: workName(row.work)
             });
         }

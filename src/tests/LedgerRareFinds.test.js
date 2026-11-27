@@ -136,6 +136,13 @@ function luckyPace() {
     return c;
 }
 
+/** The same with no Beer: a hero holds one drink or potion at a time, so the Luck Potion is weighed alone. */
+function withoutBeer(c) {
+    delete c.items.item_beer;
+    c.recipes = c.recipes.filter((r) => r.id !== 'recipe_beer');
+    return c;
+}
+
 /** A site with one place a kind: each building stands once. */
 const ONE_A_KIND = { sitePlaces: { buildings: 8, perKind: 1 } };
 
@@ -145,10 +152,11 @@ describe('rare-find boosts have their own strength targets', () => {
 
     it('a rare-find potion and building are their own kinds, against x2 and x1.5; a plain drink keeps the +20 %', () => {
         // One place a kind, so the Lucky Charm stands once: one building against its own target (stacked copies: LedgerReferenceGuild).
-        const rows = rowsOf(luckyPace(), ONE_A_KIND);
+        const rows = rowsOf(withoutBeer(luckyPace()), ONE_A_KIND);
         const potion = rows.find((r) => r.kind === 'rareConsumable');
         const charm = rows.find((r) => r.kind === 'rareSupport');
-        const beer = rows.find((r) => r.kind === 'consumable');
+        // With the Beer on offer a hero holds it instead of the Luck Potion.
+        const beer = rowsOf(luckyPace(), ONE_A_KIND).find((r) => r.kind === 'consumable');
         expect(potion).toMatchObject({ names: ['Luck Potion'], target: 100 });
         expect(charm).toMatchObject({ names: ['Lucky Charm'], target: 50 });
         // Measured on the finds: +100 % and +50 % Gems, not their slice of the vein's whole worth.
@@ -172,9 +180,9 @@ describe('rare-find boosts have their own strength targets', () => {
 
     it('measured against the consumables\' +20 % instead, the potion would be over', () => {
         const settings = { boostTargets: { rareConsumable: [{ tier: 0, pct: 20 }] } };
-        const potion = rowsOf(luckyPace(), settings).find((r) => r.kind === 'rareConsumable');
+        const potion = rowsOf(withoutBeer(luckyPace()), settings).find((r) => r.kind === 'rareConsumable');
         expect(potion.target).toBe(20);
-        const content = luckyPace();
+        const content = withoutBeer(luckyPace());
         const over = buildPace(content, buildLedger(content), settings).findings().filter((f) => f.check === 'boost-target');
         expect(over.map((f) => f.key)).toContain('item:item_luck_potion');
     });
