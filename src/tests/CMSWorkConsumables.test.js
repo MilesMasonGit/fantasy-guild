@@ -134,14 +134,14 @@ describe('⭐ the Item editor says how a food, drink or potion is used', () => {
         expect(CMS_DOSE_KINDS_OF).toBe(doseKindsOf);
     });
 
-    it('a drink with an On Work Start rule lasts ten work cycles', () => {
+    it('a drink with an On Work Start rule lasts 25 work cycles', () => {
         const container = openItem('item_cms_coffee');
-        expect(q(container, '[data-dose="drink"]').textContent).toContain('lasts 10 work cycles');
+        expect(q(container, '[data-dose="drink"]').textContent).toContain('lasts 25 work cycles');
     });
 
-    it('a work potion is drunk for each cycle of its skill', () => {
+    it('a work potion lasts 25 cycles of its skill', () => {
         const container = openItem('item_cms_birdwatcher');
-        expect(q(container, '[data-dose="potion"]').textContent).toContain('each time a work cycle of its skill starts');
+        expect(q(container, '[data-dose="potion"]').textContent).toContain('lasts 25 cycles of that skill');
     });
 
     it('an elixir lasts ten fights', () => {

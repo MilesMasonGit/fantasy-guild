@@ -17,7 +17,7 @@ import { HeroEditModal } from '../ui/modals/HeroEditModal.jsx';
 import { DOCK_STRIP_PX } from '../ui/components/dock/dockHeroView.js';
 import { setLiveMatFit } from '../ui/components/board/MatFitContext.jsx';
 import {
-    heroSkillList, skillLevelText, skillXpView, skillDetail
+    heroSkillList, skillLevelText, skillXpView, skillDetail, skillTipView, xpNumberText
 } from '../ui/components/dock/heroPanelSkills.js';
 import { getSkillIdsByLayer, SKILL_LAYERS } from '../config/registries/skillRegistry.js';
 import { xpForLevel } from '../utils/XPCurve.js';
@@ -200,7 +200,19 @@ describe('H2: skills', () => {
         const span = xpForLevel(41) - xpForLevel(40);
         expect(v.title).toBe(`1,154 / ${span.toLocaleString('en-US')} XP`);
         expect(v.fill).toBeCloseTo(into / span, 5);
-        expect(skillXpView(xpForLevel(99)).title).toBe(`${xpForLevel(99).toLocaleString('en-US')} XP`);
+        expect(skillXpView(xpForLevel(99)).title).toBe('9.42m XP');
+    });
+
+    it('writes XP from a million up as shorthand, and in full below it', () => {
+        expect(xpNumberText(999999)).toBe('999,999');
+        expect(xpNumberText(1000000)).toBe('1m');
+        expect(xpNumberText(8571820)).toBe('8.57m');
+        expect(xpNumberText(-3)).toBe('0');
+        const late = skillDetail(xpForLevel(98) + 400000, 0);
+        expect(late.level).toBe('400,000 / 857,000');
+        expect(late.total).toBe('8.97m');
+        expect(skillTipView(xpForLevel(98) + 400000).xp).toBe('400,000');
+        expect(skillDetail(xpForLevel(99)).total).toBe('9.42m');
     });
 
     it('works out a row\'s detail: exact XP, what is left, the rate and the time to the next level', () => {

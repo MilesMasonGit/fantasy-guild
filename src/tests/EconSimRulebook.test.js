@@ -114,11 +114,10 @@ describe('on: XP a cycle follows BALANCE_RULES section 1', () => {
         expect(purposeXpFactor('nonsense', ON)).toBe(0);
     });
 
-    it('reads its XP an hour against the game\'s threshold table: about 411 board-hours of new work', () => {
-        // ⚠️ The game still has its old threshold table; the rules' own table waits on T-337.
+    it('reads its XP an hour against the game\'s threshold table, now the balance rules table: about 303 board-hours, the 12.6 days the rules give', () => {
         const hours = hoursToMastery(ON);
-        expect(hours).toBeGreaterThan(400);
-        expect(hours).toBeLessThan(420);
+        expect(hours).toBeGreaterThan(295);
+        expect(hours).toBeLessThan(310);
     });
 });
 

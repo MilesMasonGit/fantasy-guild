@@ -113,6 +113,22 @@ describe('restore, recalc and sync', () => {
         expect(JSON.stringify(after.workspace.tokens)).toBe(JSON.stringify(expected.tokens));
     });
 
+    it('recalc --rulebook runs Recalculate with the rulebook dial on, leaving the stored dials alone', async () => {
+        const own = sandbox();
+        expect((await cms(own, 'restore')).code).toBe(0);
+        const before = wsOf(own);
+        const r = await cms(own, 'recalc', '--rulebook');
+        expect(r.code, r.err).toBe(0);
+        expect(r.out).toMatch(/rulebook/);
+        const after = wsOf(own);
+        const dials = { ...DEFAULT_GLOBALS.simDials, ...(before.simDials || {}) };
+        const on = recalculateWorkspace(seedStoredWorkspace(before.workspace), { ...dials, rulebook: true }).workspace;
+        const off = recalculateWorkspace(seedStoredWorkspace(before.workspace), dials).workspace;
+        expect(JSON.stringify(on.recipePools)).not.toBe(JSON.stringify(off.recipePools));
+        expect(JSON.stringify(after.workspace.recipePools)).toBe(JSON.stringify(on.recipePools));
+        expect(after.simDials ?? null).toEqual(before.simDials ?? null);
+    });
+
     it('sync writes data/ as the last Sync to Game did: today\'s files come back byte for byte', async () => {
         const r = await cms(dir, 'sync');
         expect(r.code, r.err).toBe(0);

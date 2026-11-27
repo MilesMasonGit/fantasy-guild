@@ -29,6 +29,7 @@ import { xpForLevel } from '../utils/XPCurve.js';
 import { TokenCard } from '../ui/components/board/TokenCard.jsx';
 import { tokenCardModel, CARD_BLOCK } from '../ui/components/board/tokenCard.js';
 import { withoutShippedPerks } from './fixtures/noPerks.js';
+import { WORK_POTION_CYCLES } from '../config/loopConstants.js';
 
 withoutShippedPerks();
 
@@ -301,8 +302,9 @@ describe('the card shows a working hero bonus drops', () => {
             Orders.orderAt(ana.id, { x: 400, y: 400 });
             // The card is open: it has shown the line during the cycle.
             expect(stepUntil(() => bonusOf(tree).length > 0)).toBe(true);
-            expect(stepUntil(() => seen.length >= 1)).toBe(true);
+            expect(stepUntil(() => seen.length >= WORK_POTION_CYCLES, 400 * WORK_POTION_CYCLES)).toBe(true);
             expect(seen[0].shown).toEqual([LINE]);
+            expect(seen[WORK_POTION_CYCLES - 1].shown).toEqual([LINE]);
             expect(InventoryManager.getItemCount('cb_watch_potion')).toBe(0);
             // The next cycle begins with no potion to drink.
             expect(stepUntil(() => tree.cycleElapsedMs > 0)).toBe(true);

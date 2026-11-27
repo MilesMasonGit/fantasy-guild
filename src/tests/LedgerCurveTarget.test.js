@@ -293,7 +293,7 @@ describe('the boost budget', () => {
         expect(xp.budget).toBe(10);
         const found = pace.findings().filter(f => f.check === 'boost-budget');
         expect(found.filter(f => /^XP at Maxed/.test(f.message))).toEqual([]);
-        expect(found.find(f => /^XP at Typical/.test(f.message)).message).toMatch(/6 pieces of work over the boost budget, .*\+10 % against 8 %/);
+        expect(found.find(f => /^XP at Typical/.test(f.message)).message).toMatch(/7 pieces of work over the boost budget, .*\+10 % against 8 %/);
         expect(vein.find(r => r.kind === 'xp' && r.profile === PROFILE.TYPICAL)).toMatchObject({ budget: 7.5 });
         // Halve the budget and it is over.
         const tight = paceOf(paceContent(), { boostBudget: [{ tier: 0, speed: { typical: 10, maxed: 20 }, xp: { typical: 2, maxed: 5 }, yield: { typical: 50, maxed: 50 }, rare: { typical: 0, maxed: 100 } }] });
