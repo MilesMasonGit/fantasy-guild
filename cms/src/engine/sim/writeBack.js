@@ -155,15 +155,16 @@ export function migrateLegacyIntent({ tokens = {}, recipePools = {} } = {}) {
  * One output, with its derived fields written from authored intent. `baseQty {min,max}` is the intent; `minQty`/`maxQty` are the derived pair the game reads.
  * ⚠️ When the lever policy moves an output and the author never wrote a `baseQty`, the only record of what they wanted is the pair about to be overwritten, so `baseQty` (and `baseChance` for a tuned chance) is seeded from the pre-tuning values first; otherwise one Recalculate would become the new intent and the next would tune away from it, a ratchet. Seeding happens only on an output the sim actually tuned.
  */
-function deriveOutput(output, override) {
+function deriveOutput(output, override, pinned = false) {
     if (!output || typeof output !== 'object') return output;
     const authored = quantityRange(output);
     const range = override
         ? { min: override.minQty ?? authored.min, max: override.maxQty ?? authored.max }
         : authored;
-    const chance = override && Number.isFinite(override.chancePercent)
-        ? override.chancePercent
-        : output.chance;
+    // ⚠️ Untuned, the chance returns to `baseChance` as the counts return to `baseQty`: the simulator prices `baseChance` (`fieldAdapter.authoredChance`), so a tuned chance left behind would be rolled by the game and never priced. A pinned output keeps its written chance, which is the one the adapter prices for it.
+    let chance = output.chance;
+    if (override && Number.isFinite(override.chancePercent)) chance = override.chancePercent;
+    else if (!pinned && Number.isFinite(output.baseChance)) chance = output.baseChance;
 
     const stripped = without(output, RETIRED_OUTPUT_FIELDS);
     const same = stripped === output
@@ -224,7 +225,7 @@ function deriveOutputs(outputs, downcycleEntry, tuning, pinned = false) {
     const overrides = pinned ? new Map() : downcycleEntry ? downcycleOverrides(downcycleEntry) : tuningOverrides(tuning);
     let changed = false;
     const next = outputs.map((output, index) => {
-        const derived = deriveOutput(output, overrides.get(index));
+        const derived = deriveOutput(output, overrides.get(index), pinned);
         if (derived !== output) changed = true;
         return derived;
     });
