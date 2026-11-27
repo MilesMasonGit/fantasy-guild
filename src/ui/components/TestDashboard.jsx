@@ -16,7 +16,7 @@ import { CombatStylesDevSection } from '../dev/CombatStylesDevSection.jsx';
 import { CombatTricksDevSection } from '../dev/CombatTricksDevSection.jsx';
 import { saveLiveMatToCms, DEFAULT_CMS_URL } from '../dev/starterCampDev.js';
 import {
-    PICKER_ROWS, itemChoices, tokenChoices, filterByName, giveAndSay, dropAndSay, devBankEveryKind, devFillBank,
+    PICKER_ROWS, itemChoices, tokenChoices, filterByName, giveAndSay, dropAndSay, devBankEveryKind, devFillBank, giveOldKitAndSay,
     hireHero, spawnParty, levelAllHeroes, healEveryone, knockOutAHero, devPlaceToken, clearBoard, toggleQaRegenStar
 } from '../dev/qaTools.js';
 import * as Landmarks from '../../systems/board/Landmarks.js';
@@ -226,6 +226,9 @@ export const TestDashboard = /* @__PURE__ */ React.memo(() => {
                                     }}
                                 >
                                     Fill the Bank
+                                </button>
+                                <button className={buttonClass} onClick={() => say(giveOldKitAndSay())}>
+                                    Give the old starting kit
                                 </button>
                             </div>
                         </div>

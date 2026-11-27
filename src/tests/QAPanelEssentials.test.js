@@ -12,7 +12,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 }));
 
 import { TestDashboard } from '../ui/components/TestDashboard.jsx';
-import { filterByName, itemChoices, tokenChoices } from '../ui/dev/qaTools.js';
+import { filterByName, itemChoices, tokenChoices, OLD_STARTING_KIT } from '../ui/dev/qaTools.js';
 import { GameState } from '../state/GameState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import * as BoardState from '../systems/board/BoardState.js';
@@ -20,6 +20,7 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as HeroManager from '../systems/hero/HeroManager.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
+import { openingBank } from '../systems/atlas/StarterCamp.js';
 import { placeAt } from './fixtures/mat.js';
 import './fixtures/testTokens.js';
 
@@ -128,6 +129,13 @@ describe('Give items', () => {
         const [, added] = /^Put (\d+) kinds in the Bank/.exec(view.getByRole('status').textContent);
         expect(Number(added)).toBeGreaterThan(10);
         expect(kinds).toBe(Number(added));
+    });
+
+    it('the old starting kit matches the Starter Camp Bank as shipped, and the button gives it', () => {
+        expect(Object.fromEntries(openingBank().map(e => [e.itemId, e.quantity]))).toEqual(OLD_STARTING_KIT);
+        const view = openPanel();
+        fireEvent.click(view.getByText('Give the old starting kit'));
+        for (const [id, n] of Object.entries(OLD_STARTING_KIT)) expect(InventoryManager.getItemCount(id)).toBe(n);
     });
 
     it('Fill the Bank takes every free slot', () => {
