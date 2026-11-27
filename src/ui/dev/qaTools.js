@@ -66,6 +66,22 @@ export function giveAndSay(itemId, amount) {
         : `Gave ${r.added} ${name} to the Bank`;
 }
 
+/**
+ * What the Starter Camp's Bank held when it was filled. A copy on purpose: the camp's own Bank is
+ * being emptied, and the QA panel still gives the old kit.
+ */
+export const OLD_STARTING_KIT = Object.freeze({
+    item_oak_wood: 10,
+    item_oak_seedling: 5,
+    item_wheat_seed: 5,
+    item_shrimp: 15
+});
+
+/** The old starting kit into the Bank through `giveItem`, said in words. */
+export function giveOldKitAndSay() {
+    return Object.entries(OLD_STARTING_KIT).map(([id, n]) => giveAndSay(id, n)).join('; ');
+}
+
 /** The amount of an item as one pile on the mat, at a random spot, to collect and watch it fly. */
 export function dropAndSay(itemId, amount) {
     const n = Math.floor(Number(amount));
