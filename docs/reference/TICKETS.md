@@ -26,7 +26,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-752**
+**Next free number: T-753**
 
 ---
 
@@ -34,6 +34,7 @@ here.
 
 | ID | What | Origin |
 |---|---|---|
+| T-752 | P4 | owner | *For: director.* **Keep the CMS's Gemini Generate button?** Its import step called store actions that no longer exist and was removed (2026-11-27); the window now only previews, and its prompts still describe the old item, task and station shapes. (a) Recommended: remove the button and the generator. (b) Keep the preview as it is. (c) Rebuild it to write Planned entries in today's shapes (a brief). | clean-up builder 2026-11-27 |
 | T-747 | P4 | owner | *For: director.* **Can a fight already under way be pushed?** A camp's new spawn still pushes an enemy that is fighting (157 times in the hunt hour at 100 ms ticks; the hero follows, spacing holds), which contradicts the GDD's line that a fight never moves once begun. (a) Recommended: leave it, fix the wording. (b) An enemy in a fight is unpushable too (spawns land further from their camp). | T-726 engineer 2026-11-27 |
 | T-007 | **Coal Vein at 4 s**: accept, re-tag its purpose from gold to items (~3 s), or leave for the simulator rework? | FB §5.1 |
 | T-010 | **Speech bubble audit**: add/remove list for `docs/reference/speech_bubble_lines.md`. | FB §5.5 |
@@ -108,7 +109,6 @@ here.
 | T-645 | P3 | open (the concept was approved 2026-11-22; still after T-644 and the skills land) | *For: planning agent (docs).* **GDD §4 Skills matches the game**: one list of skills, no specialist layer (T-643); Fletching, Enchanting and Tailor being built (T-572, T-577, T-578, T-304); the five identities (T-644). After those land. | SA-A19 |
 | T-674 | P3 | open | *Brief 765 W2 follow-up. For: director; content agent for the numbers.* **Each biome sets its inland water amount** (owner 2026-11-22): the biome table sets stone, sea and water shapes, but lakes, ponds and marshes have fixed sizes, so every biome's mix looks alike. Give each biome an inland water amount (a Marsh mostly water and grass with little stone; a Mountain river water but little grass), authored with the rest of the biome table. | director 2026-11-24 |
 | T-675 | P3 | open | *For: director.* **The catch-up fidelity check's Bank margin is thin**: S8L vs S8F must agree within ±1 % on Bank items on seed 1 only; over seeds 1 to 15 after 760 V1 the gap averages −0.15 % and spreads about 0.7 %, seed 8 reads −1.64 %, so any random-stream reshuffle trips it about one seed in fourteen. After a measurement in a bench window: judge the Bank over several seeds (median of 1 to 5), or widen the Bank's tolerance to about ±2 % keeping ±1 % on exact counts (STATUS, Notes between directors). | director 2026-11-24 |
-| T-676 | P2 | open | *For: director.* **Left (checked 2026-11-27):** 850 F2 may have fixed it (pricing reads baited pools, `poolBites`): confirm the three readers and close. Was: **Three readers still treat the rod's bait-free pool as live**: world materials (`materials.js`), the progression ledger and the CMS rate calculator. Since G1 only the Trap fishes without bait; they should read the baited pools, and a fish's price includes its bait (owner 2026-11-23, [content_fishing.md](../active/content_fishing.md)). | director 2026-11-24 |
 | T-683 | P2 | open | *For: director.* **The CMS ledger can favour a starving consumable**: found by the LedgerPace fix, the valuation (net worth × feed share) can rank a consumable on a craft counted as a loss above one that pays. Make the valuation count the loss, then re-run the proposals it feeds. | director 2026-11-24 |
 | T-691 | P2 | open | *For: content agent; balancer: the end chances.* **Left (checked 2026-11-27):** Foundations, Prospecting Maps, Dig recipes and the Dock are Synced (576f262c3); end chances are not evened (Birch, Maple and the fruit trees at 100 uses, Cedar and the high veins at 1000), and the four rich event nodes are not live. Was: **The gathering pack**: end chances, Forest and Orchard tree counts, the four foundations' prices, an Ore Prospecting Map per ore (rare drops from mining it and other sources), moved build lists, and the rich event nodes (Geode, Fallen Star, Fossil Bed; Hollow Tree, Driftwood Logjam, Giant Mushroom, Bamboo Grove). | owner 2026-11-24 |
 | T-695 | P4 | open | *For: director.* **The water kinds sea and fresh go unused**: after the Fishing pack every spot kind names both. Simplify the water kinds away or keep them for later content. | content agent 2026-11-24 |
@@ -157,7 +157,6 @@ The findings' full write-ups are in `docs/active/review/D1_the_mat.md` to `D4_sc
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
-| T-481 | P3 | open | *For: director.* **Left (checked 2026-11-27):** the test now uses the shared scripted rolls (T-688), which likely fixed it: run it once under `FG_TEST_SEED=b`, then close. Was: **A Field test passes only by luck**: `FarmingHarvest.test.js` (lost part-way through the first harvest and back before it ends) fails under the second seed, `FG_TEST_SEED=b` (expected 2 to be 1), on `main` 556a916b; pin its random numbers | director 2026-11-17 |
 | T-482 | P2 | open | **A CMS rename leaves other content naming the old id**: renaming Oak Wood to Oak Logs left the Starter Camp's opening Bank on `item_oak_wood` (a new game opens without it); by `performRename` the same holds for Hall star prices, world tables (Token ids), events (`typeId`) and the lesson plan's code ids. Saves follow the rename since 660 R2; content does not | 660 R2 builder, 2026-11-17 |
 | T-483 | P3 | open | **Pinned stubs' time-away counts reach disk only at the next save**: the catch-up's end save comes before `CATCH_UP_FINISHED`, where the pins add the gains, so a crash before the next autosave or close save keeps the Bank's gain but loses the pin's. A save in the route would roll the backup and could lose the unanswered summary's copy (680 S3) | 680 S6 builder, 2026-11-18 |
 | T-484 | P3 | open | **Older saves: Token types on a Region settled before 680 S6 are not yet had for the Encyclopedia**: a chest still standing there loses its tick once opened. A backfill in `migrateState` would fix it (a save change) | 680 S6 builder, 2026-11-18 |
@@ -194,7 +193,6 @@ The findings' full write-ups are in `docs/active/review/D1_the_mat.md` to `D4_sc
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
-| T-141 | P3 | open | *For: director.* **Left (checked 2026-11-27):** unblocked: the A2 Respawns block exists; the shop warning is not written. Was: **Content audit: a respawning node still sold at the Shop** (roadmap A5 lists it): warn when a Token with A2's Respawns block also has a `shop` block. Blocked on A2 merging (its block shape). One rule in `lifecycleAudit.js`, so the boot check and the CMS Economy Audit share it. | Atlas A5 |
 | T-054 | P3 | open | Class names that match no stylesheet: `animate-in`/`fade-in`/`zoom-in-95` (no `tailwindcss-animate`), `custom-scrollbar`, `gi-scrollbar`. The unused z-index tokens went in 87a461a2; the unloaded stylesheets were already gone. | CR3-465 |
 | T-056 | P3 | open | Rename `DeckDndProvider`/`DeckDndContext` (about forty test files import them). The tile accessors, unused constants, tray particle fields and dead particle lookups went in 70590720. | CR3-504, 408 |
 | T-057 | P3 | open | Rename tile-named engine vocabulary — code names and event strings together, one slice. | CR3-501 |
@@ -202,9 +200,6 @@ The findings' full write-ups are in `docs/active/review/D1_the_mat.md` to `D4_sc
 | T-060 | P3 | blocked (soak) | Toasts may leave page elements behind. A 60-minute soak decides: certification Part G (`docs/archive/certification_checklist.md`), or automate it with the drawing bench's Chrome driver. | CR3-039 |
 | T-063 | P3 | open | `resolveAnimationPath` hard-codes an id map and uses a relative `assets/` path. *Unverified since 2026-09-21.* | FMR |
 | T-094 | P3 | open | Villager remnants: `isVillager` branches in `EquipmentValidator`, `HeroRehydration`, `SkillSystem`, and the QA panel's filters. Held back while the rules and UI branches edited those files. The test-only effect helpers and inert globs went in 40123429. | GDD survey, W3 |
-| T-108 | P3 | open | *For: director.* **Left (checked 2026-11-27):** unblocked: the `atlas-wip` branch is gone. Was: `cardUseCounts` (counts completed cycles per Token type; `GameState.js`, `BoardRunner.js`) is a deck-era name; rename it after the parked `atlas-wip` branch is merged or dropped (its `StateSchema.js` edit declares the field). | hygiene W4 |
-| T-103 | P3 | open | *For: director.* **Left (checked 2026-11-27):** unblocked: the `atlas-wip` branch is gone. Was: Comment-slimming leftovers: `src/state/StateSchema.js` (review ids and history; `atlas-wip` still parks an edit there), `cms/src/engine/sim/dryRun.mjs` header, ~15 test comments clipped by the ID stripper (none found by pattern). Tuner hints, WORK_SKILL_WHY, the reachRegistry names and `PERSONALITY_TAGS` done in 2c116882. | Slimming pass |
-| T-677 | P3 | open | *For: director.* **Left (checked 2026-11-27):** no On Swing text is left in data; `cms/src/engine/contentGenerator.js:259-260` still calls `storeActions.addItem` and `addTask`, which the store no longer has. Was: **Two vestiges of the swing trigger**: the label `On Swing` / `for the swing` still shows (stored in 2 enemy descriptions: run the description resync on main, data-only commit); the CMS content generator's import is dead (`addItem`, `addTask`, `addEnemy`… don't exist in the store): remove it. | director 2026-11-24 |
 | T-679 | P3 | open | *Brief 830 D3 leftovers. For: director.* **Plate vestiges**: `ringRow.js` is mostly dead; the draw switch is still named `workPlate`; `MatHero`'s `plated` prop now means has a work bar. Remove the dead parts and rename to what they are. | director 2026-11-24 |
 
 ### Build, tests, docs
@@ -213,7 +208,6 @@ The findings' full write-ups are in `docs/active/review/D1_the_mat.md` to `D4_sc
 |---|---|---|---|---|
 | T-067 | P3 | open | Skipped tests: the Map-burst rule skips still need a ruling or deletion. | CR3-554 |
 | T-116 | P3 | open | The CMS content generator still writes the retired task/area effect vocabulary (`targetCategory` enum ALL/COMBAT/MELEE/MINING/INDUSTRY/NATURE/CRAFTING in `contentGenerator.js`); only its skill list follows the registry. Its prompt also still teaches energy costs and the per-level skill multiplier (`contentGenerator.js`, `useGlobalStore.js` defaults), both retired. It is still reachable from the CMS's Generate button, so rewriting the prompt is a design call, not dead code. | brief 20 R3 |
-| T-114 | P3 | open | *For: director.* **Left (checked 2026-11-27):** unblocked: data/ has no `logging` left. Was: Remove `migrateSkillIds` (the `logging` → `forestry` content migration in the game loaders and the CMS store) once the owner has synced `data/` with `forestry`. | brief 20 R0 |
 
 ## 3. Parked — don't work on these without a reason
 

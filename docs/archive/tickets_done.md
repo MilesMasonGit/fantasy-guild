@@ -595,3 +595,10 @@ T-750 — every bench scenario builds without the shipped perks — 0f41aef72 �
 T-746 — the CMS audit names a missing required Hall star as Critical — 9158d3fa5 — 2026-11-27
 T-749 — the batch-payback row shows the drink on Typical's finished setup — 03f863be6 — 2026-11-27
 T-745 — a fight step let go part-way finishes at its held spot — f0f9e501a — 2026-11-27
+T-676 — the ledger and the CMS rate calculator skip a catch pool that never bites — 455cb9291 — 2026-11-27
+T-108 — cardUseCounts renamed cyclesByTokenType, old saves move at load — 455cb9291 — 2026-11-27
+T-103 — StateSchema and dryRun comments slimmed (clipped test comments left) — 455cb9291 — 2026-11-27
+T-114 — the logging to forestry migration removed — 455cb9291 — 2026-11-27
+T-141 — a respawning Token also sold at the Shop warns — 455cb9291 — 2026-11-27
+T-481 — FarmingHarvest pins its regrown harvest roll, green on seeds a to g — 455cb9291 — 2026-11-27
+T-677 — the CMS generator's dead import removed — 455cb9291 — 2026-11-27
