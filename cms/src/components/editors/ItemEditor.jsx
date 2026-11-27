@@ -14,6 +14,7 @@ import ChainInspector from '../shared/ChainInspector';
 import GearLevelField from './GearLevelField';
 import GearDefenceFields from './GearDefenceFields';
 import FishingItemFields from './FishingItemFields';
+import UseBlock from './UseBlock';
 import PlanFields from '../shared/PlanFields';
 import { coinWorthFromValue, isCoinWorthPinned } from '../../engine/ledger/coins.js';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
@@ -659,6 +660,8 @@ export default function ItemEditor() {
       <Section title="Rules" icon={<Sparkles size={14} />}>
         <Statements item={item} />
       </Section>
+
+      <UseBlock item={item} onPatch={(patch) => updateItem(activeId, patch)} />
 
       <Section title="Value" icon={<Lock size={14} />}>
         <div className="grid grid-cols-2 gap-4 mb-4">

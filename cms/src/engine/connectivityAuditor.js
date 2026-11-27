@@ -1,4 +1,4 @@
-import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs, toolFindings, crimeFindings, stealOf, spotFindings, summonFindings, fishFindings, catchItemIds, baitItemIds, rareTableOf, perkFindings, masteryFindings, gearDefenceFindings, effectStackFindings, hallStarFindings, hallRequiredFindings, coinWorthFindings, coinCostFindings } from '../utils/constants';
+import { SKILLS, expandBearer, isWorkedWithoutSkill, WORK_SKILL_WHY, auditLifecycleBlocks, findUnknownRefs, toolFindings, crimeFindings, stealOf, spotFindings, summonFindings, fishFindings, catchItemIds, baitItemIds, rareTableOf, perkFindings, masteryFindings, gearDefenceFindings, effectStackFindings, hallStarFindings, hallRequiredFindings, coinWorthFindings, coinCostFindings, itemUseDropsOf, itemUseProblem } from '../utils/constants';
 import { eventProblems, EVENT_BIOMES } from '../../../src/config/eventTable.js';
 import { STANDS_ON_CHOICES } from '../../../src/systems/atlas/TerrainMap.js';
 
@@ -75,6 +75,18 @@ export function auditConnectivity(entities, solverRefusals = []) {
         consumedBy[iid].push({ id: recipe.id, type: 'recipe' });
       }
     }
+  }
+
+  // An item's Use: what it gives is produced by using it, and the item is spent by its Use.
+  for (const item of allItems) {
+    const drops = itemUseDropsOf(item);
+    if (!drops.length) continue;
+    for (const drop of drops) {
+      if (!producedBy[drop.itemId]) producedBy[drop.itemId] = [];
+      producedBy[drop.itemId].push({ id: item.id, type: 'item' });
+    }
+    if (!consumedBy[item.id]) consumedBy[item.id] = [];
+    consumedBy[item.id].push({ id: item.id, type: 'item' });
   }
 
   for (const enemy of allEnemies) {
@@ -301,6 +313,32 @@ export function auditConnectivity(entities, solverRefusals = []) {
       severity: 'Warning',
       details: f.message.charAt(0).toUpperCase() + f.message.slice(1) + '.',
     });
+  }
+
+  // An item's Use: a drop naming an item that does not exist, or a Use that gives nothing (`itemUse.js`), in the boot audit's words.
+  for (const item of allItems) {
+    for (const drop of itemUseDropsOf(item)) {
+      if (items[drop.itemId]) continue;
+      issues.push({
+        entityId: item.id,
+        entityName: item.name || item.id,
+        entityType: 'Item',
+        issueType: 'Data Integrity',
+        severity: 'Critical',
+        details: `Its Use gives item ID "${drop.itemId}", which does not exist in the database.`,
+      });
+    }
+    const problem = itemUseProblem(item);
+    if (problem) {
+      issues.push({
+        entityId: item.id,
+        entityName: item.name || item.id,
+        entityType: 'Item',
+        issueType: 'Data Integrity',
+        severity: 'Warning',
+        details: problem.charAt(0).toUpperCase() + problem.slice(1) + '.',
+      });
+    }
   }
 
   // Crime: a steal table no thief can roll, a caught curve out of range, a Hideout's own drops. The game's own rule (`crimeRule.js`); the boss camps are the world tables' own.

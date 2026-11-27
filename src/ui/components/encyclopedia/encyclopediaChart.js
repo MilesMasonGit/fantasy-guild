@@ -40,18 +40,18 @@ const NEARBY = 'growNearby';
 /** Ways in that a guild repeats (a station, a vein, a place's Tokens): the usual ones, before chance and finds. */
 const REPEATED = new Set([
     HOW.CRAFT, HOW.STATION, HOW.BUILD, HOW.WORK, HOW.CATCH, HOW.TRICKLE, HOW.UPGRADE,
-    HOW.SPAWN, HOW.GROW, HOW.REGROW, HOW.WORLD
+    HOW.SPAWN, HOW.GROW, HOW.REGROW, HOW.WORLD, HOW.USE
 ]);
 const BY_CHANCE = new Set([HOW.DROP, HOW.BONUS, EVENT_WAY]);
 
 /** Ways the player cannot take again (the opening Bank, the Starter Camp): off the chart, named in the card. */
 const ONE_OFF = new Set([HOW.STARTER_BANK, HOW.STARTER_TOOL, HOW.STARTER_CAMP, HOW.HALL]);
 
-/** Ways no hero takes: a spawner spawns, a stage grows, the Shop sells, an event lands. */
-const NO_HERO = new Set([HOW.SPAWN, HOW.GROW, HOW.REGROW, HOW.TRICKLE, HOW.SHOP, HOW.UPGRADE, MEMBER, EVENT_WAY]);
+/** Ways no hero takes: a spawner spawns, a stage grows, the Shop sells, an event lands, an item is used from the Bank. */
+const NO_HERO = new Set([HOW.SPAWN, HOW.GROW, HOW.REGROW, HOW.TRICKLE, HOW.SHOP, HOW.UPGRADE, MEMBER, EVENT_WAY, HOW.USE]);
 
 /** Ways whose box says how many a cycle gives, as the card's Makes and Drops do. A catch lands one: its odds say it. */
-const COUNTED = new Set([HOW.WORK, HOW.DROP, HOW.CRAFT, HOW.BONUS, HOW.TRICKLE]);
+const COUNTED = new Set([HOW.WORK, HOW.DROP, HOW.CRAFT, HOW.BONUS, HOW.TRICKLE, HOW.USE]);
 
 /** How deep growing stages fold (a stump grows a sapling grows a tree). */
 const FOLD_DEPTH = 4;
@@ -502,7 +502,8 @@ const isBuilt = (book, recipe) => stationsOf(book, recipe).some(r => r.how === H
 
 /**
  * The word for what comes out of a box (`key`) along a way: a vein gives, a chest opens, an enemy
- * drops, a rare find is found; a catch's hover names its tool and bait, a Hall track's its ranks.
+ * drops, a rare find is found, an item used gives its drops; a catch's hover names its tool and
+ * bait, a Hall track's its ranks.
  */
 function givesWord(book, key, how, way = null) {
     if (way?.rare && (how === HOW.WORK || how === HOW.CATCH)) return lineWord('finds', 'rareFind');
@@ -522,6 +523,7 @@ function givesWord(book, key, how, way = null) {
         case HOW.SPAWN: return lineWord('spawns');
         case HOW.GROW: return lineWord('grows');
         case HOW.REGROW: return lineWord('leaves');
+        case HOW.USE: return lineWord('use');
         default: return null;
     }
 }

@@ -104,7 +104,7 @@ export const SEVERITY_TEXT = Object.freeze({ block: 'Block', warn: 'Warn', info:
 const FINAL_TYPES = new Set(['consumable', 'treasure', 'food', 'drink', 'potion', 'weapon', 'armor', 'tool', 'fuel', 'drop']);
 
 /** The rules that make an item over and over (a Region's work, a recipe, Passive Production, a side drop). */
-const PRODUCING = new Set([HOW.WORK, HOW.CATCH, HOW.DROP, HOW.CRAFT, HOW.TRICKLE, HOW.UPGRADE, HOW.BONUS]);
+const PRODUCING = new Set([HOW.WORK, HOW.CATCH, HOW.DROP, HOW.CRAFT, HOW.TRICKLE, HOW.UPGRADE, HOW.BONUS, HOW.USE]);
 const isObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
 
 /**
@@ -236,8 +236,10 @@ export function runChecks(ledger, content = {}, { extra = [] } = {}) {
             if (!givers.length && spentBy.length) {
                 add('never-produced', key, `Spent by ${listNames(spentBy)}, but nothing makes or gives it.`, { related: spentBy });
             }
+            // An item with a Use is spent by using it, though its own Use is filed under itself.
             const finalUse = FINAL_TYPES.has(String(def.type || '').toLowerCase()) || !!def.equipSlot
-                || (def.tags || []).some((t) => FINAL_TYPES.has(String(t).toLowerCase()));
+                || (def.tags || []).some((t) => FINAL_TYPES.has(String(t).toLowerCase()))
+                || index.takers(key).some((r) => r.how === HOW.USE && r.via === key);
             if (givers.length && !takers.length && !finalUse) add('unused', key, 'Made or found, but nothing spends it.');
         }
 

@@ -208,6 +208,8 @@ export { crimeFindings } from '../../../src/systems/core/crimeRule.js';
 export { breakChanceOf, canBreak, BREAK_CHANCE_MAX } from '../../../src/config/registries/itemBreak.js';
 // An item's coin worth, for the item editor's Coin worth field and the audit. The game's own reading and wording.
 export { coinWorthOf, coinWorthFindings } from '../../../src/config/registries/itemCoins.js';
+// An item's Use (what using it from the Bank gives), for the item editor's Use block and the audit. The game's own reading and wording.
+export { itemUseDropsOf, hasUse, itemUseProblem } from '../../../src/config/registries/itemUse.js';
 // A Shop Token's coins, an enemy's Coin drop and its steal table's coins, for their fields and the audit. The game's own reading and wording.
 export { shopCoinsOf, enemyCoinDropOf, stealCoinsOf, coinCostFindings } from '../../../src/config/registries/coinCosts.js';
 // Milestone perks: the shape of a skill's perk table and the content checks for one. The game's own rules and wording.

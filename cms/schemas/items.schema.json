@@ -93,6 +93,24 @@
             "damageType": { "type": "string", "enum": ["slash", "crush", "stab", "fire", "ice", "electric", "poison", "light", "dark"], "description": "Defaults to stab." }
           }
         },
+        "use": {
+          "description": "What using copies from the Bank gives, at once, into the Bank, with no hero (src/config/registries/itemUse.js useDropsOf; src/systems/inventory/ItemUse.js useItem; the Item drawer's Use). Each copy rolls every drop: its chance, then an amount from minQty to maxQty. Written by cms/src/components/editors/UseBlock.jsx only while it has a drop.",
+          "type": "object",
+          "properties": {
+            "drops": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "itemId": { "type": "string", "description": "The item it gives; one that does not exist pays nothing (both audits name it)." },
+                  "chance": { "type": "number", "minimum": 0, "maximum": 100, "description": "Percent a copy gives it; absent is 100." },
+                  "minQty": { "type": "integer", "minimum": 0, "description": "Fewest a copy gives when it lands; absent is 1." },
+                  "maxQty": { "type": "integer", "minimum": 0, "description": "Most a copy gives when it lands; absent is minQty." }
+                }
+              }
+            }
+          }
+        },
         "isRoot": { "type": "boolean", "description": "Read only by the CMS's connectivity audit (cms/src/engine/connectivityAuditor.js): a raw item nothing needs to produce. No game reader, no editor." },
         "plan": { "$ref": "common.schema.json#/$defs/plan" }
       }
