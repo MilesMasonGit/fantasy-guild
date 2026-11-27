@@ -24,11 +24,10 @@ export const ROLL_EACH_UP_TO = 10_000;
  * order: copy by copy, line by line, a chance only under 100, an amount for every line that lands.
  */
 export function rollUse(drops, count, random = Math.random) {
-    const out = new Map();
+    // Keyed in the drops' order first, so what came reads in the authored order, whichever landed first.
+    const totals = new Map(drops.map(line => [line.itemId, 0]));
     const n = Math.max(0, Math.floor(Number(count) || 0));
-    const add = (itemId, quantity) => {
-        if (quantity > 0) out.set(itemId, (out.get(itemId) || 0) + quantity);
-    };
+    const add = (itemId, quantity) => totals.set(itemId, totals.get(itemId) + quantity);
     if (n <= ROLL_EACH_UP_TO) {
         for (let i = 0; i < n; i++) {
             for (const line of drops) {
@@ -36,12 +35,12 @@ export function rollUse(drops, count, random = Math.random) {
                 add(line.itemId, rollOutputQuantity(line, random));
             }
         }
-        return out;
+    } else {
+        for (const line of drops) {
+            add(line.itemId, roundByChance(n * (line.chance / 100) * ((line.minQty + line.maxQty) / 2), random));
+        }
     }
-    for (const line of drops) {
-        add(line.itemId, roundByChance(n * (line.chance / 100) * ((line.minQty + line.maxQty) / 2), random));
-    }
-    return out;
+    return new Map([...totals].filter(([, quantity]) => quantity > 0));
 }
 
 /**

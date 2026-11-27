@@ -38,7 +38,8 @@ export const ItemUseAmounts = ({ count, amount, onAmount }) => (
                         disabled={idle}
                         onClick={() => onAmount(n)}
                         className={cn(
-                            'ui-pixel-edge flex-1 min-w-0 px-1 py-0.5 bg-black/40 ui-text-small font-bold transition-colors',
+                            // ⚠️ No wrapping: at the drawer's narrowest, in capitals, "All -1" broke onto two lines.
+                            'ui-pixel-edge flex-1 whitespace-nowrap px-1 py-0.5 bg-black/40 ui-text-small font-bold transition-colors',
                             idle ? 'text-gi-muted/40 cursor-not-allowed'
                                 : picked ? 'text-[var(--color-ui-gold)] cursor-pointer'
                                     : 'text-white/70 hover:text-[var(--color-ui-white)] cursor-pointer'

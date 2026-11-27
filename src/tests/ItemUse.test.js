@@ -96,6 +96,13 @@ describe('the rolls', () => {
         expect(stream).toEqual([]);
     });
 
+    it('what came reads in the drops\' order, whichever landed first; a line that never landed is left out', () => {
+        const drops = [{ itemId: 'a', chance: 50, minQty: 1, maxQty: 1 }, { itemId: 'b', chance: 100, minQty: 1, maxQty: 1 }, { itemId: 'c', chance: 1, minQty: 1, maxQty: 1 }];
+        // Copy 1: a misses, b lands, c misses. Copy 2: a lands, b lands, c misses.
+        const stream = [0.9, 0, 0.9, 0.1, 0, 0, 0.9];
+        expect([...rollUse(drops, 2, () => stream.shift())]).toEqual([['a', 1], ['b', 2]]);
+    });
+
     it('are the game\'s seeded rolls: the same stream gives the same Use, another seed may not', () => {
         const run = (seed) => {
             GameState.state.inventory.items = {};
