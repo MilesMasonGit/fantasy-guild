@@ -489,6 +489,8 @@ export function buildWorld(content = {}, { tierLevels = null } = {}) {
             const isSpot = spotOf(def) !== null;
             const put = isSpot ? (rule) => spotCatches.push({ rule, first: arrivesByItself(spotOf(def)) }) : add;
             catchPoolsOf(def).forEach((pool, i) => {
+                // A pool that never bites (a rod naming no Bait) lands nothing (`Fishing.fishingOf`).
+                if (!poolBites(pool)) return;
                 const total = pool.catches.reduce((sum, c) => sum + c.weight, 0);
                 const asked = total > 0 ? pool.catches.reduce((sum, c) => sum + c.weight * fishBait(items[c.itemId]), 0) / total : 1;
                 const bait = pool.bait && asked > 0 ? [{ key: itemKey(pool.bait), quantity: asked }] : [];

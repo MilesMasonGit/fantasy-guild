@@ -57,7 +57,7 @@ describe('reach: what the Starter Camp and the Guild Hall give', () => {
         expect(l.reachOf(tokenKey('token_goblin'))).toMatchObject({ tier: 0, how: 'spawn', via: tokenKey('token_goblin_camp') });
     });
 
-    it('catches with the rod, and with bait from the Bank', () => {
+    it('catches with the Trap, and with the rod and bait from the Bank', () => {
         const l = ledger();
         expect(l.reachOf(itemKey('item_shrimp'))).toMatchObject({ tier: 0, how: 'catch' });
         expect(l.reachOf(itemKey('item_trout'))).toMatchObject({ tier: 0, how: 'catch' });

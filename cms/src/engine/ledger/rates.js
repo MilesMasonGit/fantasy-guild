@@ -11,7 +11,7 @@ import {
     PASSIVE_LAP_BASE_MS, foundationTierMeets, campOf, endTermsOf, CHANCE_LIFE
 } from '../../../../src/config/registries/tokenConstants.js';
 import { neededToolOf, toolOf, toolMeets, toolItemFor, takesLure } from '../../../../src/config/registries/toolKinds.js';
-import { hasCatchPools, catchPoolsOf, poolKeyOf } from '../../../../src/config/registries/catchPools.js';
+import { hasCatchPools, catchPoolsOf, poolKeyOf, poolBites } from '../../../../src/config/registries/catchPools.js';
 import { spotOf, arrivesByItself, spotRateOf } from '../../../../src/config/registries/fishingSpots.js';
 import { normaliseEventTable, isRunnable } from '../../../../src/config/eventTable.js';
 import { lureOf, baitSavingOf, baitSpent, fishLevel, fishCycleMs, fishBait, fishXp } from '../../../../src/config/registries/fishRules.js';
@@ -1186,9 +1186,15 @@ function fishingPlan(book, def, pool, gates, setup, ownMs) {
 /**
  * The catch pool a hero fishes at a water: `target.pool` ({@link poolKey}) when named, else the
  * first pool for the tool in hand (the setup's, else the water's first kind), as `Fishing.fishingOf`
- * picks it.
+ * picks it; null when that pool never bites.
  */
 function poolOf(book, def, target, setup) {
+    const pool = namedPoolOf(book, def, target, setup);
+    // A pool that never bites (a rod naming no Bait) lands nothing (`catchPools.poolBites`).
+    return poolBites(pool) ? pool : null;
+}
+
+function namedPoolOf(book, def, target, setup) {
     const pools = catchPoolsOf(def);
     if (text(target.pool)) {
         const exact = pools.find(p => poolKey(p) === target.pool);
@@ -1566,7 +1572,7 @@ function dedupe(rows) {
 
 /**
  * Every piece of work the calculator rates, as targets: each Token's own work (a vein, a tree, a
- * bush, a fight, Passive Production), each pool of each water, each recipe at each station that
+ * bush, a fight, Passive Production), each pool that bites of each water, each recipe at each station that
  * offers it (crops at their Fields) and each build on each Foundation that takes it.
  */
 function workTargets(book) {
@@ -1576,7 +1582,7 @@ function workTargets(book) {
         if (isObject(def.foundation)) continue;
         if (stationSkillOf(def) && isObject(def.config)) continue;
         if (hasCatchPools(def)) {
-            for (const pool of catchPoolsOf(def)) out.push({ token: id, pool: poolKey(pool) });
+            for (const pool of catchPoolsOf(def)) if (poolBites(pool)) out.push({ token: id, pool: poolKey(pool) });
             continue;
         }
         out.push({ token: id });

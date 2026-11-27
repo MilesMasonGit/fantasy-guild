@@ -81,13 +81,14 @@ describe('water, a Field and a coarse fight', () => {
         c.items.item_eel = { id: 'item_eel', name: 'Eel', type: 'food' };
         c.items.item_bait = { id: 'item_bait', name: 'Bait', type: 'material', equipSlot: 'consumable' };
         c.items.item_rod = { id: 'item_rod', name: 'Rod', type: 'tool', equipSlot: 'hand', tool: { kind: 'fishing_rod', tier: 1, starter: true } };
+        c.items.item_trap = { id: 'item_trap', name: 'Trap', type: 'tool', equipSlot: 'hand', tool: { kind: 'fishing_trap', tier: 1, starter: true } };
         c.items.item_sickle = { id: 'item_sickle', name: 'Sickle', type: 'tool', equipSlot: 'hand', tool: { kind: 'sickle', tier: 1, starter: true } };
         c.items.item_wheat = { id: 'item_wheat', name: 'Wheat', type: 'material' };
         c.items.item_seed = { id: 'item_seed', name: 'Seed', type: 'material' };
         c.tokens.token_pond = {
             id: 'token_pond', name: 'Pond', uses: null, config: { skill: 'fishing', skillRequired: 1, cycleTimeMs: 8000, xp: 1, inputs: [], outputs: [] },
             catchPools: [
-                { tool: 'fishing_rod', catches: [{ itemId: 'item_fish', weight: 3 }, { itemId: 'item_eel', weight: 1 }] },
+                { tool: 'fishing_trap', catches: [{ itemId: 'item_fish', weight: 3 }, { itemId: 'item_eel', weight: 1 }] },
                 { tool: 'fishing_rod', bait: 'item_bait', catches: [{ itemId: 'item_eel', weight: 1 }] }
             ]
         };
@@ -104,8 +105,8 @@ describe('water, a Field and a coarse fight', () => {
 
     it('water lands one catch a cycle by weight, the bait pool spending a bait a catch', () => {
         const b = buildRateBook(content());
-        const basic = b.rateOf({ token: 'token_pond', pool: 'fishing_rod|' });
-        expect(basic).toMatchObject({ ok: true, kind: WORK.WATER, cyclesPerHour: 450, target: { pool: 'fishing_rod|' } });
+        const basic = b.rateOf({ token: 'token_pond', pool: 'fishing_trap|' });
+        expect(basic).toMatchObject({ ok: true, kind: WORK.WATER, cyclesPerHour: 450, target: { pool: 'fishing_trap|' } });
         expect(basic.items.item_fish).toBeCloseTo(450 * 0.75);
         expect(basic.items.item_eel).toBeCloseTo(450 * 0.25);
         expect(basic.xp.fishing).toBeCloseTo(450);

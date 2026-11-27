@@ -92,9 +92,9 @@ describe('no row dropped: an item a Token gives twice, every catch pool', () => 
         const book = buildEncyclopedia(ledgerContent());
         const shrimp = waysIn(book, I('item_shrimp'));
         const trout = waysIn(book, I('item_trout'));
-        expect(shrimp.map(w => [w.how, w.from, w.inputs])).toEqual([[HOW.CATCH, T('token_coast'), [{ key: I('item_fishing_rod'), quantity: null, held: true }]]]);
+        expect(shrimp.map(w => [w.how, w.from, w.inputs])).toEqual([[HOW.CATCH, T('token_coast'), [{ key: I('item_fishing_trap'), quantity: null, held: true }]]]);
         expect(trout.map(w => w.inputs)).toEqual([[{ key: I('item_worm'), quantity: 1 }, { key: I('item_fishing_rod'), quantity: null, held: true }]]);
-        expect(wayInWord(book, shrimp[0])).toEqual({ word: 'catch', tip: 'catchWith', args: { tool: 'Fishing Rod' } });
+        expect(wayInWord(book, shrimp[0])).toEqual({ word: 'catch', tip: 'catchWith', args: { tool: 'Trap' } });
         expect(wayInWord(book, trout[0])).toEqual({ word: 'catch', tip: 'catchBait', args: { tool: 'Fishing Rod', bait: 'Worm' } });
         // The water's own page: a line out per pool's catch, each naming its pool.
         expect(waysOut(book, T('token_coast')).map(w => [w.to, wayOutWord(book, T('token_coast'), w).tip]))
