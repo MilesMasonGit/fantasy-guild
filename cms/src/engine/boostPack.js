@@ -227,7 +227,7 @@ export function writeBoostPack(workspace, { id, createdAt = new Date().toISOStri
                 } else if (reach === REACH.BOARD) {
                     claim.outcomes.push({ bearer, unclear: 'a Token\'s rule on the whole board: not a placed building\'s reach' });
                 } else if (campOf(def)) {
-                    claim.outcomes.push({ bearer, unclear: 'a camp\'s own rule: the budget leaves camp variants the rest of yield, with no number a camp' });
+                    claim.outcomes.push({ bearer, unclear: 'a camp variant\'s own rule: the budget gives camps no size of their own (yield\'s "rest" only)' });
                 } else if (isObject(def.spawner)) {
                     claim.outcomes.push({ bearer, unclear: 'a spawner\'s own rule on its family: not a placed building' });
                 } else if (def.tokenType === 'buff' || def.tokenType === 'station') {
@@ -438,6 +438,6 @@ export function boostLines(rows, { written = false } = {}) {
     return rows.map((r) => {
         const who = r.bearers?.length ? ` [${r.bearers.join('; ')}]` : '';
         if (written) return `- ${r.name} (${r.where}): ${r.label} ${r.from} → ${r.to}, ${r.source}${who}`;
-        return `- ${r.name} (${r.where}, ${r.axis} ${r.current}): ${r.reason}${who}`;
+        return `- ${r.name} (${r.where}, ${r.axis}${r.current === undefined ? '' : ` ${r.current}`}): ${r.reason}${who}`;
     });
 }
