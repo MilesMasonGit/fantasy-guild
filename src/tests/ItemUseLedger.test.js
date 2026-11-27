@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { buildLedger, buildWorld, computeReach, describePath, HOW, itemKey, recipeKey, LEDGER_ENGINE_TEXT } from '../systems/progression/ledger/engine.js';
+import { buildLedger, buildWorld, computeReach, describePath, HOW, itemKey, recipeKey, tokenKey, LEDGER_ENGINE_TEXT } from '../systems/progression/ledger/engine.js';
+import { itemUseSourceId } from '../config/registries/itemUse.js';
 import { runChecks } from '../../cms/src/engine/ledger/checks.js';
 import { economyFindings } from '../../cms/src/engine/ledger/economy.js';
 import { buildPace } from '../../cms/src/engine/ledger/pace.js';
@@ -175,5 +176,26 @@ describe('the Encyclopedia shows the Use as a way to get the seeds', () => {
         expect(wayOutWord(b, I('item_bird_nest'), out)).toEqual({ word: 'use', tip: 'use', args: null });
         expect(en.encyclopedia.line.use).toBe('use');
         expect(en.encyclopedia.lineTip.use).toBe('Using {from} from the Bank gives {to}');
+    });
+});
+
+describe('a price that comes from the Use: the tree and the chart follow it', () => {
+    // The Oak Tree drops a Potato Seed now and then too, so a seed has two ways in and its price names one.
+    const both = (valueSource) => {
+        const c = content();
+        c.tokens.token_oak_tree.config.outputs.push({ itemId: 'item_potato_seed', chance: 5, minQty: 1, maxQty: 1 });
+        c.items.item_potato_seed.valueSource = valueSource;
+        return c;
+    };
+    const USE = itemUseSourceId('item_bird_nest');
+
+    it('the tree follows the source the price names, the Use included', () => {
+        expect(buildLedger(both('token_oak_tree')).treeOf('item_potato_seed').tree.source).toMatchObject({ how: HOW.WORK, via: tokenKey('token_oak_tree') });
+        expect(buildLedger(both(USE)).treeOf('item_potato_seed').tree.source).toMatchObject({ how: HOW.USE, via: I('item_bird_nest') });
+    });
+
+    it('the chart puts the way the price comes from first, the Use included', () => {
+        expect(waysIn(buildEncyclopedia(both('token_oak_tree')), I('item_potato_seed'))[0]).toMatchObject({ how: HOW.WORK, from: tokenKey('token_oak_tree') });
+        expect(waysIn(buildEncyclopedia(both(USE)), I('item_potato_seed'))[0]).toMatchObject({ how: HOW.USE, from: I('item_bird_nest') });
     });
 });
