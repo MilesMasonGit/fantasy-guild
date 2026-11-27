@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { buildLedger } from '../systems/progression/ledger/engine.js';
-import { buildPace } from '../../cms/src/engine/ledger/pace.js';
+import { buildPace, roundDown } from '../../cms/src/engine/ledger/pace.js';
 import { settingsOf, paybackHoursAt } from '../../cms/src/engine/ledger/settings.js';
 import { CHECKS, runChecks } from '../../cms/src/engine/ledger/checks.js';
 import { DOSE, DOSE_LENGTH } from '../systems/core/consumableRule.js';
@@ -180,6 +180,23 @@ describe("a Guild Hall rank's payback over all the work it boosts, on the paybac
         const lone = rowOf(paceOf(ruleContent(), { heroesByTier: [{ tier: 0, heroes: 1 }] }), 'ph_gold', 1);
         expect(lone).toMatchObject({ heroes: 1, works: 2, counted: 1 });
         expect(lone.gain).toBeCloseTo(Math.max(...saves));
+    });
+
+    it('the proposed price aims at the curve over all the work it boosts, and the rank pays by it, not by its one work', () => {
+        const pace = paceOf(ruleContent(), twoHeroes);
+        const gold = rowOf(pace, 'ph_gold', 1);
+        const row = gold.row;
+        expect(row.guildGain).toBe(gold.gain);
+        const p = row.proposed;
+        const perHour = p.quantity / p.priceHours;
+        expect(p.quantity).toBe(roundDown((gold.curve * gold.gain - row.opening.cost) * perHour));
+        expect(p.payback).toBeCloseTo((p.priceHours + row.opening.cost) / gold.gain);
+        // Over the guild's two heroes it costs more than one hero's saving would allow.
+        const lone = rowOf(paceOf(ruleContent(), { heroesByTier: [{ tier: 0, heroes: 1 }] }), 'ph_gold', 1).row.proposed;
+        expect(p.quantity).toBeGreaterThan(lone.quantity);
+        // The page's colours follow the same sum: the Gold Leaf is red, as its finding warns.
+        const shown = hallRows(pace).find(r => r.id === 'ph_gold' && r.rank === 1);
+        expect(shown).toMatchObject({ pays: false, guildPaybackText: expect.any(String), curveText: '1 h 2 min' });
     });
 
     it('a rank slower than the curve past the tolerance warns; one far faster is information', () => {

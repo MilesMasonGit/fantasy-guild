@@ -121,10 +121,11 @@ export function choiceText(pace, ledger, chosen) {
 /**
  * The Guild Hall's ranks for the Pace page and the Guild Hall page: every rank that adds a rate,
  * with its tier, price, the hours that price takes to gather at Typical, what opening a closed star
- * costs on the way (`openingText`), what it saves an hour and where, its payback (red when over the
- * payback time) and the proposed price. `byStar` groups them. Beside it, its payback over all the work
- * it boosts on the payback curve (`guild`: `{ text, curveText, off }`, the hall-guild-payback check's
- * numbers; `off` true past the tolerance either way), null where it is not worked out.
+ * costs on the way (`openingText`), what it saves an hour on the work it pays back soonest on and its
+ * payback there (information), its payback over all the work it boosts on the payback curve
+ * (`guildSavesText`, `guildPaybackText`, `curveText`; `guild`: `{ text, curveText, off }`, the
+ * hall-guild-payback check's numbers, `off` true past the tolerance either way, null where it is not
+ * worked out; `pays` whether that is within the curve) and the proposed price.
  */
 export function hallRows(pace) {
   const guild = new Map(pace.hallGuildPaybacks().map((g) => [`${g.id}|${g.rank}`, g]));
@@ -135,6 +136,9 @@ export function hallRows(pace) {
     workText: r.work ? pace.workName(r.work) : null,
     savesText: r.rate ? (r.enabler ? 'the only source of what it pays' : r.gain > 0 ? PACE_TEXT.saves(r.gain) : 'nothing at its tier') : null,
     paybackText: r.rate ? (r.enabler ? 'an enabler' : PACE_TEXT.short(r.payback)) : null,
+    guildSavesText: r.rate && !r.enabler ? (r.guildGain > 0 ? PACE_TEXT.saves(r.guildGain) : 'nothing at its tier') : null,
+    guildPaybackText: r.rate && !r.enabler ? PACE_TEXT.short(r.guildPayback) : null,
+    curveText: r.rate && !r.enabler ? PACE_TEXT.hours(r.curve) : null,
     priceTimeText: PACE_TEXT.short(r.priceHours),
     openingText: r.opening?.path?.length
       ? `${PACE_TEXT.short(r.opening.cost)} to open it, lighting ${r.opening.path.map((id) => pace.hallName(id)).join(' and ')}`

@@ -160,12 +160,17 @@ export default function LedgerSettings() {
           <div className="flex items-center gap-2">
             Typical takes a building, a camp, a tool or gear that pays for itself within
             <NumberInput value={settings.paybackHours} min={0.1} onCommit={(v) => save({ paybackHours: v })} label="Payback hours" width={60} />
-            hours of work,
+            hours of work, and a Guild Hall rank that pays for itself on the payback curve (1 hour × 24^(L / 80) at the level its tier opens at).
           </div>
           <div className="flex items-center gap-2">
-            and a Guild Hall rank that pays for itself within
-            <NumberInput value={settings.hallPaybackHours} min={0.1} onCommit={(v) => save({ hallPaybackHours: v })} label="Guild Hall payback hours" width={60} />
-            hours (a rank slower than that is red, and the proposed prices are sized to it).
+            Typical drinks a drink or work potion only where its batch pays back
+            <NumberInput value={settings.batchPayback} min={0.1} onCommit={(v) => save({ batchPayback: v })} label="Batch payback" width={60} />
+            times the hero time it took to make, ingredients included (the owner's rule, BALANCE_RULES section 5: four times).
+          </div>
+          <div className="flex items-center gap-2">
+            A chain's XP an hour of the gathering behind it warns beyond
+            <NumberInput value={settings.chainXpWarnFactor} min={1} onCommit={(v) => save({ chainXpWarnFactor: v })} label="Chain XP warn factor" width={60} />
+            times (or under that fraction of) its tier's median; within, it is information (a placeholder until the owner sets a tolerance).
           </div>
           <div className="flex items-center gap-2">
             A chain is one maker and about

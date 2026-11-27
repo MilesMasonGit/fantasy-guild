@@ -96,12 +96,15 @@ describe('the Ledger tab', { timeout: 20000 }, () => {
     const mount = () => render(React.createElement(LedgerPanel, { setCurrentView: () => {} }));
 
     it('the Pace page: every rank\'s payback at Typical, red when it does not pay off, with the proposed price', () => {
+        // No tolerance, so a raise past the curve shows red.
+        store().hydrate({ ...hallWorkspace(), planSettings: { tolerancePct: 0 } });
         const view = mount();
         fireEvent.click(view.getByRole('tab', { name: 'Pace' }));
         const row = (id) => view.container.querySelector(`[data-hall="${id}"]`);
         expect(row('ph_lore|1').getAttribute('data-hall-pays')).toBe('yes');
         expect(row('ph_lore|1').textContent).toMatch(/Lore 1.*Starter Camp.*10 Copper Ore.*Copper Vein/);
-        expect(row('ph_lore|1').querySelector('[data-hall-proposed]').textContent).toMatch(/^\d+ Copper Ore \(pays back in 2\d h( \d+ min)?\)$/);
+        // Proposed on the payback curve over all its work (1 h 2 min at level 1), not a day on one work.
+        expect(row('ph_lore|1').querySelector('[data-hall-proposed]').textContent).toMatch(/^\d+ Copper Ore \(pays back in (\d+ min|1 h( \d+ min)?) over all its work\)$/);
         // Deep Veins was opened through Quick Picks, lit for nothing else: its price shows what that cost.
         expect(row('ph_deep|1').querySelector('[data-hall-opening]').textContent).toMatch(/^ \+ .+ to open it, lighting Quick Picks$/);
         expect(row('ph_lore|1').querySelector('[data-hall-opening]')).toBeNull();
@@ -111,7 +114,9 @@ describe('the Ledger tab', { timeout: 20000 }, () => {
         expect(raised.style.color).toBe('var(--color-error)');
         const gold = row('ph_gold|1');
         expect(gold.getAttribute('data-hall-pays')).toBe('no');
-        expect(gold.querySelector('[data-hall-payback]').style.color).toBe('var(--color-error)');
+        // The one-work payback is information, never red: what pays is the payback over all its work.
+        expect(gold.querySelector('[data-hall-payback]').style.color).toBe('var(--color-text-secondary)');
+        expect(view.container.textContent).not.toMatch(/Guild Hall payback in the settings/);
         // Beside it, its payback over all the work it boosts against the payback curve: red, far slower.
         expect(gold.querySelector('[data-hall-guild]').textContent).toMatch(/ on 1 work \(curve 1 h 2 min\)$/);
         expect(gold.querySelector('[data-hall-guild]').style.color).toBe('var(--color-error)');
@@ -120,15 +125,22 @@ describe('the Ledger tab', { timeout: 20000 }, () => {
         expect(row('ph_infirmary|1')).toBeNull();
     });
 
-    it('the settings: the Guild Hall payback beside the boosts\' payback, a day unless set', () => {
+    it('the settings: the batch payback (4, the owner\'s rule) and the chain XP warn factor (2, a placeholder), and no Guild Hall payback hours', () => {
         const view = mount();
         fireEvent.click(view.getByRole('tab', { name: 'Settings' }));
-        const hall = view.getByLabelText('Guild Hall payback hours');
-        expect(hall.value).toBe('24');
+        expect(view.queryByLabelText('Guild Hall payback hours')).toBeNull();
         expect(view.getByLabelText('Payback hours').value).toBe('2');
-        fireEvent.change(hall, { target: { value: '12' } });
-        fireEvent.blur(hall);
-        expect(store().planSettings.hallPaybackHours).toBe(12);
+        const batch = view.getByLabelText('Batch payback');
+        const warn = view.getByLabelText('Chain XP warn factor');
+        expect(batch.value).toBe('4');
+        expect(warn.value).toBe('2');
+        expect(batch.closest('div').textContent).toMatch(/the owner's rule/);
+        expect(warn.closest('div').textContent).toMatch(/placeholder/);
+        fireEvent.change(batch, { target: { value: '3' } });
+        fireEvent.blur(batch);
+        fireEvent.change(warn, { target: { value: '2.5' } });
+        fireEvent.blur(warn);
+        expect(store().planSettings).toMatchObject({ batchPayback: 3, chainXpWarnFactor: 2.5 });
         expect(store().planSettings.paybackHours ?? 2).toBe(2);
     });
 
@@ -175,8 +187,8 @@ describe('the Guild Hall page', () => {
         fireEvent.click([...lore.querySelectorAll('button')].find(b => b.textContent.includes('2 ranks')));
         const first = () => lore.querySelector('[data-hall-rank="1"]');
         expect(first().querySelector('[data-hall-rank-tier]').value).toBe('0');
-        expect(first().querySelector('[data-hall-rank-payback]').textContent).toMatch(/to gather, saves .* an hour: pays back in \d+ min/);
-        expect(first().querySelector('[data-hall-rank-proposed]').textContent).toMatch(/proposed \(preview\): \d+ Copper Ore, pays back in 2\d h/);
+        expect(first().querySelector('[data-hall-rank-payback]').textContent).toMatch(/to gather, saves .* an hour over all its work: pays back in \d+ min \(curve 1 h 2 min\)/);
+        expect(first().querySelector('[data-hall-rank-proposed]').textContent).toMatch(/proposed \(preview\): \d+ Copper Ore, pays back in (\d+ min|1 h( \d+ min)?) over all its work/);
 
         fireEvent.change(first().querySelector('[data-hall-rank-tier]'), { target: { value: '' } });
         expect('tier' in store().hallStars.ph_lore.ranks[0]).toBe(false);

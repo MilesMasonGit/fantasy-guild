@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { buildLedger } from '../systems/progression/ledger/engine.js';
 import { buildRateBook, FACTOR } from '../../cms/src/engine/ledger/rates.js';
 import { buildPace, roundDown, roundUp } from '../../cms/src/engine/ledger/pace.js';
-import { settingsOf } from '../../cms/src/engine/ledger/settings.js';
+import { settingsOf, paybackHoursAt } from '../../cms/src/engine/ledger/settings.js';
 import { PROFILE, BEFORE_HALL } from '../../cms/src/engine/ledger/profiles.js';
 import { hallGraph, openingPath, hallTracksOf } from '../../cms/src/engine/ledger/hall.js';
 import { CHECKS } from '../../cms/src/engine/ledger/checks.js';
@@ -108,7 +108,7 @@ describe('the profiles and the Hall', () => {
         // Deep Veins sits behind Quick Picks, behind Lore: both lit at rank 1 to open it, their price in its own.
         expect(hall[0].path).toEqual(['ph_lore', 'ph_quick']);
         expect(typical.setup.hallRanks).toMatchObject({ ph_lore: 2, ph_quick: 1, ph_deep: 1, ph_gold: 0, ph_rich: 0 });
-        for (const c of hall) expect(c.payback).toBeLessThanOrEqual(24);
+        for (const c of hall) expect(c.payback).toBeLessThanOrEqual(paybackHoursAt(1));
         // The Gold Leaf's 1 % for 100,000 Oak Wood never pays back; Rich Seams is a plane-1 rank.
         expect(hall.map(c => c.upgrade)).not.toContain('ph_gold');
         expect(hall.map(c => c.upgrade)).not.toContain('ph_rich');
@@ -145,26 +145,36 @@ describe('the profiles and the Hall', () => {
         expect(lore.price).toBeCloseTo((10 + 20) / 1440);
     });
 
-    it('the Hall has its own payback time, a day unless set: the boosts\' two hours never decide a rank', () => {
-        expect(settingsOf(null)).toMatchObject({ paybackHours: 2, hallPaybackHours: 24 });
-        expect(settingsOf({ hallPaybackHours: 6 }).hallPaybackHours).toBe(6);
-        expect(world({ hallPaybackHours: 1e6 }).rateAt(VEIN, PROFILE.TYPICAL, 0).setup.hallRanks.ph_gold).toBe(1);
+    it('no Guild Hall payback setting: the boosts\' two hours never decide a rank, nor a stored day', () => {
+        expect(settingsOf(null)).toMatchObject({ paybackHours: 2 });
+        expect(settingsOf(null)).not.toHaveProperty('hallPaybackHours');
+        expect(settingsOf({ hallPaybackHours: 6 })).not.toHaveProperty('hallPaybackHours');
+        expect(world({ hallPaybackHours: 1e6 }).rateAt(VEIN, PROFILE.TYPICAL, 0).setup.hallRanks.ph_gold).toBe(0);
         expect(world({ paybackHours: 1e6 }).rateAt(VEIN, PROFILE.TYPICAL, 0).setup.hallRanks.ph_gold).toBe(0);
     });
 
-    it('a rank that pays back in hours, not minutes, is bought within the Hall\'s day and not within two hours', () => {
+    it('Typical buys a rank that pays back on its work within the payback curve at its tier\'s opening level, not within a day', () => {
         const c = content();
-        // Rich Seams (no other star opens through it) at 1,200 Copper Ore: about 50 minutes of gathering for half as much ore again.
-        c.hallSky.stars.ph_rich.ranks[0].price = [{ itemId: 'item_copper_ore', quantity: 1200 }];
-        const day = buildPace(c, buildLedger(c), null);
-        const row = day.hallPaybacks().find(r => r.id === 'ph_rich' && r.rank === 1);
-        expect(row.payback).toBeGreaterThan(2);
-        expect(row.payback).toBeLessThan(24);
-        expect(row.pays).toBe(true);
-        expect(day.rateAt(VEIN, PROFILE.TYPICAL, 1).setup.hallRanks.ph_rich).toBe(1);
-        const hours = buildPace(c, buildLedger(c), { hallPaybackHours: 2 });
-        expect(hours.hallPaybacks().find(r => r.id === 'ph_rich' && r.rank === 1).pays).toBe(false);
-        expect(hours.rateAt(VEIN, PROFILE.TYPICAL, 1).setup.hallRanks.ph_rich).toBe(0);
+        // Rich Seams, a Plane 1 rank (the ladder opens Plane 1 at level 10); no other star opens through it.
+        const curve = paybackHoursAt(10);
+        const priced = (quantity) => {
+            c.hallSky.stars.ph_rich.ranks[0].price = [{ itemId: 'item_copper_ore', quantity }];
+            const pace = buildPace(c, buildLedger(c), null);
+            return { pace, row: pace.hallPaybacks().find(r => r.id === 'ph_rich' && r.rank === 1) };
+        };
+        const { row } = priced(1200);
+        // Its payback is its price over what it saves: price it to half the curve, then to three times it (still within the old day).
+        const perHour = 1200 / row.priceHours;
+        const cheap = priced(Math.floor(0.5 * curve * row.gain * perHour));
+        expect(cheap.row.payback).toBeLessThan(curve);
+        expect(cheap.pace.rateAt(VEIN, PROFILE.TYPICAL, 1).setup.hallRanks.ph_rich).toBe(1);
+        const dear = priced(Math.ceil(3 * curve * row.gain * perHour));
+        expect(dear.row.payback).toBeGreaterThan(curve);
+        expect(dear.row.payback).toBeLessThan(24);
+        expect(dear.pace.rateAt(VEIN, PROFILE.TYPICAL, 1).setup.hallRanks.ph_rich).toBe(0);
+        // It boosts the vein alone, so over all its work it is as slow: red on the pages, as Typical leaves it.
+        expect(cheap.row.pays).toBe(true);
+        expect(dear.row.pays).toBe(false);
     });
 });
 
@@ -183,6 +193,26 @@ describe('every rank\'s payback at Typical, and the price the ledger proposes', 
         expect(rowOf(pace, 'ph_rich', 1).cap).toBe(1);
     });
 
+    it('beside it, its payback over all the work it boosts on the payback curve, the payback check\'s own numbers, and pays by them', () => {
+        const pace = world();
+        const tol = pace.settings.tolerancePct / 100;
+        const guild = pace.hallGuildPaybacks();
+        expect(guild.length).toBeGreaterThan(3);
+        for (const g of guild) {
+            const row = rowOf(pace, g.id, g.rank);
+            expect(row).toMatchObject({ guildGain: g.gain, guildPayback: g.payback, curve: g.curve });
+            expect(g.oneWork).toBe(row.gain);
+            expect([g.id, g.rank, row.pays]).toEqual([g.id, g.rank, g.cost === 0 || g.off <= tol + 1e-9]);
+        }
+        // The Gold Leaf boosts more than one piece of Mining work: its saving over the guild's two heroes is at least the vein's alone.
+        const gold = rowOf(pace, 'ph_gold', 1);
+        expect(gold.guildGain).toBeGreaterThanOrEqual(gold.gain);
+        const slow = new Set(pace.findings().filter(x => x.check === 'hall-guild-payback' && x.severity === 'warn').map(x => x.key));
+        for (const row of pace.hallPaybacks().filter(r => r.rate && !r.enabler && Number.isFinite(r.priceHours) && r.priceHours > 0)) {
+            expect([row.id, row.rank, slow.has(`hall:${row.id}`) || row.pays]).toEqual([row.id, row.rank, true]);
+        }
+    });
+
     it('a rank that does not pay back within the day is found over all its work; a star that adds no rate is named, not priced', () => {
         const pace = world();
         expect(rowOf(pace, 'ph_gold', 1)).toMatchObject({ rate: true, pays: false });
@@ -195,15 +225,18 @@ describe('every rank\'s payback at Typical, and the price the ledger proposes', 
         for (const x of f) expect(CHECKS[x.check]?.group).toBe('D');
     });
 
-    it('proposes the most of its tier\'s material it can cost and still pay back in time, rounded down', () => {
+    it('proposes the most of its tier\'s material it can cost and still pay back on the curve over all its work, rounded down', () => {
         const pace = world();
         const lore = rowOf(pace, 'ph_lore', 1);
+        const curve = paybackHoursAt(1);
+        expect(lore.curve).toBeCloseTo(curve);
         // Mining's own material at the Starter Camp, at Typical-before-the-Hall's 1440 an hour.
         expect(lore.proposed.itemId).toBe('item_copper_ore');
-        expect(lore.proposed.quantity).toBe(roundDown(24 * lore.gain * 1440));
+        expect(lore.proposed.quantity).toBe(roundDown(curve * lore.guildGain * 1440));
         expect(lore.proposed).toMatchObject({ pays: true });
-        expect(lore.proposed.payback).toBeLessThanOrEqual(24);
-        expect(lore.proposed.payback).toBeGreaterThan(20);
+        expect(lore.proposed.payback).toBeCloseTo(lore.proposed.priceHours / lore.guildGain);
+        expect(lore.proposed.payback).toBeLessThanOrEqual(curve);
+        expect(lore.proposed.payback).toBeGreaterThan(0.8 * curve);
         // The Well's Spring pays Copper Ore, so it is priced in something else; its second rank has no tier.
         expect(rowOf(pace, 'ph_spring', 1).proposed.itemId).toBe('item_oak_wood');
         expect(rowOf(pace, 'ph_spring', 2).proposed).toEqual({ why: 'no tier set' });
@@ -224,14 +257,19 @@ describe('every rank\'s payback at Typical, and the price the ledger proposes', 
     });
 
     it('never proposes a rank cheaper than the one before: raised, marked, and red when it then pays back too slowly', () => {
-        const pace = world();
+        // No tolerance, so the raise that takes rank 2 past the curve shows.
+        const pace = world({ tolerancePct: 0 });
         const one = rowOf(pace, 'ph_lore', 1).proposed;
         const two = rowOf(pace, 'ph_lore', 2);
         // Rank 2 saves less than rank 1 (+50 % on +50 %), so on its own it would cost less.
-        expect(roundDown(24 * two.gain * 1440)).toBeLessThan(one.quantity);
+        expect(roundDown(two.curve * two.guildGain * 1440)).toBeLessThan(one.quantity);
         expect(two.proposed).toMatchObject({ itemId: 'item_copper_ore', quantity: one.quantity, raised: true, pays: false });
-        expect(two.proposed.payback).toBeCloseTo((one.quantity / 1440) / two.gain);
-        expect(two.proposed.payback).toBeGreaterThan(24);
+        expect(two.proposed.payback).toBeCloseTo((one.quantity / 1440) / two.guildGain);
+        expect(two.proposed.payback).toBeGreaterThan(two.curve);
+        // Within the tolerance (25 %), the same raise pays, as the payback check would not warn of it.
+        const tolerant = rowOf(world(), 'ph_lore', 2).proposed;
+        expect(tolerant).toMatchObject({ quantity: one.quantity, raised: true });
+        expect(tolerant.pays).toBe(tolerant.payback <= two.curve * 1.25);
         // Every authored star's proposals, rank by rank, never fall.
         for (const id of ['ph_lore', 'ph_quick', 'ph_deep', 'ph_gold', 'ph_rich', 'ph_spring']) {
             const proposed = pace.hallPaybacks().filter(r => r.id === id && r.proposed?.itemId).map(r => r.proposed);
@@ -319,14 +357,14 @@ describe('the payback check counts opening a star; a skill that gathers nothing 
         expect(row.opening.path).toEqual(['ph_rails']);
         const perHour = pace.supplyOf('item_copper_ore', BEFORE_HALL, 0).perHour;
         expect(row.opening.cost).toBeCloseTo(5 / perHour);
-        expect(row.proposed.quantity).toBe(roundDown((24 * row.gain - row.opening.cost) * perHour));
-        expect(row.proposed.payback).toBeCloseTo((row.proposed.priceHours + row.opening.cost) / row.gain);
-        expect(row.proposed.payback).toBeLessThanOrEqual(24);
+        expect(row.proposed.quantity).toBe(roundDown((row.curve * row.guildGain - row.opening.cost) * perHour));
+        expect(row.proposed.payback).toBeCloseTo((row.proposed.priceHours + row.opening.cost) / row.guildGain);
+        expect(row.proposed.payback).toBeLessThanOrEqual(row.curve);
     });
 
-    it('every rank that pays back is one Typical buys on the work it saves most on', () => {
+    it('every rank one work alone pays back on the curve is one Typical buys on that work', () => {
         const pace = world();
-        const paying = pace.hallPaybacks().filter(r => !r.builtIn && r.rate && r.pays && r.work);
+        const paying = pace.hallPaybacks().filter(r => !r.builtIn && r.rate && !r.enabler && r.work && r.payback <= r.curve);
         expect(paying.length).toBeGreaterThan(2);
         for (const row of paying) {
             const held = pace.rateAt(row.work.target, PROFILE.TYPICAL, row.cap).setup.hallRanks?.[row.id] || 0;
