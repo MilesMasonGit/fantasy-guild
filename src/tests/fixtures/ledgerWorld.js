@@ -34,6 +34,7 @@ export const PLAN_ITEMS = {
     item_copper_woodaxe: { id: 'item_copper_woodaxe', name: 'Copper Woodaxe', type: 'tool', equipSlot: 'hand', tool: { kind: 'woodaxe', tier: 1, starter: true } },
     item_copper_sickle: { id: 'item_copper_sickle', name: 'Copper Sickle', type: 'tool', equipSlot: 'hand', tool: { kind: 'sickle', tier: 1, starter: true } },
     item_fishing_rod: { id: 'item_fishing_rod', name: 'Fishing Rod', type: 'tool', equipSlot: 'hand', tool: { kind: 'fishing_rod', tier: 1, starter: true } },
+    item_fishing_trap: { id: 'item_fishing_trap', name: 'Fishing Trap', type: 'tool', equipSlot: 'hand', tool: { kind: 'fishing_trap', tier: 1, starter: true } },
     item_iron_pickaxe: { id: 'item_iron_pickaxe', name: 'Iron Pickaxe', type: 'tool', equipSlot: 'hand', tool: { kind: 'pickaxe', tier: 2 } },
     item_chief_banner: { id: 'item_chief_banner', name: 'Chief Banner', type: 'material', plan: { tier: 1 } },
     item_water: { id: 'item_water', name: 'Water', type: 'drink' },
@@ -80,7 +81,7 @@ export const PLAN_TOKENS = {
     token_coast: {
         id: 'token_coast', name: 'Coast', config: work('fishing', 1, 8000, []),
         catchPools: [
-            { tool: 'fishing_rod', bait: null, catches: [{ itemId: 'item_shrimp', weight: 1 }] },
+            { tool: 'fishing_trap', bait: null, catches: [{ itemId: 'item_shrimp', weight: 1 }] },
             { tool: 'fishing_rod', bait: 'item_worm', catches: [{ itemId: 'item_trout', weight: 1 }] },
         ],
     },

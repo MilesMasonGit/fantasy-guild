@@ -334,10 +334,10 @@ function paceWithPond() {
     const c = paceContent();
     c.items.item_fish = { id: 'item_fish', name: 'Fish', type: 'food' };
     c.items.item_eel = { id: 'item_eel', name: 'Eel', type: 'food' };
-    c.items.item_rod = { id: 'item_rod', name: 'Rod', type: 'tool', equipSlot: 'hand', tool: { kind: 'fishing_rod', tier: 1, starter: true } };
+    c.items.item_trap = { id: 'item_trap', name: 'Trap', type: 'tool', equipSlot: 'hand', tool: { kind: 'fishing_trap', tier: 1, starter: true } };
     c.tokens.token_pond = {
         id: 'token_pond', name: 'Pond', uses: null, config: { skill: 'fishing', skillRequired: 1, cycleTimeMs: 8000, xp: 1, inputs: [], outputs: [] },
-        catchPools: [{ tool: 'fishing_rod', catches: [{ itemId: 'item_fish', weight: 3 }, { itemId: 'item_eel', weight: 1 }] }]
+        catchPools: [{ tool: 'fishing_trap', catches: [{ itemId: 'item_fish', weight: 3 }, { itemId: 'item_eel', weight: 1 }] }]
     };
     c.starterCamp.tokens.push({ typeId: 'token_pond', x: 5, y: 0 });
     return c;
