@@ -18,7 +18,7 @@ import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 import { registerItems } from '../config/registries/itemRegistry.js';
 import { registerEffects } from '../config/registries/effectRegistry.js';
 import { makeStatement, KEYWORD } from '../systems/effects/statements.js';
-import { DRINK_CYCLES } from '../config/loopConstants.js';
+import { DRINK_CYCLES, WORK_POTION_CYCLES } from '../config/loopConstants.js';
 import { resetMatTuning } from '../config/matTuning.js';
 import * as fixtures from '../../bench/fixtures.mjs';
 import { withoutShippedPerks } from './fixtures/noPerks.js';
@@ -28,15 +28,15 @@ withoutShippedPerks();
 
 /**
  * Brief 230 S6b: a forester with a Birdwatcher (a work potion: a 25 % chance of a Bird Nest as each
- * Forestry cycle completes) and a Coffee (a drink: cycles at half time for ten cycles). Every
- * Birdwatcher is drunk at a cycle start and each nest is one random draw at a cycle's end, so the
- * same 25 cycles in 100 ms ticks and in 1000 ms steps drink the same potions and Coffees, keep the
+ * Forestry cycle completes) and a Coffee (a drink: cycles at half time), each lasting 25 cycles. A
+ * dose starts at a cycle start and each nest is one random draw at a cycle's end, so the
+ * same 60 cycles in 100 ms ticks and in 1000 ms steps drink the same potions and Coffees, keep the
  * same dose and drop the same nests; and a catch-up ends where the same time played live ends.
  */
 
 const NOW = 1_800_000_000_000;
-const AWAY_MS = 90_000;
-const CYCLES = 25;
+const AWAY_MS = 240_000;
+const CYCLES = 60;
 
 class SilentAudio {
     constructor() { this.paused = true; this.currentTime = 0; }
@@ -93,7 +93,7 @@ function seeded() {
 }
 const realRandom = Math.random;
 
-/** One forester pinned to one tree, carrying a Birdwatcher and a Coffee: 30 potions, 2 Coffees. */
+/** One forester pinned to one tree, carrying a Birdwatcher and a Coffee: 2 potions, 2 Coffees. */
 function buildBoard() {
     stream.state = 61;
     stream.draws = 0;
@@ -103,7 +103,7 @@ function buildBoard() {
     const [forester] = fixtures.makeHeroes(1, { forestry: 10 });
     forester.equipment[0] = 'cu6_birdwatcher';
     forester.equipment[1] = 'cu6_coffee';
-    InventoryManager.addItem('cu6_birdwatcher', 30);
+    InventoryManager.addItem('cu6_birdwatcher', 2);
     InventoryManager.addItem('cu6_coffee', 2);
     const tree = fixtures.placeAt('cu6_tree', 400, 400);
     fixtures.orderAt(forester.id, { x: tree.x, y: tree.y });
@@ -127,7 +127,7 @@ function snapshot(ids, extra = {}) {
     };
 }
 
-/** Watch the forester's cycles and drinks; `at` is a snapshot taken as the 25th cycle completes. */
+/** Watch the forester's cycles and drinks; `at` is a snapshot taken as the 60th cycle completes. */
 function watch(ids) {
     const seen = { cycles: 0, drunk: [], at: null };
     const offs = [
@@ -141,8 +141,8 @@ function watch(ids) {
     return { seen, stop: () => { offs.forEach(off => off()); return seen; } };
 }
 
-/** Play in `stepMs` steps through the plain loop until the 25th cycle has completed. */
-function playTo25(stepMs) {
+/** Play in `stepMs` steps through the plain loop until the 60th cycle has completed. */
+function playToTheEnd(stepMs) {
     const ids = buildBoard();
     const w = watch(ids);
     for (let i = 0; i < 400_000 / stepMs && !w.seen.at; i++) GameLoop.runHandlers(stepMs);
@@ -177,22 +177,24 @@ afterAll(() => {
 });
 
 describe('work potions and drinks during time away', () => {
-    it('⭐ 25 Forestry cycles drink, dose and drop the same in 100 ms ticks as in 1000 ms steps', () => {
-        const fine = playTo25(100);
-        const coarse = playTo25(1000);
+    it('⭐ 60 Forestry cycles drink, dose and drop the same in 100 ms ticks as in 1000 ms steps', () => {
+        const fine = playToTheEnd(100);
+        const coarse = playToTheEnd(1000);
         expect(fine.at).not.toBeNull();
         expect(coarse.at).toEqual(fine.at);
 
-        // And the doses really ran: 25 Birdwatchers, two Coffees (the second ran out at cycle 20,
-        // then the Bank was dry), some nests and not all.
-        expect(fine.at.birdwatchers).toBe(30 - CYCLES);
+        // And the doses really ran: two Birdwatchers and two Coffees (the second of each ran out at
+        // cycle 50, then the Bank was dry), some nests and not all.
+        expect(fine.at.birdwatchers).toBe(0);
         expect(fine.at.coffees).toBe(0);
-        expect(fine.at.drinkCycles).toEqual({ cu6_coffee: 0 });
+        expect(fine.at.drinkCycles).toEqual({ cu6_birdwatcher: 0, cu6_coffee: 0 });
         expect(fine.drunk.filter(id => id === 'cu6_coffee')).toHaveLength(2);
+        expect(fine.drunk.filter(id => id === 'cu6_birdwatcher')).toHaveLength(2);
         expect(fine.at.nests).toBeGreaterThan(0);
         expect(fine.at.nests).toBeLessThan(CYCLES);
         expect(fine.at.logs).toBe(CYCLES);
         expect(DRINK_CYCLES * 2).toBeLessThan(CYCLES);
+        expect(WORK_POTION_CYCLES * 2).toBeLessThan(CYCLES);
     });
 
     it('⭐ a catch-up ends exactly where the same 1000 ms steps through the plain loop end', async () => {

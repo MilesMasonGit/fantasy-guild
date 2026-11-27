@@ -25,7 +25,7 @@ import { ModifierAggregator } from '../systems/effects/ModifierAggregator.js';
 import * as HeroEffects from '../systems/hero/HeroEffects.js';
 import * as LiveEffects from '../systems/effects/LiveEffects.js';
 import * as ConsumptionSystem from '../systems/hero/ConsumptionSystem.js';
-import { DRINK_CYCLES, ELIXIR_FIGHTS } from '../config/loopConstants.js';
+import { DRINK_CYCLES, WORK_POTION_CYCLES } from '../config/loopConstants.js';
 import { renderStatement } from '../systems/effects/statementText.js';
 import { usedBubbleText } from '../ui/components/board/fx/matFx.js';
 import { auditContent } from '../systems/core/ContentAudit.js';
@@ -170,15 +170,16 @@ beforeEach(() => {
 });
 
 describe('⭐ a work potion is spent only when a cycle of its own skill starts', () => {
-    it('one Birdwatcher per Forestry cycle, and a Bird Nest as each cycle completes', () => {
+    it('one Birdwatcher lasts its Forestry cycles, and a Bird Nest drops as each cycle completes', () => {
         hero.equipment[0] = 's6b_birdwatcher';
         InventoryManager.addItem('s6b_birdwatcher', 5);
         place('s6b_tree', TREE_AT);
         untilCycles(3);
 
-        expect(InventoryManager.getItemCount('s6b_birdwatcher')).toBe(2);
+        expect(InventoryManager.getItemCount('s6b_birdwatcher')).toBe(4);
+        expect(hero.drinkCycles).toEqual({ s6b_birdwatcher: WORK_POTION_CYCLES - 3 });
         expect(onBoard('s6b_nest')).toBe(3);
-        expect(consumed.map(c => [c.itemId, c.dose])).toEqual(Array(3).fill(['s6b_birdwatcher', 'potion']));
+        expect(consumed.map(c => [c.itemId, c.dose])).toEqual([['s6b_birdwatcher', 'potion']]);
         // The effect lasted each cycle: it was on at the completion, and is off after it.
         expect(completions.every(c => c.effects.includes('s6b_fx_birdwatcher'))).toBe(true);
         expect(hero.effects).toEqual([]);
@@ -199,10 +200,13 @@ describe('⭐ a work potion is spent only when a cycle of its own skill starts',
         hero.equipment[0] = 's6b_birdwatcher';
         InventoryManager.addItem('s6b_birdwatcher', 1);
         place('s6b_tree', TREE_AT);
-        untilCycles(3);
+        untilCycles(WORK_POTION_CYCLES);
+        const nests = onBoard('s6b_nest');
+        expect(nests).toBeGreaterThanOrEqual(WORK_POTION_CYCLES);
+        untilCycles(2);
 
         expect(InventoryManager.getItemCount('s6b_birdwatcher')).toBe(0);
-        expect(onBoard('s6b_nest')).toBe(1);
+        expect(onBoard('s6b_nest')).toBe(nests);
         expect(consumed).toHaveLength(1);
     });
 
@@ -220,7 +224,7 @@ describe('⭐ a work potion is spent only when a cycle of its own skill starts',
     });
 });
 
-describe('⭐ a drink lasts ten work cycles', () => {
+describe('⭐ a drink lasts its work cycles', () => {
     it('is drunk at the first cycle and counts each cycle on the hero', () => {
         hero.equipment[0] = 's6b_coffee';
         InventoryManager.addItem('s6b_coffee', 3);
@@ -232,9 +236,9 @@ describe('⭐ a drink lasts ten work cycles', () => {
         expect(consumed).toEqual([expect.objectContaining({ heroId: 'hero_1', itemId: 's6b_coffee', dose: 'drink', amount: 0 })]);
     });
 
-    it('is ten cycles for every drink, the same number as an elixir\'s fights', () => {
-        expect(DRINK_CYCLES).toBe(10);
-        expect(DRINK_CYCLES).toBe(ELIXIR_FIGHTS);
+    it('is 25 cycles for every drink, the same as a work potion (BALANCE_RULES section 5)', () => {
+        expect(DRINK_CYCLES).toBe(25);
+        expect(DRINK_CYCLES).toBe(WORK_POTION_CYCLES);
     });
 
     it('Coffee: its cycles run at half time while the dose lasts', () => {
@@ -244,7 +248,7 @@ describe('⭐ a drink lasts ten work cycles', () => {
         untilCycles(3);
         expect(lastGap()).toBe(20);
 
-        // Ten cycles later the dose is out and the Bank is empty: back to 4 s.
+        // The dose's cycles later it is out and the Bank is empty: back to 4 s.
         untilCycles(DRINK_CYCLES);
         expect(InventoryManager.getItemCount('s6b_coffee')).toBe(0);
         expect(hero.drinkCycles.s6b_coffee).toBe(0);
@@ -265,7 +269,7 @@ describe('⭐ a drink lasts ten work cycles', () => {
         expect(consumed).toHaveLength(2);
     });
 
-    it('keeps working for the rest of its ten cycles after the Bank runs dry', () => {
+    it('keeps working for the rest of its cycles after the Bank runs dry', () => {
         hero.equipment[0] = 's6b_coffee';
         InventoryManager.addItem('s6b_coffee', 1);
         place('s6b_tree', TREE_AT);
@@ -304,7 +308,7 @@ describe('⭐ a drink lasts ten work cycles', () => {
 
     it('a fight is not a work cycle: an elixir\'s count and a drink\'s are apart', () => {
         expect(ConsumptionSystem.workDoseOf('s6b_coffee')).toBe(DRINK_CYCLES);
-        expect(ConsumptionSystem.workDoseOf('s6b_birdwatcher')).toBe(1);
+        expect(ConsumptionSystem.workDoseOf('s6b_birdwatcher')).toBe(WORK_POTION_CYCLES);
         expect(ConsumptionSystem.isFightElixir('s6b_birdwatcher')).toBe(false);
         expect(ConsumptionSystem.isFightElixir('s6b_coffee')).toBe(false);
     });
