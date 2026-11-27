@@ -270,6 +270,13 @@ describe('pack boosts on the command line', () => {
     it('never writes the workspace', () => {
         expect(hashOf(f.workspaceFile)).toBe(hashBefore);
     });
+
+    it('writes the unclear list beside the pack when --unclear names none', async () => {
+        const g = setUp();
+        const r = await cms(['pack', 'boosts', `--workspace=${g.workspaceFile}`, `--out=${g.packFile}`]);
+        expect(r.code, r.err).toBe(0);
+        expect(fs.readFileSync(path.join(path.dirname(g.packFile), 'test-boosts-unclear.txt'), 'utf8')).toContain('st_merry');
+    }, 60000);
 });
 
 describe('pack boosts refuses', () => {

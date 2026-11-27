@@ -72,7 +72,7 @@ export const USAGE = `Usage: npm run cms -- <command> [options]
                                   tier's XP total, yield +50 %, rare finds +100 %). Tier totals are
                                   the ledger's boost budget (Maxed). Only the number moves. What
                                   fits no source or mixes kinds is listed (and written to
-                                  --unclear), never guessed. Written to --out (never into
+                                  --unclear, else <id>-unclear.txt beside the pack), never guessed. Written to --out (never into
                                   cms/incoming/); reads the workspace, never saves it.
   recalc [--all]                  Recalculate (the economic simulator) on the workspace and save it.
   sync [--confirm-removals] [--no-commit]
@@ -563,8 +563,9 @@ async function cmdPackBoosts(paths, options, load, out) {
         out('Unclear (not written): mapping doubts for the content session, number doubts for the balancer:');
         for (const line of boostLines(unclear)) out(line);
     }
-    if (typeof options.unclear === 'string') {
-        const listFile = path.resolve(options.unclear);
+    {
+        // Always written: beside the pack unless --unclear names another file.
+        const listFile = typeof options.unclear === 'string' ? path.resolve(options.unclear) : path.join(path.dirname(file), `${id}-unclear.txt`);
         fs.writeFileSync(listFile, ['Boost statements the rule could not size, left as they are:', ...boostLines(unclear), '', 'Skipped:', ...boostLines(skipped), '', ...notes, ''].join('\n'));
         out(`The unclear list written to ${shortPath(paths.root, listFile)}.`);
     }
