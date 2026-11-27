@@ -164,7 +164,7 @@ The base times (6, 8 and 12 seconds) are starting values (agent's call). Builds,
 
 | Rule | Ruling |
 |---|---|
-| **Places** | **Reach 240 u, Tokens at least 128 u apart (edges touching): 12 places round a node** (owner, 2026-11-26, [concept_token_spacing.md](../active/concept_token_spacing.md), brief 890). A maker's station has about 8 places for buildings. **A gathering site spends 6 or 7 on its camp, its spawner and its 4 or 5 nodes, leaving about 5 for buildings**, so gatherers choose harder than makers |
+| **Places** | **Reach 240 u, Tokens at least 128 u apart (edges touching): 12 places round a node** (owner, 2026-11-26, [concept_token_spacing.md](../active/concept_token_spacing.md), brief 890). A maker's station has about 8 places for buildings. **A gathering site spends 6 or 7 on its camp, its spawner and its 4 or 5 nodes, leaving 5 or 6 for buildings**, so gatherers choose harder than makers |
 | **Choosing** | **A perfect site cannot max every kind**: about 4 places max one kind (speed, yield, XP or rare finds), so a site leans one or two ways. One building's number is the kind's building share ÷ 4 |
 | **Typical** | **A typical player fills most of the places** (6 or more). Players differ by which boosts they pick, not by how many they fit |
 | **Station upgrades** | **A station's own upgrade is a boost** and shares the tier's budget with the buildings round it. Today's upgraded stations run up to 60 % faster by themselves; they come down to the budget |
