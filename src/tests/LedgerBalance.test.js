@@ -1,19 +1,20 @@
 import { describe, it, expect } from 'vitest';
 import { buildLedger } from '../systems/progression/ledger/engine.js';
 import { buildPace } from '../../cms/src/engine/ledger/pace.js';
-import { proposeBalance, applyProposals, LEVER, CANT_FIX } from '../../cms/src/engine/ledger/balance.js';
-import { balanceContent, calmContent } from './fixtures/balanceWorld.js';
+import { proposeBalance, applyProposals, wayOutSuggestion, LEVER, CANT_FIX } from '../../cms/src/engine/ledger/balance.js';
+import { balanceContent, calmContent, withWorld } from './fixtures/balanceWorld.js';
 
 /**
- * The ledger's balancing preview (brief 290 L9): XP a cycle, level gates, costs and times, and boost
- * strengths proposed so the curve's player (Maxed) follows the pace curve, each stage meets its budget and
- * boosts meet their targets; what numbers cannot fix is reported. Nothing is applied: the proposals
- * come back with the pace before and after them. Fixture: `fixtures/balanceWorld.js`.
+ * The ledger's balancing preview (brief 290 L9): XP a cycle, costs and times, boost strengths and
+ * coins proposed so the curve's player (Maxed) follows the pace curve and boosts meet their targets;
+ * each stage is its way out (settling the next place, owner 2026-11-26), and one off its budget is
+ * reported with the settle level or coins the world tables would need. What numbers cannot fix is
+ * reported. Nothing is applied: the proposals come back with the pace before and after them.
+ * Fixture: `fixtures/balanceWorld.js`.
  */
 
-// The stages follow the pace rule (brief 880 L3): the Starter Camp is done when the curve reaches level 9, about 30 minutes in.
-// Eight heroes from the start, so a stage is its slowest path, the levers' measure; with the reference guild's one hero
-// the camp is its hero's work, which no lever shrinks alone (below).
+// The stages follow the pace rule (brief 880 L3): the Starter Camp's budget is the curve's time to level 9, about 30 minutes.
+// Eight heroes from the start, so a path is its slowest skill.
 const SPARE_HEROES = [{ tier: 0, heroes: 8 }];
 const CAMP_ONLY = { tierLevels: [{ tier: 0, level: 1 }, { tier: 1, level: 9 }], heroesByTier: SPARE_HEROES };
 const proposalOf = (result, key, field) => result.proposals.find(p => p.key === key && p.field === field) || null;
@@ -22,21 +23,7 @@ const stage = (summary, tier) => summary.stages.find(s => s.tier === tier);
 describe('the balancing preview', () => {
     const result = proposeBalance(balanceContent(), CAMP_ONLY);
 
-    it('moves a too-slow stage to its budget: the camp is hours late before, within the tolerance after', () => {
-        const before = stage(result.before, 0);
-        const after = stage(result.after, 0);
-        // Over an hour late: four Groves round the Oak bring the Statue's wood faster than one did.
-        expect(before.hours).toBeGreaterThan(1);
-        expect(before.within).toBe(false);
-        expect(Math.abs(after.hours * 60 / 30 - 1)).toBeLessThanOrEqual(0.25);
-        expect(after.within).toBe(true);
-    });
-
-    it('lowers a level gate that holds a camp entry back, and raises the XP of a source far slower than the curve', () => {
-        const gate = proposalOf(result, 'recipe:recipe_elixir', 'levelRequirement');
-        expect(gate).toMatchObject({ lever: LEVER.GATE, from: 12 });
-        expect(gate.to).toBeLessThan(12);
-        expect(gate.to).toBeGreaterThanOrEqual(1);
+    it('raises the XP of a source far slower than the curve', () => {
         const xp = proposalOf(result, 'token:token_herbs', 'config.xp');
         expect(xp).toMatchObject({ lever: LEVER.XP, from: 1 });
         expect(xp.to).toBeGreaterThanOrEqual(4);
@@ -89,21 +76,25 @@ describe('the balancing preview', () => {
         const applied = applyProposals(content, r.proposals);
         expect(content).toEqual(balanceContent());
         const pace = buildPace(applied, buildLedger(applied), CAMP_ONLY);
-        expect(pace.stageOf(0).hours).toBeCloseTo(stage(r.after, 0).hours, 6);
-        expect(applied.recipes.find(x => x.id === 'recipe_elixir').levelRequirement).toBe(proposalOf(r, 'recipe:recipe_elixir', 'levelRequirement').to);
+        expect(pace.stageOf(0).hours).toBeCloseTo(stage(r.after, 0).content.hours, 6);
+        expect(applied.tokens.token_herbs.config.xp).toBe(proposalOf(r, 'token:token_herbs', 'config.xp').to);
     });
 });
 
 describe('what the preview never does', () => {
-    it('⭐ says when a stage is its heroes\' work, which no one number shrinks: the camp with the reference guild\'s one hero', () => {
-        const r = proposeBalance(balanceContent(), { tierLevels: CAMP_ONLY.tierLevels });
-        const camp = stage(r.after, 0);
-        expect(camp.within).toBe(false);
-        const left = r.cantFix.find(x => x.key === 'stage:0');
-        expect(left).toMatchObject({ cause: CANT_FIX.HEROES });
-        expect(left.message).toMatch(/its 1 hero set it, with .* of the guild's work by then/);
-        // With heroes to spare the preview brings it within its budget.
-        expect(stage(proposeBalance(balanceContent(), CAMP_ONLY).after, 0).within).toBe(true);
+    it('⭐ never fits a stage\'s full content into its budget: the camp an hour late draws no level gate and no report', () => {
+        // The Elixir, planned for the camp at Alchemy 12, holds its content over an hour against its 30 minutes,
+        // with heroes to spare and with the reference guild's one hero.
+        for (const settings of [CAMP_ONLY, { tierLevels: CAMP_ONLY.tierLevels }]) {
+            const r = proposeBalance(balanceContent(), settings);
+            expect(stage(r.before, 0).content.hours * 60).toBeGreaterThan(stage(r.before, 0).budgetMinutes * 1.25);
+            expect(proposalOf(r, 'recipe:recipe_elixir', 'levelRequirement')).toBeNull();
+            expect(r.proposals.filter(p => /levelRequirement|skillRequired/.test(p.field))).toEqual([]);
+            // A stage with no place after it has no way out to time, and nothing about it to report.
+            expect(stage(r.after, 0)).toMatchObject({ place: null, why: 'none', hours: null, within: true });
+            expect(r.cantFix.filter(c => c.kind === 'stage')).toEqual([]);
+        }
+        expect(LEVER).not.toHaveProperty('GATE');
     });
 
     it('proposes nothing for a world already on its pace', () => {
@@ -143,7 +134,6 @@ describe('what the preview never does', () => {
             }
             expect(Number.isInteger(p.to)).toBe(true);
             expect(p.to).toBeGreaterThanOrEqual(1);
-            if (p.lever === LEVER.GATE) expect(p.to).toBeLessThanOrEqual(99);
             if (p.lever === LEVER.XP) expect(p.to).toBeLessThanOrEqual(p.from * 20);
             if (p.lever === LEVER.TIME) expect(p.to).toBeGreaterThanOrEqual(1000);
         }
@@ -156,5 +146,73 @@ describe('what the preview never does', () => {
     it('never proposes a Guild Hall price or strength, nor moves a gate the world tables set', () => {
         const r = proposeBalance(balanceContent(), CAMP_ONLY);
         expect(r.proposals.every(p => ['item', 'token', 'recipe', 'effect'].includes(p.kind))).toBe(true);
+    });
+});
+
+describe('a stage is its way out', () => {
+    const paceOf = (content) => buildPace(content, buildLedger(content), CAMP_ONLY);
+
+    it('⭐ shows each stage\'s way out before and after, its full content beside it as information', () => {
+        const content = withWorld(balanceContent(), { level: 15 });
+        const r = proposeBalance(content, CAMP_ONLY);
+        const pace = paceOf(content);
+        const g = pace.gateOf(0);
+        const camp = stage(r.before, 0);
+        expect(camp).toMatchObject({ place: g.place, name: g.name, ring: 1, coins: 0, asks: g.asks, floor: ['goods'], complete: true });
+        expect(camp.hours).toBeCloseTo(g.hours, 9);
+        expect(camp.offPct).toBeCloseTo((g.hours * 60 / camp.budgetMinutes - 1) * 100, 0);
+        expect(camp.within).toBe(false);
+        expect(camp.content.entries).toBeGreaterThan(0);
+        expect(camp.content.hours).toBeCloseTo(pace.stageOf(0).hours, 9);
+        // The numbers proposed move the camp's content, not its way out: Forestry 15 is levelled on the Oak, on the curve.
+        expect(stage(r.after, 0).hours).toBeCloseTo(g.hours, 9);
+        expect(r.after.stages[r.after.stages.length - 1]).toMatchObject({ place: null, why: 'last', within: true });
+    });
+
+    it('⭐ reports a slow way out with the settle level that would bring it to its budget, and writes no level', () => {
+        const r = proposeBalance(withWorld(balanceContent(), { level: 15 }), CAMP_ONLY);
+        const camp = stage(r.after, 0);
+        const left = r.cantFix.find(c => c.key === 'stage:0');
+        expect(left).toMatchObject({ kind: 'stage', cause: CANT_FIX.WORLD, related: [camp.place], floor: ['goods'] });
+        expect(left.suggest.level).toMatchObject({ skill: 'forestry', from: 15 });
+        expect(left.suggest.level.to).toBeLessThan(15);
+        expect(left.suggest.level.to).toBeGreaterThan(1);
+        expect(Math.abs(left.suggest.level.hours * 60 / camp.budgetMinutes - 1)).toBeLessThanOrEqual(0.25);
+        expect(left.suggest.coins).toBeNull();
+        expect(left.message).toMatch(/^Starter Camp's way out, settling .+ ring 1 \(Forestry 15\), is had 1 h \d+ min \(\+\d+ %\) into a new game at Maxed, against its budget of 30 min\./);
+        expect(left.message).toMatch(/ring 1's settle level Forestry 15 → about \d+ \(the way out then .+\)\. A suggestion only: the preview writes neither\./);
+        expect(left.message).toMatch(/A floor: its goods price \(the world seed's\) is not counted, so the real way out is later\.$/);
+        expect(r.proposals.filter(p => p.kind === 'world')).toEqual([]);
+    });
+
+    it('a fast way out is reported with the higher settle level that would fill its budget', () => {
+        const r = proposeBalance(withWorld(balanceContent(), { level: 3 }), CAMP_ONLY);
+        const left = r.cantFix.find(c => c.key === 'stage:0');
+        expect(left).toMatchObject({ cause: CANT_FIX.WORLD });
+        expect(left.suggest.level.from).toBe(3);
+        expect(left.suggest.level.to).toBeGreaterThan(3);
+        expect(left.message).toMatch(/\(-\d+ %\) into a new game/);
+        // At the level suggested it is on its budget, and nothing is reported.
+        const on = proposeBalance(withWorld(balanceContent(), { level: left.suggest.level.to }), CAMP_ONLY);
+        expect(stage(on.after, 0).within).toBe(true);
+        expect(on.cantFix.filter(c => c.kind === 'stage')).toEqual([]);
+    });
+
+    it('suggests the ring\'s coins too for a place that asks coins, and no coins for one that asks none', () => {
+        const content = withWorld(balanceContent(), { level: 3, coins: 500 });
+        content.items.item_wood.value = 1;
+        const pace = paceOf(content);
+        const B = pace.settings.stages[0].budgetMinutes;
+        const g = pace.gateOf(0);
+        expect(g.coins).toBe(500);
+        expect(g.priceHours).toBeGreaterThan(0);
+        expect(g.hours * 60).toBeLessThan(B * 0.75);
+        const { level, coins } = wayOutSuggestion(pace, 0, B);
+        expect(coins).toMatchObject({ ring: 1, from: 500 });
+        expect(coins.to).toBeGreaterThan(500);
+        expect(Math.abs(coins.hours * 60 / B - 1)).toBeLessThanOrEqual(0.25);
+        expect(pace.wayOutWith(0, { coins: coins.to }).hours).toBeCloseTo(coins.hours, 9);
+        expect(level.to).toBeGreaterThan(3);
+        expect(wayOutSuggestion(paceOf(withWorld(balanceContent(), { level: 3 })), 0, B).coins).toBeNull();
     });
 });

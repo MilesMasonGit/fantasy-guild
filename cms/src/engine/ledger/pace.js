@@ -121,8 +121,19 @@ export const PACE_TEXT = Object.freeze({
     theft: (enemy, hideout) => `thefts from ${enemy} at ${hideout}`,
     noCurve: (curve, stage) => `no ${curve} coin curve point at or before ${stage}`,
     noIncome: (stage) => `nothing the guild has by ${stage} earns coins`,
-    notReached: 'never reached'
+    notReached: 'never reached',
+    /** Why a way out is a floor (`gateOf(...).floor`): the real one asks more. */
+    wayOutFloor: Object.freeze({
+        goods: 'its goods price (the world seed\'s) is not counted',
+        fights: 'a level it asks is trained by fights, which are not timed'
+    })
 });
+
+/**
+ * Why a way out's time is a floor (`gateOf(...).floor`). ⚠️ A place's goods are the world seed's,
+ * which the settle rule does not carry: while it carries none, every way out is a floor.
+ */
+export const WAY_OUT_FLOOR = Object.freeze({ GOODS: 'goods', FIGHTS: 'fights' });
 
 const isObject = (v) => typeof v === 'object' && v !== null && !Array.isArray(v);
 
@@ -1313,20 +1324,29 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
      * price (`priceHours`: its coins, earned from then), the path (`pathHours`); and the guild's
      * hero-hours for both (`heroHours`: each level's work and the price once), put in by the guild's
      * heroes ({@link hoursForWork}). What else settling it needs (the place before, the ring's star)
-     * is left out: it has its own times.
+     * is left out: it has its own times. `levels` (`{ skill: level }`) and `coins` time it as if it
+     * asked those instead.
      */
-    function placeWayOut(key, tier) {
+    function placeWayOut(key, tier, { levels = null, coins = null } = {}) {
         const at = reach.get(key);
-        const rule = at.rule;
+        const base = at.rule;
+        // The same place asking other levels or coins: what a settle level or a ring's coins moved would give.
+        const rule = levels || coins !== null
+            ? { ...base, gates: base.gates.map(g => ({ ...g, level: levels?.[g.skill] ?? g.level })), coins: coins ?? base.coins }
+            : base;
         let start = 0;
         let complete = true;
         let levelHeroHours = 0;
         const asks = [];
+        const floor = [];
+        // ⚠️ Its goods are the world seed's: the rule carries none, so its price here is its coins alone.
+        if (!list(rule.inputs).length) floor.push(WAY_OUT_FLOOR.GOODS);
         for (const g of rule.gates) {
             // Combat and a fighting style are trained by fights, which the calculator does not time: a floor.
             if (g.skill === COMBAT || isCombatStyle(g.skill)) {
                 asks.push({ skill: g.skill, level: g.level, hours: null });
                 complete = false;
+                if (!floor.includes(WAY_OUT_FLOOR.FIGHTS)) floor.push(WAY_OUT_FLOOR.FIGHTS);
                 continue;
             }
             const { hours, work } = levelTimeTo(g.skill, g.level, TARGET, tier);
@@ -1337,13 +1357,17 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         const give = rule.gives.find(x => x.key === key) || { key, chance: 1 };
         const price = stepOf(rule, give, TARGET, at.tier, start);
         const pathHours = start + price.hours;
-        const heroHours = levelHeroHours + stepWork(key, TARGET, new Map());
+        // A settle step's work is its coins earned (`stepWork`), worked out here for the coins asked.
+        const priceWork = rule === base ? stepWork(key, TARGET, new Map())
+            : rule.coins > 0 ? coinCostHours(rule.coins, TARGET, Math.min(at.tier, budgetTierOf(rule.ring ?? rule.floor))) : 0;
+        const heroHours = levelHeroHours + priceWork;
         const workHours = Number.isFinite(heroHours) ? hoursForWork(heroHours) : Infinity;
         const hours = Math.max(pathHours, workHours);
         return {
             place: key, name: nameOf(key), ring: rule.ring ?? null, asks, coins: rule.coins || 0,
             levelHours: start, priceHours: price.hours, pathHours, levelHeroHours, heroHours, workHours, hours,
-            byWork: Number.isFinite(hours) && workHours > pathHours, complete: complete && Number.isFinite(hours)
+            byWork: Number.isFinite(hours) && workHours > pathHours, complete: complete && Number.isFinite(hours),
+            floor: Number.isFinite(hours) ? floor : []
         };
     }
 
@@ -1355,14 +1379,15 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
      * ({@link placeWayOut}), with the stage's heroes, a fully timed one before any floor.
      * `{ tier, next, why, heroes, place, name, ring, asks: [{ skill, level, hours }], coins,
      * levelHours, priceHours, pathHours, levelHeroHours, heroHours, workHours, hours, byWork, complete,
-     * needs: [{ key, name, hours }], places }`: `why` is null, `'last'` for the last stage, or
-     * `'none'` when no place is of the next stage's tier; `needs` what else settling the place needs,
+     * floor, needs: [{ key, name, hours }], places }`: `why` is null, `'last'` for the last stage, or
+     * `'none'` when no place is of the next stage's tier; `floor` why its time is a floor
+     * ({@link WAY_OUT_FLOOR}, none when it is never had); `needs` what else settling the place needs,
      * each at its arrival, as information; `places` how many it was the soonest of.
      */
     function gateOf(tier) {
         if (gateMemo.has(tier)) return gateMemo.get(tier);
         const next = stageTiers.find(t => t > tier) ?? null;
-        const base = { tier, next, heroes: heroesAt(settings, tier), place: null, hours: null, needs: [], places: 0 };
+        const base = { tier, next, heroes: heroesAt(settings, tier), place: null, hours: null, needs: [], places: 0, floor: [] };
         let out;
         if (next === null) {
             out = { ...base, why: 'last' };
@@ -1583,7 +1608,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                 ? `is had ${PACE_TEXT.hours(g.hours)} into a new game at ${AT_TARGET}, ${off > 0 ? `${Math.round(off * 100)} % over` : `${Math.round(-off * 100)} % under`} its budget of ${formatMinutes(stage.budgetMinutes)} (±${settings.tolerancePct} %)`
                 : `is never had at ${AT_TARGET}: ${wayOutNever(g)}`;
             const heroes = g.byWork ? ` Its ${PACE_TEXT.heroes(g.heroes)} set it: ${PACE_TEXT.hours(g.heroHours)} of the guild's work, where the levels side by side and the price take ${PACE_TEXT.hours(g.pathHours)}.` : '';
-            const floor = g.complete || !Number.isFinite(g.hours) ? '' : ' A floor: a level it asks is trained by fights, which are not timed.';
+            const floor = g.floor.length ? ` A floor: ${g.floor.map(f => PACE_TEXT.wayOutFloor[f]).join(', and ')}.` : '';
             const later = g.needs.filter(n => n.hours > g.hours);
             const needs = later.length ? ` Settling it also waits for ${later.map(n => `${n.name} (had ${PACE_TEXT.hours(n.hours)} in)`).join(' and ')}.` : '';
             add('stage-budget', `stage:${stage.tier}`, `${settling}, ${when}.${heroes}${floor}${needs}${content ? `${content}, not held to the budget.` : ''}`, {
@@ -2522,6 +2547,14 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         stageOf,
         /** The way out of a stage: the soonest of the next stage's places, its levels and its price, with the stage's heroes (what its budget times). */
         gateOf,
+        /**
+         * A stage's way out re-timed as if its place asked other levels (`{ skill: level }`) or coins:
+         * what moving its settle level or its ring's coins would give. Null when the stage has no way out.
+         */
+        wayOutWith: (tier, { levels = null, coins = null } = {}) => {
+            const g = gateOf(tier);
+            return g.place ? placeWayOut(g.place, tier, { levels, coins }) : null;
+        },
         ringOpensAt,
         hallPaybacks,
         hallName,

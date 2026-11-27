@@ -2,11 +2,13 @@ import { proposeBalance, applyProposals, recordOf, LEVER, BALANCE_TEXT, CANT_FIX
 import { contentOf } from './ledgerReport.js';
 import { currentValue, fingerprint, PACK_FORMAT, PACK_VERSION } from './changePacks.js';
 import { adaptToken, adaptRecipe, isInert, isUntagged } from './sim/fieldAdapter.js';
+import { tierLabel } from '../../../src/systems/progression/ledger/plan.js';
 
 /**
  * The Ledger's balancing preview over the CMS workspace (`ledger/balance.js`): the numbers the
- * content would need for the Maxed player (the curve's) to follow the pace curve, each stage to meet its budget
- * and boosts their targets, and what numbers alone cannot fix. A preview: nothing here writes to the
+ * content would need for the Maxed player (the curve's) to follow the pace curve and boosts their
+ * targets, each stage's way out before and after, and what numbers alone cannot fix (a way out off
+ * its budget, for the world tables to move). A preview: nothing here writes to the
  * workspace. Slow (the pace is worked out again after each pass), so the page runs it in the ledger's
  * Worker (`ledgerJobs.js`).
  */
@@ -64,14 +66,29 @@ function formatHours(h) {
 }
 const skillWords = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
+/** What a stage's way out asks, in words: "Trees ring 1: Forestry 5 + 30 coins". */
+export function wayOutText(s) {
+    const asks = [...s.asks.map((a) => `${skillWords(a.skill)} ${a.level}`), ...(s.coins > 0 ? [`${s.coins} coins`] : [])].join(' + ') || 'nothing';
+    return `${s.name}: ${asks}`;
+}
+
+/** Why a stage has no way out, in words. */
+export const noWayOutText = (s) => (s.why === 'last' ? 'the last stage' : `no place of ${tierLabel(s.next)} to settle`);
+
 /** The preview in plain text, for the change pack tool: stages, walls, the largest moves, what numbers cannot fix. */
 export function balanceText(result, { moves = 15 } = {}) {
     const lines = [];
-    lines.push('Stages at Maxed (before → after, against the budget):');
+    lines.push('Way out of each stage at Maxed (before → after, against the budget; its full content after, information only):');
     for (const a of result.after.stages) {
         const b = result.before.stages.find((s) => s.tier === a.tier) || a;
         const pct = (s) => (s.offPct === null ? '' : ` (${s.offPct >= 0 ? '+' : ''}${Math.round(s.offPct)} %)`);
-        lines.push(`- ${a.label}: ${hoursWords(b.hours)}${pct(b)} → ${hoursWords(a.hours)}${pct(a)} against ${formatHours(a.budgetMinutes / 60)}${a.within ? ', within' : ', OUT'}`);
+        const content = a.content.entries ? `; full content ${hoursWords(a.content.hours)}` : '';
+        if (!a.place) {
+            lines.push(`- ${a.label}: ${noWayOutText(a)}${content}`);
+            continue;
+        }
+        const floor = a.floor.length ? ', a floor' : '';
+        lines.push(`- ${a.label}: ${hoursWords(b.hours)}${pct(b)} → ${hoursWords(a.hours)}${pct(a)} against ${formatHours(a.budgetMinutes / 60)}${a.within ? ', within' : ', OUT'} (${wayOutText(a)}${floor})${content}`);
     }
     const wall = (w) => `${skillWords(w.skill)} ${w.from} → ${w.to} (${hoursWords(w.hours)} against ${hoursWords(w.curveHours)}, worst level ${Math.round(w.worst * 10) / 10}×)`;
     lines.push(`Walls at Maxed: ${result.before.walls.length} → ${result.after.walls.length}.`);
@@ -155,20 +172,22 @@ export function balancePack(state, result, { id = null, createdAt = new Date().t
         });
     }
     const tol = state.planSettings?.tolerancePct ?? 25;
+    // ⚠️ The pack gate measures a stage by its full content: the stages the numbers move are declared by it, not by the way out.
     const stages = [];
     for (const after of result.after.stages) {
-        const before = result.before.stages.find((s) => s.tier === after.tier);
-        if (!before || !(before.hours > 0) || !(after.hours > 0) || !Number.isFinite(before.hours) || !Number.isFinite(after.hours)) continue;
-        if (Math.abs(after.hours / before.hours - 1) * 100 <= tol) continue;
+        const was = result.before.stages.find((s) => s.tier === after.tier)?.content.hours;
+        const now = after.content.hours;
+        if (!(was > 0) || !(now > 0) || !Number.isFinite(was) || !Number.isFinite(now)) continue;
+        if (Math.abs(now / was - 1) * 100 <= tol) continue;
         stages.push({
-            tier: after.tier, move: after.hours < before.hours ? 'faster' : 'slower', toHours: Math.round(after.hours * 100) / 100,
-            note: `The balancing preview brings ${after.label} toward its budget of ${Math.round(after.budgetMinutes)} min.`
+            tier: after.tier, move: now < was ? 'faster' : 'slower', toHours: Math.round(now * 100) / 100,
+            note: `The balancing preview's numbers move ${after.label}'s full content, which is information and held to no budget.`
         });
     }
     const day = createdAt.slice(0, 10);
     return {
         format: PACK_FORMAT, version: PACK_VERSION, id: id || `${day}-ledger-balancing-preview`, createdAt,
-        asked: 'The Ledger balancing preview (brief 290 L9): the numbers the Maxed player, the curve player, needs to follow the pace curve, each stage its budget and boosts their targets. A preview to review, not to apply yet.',
+        asked: 'The Ledger balancing preview (brief 290 L9): the numbers the Maxed player, the curve player, needs to follow the pace curve and boosts their targets. A preview to review, not to apply yet.',
         ...(stages.length ? { intent: { stages } } : {}),
         entries
     };

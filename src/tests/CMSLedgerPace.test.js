@@ -147,7 +147,11 @@ describe('the tab', { timeout: 20000 }, () => {
         expect(view.getByRole('tab', { name: 'Pace' }).getAttribute('aria-selected')).toBe('true');
         expect(view.container.querySelector('[data-breakdown="construction|0"]')).toBeTruthy();
         // ⭐ The way out (the next place's level and price) is what the budget times; the full content is information, never red.
-        expect(view.container.querySelector('[data-stage="0"] [data-stage-hours]').textContent).toMatch(/^26 min \(-27 %\)$/);
+        expect(view.container.querySelector('[data-stage="0"] [data-stage-hours]').textContent).toMatch(/^26 min \(-27 %\)\*$/);
+        // ⭐ Every way out is marked a floor, with why: its place's goods price is not counted.
+        const ways = [...view.container.querySelectorAll('[data-stage-gate]')].filter((c) => !c.querySelector('[data-stage-gate-none]'));
+        expect(ways.length).toBeGreaterThan(0);
+        for (const c of ways) expect(c.querySelector('[data-stage-floor]').textContent).toBe("* a floor: its goods price (the world seed's) is not counted");
         expect(view.container.querySelector('[data-stage="0"] [data-stage-gate]').textContent).toMatch(/Trees ring 1: Forestry 5/);
         expect(view.container.querySelector('[data-stage="0"] [data-stage-content]').textContent).toMatch(/^10 h 39 min, 20 entries/);
         expect(view.container.querySelector('[data-stage="0"] [data-stage-content]').getAttribute('style')).not.toMatch(/error|success/);
