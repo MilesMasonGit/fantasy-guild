@@ -10,6 +10,7 @@ import { TERRAIN, TERRAIN_CELL, terrainAt, decodeTerrain } from '../systems/atla
 import { readStone, STONE_SHAPE } from '../systems/atlas/StoneShapes.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { resetStarterCampForTests } from '../config/registries/starterCampRegistry.js';
+import { getTokenType } from '../config/registries/tokenRegistry.js';
 import { resetMatTuning } from '../config/matTuning.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -101,15 +102,19 @@ describe('⭐ the Starter Camp\'s Stone patch', () => {
         }
     });
 
-    it('⭐ a new game opens with it under the camp\'s copper mine', () => {
+    it('⭐ a new game opens with it under the camp\'s mines, or amid its mining nodes when it has none', () => {
         GameState.initNew();
         InventoryManager.init();
         SpriteLayer.init();
         EngineBootstrap.createDefaultGameData();
         const region = Atlas.activeRegion();
         expect(stoneCells(region.terrain)).toBeGreaterThan(8);
-        const mine = BoardState.tokens().find(t => t.typeId === 'token_copper_mine');
+        const standing = BoardState.tokens();
+        const mines = standing.filter(t => (getTokenType(t.typeId)?.standsOn || []).includes(TERRAIN.STONE));
+        const under = mines.length ? mines : standing.filter(t => getTokenType(t.typeId)?.config?.skill === 'mining');
+        expect(under.length).toBeGreaterThan(0);
+        const middle = { x: under.reduce((n, t) => n + t.x, 0) / under.length, y: under.reduce((n, t) => n + t.y, 0) / under.length };
         const [shape] = readStone(region.terrain.stone).shapes;
-        expect(dist(shape, mine)).toBeLessThan(TERRAIN_CELL * 6);
+        expect(dist(shape, middle)).toBeLessThan(TERRAIN_CELL * 6);
     });
 });

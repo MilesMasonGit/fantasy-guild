@@ -39,7 +39,7 @@ describe('The Processing chain in shipped data (7.5)', () => {
     });
 
     describe('Foundations', () => {
-        it('the Wood Foundation is a wood Foundation built with Construction, sold for 15 Oak Wood and coins, first in the list', () => {
+        it('the Wood Foundation is a wood Foundation built with Construction, sold for 15 Oak Wood, no coins (the opening buy is free of coins), first in the list', () => {
             const def = tokens.token_wood_foundation;
             expect(def.name).toBe('Wood Foundation');
             expect(def.foundation).toEqual({ kind: 'wood', skill: 'construction' });
@@ -48,7 +48,6 @@ describe('The Processing chain in shipped data (7.5)', () => {
                 section: 'construction',
                 skills: ['crafting', 'cooking', 'alchemy', 'forestry'],
                 order: 1,
-                coins: 420,
             });
             expect(def.config).toBeNull();
         });
