@@ -34,6 +34,7 @@ const fixtureWorkspace = () => ({
     items: {
         item_ore: { id: 'item_ore', name: 'Ore', type: 'material', plan: live(0) },
         item_pickaxe: { id: 'item_pickaxe', name: 'Pickaxe', type: 'tool', equipSlot: 'hand', effects: [ref('eff_tool')], plan: live(0) },
+        item_ruby_ring: { id: 'item_ruby_ring', name: 'Ruby Ring', type: 'armor', equipSlot: 'trinket', effects: [ref('eff_ring_speed')], plan: live(3) },
         item_topaz_ring: { id: 'item_topaz_ring', name: 'Topaz Ring', type: 'armor', equipSlot: 'trinket', effects: [ref('eff_ring_gems')], plan: live(3) },
         item_tea: { id: 'item_tea', name: 'Tea', type: 'drink', equipSlot: 'drink', effects: [ref('eff_tea')], plan: live(3) },
         item_coffee: { id: 'item_coffee', name: 'Coffee', type: 'drink', equipSlot: 'drink', effects: [ref('eff_coffee')], plan: live(7) },
@@ -88,6 +89,9 @@ const fixtureWorkspace = () => ({
         eff_camp_speed: effect('eff_camp_speed', provides('WORK_TIME', 'percentage', -0.1, { category: 'smithing' })),
         eff_camp_rest: effect('eff_camp_rest', provides('GROW_TIME', 'percentage', -0.2, { category: 'mining' })),
         eff_study: effect('eff_study', provides('XP_BONUS', 'percentage', 0.1, { reach: 'self' })),
+        eff_ring_speed: effect('eff_ring_speed', provides('WORK_TIME', 'percentage', -0.05)),
+        eff_perk_yield: effect('eff_perk_yield', provides('YIELD', 'percentage', 0.1, { category: 'farming' })),
+        eff_perk_loot: effect('eff_perk_loot', provides('LOOT_MULT', 'flat', 5, { category: 'forestry' })),
         eff_ring_gems: effect('eff_ring_gems', { keyword: 'grants', payload: { type: 'BONUS_DROP', itemId: 'item_ore', quantity: 1 }, to: { mode: 'all', value: '' }, reach: 'nearby', when: null }),
         eff_bonus: effect('eff_bonus', { keyword: 'grants', payload: { type: 'BONUS_DROP', itemId: 'item_ore', quantity: 1 }, to: { mode: 'all', value: '' }, reach: 'nearby', when: null }),
         eff_mastery: effect('eff_mastery', provides('WORK_TIME', 'percentage', -0.05, { reach: 'self' })),
@@ -122,6 +126,8 @@ const fixtureWorkspace = () => ({
     skillPerks: {
         mining: { id: 'mining', perks: [{ level: 10, effectId: 'eff_perk_early', scale: 1 }, { level: 85, effectId: 'eff_perk_late', scale: 1 }] },
         fishing: { id: 'fishing', perks: [{ level: 10, effectId: 'eff_perk_xp', scale: 1 }] },
+        farming: { id: 'farming', perks: [{ level: 10, effectId: 'eff_perk_yield', scale: 1 }] },
+        forestry: { id: 'forestry', perks: [{ level: 40, effectId: 'eff_perk_loot', scale: 1 }] },
     },
     hallStars: {
         star_speed: { id: 'star_speed', constellation: 'mining', name: 'Quick Picks', links: ['hall'], ranks: [rank(0, provides('WORK_TIME', 'percentage', -0.06, { category: 'mining', reach: 'board' })), rank(2, provides('WORK_TIME', 'percentage', -0.126, { category: 'mining', reach: 'board' }))] },
@@ -201,6 +207,23 @@ describe('pack boosts: the rule\'s numbers', () => {
         expect(effectValue(result.pack, 'eff_perk_late')).toBe(-0.1);
     });
 
+    it('sizes a yield perk as five times a speed perk slice, cumulative by tier', () => {
+        // Copper: 5 % speed, so +25 % yield. Mythril (level 40, speed 40 %): a quarter is 10 %, so +50 %.
+        expect(effectValue(result.pack, 'eff_perk_yield')).toBe(0.25);
+        expect(effectValue(result.pack, 'eff_perk_loot')).toBe(50);
+    });
+
+    it('lists tools, worn gear and XP perks as needing another effect, sized nowhere', () => {
+        const needs = result.needsEffect.map((n) => `${n.where} ${n.reason}`).join(' | ');
+        expect(needs).toMatch(/eff_tool.*tool/);
+        expect(needs).toMatch(/eff_ring_speed.*gear/);
+        expect(needs).toMatch(/eff_perk_xp.*XP perk/);
+        for (const id of ['eff_tool', 'eff_ring_speed', 'eff_perk_xp']) {
+            expect(result.unclear.some((u) => u.where.includes(id))).toBe(false);
+            expect(result.pack.entries.some((e) => e.id === id)).toBe(false);
+        }
+    });
+
     it('sizes a Guild Hall star\'s ranks to 10 % of its kind in all, in even steps', () => {
         expect(starValues(result.pack, 'star_speed')).toEqual([-0.05, -0.1]);
         expect(starValues(result.pack, 'star_yield')).toEqual([0.0333, 0.0667, 0.1]);
@@ -234,14 +257,12 @@ describe('pack boosts: the rule\'s numbers', () => {
     it('lists what fits none of the sources, or mixes kinds, and writes none of it', () => {
         const reasons = Object.fromEntries(result.unclear.map((u) => [u.where, u.reason]));
         const unclearOf = (fragment) => Object.entries(reasons).find(([w]) => w.includes(fragment))?.[1];
-        expect(unclearOf('eff_tool')).toMatch(/tool/);
         expect(unclearOf('eff_mixed')).toMatch(/more than one kind/);
-        expect(unclearOf('eff_perk_xp')).toMatch(/perk/);
         expect(unclearOf('st_masters')).toMatch(/more than one kind/);
         expect(unclearOf('st_merry')).toMatch(/Beer.*Mead|Mead.*Beer/);
         expect(unclearOf('star_mixed')).toMatch(/more than one kind/);
         const written = new Set(result.pack.entries.map((e) => e.id));
-        for (const id of ['eff_tool', 'eff_mixed', 'eff_perk_xp', 'st_masters', 'st_merry', 'star_mixed']) expect(written.has(id)).toBe(false);
+        for (const id of ['eff_mixed', 'st_masters', 'st_merry', 'star_mixed']) expect(written.has(id)).toBe(false);
     });
 
     it('skips what is left alone on purpose: a parked bearer, an effect nothing carries; fight and other axes are not counted', () => {
@@ -303,8 +324,11 @@ describe('pack boosts on the command line', () => {
         expect(run.out).toMatch(/\d+ unclear/);
         expect(run.out).toMatch(/\d+ skipped/);
         const listed = fs.readFileSync(f.unclearFile, 'utf8');
-        expect(listed).toContain('eff_tool');
         expect(listed).toContain('st_merry');
+        expect(run.out).toMatch(/\d+ needing another effect/);
+        const needs = fs.readFileSync(path.join(path.dirname(f.packFile), 'test-boosts-needs-effect.txt'), 'utf8');
+        expect(needs).toContain('eff_tool');
+        expect(needs).toContain('eff_perk_xp');
     });
 
     it('never writes the workspace', () => {

@@ -71,8 +71,9 @@ export const USAGE = `Usage: npm run cms -- <command> [options]
                                   (a speed drink a quarter of its tier's speed total, an XP one the
                                   tier's XP total, yield +10 to +50 % by tier, rare +100 or +200 %); a
                                   camp variant's own boost and a station's own XP or yield step one
-                                  building's worth. World events, bonus drops and mastery are left
-                                  unsized (skipped). Tier totals are
+                                  building's worth; a yield perk five times a speed perk's slice.
+                                  World events, bonus drops and mastery are left unsized (skipped);
+                                  tools, worn gear and XP perks go to <id>-needs-effect.txt. Tier totals are
                                   the ledger's boost budget (Maxed). Only the number moves. What
                                   fits no source or mixes kinds is listed (and written to
                                   --unclear, else <id>-unclear.txt beside the pack), never guessed. Written to --out (never into
@@ -501,7 +502,7 @@ async function cmdPackNumbers(paths, options, out) {
         result = writeNumberPack(disk.workspace, rows, { id });
     }
     const { pack, filled, unclear, skipped, restUnclear, stumps = [] } = result;
-    out(`Against ${shortPath(paths.root, paths.workspaceFile)} (revision ${disk.revision}), never saved: ${plural(filled.length, 'entry', 'entries')} written, ${unclear.length} unclear, ${skipped.length} skipped.`);
+    out(`Against ${shortPath(paths.root, paths.workspaceFile)} (revision ${disk.revision}), never saved: ${plural(filled.length, 'entry', 'entries')} written, ${unclear.length} unclear, ${needsEffect.length} needing another effect, ${skipped.length} skipped.`);
     const tagged = filled.filter((f) => f.tagged).length;
     if (tagged) out(`  ${plural(tagged, 'edit')} on a record with a Tempo and a Purpose: Recalculate keeps its pinned time and XP.`);
     if (stumps.length) out(`  ${plural(stumps.length, 'Stump')} given its tree's rest, back in ${stumps[0].afterMs / 1000} s: ${stumps.map((x) => x.name).join(', ')}.`);
@@ -521,6 +522,9 @@ async function cmdPackNumbers(paths, options, out) {
         const head = live ? 'Live entries with no clear match to the catalogue, for the content session:' : 'Planned entries with no clear recipe or Token cycle, for the content session:';
         fs.writeFileSync(listFile, [head, ...unclearText(unclear), '', 'Gathering Tokens whose uses and rest are not written in full (the rest rule):', ...unclearText(restUnclear), ''].join('\n'));
         out(`The unclear list written to ${shortPath(paths.root, listFile)}.`);
+        const needsFile = path.join(path.dirname(file), `${id}-needs-effect.txt`);
+        fs.writeFileSync(needsFile, ['Work boosts on tools, worn gear and XP perks, which have no share of the work budget: each needs another effect (for the content session). Left as they are:', ...boostLines(needsEffect), ''].join('\n'));
+        out(`The needs-another-effect list (${needsEffect.length}) written to ${shortPath(paths.root, needsFile)}.`);
     }
     if (!pack) {
         out(`Nothing to write: no ${live ? 'Live' : 'Planned'} entry has numbers from the solver.`);
@@ -550,9 +554,9 @@ async function cmdPackBoosts(paths, options, load, out) {
         out(`The ledger could not be built (${err.message}): an item with no plan tier is listed as unclear.`);
     }
     const result = writeBoostPack(workspace, { id, tierOf });
-    const { pack, filled, unclear, skipped, notes } = result;
+    const { pack, filled, unclear, skipped, needsEffect, notes } = result;
     const moved = filled.filter((f) => f.from !== f.to).length;
-    out(`Against ${shortPath(paths.root, paths.workspaceFile)} (revision ${disk.revision}), never saved: ${plural(filled.length, 'statement')} written (${moved} moved, ${filled.length - moved} at the rule already), ${unclear.length} unclear, ${skipped.length} skipped.`);
+    out(`Against ${shortPath(paths.root, paths.workspaceFile)} (revision ${disk.revision}), never saved: ${plural(filled.length, 'statement')} written (${moved} moved, ${filled.length - moved} at the rule already), ${unclear.length} unclear, ${needsEffect.length} needing another effect, ${skipped.length} skipped.`);
     out(`  Tiers: ${result.tierSource}.`);
     const reasons = new Map();
     for (const s of skipped) reasons.set(s.reason, (reasons.get(s.reason) || 0) + 1);
@@ -571,6 +575,9 @@ async function cmdPackBoosts(paths, options, load, out) {
         const listFile = typeof options.unclear === 'string' ? path.resolve(options.unclear) : path.join(path.dirname(file), `${id}-unclear.txt`);
         fs.writeFileSync(listFile, ['Boost statements the rule could not size, left as they are:', ...boostLines(unclear), '', 'Skipped:', ...boostLines(skipped), '', ...notes, ''].join('\n'));
         out(`The unclear list written to ${shortPath(paths.root, listFile)}.`);
+        const needsFile = path.join(path.dirname(file), `${id}-needs-effect.txt`);
+        fs.writeFileSync(needsFile, ['Work boosts on tools, worn gear and XP perks, which have no share of the work budget: each needs another effect (for the content session). Left as they are:', ...boostLines(needsEffect), ''].join('\n'));
+        out(`The needs-another-effect list (${needsEffect.length}) written to ${shortPath(paths.root, needsFile)}.`);
     }
     if (!pack) {
         out('Nothing to write: every boost the rule sizes is at its number already.');

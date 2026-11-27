@@ -44,6 +44,8 @@ export const BOOST_RULE = Object.freeze({
     building: Object.freeze({ speed: 5, xp: 2.5, yield: 50, rare: 12.5, regrow: 10, coin: 10 }),
     stationStep: 5,
     perkShare: 0.25,
+    // A yield perk is a speed perk's slice at five times the size (the owner, 2026-11-26).
+    perkYieldPerSpeed: 5,
     hallStar: 10,
     // Yield and rare finds by plan tier (the balancer, 2026-11-26): copper (tiers 0 and 1) to darkmetal; rare +200 % from adamantine (owner, 2026-11-07).
     consumable: Object.freeze({
@@ -64,6 +66,13 @@ const UNSIZED = Object.freeze({
     event: 'a world event\'s Token: left unsized, and out of the boost budget check',
     bonus: 'a bonus drop of named items: left unsized, and out of the boost budget check',
     mastery: 'a mastery track\'s rank: left unsized (the ledger rates no mastery)',
+});
+
+/** What has no share of the work budget and needs an effect of its own (the owner, 2026-11-26): for the content session. */
+const NEEDS = Object.freeze({
+    tool: 'a tool has no share of the work budget: it keeps its gating, and this work boost needs another effect',
+    gear: 'worn gear has no share of the work budget: this work boost becomes an effect of its own',
+    xpPerk: 'an XP perk is not sized: it needs another effect',
 });
 
 /** The axes the pack sizes: the kind each moves, the bucket the rule's number is written in, and its sign. */
@@ -289,11 +298,9 @@ export function writeBoostPack(workspace, { id, createdAt = new Date().toISOStri
                 const claim = effectClaim(ref.effectId, index);
                 if (parked) { claim.outcomes.push({ bearer, skip: 'its bearer is Parked' }); continue; }
                 if (axis.kind === 'finds') { claim.outcomes.push({ bearer, skip: UNSIZED.bonus }); continue; }
-                const what = consumable ? 'a drink or potion\'s own always-on rule (not what it applies when drunk)'
-                    : def.type === 'tool' ? 'a tool\'s own boost: tools are not one of the sources the rule sizes'
-                        : def.equipSlot === 'food' ? 'food\'s own boost: food is not one of the sources the rule sizes'
-                            : 'worn gear\'s boost: gear is not one of the sources the rule sizes';
-                claim.outcomes.push({ bearer, unclear: what });
+                if (consumable) { claim.outcomes.push({ bearer, unclear: 'a drink or potion\'s own always-on rule (not what it applies when drunk)' }); continue; }
+                if (def.equipSlot === 'food') { claim.outcomes.push({ bearer, unclear: 'food\'s own boost: food is not one of the sources the rule sizes' }); continue; }
+                claim.outcomes.push({ bearer, needs: def.type === 'tool' ? NEEDS.tool : NEEDS.gear });
             }
             if (!consumable) continue;
             for (const s of list(effects[ref.effectId]?.statements)) {
@@ -330,9 +337,11 @@ export function writeBoostPack(workspace, { id, createdAt = new Date().toISOStri
     }
 
     // ── Skill perks ─────────────────────────────────────────────────────────────────────────────
-    const perkTarget = (level) => BOOST_RULE.perkShare * rowAt(tierAtLevel(level)).speed.maxed;
+    // Speed: a quarter of the tier's speed total; yield the same slice five times over (+25 % where speed is 5 %).
+    const PERK_SLICE = Object.freeze({ speed: 1, yield: BOOST_RULE.perkYieldPerSpeed });
+    const perkTarget = (kind, level) => PERK_SLICE[kind] * BOOST_RULE.perkShare * rowAt(tierAtLevel(level)).speed.maxed;
     for (const [skill, table] of Object.entries(workspace?.skillPerks || {})) {
-        const speed = [];
+        const byKind = { speed: [], yield: [] };
         for (const perk of list(table?.perks)) {
             if (!effects[perk.effectId]) continue;
             const bearer = `${skill} perk at level ${perk.level} (${perk.effectId})`;
@@ -342,26 +351,30 @@ export function writeBoostPack(workspace, { id, createdAt = new Date().toISOStri
                 return isObject(kind) ? { claim, ...kind } : { claim, kind, scale: wholeScale(perk.scale) };
             });
             const kinds = new Set(rows.filter((r) => typeof r.kind === 'string').map((r) => r.kind));
-            if (kinds.size === 1 && kinds.has('speed')) speed.push({ perk, bearer, rows });
-            else settle(rows, bearer, 'perk', (kind) => ({ unclear: `a perk's ${KIND_TEXT[kind]}: the budget gives skill perks a share of speed only` }));
+            const only = kinds.size === 1 ? [...kinds][0] : null;
+            if (byKind[only]) byKind[only].push({ perk, bearer, rows });
+            else if (only === 'xp') for (const r of rows) r.claim.outcomes.push(r.skip ? { bearer, skip: r.skip } : r.unclear ? { bearer, unclear: r.unclear } : { bearer, needs: NEEDS.xpPerk });
+            else settle(rows, bearer, 'perk', (kind) => ({ unclear: `a perk's ${KIND_TEXT[kind]}: skill perks are sized in speed and yield` }));
         }
-        // Perk by perk, to a quarter of the speed total of the tier each perk's level falls in; perks in one tier share its step.
-        speed.sort((a, b) => a.perk.level - b.perk.level);
-        let reached = 0;
-        for (let i = 0; i < speed.length;) {
-            const tier = tierAtLevel(speed[i].perk.level);
-            const row = rowAt(tier);
-            const group = speed.filter((s) => rowAt(tierAtLevel(s.perk.level)) === row);
-            const target = perkTarget(speed[i].perk.level);
-            const each = (target - reached) / group.length;
-            for (const s of group) {
-                settle(s.rows, s.bearer, 'perk', () => (each > 0 ? each : { unclear: `no room left: the perks before it already reach a quarter of ${tierLabel(tier)}'s speed total` }));
+        // Perk by perk, to the kind's slice of the speed total of the tier each perk's level falls in; perks in one tier share its step.
+        for (const [kind, perks] of Object.entries(byKind)) {
+            perks.sort((a, b) => a.perk.level - b.perk.level);
+            let reached = 0;
+            for (let i = 0; i < perks.length;) {
+                const tier = tierAtLevel(perks[i].perk.level);
+                const row = rowAt(tier);
+                const group = perks.filter((p) => rowAt(tierAtLevel(p.perk.level)) === row);
+                const target = perkTarget(kind, perks[i].perk.level);
+                const each = (target - reached) / group.length;
+                for (const p of group) {
+                    settle(p.rows, p.bearer, 'perk', () => (each > 0 ? each : { unclear: `no room left: the perks before it already reach ${tierLabel(tier)}'s ${KIND_TEXT[kind]} slice` }));
+                }
+                reached = Math.max(reached, target);
+                i += group.length;
             }
-            reached = Math.max(reached, target);
-            i += group.length;
+            const full = PERK_SLICE[kind] * BOOST_RULE.perkShare * top.speed.maxed;
+            if (perks.length && reached < full - 1e-9) notes.push(`${skill}'s ${KIND_TEXT[kind]} perks reach ${round(reached, 2)} % of the ${round(full, 2)} % by darkmetal: more perk levels would carry the rest (for the content session).`);
         }
-        const full = BOOST_RULE.perkShare * top.speed.maxed;
-        if (speed.length && reached < full - 1e-9) notes.push(`${skill}'s speed perks reach ${round(reached, 2)} % of the ${round(full, 2)} % by darkmetal: more perk levels would carry the rest (for the content session).`);
     }
 
     // ── Guild Hall stars ────────────────────────────────────────────────────────────────────────
@@ -388,6 +401,7 @@ export function writeBoostPack(workspace, { id, createdAt = new Date().toISOStri
     const filled = [];
     const unclear = [];
     const skipped = [];
+    const needsEffect = [];
     const at = (c) => ({ where: c.where, name: c.name, kind: c.kind, id: c.id, axis: c.statement?.payload?.type, current: c.statement?.payload?.value });
     // Effects nothing carries (or only an enemy's kinds list): skipped, so the counts cover every counted statement.
     for (const effectId of Object.keys(effects)) {
@@ -402,6 +416,12 @@ export function writeBoostPack(workspace, { id, createdAt = new Date().toISOStri
         const sized = c.outcomes.filter((o) => 'value' in o);
         const unsure = c.outcomes.filter((o) => o.unclear);
         const bearers = [...new Set(c.outcomes.map((o) => o.bearer).filter(Boolean))];
+        const needs = c.outcomes.filter((o) => o.needs);
+        if (needs.length && !sized.length && !unsure.length) {
+            needsEffect.push({ ...at(c), bearers, reason: [...new Set(needs.map((o) => o.needs))].join('; ') });
+            continue;
+        }
+        if (needs.length) unsure.push(...needs.map((o) => ({ ...o, unclear: `shared with ${o.bearer}, which needs another effect` })));
         if (!sized.length && !unsure.length) {
             skipped.push({ ...at(c), bearers, reason: [...new Set(c.outcomes.map((o) => o.skip))].join('; ') });
             continue;
@@ -453,7 +473,7 @@ export function writeBoostPack(workspace, { id, createdAt = new Date().toISOStri
         entries,
     } : null;
     const tierSource = `an item's tier is its plan's tier${tierOf ? `, else the tier the ledger first reaches it at (${tiersFromLedger} so)` : ''}; tier totals are the Maxed cells of the boost budget's row for that tier`;
-    return { pack, filled, unclear, skipped, notes, tierSource };
+    return { pack, filled, unclear, skipped, needsEffect, notes, tierSource };
 }
 
 /** A list of the writer's rows as text lines. */
