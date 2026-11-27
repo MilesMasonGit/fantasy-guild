@@ -85,7 +85,8 @@ export function hallCell(w, h) {
  *          spawners have a clearing
  */
 export function layoutSlots(fixtures, { w, h, hall, list, squeeze = false }) {
-    const cells = fixtures.lattice(w, h, STEP, MARGIN).filter(p => Math.hypot(p.x - hall.x, p.y - hall.y) > STEP * 1.0625);
+    // The lattice, minus the Hall's own cell and its four side cells.
+    const cells = fixtures.lattice(w, h, STEP, MARGIN).filter(p => Math.hypot(p.x - hall.x, p.y - hall.y) > 170);
     const col = (p) => Math.round((p.x - MARGIN) / STEP);
     const row = (p) => Math.round((p.y - MARGIN) / STEP);
     const even = cells.filter(p => (col(p) + row(p)) % 2 === 0);
