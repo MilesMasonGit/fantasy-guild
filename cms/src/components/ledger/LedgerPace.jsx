@@ -168,7 +168,7 @@ export default function LedgerPace({ report, onRefresh, onOpen, focusSkill }) {
       <section className="rounded-xl border bg-[#1a1a1e] border-white/10 p-4 space-y-2" aria-label="Guild Hall paybacks">
         <h3 className={sectionHead}>Guild Hall paybacks</h3>
         <p className="text-[10px] text-gray-500">
-          Each rank that adds a rate, at the tier it belongs to and at Typical: the hours its price takes to gather (at Typical's rates before the Hall), and for a star still closed there the stars lit to open it, against the hours it saves an hour on the work it pays back soonest on. Typical buys a rank that pays for itself on that work within {hoursText(pace.settings.hallPaybackHours)} (the Guild Hall payback in the settings); one it does not buy is red. The proposed price is the most of its tier's material it can cost and still pay back in time, never below the rank before (raised ones are marked, and red when the raise makes them pay back too slowly): a preview, never applied. Over all its work is the payback check: the rank's payback counting every piece of work it boosts that the guild's heroes can work at once, against the payback curve (1 hour × 24^(L / 80), BALANCE_RULES section 5): red when slower past the tolerance, amber when far quicker. A rank priced in what its stage cannot gather, and ranks that add no rate (Bank tabs, a wound's length, a loadout slot, a camp's reach) are listed under Problems.
+          Each rank that adds a rate, at the tier it belongs to and at Typical: the hours its price takes to gather (at Typical's rates before the Hall), and for a star still closed there the stars lit to open it, against the hours it saves an hour on the work it pays back soonest on (information: Typical buys a rank on a work that pays for itself there within {hoursText(pace.settings.hallPaybackHours)}, the Guild Hall payback in the settings). Over all its work is the payback check: the rank's payback counting every piece of work it boosts that the guild's heroes can work at once, against the payback curve (1 hour × 24^(L / 80), BALANCE_RULES section 5): red when slower past the tolerance, amber when far quicker. The proposed price is the most of its tier's material it can cost and still pay back on the curve over all its work, never below the rank before (raised ones are marked, and red when the raise makes them pay back too slowly): a preview, never applied. A rank priced in what its stage cannot gather, and ranks that add no rate (Bank tabs, a wound's length, a loadout slot, a camp's reach) are listed under Problems.
         </p>
         <table className="w-full" style={{ borderCollapse: 'collapse' }}>
           <thead>
@@ -193,14 +193,14 @@ export default function LedgerPace({ report, onRefresh, onOpen, focusSkill }) {
                 <td style={{ ...cell, color: 'var(--color-text-secondary)' }}>
                   {h.savesText}{h.workText && !h.enabler ? <span className="text-gray-500"> on {h.workText}</span> : null}
                 </td>
-                <td style={{ ...cell, fontWeight: h.pays ? 400 : 700, color: h.enabler ? 'var(--color-text-muted)' : h.pays ? 'var(--color-success)' : 'var(--color-error)' }} data-hall-payback>
+                <td style={{ ...cell, color: h.enabler ? 'var(--color-text-muted)' : 'var(--color-text-secondary)' }} data-hall-payback>
                   {h.paybackText}
                 </td>
                 <td style={{ ...cell, fontWeight: h.guild?.off ? 700 : 400, color: !h.guild ? 'var(--color-text-muted)' : h.guild.off ? (h.guild.slow ? 'var(--color-error)' : 'var(--color-warning)') : 'var(--color-success)' }} data-hall-guild>
                   {h.guild ? <>{h.guild.text} <span className="text-gray-500">({h.guild.curveText})</span></> : '—'}
                 </td>
                 <td style={{ ...cell, color: h.proposed && !h.proposed.why && !h.proposed.pays ? 'var(--color-error)' : 'var(--color-text-muted)' }} data-hall-proposed>
-                  {h.proposed ? (h.proposed.why ? h.proposed.why : `${h.proposed.priceText} (pays back in ${hoursText(h.proposed.payback)}${h.proposed.raised ? ', raised to the rank before' : ''})`) : '—'}
+                  {h.proposed ? (h.proposed.why ? h.proposed.why : `${h.proposed.priceText} (pays back in ${hoursText(h.proposed.payback)} over all its work${h.proposed.raised ? ', raised to the rank before' : ''})`) : '—'}
                 </td>
               </tr>
             ))}

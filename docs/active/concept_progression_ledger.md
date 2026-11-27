@@ -300,12 +300,15 @@ cheapest stars before it (their rank 1 added to the price); a rank that gives a 
 floor can make two ranks equal) is bought on the way to the one above. **Maxed** takes every rank.
 
 **The payback check and the price.** Every rank, at its tier (never past the last stage the pace
-knows), at Typical, on the work it saves most on: payback = price hours / hours saved an hour; over
-`hallPaybackHours` it is red and a Problem. The proposed price is the most of its tier's gathered
-material (the star's skill's own where there is one, never what the star pays) it can cost and still
-pay back within `hallPaybackHours`, rounded down to two figures, then **never below the rank before**
+knows), at Typical, over **all the work it boosts** (the most-saving works open by its stage, one per
+hero the reference guild has there): payback = price hours (and the stars lit to open it) / hours
+saved an hour; slower than the payback curve past the tolerance it is red and a Problem
+(`hall-guild-payback`). The payback on the one work it saves most on is shown as information. The
+proposed price is the most of its tier's gathered material (the star's skill's own where there is
+one, never what the star pays) it can cost and still pay back on the curve over all that work,
+rounded down to two figures, then **never below the rank before**
 (the director, 2026-10-30): in hours to gather and, in the same material, in quantity, rounded up.
-A raised proposal is marked, and red when the raise makes it pay back slower than the Hall's time.
+A raised proposal is marked, and red when the raise makes it pay back slower than the curve allows.
 A preview (brief 290's rule).
 
 **On H1's QA sky** (shipped data, default settings): every rank that adds a rate pays back, in 1 to

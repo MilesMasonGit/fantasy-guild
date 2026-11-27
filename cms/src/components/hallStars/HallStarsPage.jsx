@@ -15,7 +15,8 @@ import { hallRows, hallRowsOf, hoursText } from '../../engine/ledgerPace';
  * `data/hallStars.json`. A star's name, description, constellation, place and tag sit here; its
  * ranks (price, rules, Passive Production lines) show as the game reads them and come in by change
  * pack. Each rank's **tier** is the owner's, set here; the ledger then says what the rank pays back
- * in at Typical and proposes a price for it (a preview: nothing is applied). Bunk Beds, Bank Tabs
+ * in at Typical over all the work it boosts, on the payback curve, and proposes a price for it (a
+ * preview: nothing is applied). Bunk Beds, Bank Tabs
  * and the Wishing Well are stars like the rest (the game gives a hero and a Bank tab a rank by id);
  * until a pack brings them the game stands in for them, and the stand-ins are not listed.
  * ⚠️ The paybacks are the ledger's whole pace, worked out when the page opens and on Refresh, not on
@@ -27,7 +28,7 @@ function workOutPricing() {
   const state = useEntityStore.getState();
   if (state.hallStars == null && state.hallConstellations == null) return null;
   const pace = workspacePace(state);
-  return { rows: hallRows(pace), paybackHours: pace.settings.hallPaybackHours, at: new Date() };
+  return { rows: hallRows(pace), at: new Date() };
 }
 
 /** A raw rank with its tier set, or cleared with `''`. */
@@ -112,7 +113,7 @@ export default function HallStarsPage() {
     <div className="h-full overflow-y-auto p-4 space-y-4" data-testid="hall-stars-page">
       <div className="flex items-center justify-between gap-3">
         <p className="text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
-          Set each rank's tier; the ledger says what it pays back in at Typical (red beyond {pricing ? hoursText(pricing.paybackHours) : 'the payback time'}) and proposes a price: the most of its tier's material it can cost and still pay back in time, never below the rank before. Proposed prices are a preview and are never applied.
+          Set each rank's tier; the ledger says what it pays back in at Typical over all the work it boosts (red when slower than the payback curve, 1 hour × 24^(L / 80) at the level its tier opens at, past the tolerance) and proposes a price: the most of its tier's material it can cost and still pay back on the curve, never below the rank before. Proposed prices are a preview and are never applied.
         </p>
         <button
           type="button"
@@ -260,12 +261,12 @@ function RankPricing({ row }) {
       <span
         data-hall-rank-payback
         style={{ color: row.enabler ? 'var(--color-text-muted)' : row.pays ? 'var(--color-success)' : 'var(--color-error)', fontWeight: row.pays ? 400 : 700 }}
-        title={row.workText ? `Saves ${row.savesText} on ${row.workText}, at ${tierLabel(row.cap)}` : undefined}
+        title={row.workText ? `Saves most on ${row.workText}: ${row.savesText}, paying back in ${row.paybackText} there, at ${tierLabel(row.cap)}` : undefined}
       >
-        · {row.priceTimeText} to gather{row.openingText ? `, ${row.openingText}` : ''}, saves {row.savesText}: pays back in {row.paybackText}
+        · {row.priceTimeText} to gather{row.openingText ? `, ${row.openingText}` : ''}, {row.enabler ? `saves ${row.savesText}: an enabler` : `saves ${row.guildSavesText} over all its work: pays back in ${row.guildPaybackText} (curve ${row.curveText})`}
       </span>
       <span data-hall-rank-proposed style={{ color: row.proposed && !row.proposed.why && !row.proposed.pays ? 'var(--color-error)' : 'var(--color-accent-hover)' }}>
-        · proposed (preview): {row.proposed?.why ? row.proposed.why : `${row.proposed.priceText}, pays back in ${hoursText(row.proposed.payback)}${row.proposed.raised ? ', raised to the rank before' : ''}`}
+        · proposed (preview): {row.proposed?.why ? row.proposed.why : `${row.proposed.priceText}, pays back in ${hoursText(row.proposed.payback)} over all its work${row.proposed.raised ? ', raised to the rank before' : ''}`}
       </span>
     </>
   );

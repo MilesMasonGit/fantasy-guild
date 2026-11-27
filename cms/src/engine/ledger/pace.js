@@ -2119,9 +2119,11 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     let hallMemo = null;
     /**
      * Every Guild Hall rank, stand-in and authored: its tier, price, the hours that price takes to
-     * gather at Typical (before the Hall), the hours it saves an hour and on which work, its payback
-     * and whether that is within the payback time (`pays`), and the price the ledger proposes for an
-     * authored rank (`proposed`). `rate: false` for a rank that adds no rate (Bank tabs, a wound's
+     * gather at Typical (before the Hall), the hours it saves an hour on the work it pays back soonest
+     * on and its payback there (`gain`, `work`, `payback`: information), its payback over all the work
+     * it boosts on the payback curve ({@link guildPaybackOf}: `guildGain`, `guildPayback`, `curve`),
+     * whether that is within the curve and the tolerance (`pays`, what the hall-guild-payback check
+     * asks), and the price the ledger proposes for an authored rank (`proposed`). `rate: false` for a rank that adds no rate (Bank tabs, a wound's
      * length, a loadout slot, a camp's reach). `cap` is the stage it is measured at: its tier, but
      * never past the last stage the pace knows (no later content exists to work or buy there, and
      * every stage costs a Typical profile of every piece of work).
@@ -2153,7 +2155,9 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                 const enabler = gain === Infinity;
                 const cost = base.priceHours + opening.cost;
                 const payback = cost === 0 ? 0 : enabler ? 0 : gain > 0 ? cost / gain : Infinity;
-                const row = { ...base, rate: true, enabler, gain, work, opening, payback, pays: enabler || payback <= settings.hallPaybackHours };
+                const row = { ...base, rate: true, enabler, gain, work, opening, payback };
+                if (!enabler) Object.assign(row, guildPaybackOf(row));
+                row.pays = enabler || cost === 0 || withinCurve(row.guildPayback, row.curve);
                 if (!track.builtIn) row.proposed = proposePrice(track, rank, row);
                 rows.push(row);
             }
@@ -2164,10 +2168,37 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
     }
 
     /**
+     * A rank's payback over all the work it boosts (BALANCE_RULES section 5: for a star that boosts
+     * the whole guild, payback counts all the work it boosts, not one hero's), on the payback curve
+     * ({@link paybackHoursAt}, at the level its tier opens at). What it saves is the hours an hour each
+     * boosted work open by its stage saves at Typical, the most-saving ones added, one per hero the
+     * reference guild has there: no more work runs at once than the guild has heroes. Its cost is the
+     * price at Typical before the Hall and the stars lit to open it. A Bunk Beds rank is another hero,
+     * an hour of work an hour. `{ guildGain, guildPayback, curve, curveLevel, guildWorks: { heroes, works, counted } }`.
+     */
+    function guildPaybackOf(row) {
+        const heroes = heroesAt(settings, row.cap);
+        const saves = row.id === ROSTER_STAR ? [1] : hallWorksOf(row.id)
+            .filter(w => w.tier <= row.cap)
+            .map(w => profiles.hallRankOn(w.target, row.cap, row.id, row.rank)?.saves || 0)
+            .filter(x => x > 0 && Number.isFinite(x))
+            .sort((a, b) => b - a);
+        const counted = Math.min(heroes, saves.length);
+        const guildGain = sum(saves.slice(0, counted));
+        const cost = row.priceHours + row.opening.cost;
+        const guildPayback = cost === 0 ? 0 : guildGain > 0 ? cost / guildGain : Infinity;
+        const curveLevel = tierLevelAt(settings.tierLevels, row.tier ?? row.cap);
+        return { guildGain, guildPayback, curve: paybackHoursAt(curveLevel), curveLevel, guildWorks: { heroes, works: saves.length, counted } };
+    }
+
+    /** Whether a payback is within the curve and the tolerance, as the hall-guild-payback check holds it. */
+    const withinCurve = (payback, curve) => payback / curve - 1 <= settings.tolerancePct / 100 + 1e-9;
+
+    /**
      * A star's proposed prices never fall from one rank to the next (the director, 2026-10-30): a
      * rank's proposal is raised to the one before it, in hours to gather and, in the same material,
      * in quantity, rounded up. A raised proposal says so (`raised`) and may then pay back slower
-     * than the Hall's payback time (`pays: false`).
+     * than the payback curve allows (`pays: false`).
      */
     function neverCheaper(rows) {
         let before = null;
@@ -2181,10 +2212,10 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                 if (p.itemId === before.itemId) quantity = Math.max(quantity, before.quantity);
                 if (quantity > p.quantity) {
                     const priceHours = quantity / perHour;
-                    const payback = (priceHours + rankCoinHours(row) + row.opening.cost) / row.gain;
+                    const payback = (priceHours + rankCoinHours(row) + row.opening.cost) / row.guildGain;
                     row.proposed = {
                         ...p, quantity, priceHours, payback, raised: true,
-                        pays: payback <= settings.hallPaybackHours,
+                        pays: withinCurve(payback, row.curve),
                         priceText: priceWords([{ itemId: p.itemId, quantity }])
                     };
                 }
@@ -2292,24 +2323,25 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
 
     /**
      * The price the ledger proposes for an authored rank: the most of its tier's material it can
-     * cost and still pay back within the Hall's payback time at Typical, rounded down to two
-     * figures, then never below the rank before ({@link neverCheaper}).
+     * cost and still pay back on the payback curve over all the work it boosts at Typical
+     * ({@link guildPaybackOf}), rounded down to two figures, then never below the rank before
+     * ({@link neverCheaper}).
      * `{ itemId, quantity, priceHours, payback, pays, work }`, or `{ why }` when it cannot propose one.
      */
     function proposePrice(track, rank, row) {
         if (track.tier(rank) === null) return { why: 'no tier set' };
         if (row.enabler) return { why: 'the only source of what it pays, so any price pays back' };
-        if (!(row.gain > 0)) return { why: 'it saves no time at its tier' };
+        if (!(row.guildGain > 0)) return { why: 'it saves no time at its tier' };
         const material = materialFor(track.star, row.tier, row.cap);
         if (!material) return { why: 'no gathered material at its tier' };
-        // What is left of the payback time once the stars on the way are lit and the rank's coins earned.
+        // What is left of the curve's hours of guild-wide saving once the stars on the way are lit and the rank's coins earned.
         const coinHours = rankCoinHours(row);
-        const left = settings.hallPaybackHours * row.gain - row.opening.cost - coinHours;
+        const left = row.curve * row.guildGain - row.opening.cost - coinHours;
         if (!(left > 0)) return { why: row.coins > 0 ? `opening it and earning its ${PACE_TEXT.coins(row.coins)} take longer than it can pay back` : `opening it (${openingWords(row.opening)}) takes longer than it can pay back` };
         const quantity = Math.max(1, roundDown(left * material.perHour));
         const priceHours = quantity / material.perHour;
-        const payback = (priceHours + coinHours + row.opening.cost) / row.gain;
-        return { itemId: material.itemId, quantity, priceText: priceWords([{ itemId: material.itemId, quantity }]), priceHours, payback, pays: payback <= settings.hallPaybackHours, work: material.work };
+        const payback = (priceHours + coinHours + row.opening.cost) / row.guildGain;
+        return { itemId: material.itemId, quantity, priceText: priceWords([{ itemId: material.itemId, quantity }]), priceHours, payback, pays: withinCurve(payback, row.curve), work: material.work };
     }
 
     /** The stars a track opens from (a link counts from both ends), the Hall as `HALL_NODE`. */
@@ -2608,40 +2640,19 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
 
     let hallGuildMemo = null;
     /**
-     * Every Guild Hall rank's payback over all the work it boosts (BALANCE_RULES section 5: for a
-     * star that boosts the whole guild, payback counts all the work it boosts, not one hero's), on
-     * the payback curve ({@link paybackHoursAt}, at the level its tier opens at). What it saves is the
-     * hours an hour each boosted work open by its stage saves at Typical (as `hallPaybacks` measures
-     * one), the most-saving ones added, one per hero the reference guild has there (`heroes`): no
-     * more work runs at once than the guild has heroes. Its cost is `hallPaybacks`'s: the price at
-     * Typical before the Hall and the stars lit to open it. A Bunk Beds rank is another hero, an hour
-     * of work an hour. Ranks that add no rate and enablers are left out.
+     * Every Guild Hall rank's payback over all the work it boosts, on the payback curve, as
+     * `hallPaybacks` works it out for each rank ({@link guildPaybackOf}). Ranks that add no rate and
+     * enablers are left out.
      * `[{ id, name, rank, tier, cap, level, heroes, works, counted, gain, oneWork, cost, payback, curve, off, row }]`.
      */
     function hallGuildPaybacks() {
         if (hallGuildMemo) return hallGuildMemo;
-        const rows = [];
-        for (const row of hallPaybacks()) {
-            if (row.rate === false || row.enabler) continue;
-            const heroes = heroesAt(settings, row.cap);
-            const saves = row.id === ROSTER_STAR ? [1] : hallWorksOf(row.id)
-                .filter(w => w.tier <= row.cap)
-                .map(w => profiles.hallRankOn(w.target, row.cap, row.id, row.rank)?.saves || 0)
-                .filter(s => s > 0 && Number.isFinite(s))
-                .sort((a, b) => b - a);
-            const worked = Math.min(heroes, saves.length);
-            const gain = sum(saves.slice(0, worked));
-            const cost = row.priceHours + row.opening.cost;
-            const payback = cost === 0 ? 0 : gain > 0 ? cost / gain : Infinity;
-            const level = tierLevelAt(settings.tierLevels, row.tier ?? row.cap);
-            const curve = paybackHoursAt(level);
-            rows.push({
-                id: row.id, name: row.name, rank: row.rank, tier: row.tier, cap: row.cap, level, heroes, works: saves.length, counted: worked,
-                gain, oneWork: row.gain, cost, payback, curve, off: payback / curve - 1, row
-            });
-        }
-        hallGuildMemo = rows;
-        return rows;
+        hallGuildMemo = hallPaybacks().filter(row => row.rate !== false && !row.enabler).map(row => ({
+            id: row.id, name: row.name, rank: row.rank, tier: row.tier, cap: row.cap, level: row.curveLevel, ...row.guildWorks,
+            gain: row.guildGain, oneWork: row.gain, cost: row.priceHours + row.opening.cost, payback: row.guildPayback, curve: row.curve,
+            off: row.guildPayback / row.curve - 1, row
+        }));
+        return hallGuildMemo;
     }
 
     // ── the boost budget ───────────────────────────────────────────────────────────────────────
