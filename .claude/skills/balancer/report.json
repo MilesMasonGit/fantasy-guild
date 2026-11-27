@@ -17,6 +17,9 @@
     "The method itself, with two read-only readings of the CMS's simulator and ledger: docs/active/balance_method_review.md. The page is on the curve by construction (XP is worked back from the curve), so it cannot test whether a guild's set-up is realistic; only the ledger or play can."
   ],
   "moved": [
+    "Approved by the owner, 2026-11-26: the first number pack waits for a boosts pack and they land together, followed by one coin reset.",
+    "Approved by the owner, 2026-11-26, the boost budget counting only what a hero can hold at once: four Faster Work buildings or station upgrade steps at 5 % each, skill perks 15 %, Guild Hall stars 10 % (small steps), and one consumable in all, a speed drink at 15 %: 60 % off work time late in the game, the same total as before. XP: four More XP buildings at 2.5 % and Hall stars 10 %. Yield: Double Output buildings at +50 % each, up to four.",
+    "Approved by the owner, 2026-11-26, replacing the 30 seconds ruled the day before: a node gives about 15 seconds of work and is back in about a minute, so a hero needs 4 or 5 nodes to stay busy. A gathering site then has about 5 places left for buildings.",
     "Approved by the owner, 2026-11-26: leaving a stage means settling the next place (level 10 in one or two skills and its price, about 35 minutes for the Starter Camp), not finishing everything the stage offers.",
     "Approved by the owner, 2026-11-26, after spacing was settled (reach 240, Tokens 128 apart, 12 places round a node, about 8 for buildings): the same building all game and more of them. A Faster Work building is 5 % off work time, one held at copper and four at darkmetal; a More XP building is +2.5 % XP; a Double Output building +25 % yield.",
     "Approved by the owner, 2026-11-26: a typical player holds three quarters of each boost, not half. The typical line on this page moves from about 23 days a skill to about 17.5, and typical ends about 1.4 times behind optimized, not 2 times.",
@@ -49,8 +52,8 @@
     "Cooking, Smithing and Enchanting: none."
   ],
   "waiting": [
+    "On the director, a new ticket (T-736): a writer for the boosts pack, sizing every boost from what it is and its tier, and nodes at 15 seconds of work and a minute's rest in the number pack.",
     "On the director: the coin fix joined onto the test branch, then the ledger timing Planned work.",
-    "On the balancer, for the owner: how to bring the live game's boosts down to the budget, as a second pack.",
     "On the owner, later, with the pack: the first places should ask level 10 in the skill they name (today the first ore place asks Mining 5, so a player leaves the Starter Camp in 12 to 17 minutes, not about 35).",
     "On the owner: review and Sync the six Planned packs in the CMS (the content session staged the plan on 2026-11-26: 210 entries). They apply cleanly in a test copy.",
     "On the director, briefed and in the queue (brief 900): the ledger timing a real guild and site (building now), the simulator's curves from the balance rules (building now), the two coin curves, and three checks.",
@@ -58,6 +61,7 @@
     "On the director: the ledger prices every coin cost from one curve; the rule needs an everyday curve and a big-purchase curve (a new ticket, T-713).",
     "On the director, with the first number pack: the new XP table (9.4 million XP to 99) and the 25-cycle dose for drinks and potions.",
     "On the balancer: Construction once its repeatable work is planned, and re-checking the gaps as the content session fills them.",
-    "On the content session: packs for Crime, Summoning, Faith and the enemies, then the fifteen gaps; purpose leanings, the Arrowheads levels and Construction's repeatable work."
+    "On the content session: packs for Crime, Summoning, Faith and the enemies, then the fifteen gaps; purpose leanings, the Arrowheads levels and Construction's repeatable work.",
+    "Open, for the content session: late-game yield beyond buildings. The budget counts on camp variants and perks for about as much yield again as the four Double Output buildings; until content has that, late makers need more than 2 gatherers."
   ]
 }
