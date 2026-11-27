@@ -96,7 +96,7 @@ function oldSave() {
     state.collection.itemLifetimeCounts = { [OLD.item]: 900 };
     state.collection.discoveredEnemies = { [OLD.token]: true };
     state.collection.enemyKillCounts = { [OLD.token]: 12 };
-    state.collection.cardUseCounts = { [OLD.den]: 3 };
+    state.collection.cyclesByTokenType = { [OLD.den]: 3 };
     state.collection.tokensHad = { [OLD.den]: true };
     state.collection.tokensBuilt = { [OLD.den]: 1 };
     state.ui.pinnedStubs = [{ itemId: OLD.item, added: 5, removed: 1 }];
@@ -176,7 +176,7 @@ describe('a renamed id is followed everywhere a save holds it', () => {
         expect(c.itemLifetimeCounts).toEqual({ [NEW.item]: 900 });
         expect(c.discoveredEnemies).toEqual({ [NEW.token]: true });
         expect(c.enemyKillCounts).toEqual({ [NEW.token]: 12 });
-        expect(c.cardUseCounts).toEqual({ [NEW.den]: 3 });
+        expect(c.cyclesByTokenType).toEqual({ [NEW.den]: 3 });
         expect(c.tokensHad).toEqual({ [NEW.den]: true });
         expect(c.tokensBuilt).toEqual({ [NEW.den]: 1 });
         expect(s.ui.pinnedStubs).toEqual([{ itemId: NEW.item, added: 5, removed: 1 }]);

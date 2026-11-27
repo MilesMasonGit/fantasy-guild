@@ -579,7 +579,7 @@ function resolveVictory(instance, fight, enemy, heroId) {
         produced: fight.produced || []
     });
     // The Token-type tally counts a kill as the enemy Token's cycle, as it counts a work cycle.
-    const counts = GameState.state?.collection?.cardUseCounts;
+    const counts = GameState.state?.collection?.cyclesByTokenType;
     if (counts) counts[instance.typeId] = (counts[instance.typeId] || 0) + 1;
     // `heroId` and `typeId` ride along so a rule reacting to a fight ending can name the victor and
     // the creature, as `CYCLE_COMPLETE` (published just above from the same function) can.

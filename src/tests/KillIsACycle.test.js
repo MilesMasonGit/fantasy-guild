@@ -266,7 +266,7 @@ describe('the kill\'s cycle', () => {
 
     it('counts in the Token-type tally as the enemy\'s cycle', () => {
         oneKill();
-        expect(GameState.state.collection.cardUseCounts.kc_enemy).toBe(1);
+        expect(GameState.state.collection.cyclesByTokenType.kc_enemy).toBe(1);
     });
 });
 

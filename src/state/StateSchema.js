@@ -175,7 +175,7 @@ export const INITIAL_STATE = {
         discoveredEnemies: {},   // { [enemyId]: true }
         itemLifetimeCounts: {},  // { [itemId]: number }
         enemyKillCounts: {},     // { [enemyId]: number }
-        cardUseCounts: {},       // { [typeId]: number } — completed cycles per Token type
+        cyclesByTokenType: {},   // { [typeId]: number } — completed cycles per Token type, a kill counting as the enemy Token's
         // The Encyclopedia's ticks (`collectionLog.js`); an older save gets them empty from `migrateState`.
         tokensHad: {},           // { [typeId]: true } — a Token of the type has stood on the mat
         recipesMade: {},         // { [recipeId]: true } — a cycle of the recipe has finished
