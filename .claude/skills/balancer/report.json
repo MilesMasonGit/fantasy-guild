@@ -17,6 +17,7 @@
     "The method itself, with two read-only readings of the CMS's simulator and ledger: docs/active/balance_method_review.md. The page is on the curve by construction (XP is worked back from the curve), so it cannot test whether a guild's set-up is realistic; only the ledger or play can."
   ],
   "moved": [
+    "Approved by the owner, 2026-11-26: a hero has one drink active, and drinks, potions and elixirs all count as drinks; one boost item of another type (such as a scroll, not designed yet) may be held beside it. Poisons, bait, arrows and Motes are not boosts and are not limited. The game allows more than this today, so it is a game change (T-738).",
     "Approved by the owner, 2026-11-26: the first number pack waits for a boosts pack and they land together, followed by one coin reset.",
     "Approved by the owner, 2026-11-26, the boost budget counting only what a hero can hold at once: four Faster Work buildings or station upgrade steps at 5 % each, skill perks 15 %, Guild Hall stars 10 % (small steps), and one consumable in all, a speed drink at 15 %: 60 % off work time late in the game, the same total as before. XP: four More XP buildings at 2.5 % and Hall stars 10 %. Yield: Double Output buildings at +50 % each, up to four.",
     "Approved by the owner, 2026-11-26, replacing the 30 seconds ruled the day before: a node gives about 15 seconds of work and is back in about a minute, so a hero needs 4 or 5 nodes to stay busy. A gathering site then has about 5 places left for buildings.",
