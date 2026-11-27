@@ -119,16 +119,17 @@ const DEFAULT_BOOST_TARGETS = {
  * - **Everyday** (a Shop Token, a Foundation): one level's time at the tier's opening level on the
  *   pace rule, copper at level 10's (few purchases come in the first minutes).
  * - **Big** (settling a place, a Guild Hall star): half the payback curve, 1 hour x 24^(L / 80) at
- *   the tier's opening level, copper at its start. A star's rank adds no multiplier: each rank is
- *   priced at its own stage.
- * ⚠️ The everyday points follow the pace step but are written out, not worked out: a test pins them
- * to the pace rule, so a moved step fails it until the points move with it.
+ *   each tier's opening level (Plane 1 at level 10's 45 min, its own point), copper at its start. A
+ *   star's rank adds no multiplier: each rank is priced at its own stage.
+ * ⚠️ The points are written out, not worked out: tests pin the everyday ones to the pace rule and
+ * the big ones to the payback rule at the tier levels, so a moved rule fails them until the points
+ * move with it.
  */
 export const COIN_CURVE = Object.freeze({ EVERYDAY: 'everyday', BIG: 'big' });
 const COIN_CURVE_FIELD = Object.freeze({ [COIN_CURVE.EVERYDAY]: 'coinCurve', [COIN_CURVE.BIG]: 'bigCoinCurve' });
 const curvePoints = (pairs) => Object.freeze(pairs.map(([tier, minutes]) => Object.freeze({ tier, minutes })));
 const DEFAULT_COIN_CURVE = curvePoints([[0, 5], [2, 9], [3, 17], [4, 32], [5, 59], [6, 107], [7, 361]]);
-const DEFAULT_BIG_COIN_CURVE = curvePoints([[0, 30], [2, 66], [3, 99], [4, 147], [5, 219], [6, 325], [7, 720]]);
+const DEFAULT_BIG_COIN_CURVE = curvePoints([[0, 30], [1, 45], [2, 66], [3, 99], [4, 147], [5, 219], [6, 325], [7, 720]]);
 
 /**
  * The reference guild's heroes (BALANCE_RULES section 8): about one a tier, one
