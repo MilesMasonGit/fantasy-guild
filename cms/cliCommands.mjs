@@ -60,6 +60,20 @@ export const USAGE = `Usage: npm run cms -- <command> [options]
                                   solver's rule (with --dials). A Live entry with no match, other
                                   ingredients or another output than the catalogue's is listed,
                                   never guessed. Its own pack.
+  pack boosts --out=<pack.json> [--unclear=<file>]
+                                  The boosts pack writer: every effect statement that moves work
+                                  time, XP, yield or doubles, rare finds or regrowth, sized by its
+                                  source (BALANCE_RULES section 5): a placed building 5 % speed,
+                                  +2.5 % XP, +50 % yield, +12.5 % rare finds, 10 % regrowth (the
+                                  coin building +10 %); a station's own upgrade 5 % a step; a
+                                  skill's speed perks a quarter of the tier's speed total; a Guild
+                                  Hall star 10 % of its kind over its ranks; the one consumable
+                                  (a speed drink a quarter of its tier's speed total, an XP one the
+                                  tier's XP total, yield +50 %, rare finds +100 %). Tier totals are
+                                  the ledger's boost budget (Maxed). Only the number moves. What
+                                  fits no source or mixes kinds is listed (and written to
+                                  --unclear), never guessed. Written to --out (never into
+                                  cms/incoming/); reads the workspace, never saves it.
   recalc [--all]                  Recalculate (the economic simulator) on the workspace and save it.
   sync [--confirm-removals] [--no-commit]
                                   Recalculate, then write data/ exactly as Sync to Game does, and
@@ -435,7 +449,8 @@ function rowsFor(paths, options, out) {
     return rows;
 }
 
-async function cmdPackNumbers(paths, options, out) {
+/** The pack a writer is asked for (--out): its file and id, never in the CMS's inbox. */
+function packTargetOf(paths, options) {
     if (typeof options.out !== 'string') throw new CliError('Name the pack to write: --out=<pack.json> (a scratch folder; the balancer copies it to cms/incoming/ once it passes).', 2);
     const file = path.resolve(options.out);
     const inbox = path.join(paths.root, 'cms', 'incoming');
@@ -446,15 +461,25 @@ async function cmdPackNumbers(paths, options, out) {
     if (!/\.json$/i.test(file) || !/^[a-z0-9][a-z0-9_-]{0,79}$/i.test(id)) {
         throw new CliError(`The pack's file name is its id: letters, digits, _ and -, ending .json (not ${path.basename(file)}).`, 2);
     }
-    // Read-only, so a worktree with no workspace of its own reads the main checkout's.
+    return { file, id };
+}
+
+/** The paths a read-only command reads: a worktree with no workspace of its own reads the main checkout's. */
+function readOnlyPaths(paths, options, out) {
     const asked = typeof options.workspace === 'string' || typeof options.sandbox === 'string';
     if (!asked && !readDisk(paths).exists) {
         const main = mainCheckoutWorkspace(paths.root);
         if (main && fs.existsSync(main)) {
-            paths = { ...paths, workspaceFile: main };
             out(`This is a worktree with no workspace of its own: reading the main checkout's workspace, ${main}.`);
+            return { ...paths, workspaceFile: main };
         }
     }
+    return paths;
+}
+
+async function cmdPackNumbers(paths, options, out) {
+    const { file, id } = packTargetOf(paths, options);
+    paths = readOnlyPaths(paths, options, out);
     const disk = requireDisk(paths);
     const rows = rowsFor(paths, options, out);
     const live = options.live === true;
@@ -505,6 +530,55 @@ async function cmdPackNumbers(paths, options, out) {
     return 0;
 }
 
+async function cmdPackBoosts(paths, options, load, out) {
+    const { file, id } = packTargetOf(paths, options);
+    paths = readOnlyPaths(paths, options, out);
+    const disk = requireDisk(paths);
+    const { seedStoredWorkspace } = await load('/src/engine/workspaceSeeds.js');
+    const { writeBoostPack, boostLines } = await load('/src/engine/boostPack.js');
+    const workspace = { ...disk.workspace, ...seedStoredWorkspace(disk.workspace) };
+    // An item whose plan names no tier takes the tier the ledger first reaches it at, as the ledger's budget check does.
+    let tierOf = null;
+    try {
+        const { workspaceLedger } = await load('/src/engine/ledgerReport.js');
+        const reach = workspaceLedger(workspace).reach;
+        tierOf = (kind, entryId) => reach.get(`${kind}:${entryId}`)?.tier ?? null;
+    } catch (err) {
+        out(`The ledger could not be built (${err.message}): an item with no plan tier is listed as unclear.`);
+    }
+    const result = writeBoostPack(workspace, { id, tierOf });
+    const { pack, filled, unclear, skipped, notes } = result;
+    const moved = filled.filter((f) => f.from !== f.to).length;
+    out(`Against ${shortPath(paths.root, paths.workspaceFile)} (revision ${disk.revision}), never saved: ${plural(filled.length, 'statement')} written (${moved} moved, ${filled.length - moved} at the rule already), ${unclear.length} unclear, ${skipped.length} skipped.`);
+    out(`  Tiers: ${result.tierSource}.`);
+    const reasons = new Map();
+    for (const s of skipped) reasons.set(s.reason, (reasons.get(s.reason) || 0) + 1);
+    for (const [reason, n] of reasons) out(`  skipped ${n}: ${reason}`);
+    for (const note of notes) out(`  ${note}`);
+    if (moved) {
+        out('Written:');
+        for (const line of boostLines(filled.filter((f) => f.from !== f.to), { written: true })) out(line);
+    }
+    if (unclear.length) {
+        out('Unclear (not written): mapping doubts for the content session, number doubts for the balancer:');
+        for (const line of boostLines(unclear)) out(line);
+    }
+    if (typeof options.unclear === 'string') {
+        const listFile = path.resolve(options.unclear);
+        fs.writeFileSync(listFile, ['Boost statements the rule could not size, left as they are:', ...boostLines(unclear), '', 'Skipped:', ...boostLines(skipped), '', ...notes, ''].join('\n'));
+        out(`The unclear list written to ${shortPath(paths.root, listFile)}.`);
+    }
+    if (!pack) {
+        out('Nothing to write: every boost the rule sizes is at its number already.');
+        return 0;
+    }
+    const check = validatePack(pack, { fileName: path.basename(file) });
+    if (!check.ok) throw new CliError('The pack came out malformed, so it was not written:\n- ' + check.errors.join('\n- '));
+    fs.writeFileSync(file, JSON.stringify(pack, null, 2) + '\n');
+    out(`The pack written to ${shortPath(paths.root, file)}: ${plural(pack.entries.length, 'edit')} (${pack.entries.filter((e) => e.kind === 'effect').length} effects, ${pack.entries.filter((e) => e.kind === 'hallStar').length} Guild Hall stars). Check it with: npm run cms -- pack check ${shortPath(paths.root, file)}`);
+    return 0;
+}
+
 async function cmdValidate(paths, options, out) {
     const { validateWorkspace, validateDataDir, reportLines } = await import('./schemaCheck.js');
     let result;
@@ -534,6 +608,7 @@ export async function runCli(argv, { root, load, out = (s) => console.log(s), er
         if (command === 'pack' && sub === 'check') return await cmdPackCheck(file, paths, out);
         if (command === 'pack' && sub === 'apply') return await cmdPackApply(file, paths, options, load, out);
         if (command === 'pack' && sub === 'numbers') return await cmdPackNumbers(paths, options, out);
+        if (command === 'pack' && sub === 'boosts') return await cmdPackBoosts(paths, options, load, out);
         if (command === 'recalc') return await cmdRecalc(paths, options, load, out);
         if (command === 'sync') return await cmdSync(paths, options, load, out);
         if (command === 'restore') return await cmdRestore(paths, load, out);
