@@ -43,8 +43,7 @@ times the curve seen in Smithing 1 to 15, Crafting 1 to 15 and Alchemy 1 to 14. 
 and the next station close it. Raising any early recipe to cover it makes that recipe the best XP to level
 40 (BALANCE_RULES section 1, the ceiling), so XP is not the lever.
 
-A question for the owner, with the coin reset: accept it (a lone hero cannot run a chain at full pace; the
-Starter Camp is left on a gathering skill at level 10 anyway), or ask `/content` for an early boost.
+**Accepted by the owner, 2026-11-27** (BALANCE_RULES section 8, a lone hero makes slowly): nothing to fill here.
 
 ## Waiting on something else
 
