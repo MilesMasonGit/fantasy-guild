@@ -26,33 +26,37 @@
           {
             "id": "token_clay_deposit",
             "weight": 1
-          }
-        ],
-        "2": [
+          },
           {
-            "id": "token_iron_ore_vein",
-            "weight": 3
+            "id": "token_quartz_deposit",
+            "weight": 1
           },
           {
             "id": "token_geode",
             "weight": 1
           },
           {
-            "id": "token_quartz_deposit",
-            "weight": 1
+            "id": "token_iron_ore_vein",
+            "weight": 3
           }
         ],
-        "3": [
+        "2": [
           {
             "id": "token_silver_ore_vein",
             "weight": 2
           },
           {
-            "id": "token_gold_ore_vein",
+            "id": "token_mythril_ore_vein",
             "weight": 2
           },
           {
-            "id": "token_mythril_ore_vein",
+            "id": "token_marble_vein",
+            "weight": 1
+          }
+        ],
+        "3": [
+          {
+            "id": "token_gold_ore_vein",
             "weight": 2
           },
           {
@@ -64,15 +68,11 @@
             "weight": 1
           },
           {
-            "id": "token_fossil_bed",
-            "weight": 1
-          },
-          {
-            "id": "token_marble_vein",
-            "weight": 1
-          },
-          {
             "id": "token_basalt_vein",
+            "weight": 1
+          },
+          {
+            "id": "token_fossil_bed",
             "weight": 1
           }
         ]
@@ -90,24 +90,28 @@
         "1": [
           {
             "id": "token_oak_tree",
-            "weight": 1
-          }
-        ],
-        "2": [
+            "weight": 2
+          },
           {
             "id": "token_fir_tree",
             "weight": 2
           }
         ],
-        "3": [
+        "2": [
           {
             "id": "token_birch_tree",
             "weight": 2
           },
           {
+            "id": "token_giant_mushroom",
+            "weight": 1
+          },
+          {
             "id": "token_maple_tree",
             "weight": 2
-          },
+          }
+        ],
+        "3": [
           {
             "id": "token_cedar_tree",
             "weight": 1
@@ -118,10 +122,6 @@
           },
           {
             "id": "token_ebony_tree",
-            "weight": 1
-          },
-          {
-            "id": "token_giant_mushroom",
             "weight": 1
           }
         ]
@@ -146,53 +146,37 @@
             "weight": 1
           },
           {
+            "id": "token_grapevine",
+            "weight": 2
+          },
+          {
             "id": "token_blueberry_bush",
             "weight": 1
           },
           {
-            "id": "token_strawberry_bush",
-            "weight": 1
-          },
-          {
             "id": "token_cherry_tree",
-            "weight": 1
-          },
-          {
-            "id": "token_peach_tree",
             "weight": 1
           }
         ],
         "2": [
           {
-            "id": "token_grapevine",
-            "weight": 2
-          },
-          {
-            "id": "token_cherry_tree",
-            "weight": 1
-          },
-          {
             "id": "token_strawberry_bush",
-            "weight": 1
-          },
-          {
-            "id": "token_peach_tree",
-            "weight": 1
-          }
-        ],
-        "3": [
-          {
-            "id": "token_raspberry_bush",
-            "weight": 1
-          },
-          {
-            "id": "token_pineapple_bush",
             "weight": 1
           },
           {
             "id": "token_lemon_tree",
             "weight": 1
           },
+          {
+            "id": "token_peach_tree",
+            "weight": 1
+          },
+          {
+            "id": "token_raspberry_bush",
+            "weight": 1
+          }
+        ],
+        "3": [
           {
             "id": "token_lime_tree",
             "weight": 1
@@ -202,7 +186,7 @@
             "weight": 1
           },
           {
-            "id": "token_watermelon_patch",
+            "id": "token_pineapple_bush",
             "weight": 1
           },
           {
@@ -211,6 +195,10 @@
           },
           {
             "id": "token_coconut_tree",
+            "weight": 1
+          },
+          {
+            "id": "token_watermelon_patch",
             "weight": 1
           }
         ]
@@ -312,12 +300,18 @@
   "mainPerCell": 1,
   "blendsPerNeighbour": 1,
   "keys": {
-    "1": [],
-    "2": [
+    "1": [
       "token_iron_ore_vein",
       "token_fir_tree"
     ],
-    "3": []
+    "2": [
+      "token_silver_ore_vein",
+      "token_birch_tree"
+    ],
+    "3": [
+      "token_gold_ore_vein",
+      "token_cedar_tree"
+    ]
   },
   "kits": [
     {
@@ -464,9 +458,7 @@
         "kits": [
           "plains"
         ]
-      }
-    ],
-    "2": [
+      },
       {
         "id": "token_ember_vents",
         "kits": [
@@ -504,7 +496,7 @@
         ]
       }
     ],
-    "3": [
+    "2": [
       {
         "id": "token_drake_roost",
         "kits": [
@@ -517,7 +509,9 @@
         "kits": [
           "woodland"
         ]
-      },
+      }
+    ],
+    "3": [
       {
         "id": "token_troll_bridge",
         "kits": [
@@ -590,57 +584,6 @@
     },
     "2": {
       "count": [
-        4,
-        5
-      ],
-      "enemies": [
-        {
-          "id": "token_wolf",
-          "weight": 2
-        },
-        {
-          "id": "token_bee",
-          "weight": 2
-        },
-        {
-          "id": "token_crab",
-          "weight": 1
-        },
-        {
-          "id": "token_frog",
-          "weight": 1
-        },
-        {
-          "id": "token_sulphur_lizard",
-          "weight": 1
-        }
-      ],
-      "bossChance": 0.3,
-      "bosses": [
-        {
-          "id": "token_wolf_alpha",
-          "weight": 1
-        },
-        {
-          "id": "token_greater_slime",
-          "weight": 1
-        },
-        {
-          "id": "token_water_elemental",
-          "weight": 1
-        },
-        {
-          "id": "token_wind_elemental",
-          "weight": 1
-        },
-        {
-          "id": "token_queen_bee",
-          "weight": 1
-        }
-      ]
-    },
-    "3": {
-      "count": [
         5,
         6
       ],
@@ -681,6 +624,29 @@
           "weight": 1
         }
       ]
+    },
+    "3": {
+      "count": [
+        5,
+        6
+      ],
+      "enemies": [
+        {
+          "id": "token_blue_drake",
+          "weight": 2
+        },
+        {
+          "id": "token_treant",
+          "weight": 2
+        }
+      ],
+      "bossChance": 0.5,
+      "bosses": [
+        {
+          "id": "token_troll",
+          "weight": 1
+        }
+      ]
     }
   },
   "specialties": [
@@ -698,8 +664,7 @@
       "kind": "treasure",
       "value": 6,
       "rings": [
-        1,
-        2
+        1
       ],
       "max": 2
     },
@@ -708,8 +673,8 @@
       "kind": "treasure",
       "value": 12,
       "rings": [
-        2,
-        3
+        1,
+        2
       ],
       "max": 2
     }
