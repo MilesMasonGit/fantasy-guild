@@ -12,7 +12,7 @@ import { ruleContent } from './fixtures/ruleChecksWorld.js';
 
 /**
  * Three checks the balance rules promise (BALANCE_RULES sections 1 and 5): a chain's total XP per
- * raw unit against its tier's median, a drink or work potion's batch paying back at least 4x its
+ * hour of its gathering against the chains at about its level, a drink or work potion's batch paying back at least 4x its
  * making, and a Guild Hall rank's payback over all the work it boosts, on the payback curve. On the
  * pace world (`fixtures/paceWorld.js`) with a second vein, three chains at the Still and the small
  * sky (`fixtures/paceHallSky.js`). The dose length the batch check reads is the game's: the same
@@ -21,7 +21,7 @@ import { ruleContent } from './fixtures/ruleChecksWorld.js';
 
 const paceOf = (c, settings = null) => buildPace(c, buildLedger(c), settings);
 
-describe("a chain's XP per hour of the gathering behind it, against its tier's median", () => {
+describe("a chain's XP per hour of the gathering behind it, against the chains at about its level", () => {
     it('every link pays its own XP, at its authored numbers, over the hours its raw inputs take to gather', () => {
         const pace = paceOf(ruleContent({ sky: false }));
         const rows = pace.chainXpRows();
@@ -82,7 +82,7 @@ describe("a chain's XP per hour of the gathering behind it, against its tier's m
         }
         const cake = f.find(x => x.key === 'item:item_cake');
         expect(cake.severity).toBe('warn');
-        expect(cake.message).toMatch(/^Copper Cake \(Starter Camp, a chain of 3 links\) pays 6180 XP an hour of the gathering behind it \(68\.67 XP over 1 min of gathering 4 raw\), 243 % over its tier's median of 1800 XP an hour \(±25 %, a warning beyond 2× either way; BALANCE_RULES section 1/);
+        expect(cake.message).toMatch(/^Copper Cake \(Starter Camp, a chain of 3 links whose last asks level 1\) pays 6180 XP an hour of the gathering behind it \(68\.67 XP over 1 min of gathering 4 raw\), 243 % over the median of 1800 XP an hour of the 3 chains whose last link asks level 1 to 11 \(±25 %, a warning beyond 2× either way; BALANCE_RULES section 1/);
         expect(cake.message).toMatch(/Move a link's XP, or its ingredient counts, toward the median\.$/);
         expect(CHECKS['chain-xp'].group).toBe('D');
         // A wider warning factor makes every one information; a wider tolerance lets them all pass.
@@ -90,6 +90,53 @@ describe("a chain's XP per hour of the gathering behind it, against its tier's m
         expect(wide.length).toBe(f.length);
         expect(wide.every(x => x.severity === 'info')).toBe(true);
         expect(paceOf(c, { tolerancePct: 100000 }).findings().some(x => x.check === 'chain-xp')).toBe(false);
+    });
+
+    // Plank-like chains at the Still: one oak (1 XP) into an item of `xp`, asking `level`, so each pays (1 + xp) XP an oak.
+    const withChains = (c, chains) => {
+        for (const [id, level, xp] of chains) {
+            c.items[id] = { id, name: id, type: 'material', plan: { tier: 0 } };
+            c.recipes.push({ ...structuredClone(c.recipes.find(r => r.id === 'recipe_plank')), id: `recipe_${id}`, name: id, levelRequirement: level, xp, outputs: [{ itemId: id, chance: 100, minQty: 1, maxQty: 1 }] });
+        }
+        return c;
+    };
+
+    it("chains at levels 20 and 80 on the rule's curve, 8x apart, raise nothing: each is held to its own level", () => {
+        // 2^((80 - 20) / 20) = 8: (1 + 3) XP an oak at 20, (1 + 31) at 80.
+        const c = withChains(ruleContent({ sky: false }), [['c20a', 20, 3], ['c20b', 20, 3], ['c20c', 20, 3], ['c80a', 80, 31], ['c80b', 80, 31], ['c80c', 80, 31]]);
+        const pace = paceOf(c);
+        const rows = pace.chainXpRows();
+        const row = (item) => rows.find(r => r.item === item);
+        expect(row('c20a')).toMatchObject({ level: 20, band: { from: 10, to: 30 }, count: 3 });
+        expect(row('c80a')).toMatchObject({ level: 80, band: { from: 70, to: 90 }, count: 3 });
+        expect(row('c80a').xpPerHour / row('c20a').xpPerHour).toBeCloseTo(8);
+        for (const id of ['c20a', 'c20b', 'c20c', 'c80a', 'c80b', 'c80c']) expect(row(id).off).toBeCloseTo(0);
+        expect(pace.findings().filter(x => x.check === 'chain-xp' && /^c[28]0/.test(x.key.slice(5)))).toEqual([]);
+    });
+
+    it('a chain three times its neighbours at its level warns, naming the band; the threshold is chainXpWarnFactor', () => {
+        const c = withChains(ruleContent({ sky: false }), [['c40a', 40, 3], ['c40b', 38, 3], ['c40c', 44, 3], ['c40hot', 40, 11]]);
+        const pace = paceOf(c);
+        const hot = pace.chainXpRows().find(r => r.item === 'c40hot');
+        expect(hot).toMatchObject({ level: 40, band: { from: 30, to: 50 }, count: 4 });
+        expect(hot.off + 1).toBeCloseTo(3);
+        const f = pace.findings().find(x => x.check === 'chain-xp' && x.key === 'item:c40hot');
+        expect(f.severity).toBe('warn');
+        expect(f.message).toMatch(/whose last asks level 40\) pays .*200 % over the median of \d+ XP an hour of the 4 chains whose last link asks level 30 to 50 \(±25 %, a warning beyond 2× either way/);
+        expect(pace.findings().filter(x => x.check === 'chain-xp' && x.key !== 'item:c40hot').every(x => x.severity === 'info')).toBe(true);
+        expect(paceOf(c, { chainXpWarnFactor: 3.5 }).findings().find(x => x.key === 'item:c40hot').severity).toBe('info');
+        expect(paceOf(c, { chainXpWarnFactor: 2.5 }).findings().find(x => x.key === 'item:c40hot').severity).toBe('warn');
+    });
+
+    it('a band short of three chains widens by ten levels at a time until it holds them', () => {
+        const c = withChains(ruleContent({ sky: false }), [['c60', 60, 3], ['c75', 75, 3], ['c88', 88, 3]]);
+        const rows = paceOf(c).chainXpRows();
+        const row = (item) => rows.find(r => r.item === item);
+        // Level 75: 60 and 88 are within 20, so ±10 widens once.
+        expect(row('c75')).toMatchObject({ band: { from: 55, to: 95 }, count: 3 });
+        // Level 60: 75 within 20, 88 within 30.
+        expect(row('c60')).toMatchObject({ band: { from: 30, to: 90 }, count: 3 });
+        expect(row('item_cake')).toMatchObject({ band: { from: 1, to: 11 }, count: 3 });
     });
 
     it('a tier with fewer than three chains has no median and flags nothing', () => {
@@ -370,7 +417,7 @@ describe('the read-out and the Ledger page carry them', () => {
         expect(rc.batches.rows.find(b => b.item === 'item_beer')).toMatchObject({ doseCycles: DOSE_LENGTH[DOSE.DRINK], short: true });
         expect(rc.hallGuild.find(h => h.id === 'ph_gold' && h.rank === 1)).toMatchObject({ off: true });
         for (const check of ['chain-xp', 'batch-payback', 'hall-guild-payback']) expect(out.checks.some(x => x.check === check), check).toBe(true);
-        expect(readoutText(out).join('\n')).toMatch(/Rule checks \(±25 %\): 3 chains, 1 off their tier's median XP an hour of gathering \(0 beyond 2x\); 1 drink and potion batches, 1 under 4x their making; \d+ Guild Hall ranks over all their work, \d+ slower and \d+ quicker than the payback curve\./);
+        expect(readoutText(out).join('\n')).toMatch(/Rule checks \(±25 %\): 3 chains, 1 off the median XP an hour of gathering of the chains at about their level \(0 beyond 2x\); 1 drink and potion batches, 1 under 4x their making; \d+ Guild Hall ranks over all their work, \d+ slower and \d+ quicker than the payback curve\./);
     });
 
     it('the Hall paybacks table has the payback over all the work beside the one-work payback', () => {

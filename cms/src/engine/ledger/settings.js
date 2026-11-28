@@ -23,7 +23,7 @@ import { PLAN_TIER_LEVELS, tierOrNull, tierLevelsOf, tierLevelAt } from '../../.
  *       sitePlaces: { places: 12, buildings: 8, perKind: 4 }, // places round a node, at most this many for buildings, this many boosting one kind
  *       paybackHours: 2,                             // a sensible investor's boost pays for itself within this
  *       batchPayback: 4,                             // a drink or work potion's batch saves at least this many times its making
- *       chainXpWarnFactor: 2,                        // a chain's XP an hour of gathering this many times off its tier's median warns
+ *       chainXpWarnFactor: 2,                        // a chain's XP an hour of gathering this many times off the median of chains at about its level warns
  *       steadyFindsPerDay: 1,                        // a rare find on repeatable work this often a day is a steady source
  *       coinCurve: [{ tier, minutes }],              // an everyday coin cost asks one hero's coins earned in this long, from a stage on
  *       bigCoinCurve: [{ tier, minutes }],           // and a big one this long
@@ -187,7 +187,7 @@ export const DEFAULT_LEDGER_SETTINGS = Object.freeze({
     paybackHours: 2,
     // BALANCE_RULES section 5: a batch of drinks or work potions saves at least four times the hero time it took to make, ingredients included.
     batchPayback: 4,
-    // The balancer (2026-11-26): a chain's XP an hour of its gathering warns beyond twice or half its tier's median; within, information.
+    // The balancer (2026-11-26): a chain's XP an hour of its gathering warns beyond twice or half the median of the chains at about its level; within, information.
     chainXpWarnFactor: 2,
     // The owner (2026-11-07): a low rate on repeatable work is still steady. ⚠️ Matches the engine's STEADY_FINDS_PER_DAY (pinned by a test).
     steadyFindsPerDay: 1,

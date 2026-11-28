@@ -60,7 +60,7 @@ import { shopCoinsOf, enemyCoinDropOf } from '../../../../src/config/registries/
  *   stage's time against its budget, Typical, Bare and Maxed out of their bounds, a Guild Hall rank
  *   slow to pay back, a boost off its target strength, boosts held over the boost budget, a coin
  *   price nothing earns, and what the calculator cannot read; and three the balance rules promise
- *   (sections 1 and 5): a chain's XP per raw unit far off its tier's median, a drink or work
+ *   (sections 1 and 5): a chain's XP an hour of its gathering far off the median of chains at about its level, a drink or work
  *   potion's batch paying back under its factor, and a Hall rank off the payback curve over all the
  *   work it boosts.
  * - **The Guild Hall**: every rank's payback at Typical (the hours to gather its price against the
@@ -174,8 +174,14 @@ export function ringBudgetTier(ring, ringRungs = null) {
 const list = (v) => (Array.isArray(v) ? v.filter(Boolean) : []);
 const sum = (xs) => xs.reduce((a, b) => a + b, 0);
 
-/** The fewest chains a tier needs for its median to say anything (the chain XP check). */
+/** The fewest chains a level band needs for its median to say anything (the chain XP check). */
 const CHAIN_MEDIAN_MIN = 3;
+/**
+ * A chain is held to the chains whose last link asks within this many levels of its own (BALANCE_RULES
+ * section 1: XP an hour doubles every 20 levels, so a band of ±10 spans about √2 either way of a chain
+ * on the curve). A band short of {@link CHAIN_MEDIAN_MIN} chains widens by this much until it holds them.
+ */
+const CHAIN_LEVEL_BAND = 10;
 const medianOf = (xs) => {
     const s = [...xs].sort((a, b) => a - b);
     const mid = Math.floor(s.length / 2);
@@ -1810,13 +1816,13 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             });
         }
 
-        // A chain paying more or less XP an hour of its gathering than its tier's others: far off is a warning.
+        // A chain paying more or less XP an hour of its gathering than the chains at about its level: far off is a warning.
         const warnAt = settings.chainXpWarnFactor;
         for (const c of chainXpRows()) {
             if (c.off === null || !(Math.abs(c.off) > tol + 1e-9)) continue;
             const ratio = c.off + 1;
             const far = ratio > warnAt + 1e-9 || ratio < 1 / warnAt - 1e-9;
-            add('chain-xp', itemKey(c.item), `${c.name} (${tierLabel(c.tier)}, a chain of ${c.links} links) pays ${PACE_TEXT.figure(c.xpPerHour)} XP an hour of the gathering behind it (${PACE_TEXT.figure(c.xp)} XP over ${PACE_TEXT.short(c.rawHours)} of gathering ${PACE_TEXT.figure(c.raw)} raw), ${Math.round(Math.abs(c.off) * 100)} % ${c.off > 0 ? 'over' : 'under'} its tier's median of ${PACE_TEXT.figure(c.median)} XP an hour (±${settings.tolerancePct} %, a warning beyond ${warnAt}× either way; BALANCE_RULES section 1: each link of a chain pays its own XP, so a tier's chains pay about alike for the time they take from the ground). ${far ? "Move a link's XP, or its ingredient counts, toward the median." : 'Information: within the warning factor.'}`, {
+            add('chain-xp', itemKey(c.item), `${c.name} (${tierLabel(c.tier)}, a chain of ${c.links} links whose last asks level ${c.level}) pays ${PACE_TEXT.figure(c.xpPerHour)} XP an hour of the gathering behind it (${PACE_TEXT.figure(c.xp)} XP over ${PACE_TEXT.short(c.rawHours)} of gathering ${PACE_TEXT.figure(c.raw)} raw), ${Math.round(Math.abs(c.off) * 100)} % ${c.off > 0 ? 'over' : 'under'} the median of ${PACE_TEXT.figure(c.median)} XP an hour of the ${c.count} chains whose last link asks level ${c.band.from} to ${c.band.to} (±${settings.tolerancePct} %, a warning beyond ${warnAt}× either way; BALANCE_RULES section 1: each link of a chain pays its own XP, and XP an hour doubles every 20 levels, so chains of about one level pay about alike for the time they take from the ground). ${far ? "Move a link's XP, or its ingredient counts, toward the median." : 'Information: within the warning factor.'}`, {
                 severity: far ? 'warn' : 'info', name: c.name
             });
         }
@@ -2623,11 +2629,13 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
      * authored XP (one action at Bare, no perks), over the hours its raw inputs take to gather: what
      * gathering, a water, a field or anything but a station gives, each at its own Bare source's rate
      * (a rare drop at its find rate; one in stock is free). Each item comes from its best source at
-     * Bare at the end's stage; a raw input with no source by then leaves the chain out. Beside each,
-     * the median of its tier's chains (by the end's tier) and how far off it is, null where a tier has
-     * fewer than {@link CHAIN_MEDIAN_MIN} chains. A chain through a loop is left out.
-     * `[{ item, name, tier, cap, xp, raw, rawHours, xpPerHour, links, median, off }]`, `raw` its raw
-     * units, by tier then name.
+     * Bare at the end's stage; a raw input with no source by then leaves the chain out. Its `level` is
+     * what its last link asks. Beside each, the median of the chains whose level sits within
+     * {@link CHAIN_LEVEL_BAND} of its own, itself among them, whatever their tier (`band`, the levels
+     * it spans, widened until it holds {@link CHAIN_MEDIAN_MIN} chains), and how far off it is; null
+     * where fewer than that many chains exist at all. A chain through a loop is left out.
+     * `[{ item, name, tier, cap, level, xp, raw, rawHours, xpPerHour, links, median, band, count, off }]`,
+     * `raw` its raw units, `count` the chains in its band, by tier then name.
      */
     function chainXpRows() {
         if (chainMemo) return chainMemo;
@@ -2669,7 +2677,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                         links = Math.max(links, c.links);
                     }
                     stack.delete(itemId);
-                    if (whole && hours > 0) out = { xp, raw, hours, links: links + 1 };
+                    if (whole && hours > 0) out = { xp, raw, hours, links: links + 1, level: profiles.contextOf(work.target).gate ?? 1 };
                 }
             }
             memo.set(key, out);
@@ -2688,18 +2696,22 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
             if (cap === null || tier === null || !counted(key)) continue;
             const c = chainOf(itemId, cap, new Set());
             if (!c || c.links < 2) continue;
-            rows.push({ item: itemId, name: nameOf(key), tier, cap, xp: c.xp, raw: c.raw, rawHours: c.hours, xpPerHour: c.xp / c.hours, links: c.links, median: null, off: null });
+            rows.push({ item: itemId, name: nameOf(key), tier, cap, level: c.level, xp: c.xp, raw: c.raw, rawHours: c.hours, xpPerHour: c.xp / c.hours, links: c.links, median: null, band: null, count: 0, off: null });
         }
-        const byTier = new Map();
-        for (const row of rows) {
-            if (!byTier.has(row.tier)) byTier.set(row.tier, []);
-            byTier.get(row.tier).push(row);
-        }
-        for (const group of byTier.values()) {
-            if (group.length < CHAIN_MEDIAN_MIN) continue;
-            const median = medianOf(group.map(r => r.xpPerHour));
-            for (const row of group) {
+        // A sliding band, not fixed buckets: a chain near a bucket's edge would be judged against one side only.
+        if (rows.length >= CHAIN_MEDIAN_MIN) {
+            for (const row of rows) {
+                let reach = CHAIN_LEVEL_BAND;
+                let group = [];
+                for (;;) {
+                    group = rows.filter(r => Math.abs(r.level - row.level) <= reach);
+                    if (group.length >= CHAIN_MEDIAN_MIN) break;
+                    reach += CHAIN_LEVEL_BAND;
+                }
+                const median = medianOf(group.map(r => r.xpPerHour));
                 row.median = median;
+                row.band = { from: Math.max(1, row.level - reach), to: Math.min(MAX_SKILL_LEVEL, row.level + reach) };
+                row.count = group.length;
                 row.off = median > 0 ? row.xpPerHour / median - 1 : null;
             }
         }

@@ -75,7 +75,7 @@ export const CHECKS = Object.freeze({
     'hall-price-unreachable': { group: 'D', severity: SEVERITY.WARN, label: 'A Guild Hall rank priced in what its stage cannot gather' },
     'hall-guild-payback': { group: 'D', severity: SEVERITY.WARN, label: 'A Guild Hall rank off the payback curve over all the work it boosts' },
     'batch-payback': { group: 'D', severity: SEVERITY.WARN, label: 'A drink or potion batch paying back under its factor' },
-    'chain-xp': { group: 'D', severity: SEVERITY.WARN, label: "A chain's XP an hour of its gathering far off its tier's median" },
+    'chain-xp': { group: 'D', severity: SEVERITY.WARN, label: "A chain's XP an hour of its gathering far off the median of chains at about its level" },
     'ring-open': { group: 'D', severity: SEVERITY.WARN, label: 'A ring of the world map opening before the stage before it ends' },
     'boost-target': { group: 'D', severity: SEVERITY.WARN, label: 'A boost over its target strength' },
     'boost-budget': { group: 'D', severity: SEVERITY.WARN, label: 'Boosts held over the boost budget' },
