@@ -609,3 +609,4 @@ T-753 — the xp lever caps a work under the later best and reports gaps — 042
 T-751 — Recalculate prices an item's Use: drops together worth the item, split by scarcity, no labour; a Use counts as a source — e6294972 — 2026-11-27
 T-755 — a rare drop is worth more in proportion: equal shares, a piece its share over its abundance; the whole-coin floor's excess comes out of the other shares — 0920e148 — 2026-11-27
 T-757 — Recalculate writes an untuned chance back to baseChance; pinned outputs keep theirs — 0920e148 — 2026-11-27
+T-734 — Typical buys a Guild Hall rank on the payback curve, the same sum as the prices (part B; part A 0be536118) — dab95deb3 — 2026-11-27
