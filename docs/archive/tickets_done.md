@@ -611,3 +611,4 @@ T-755 — a rare drop is worth more in proportion: equal shares, a piece its sha
 T-757 — Recalculate writes an untuned chance back to baseChance; pinned outputs keep theirs — 0920e148 — 2026-11-27
 T-734 — Typical buys a Guild Hall rank on the payback curve, the same sum as the prices (part B; part A 0be536118) — dab95deb3 — 2026-11-27
 T-748 — Typical judges a drink again as its setup grows and drops it once it stops paying back; T-749 second number retired — 7811ffcba — 2026-11-27
+T-763 — coin checks leave a Guild Hall rank's coins to its payback; the coins lever writes Shop and ring prices only — 7f8df052d — 2026-11-28
