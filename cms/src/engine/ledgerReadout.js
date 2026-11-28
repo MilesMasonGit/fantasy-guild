@@ -26,7 +26,7 @@ import { STRICT_RINGS } from '../../../src/config/worldTablesShape.js';
  */
 
 export const READOUT_FORMAT = 'fantasy-guild-ledger-readout';
-export const READOUT_VERSION = 8;
+export const READOUT_VERSION = 9;
 
 /** The solver's players and the ledger profiles they are read at. */
 export const READOUT_PROFILES = Object.freeze({ opt: PROFILE.MAXED, typ: PROFILE.TYPICAL, bare: PROFILE.BARE });
@@ -52,7 +52,7 @@ export const NOTES = Object.freeze([
     'Arrivals (arriveOpt, arriveTyp) are minutes from a new game along the ledger\'s path; null when never reached, and for Planned entries (the ledger times nothing Planned).',
     'The solver\'s curve is its own dials; curve here is the CMS pace rule (Ledger settings) at that level, and the stages\' budgets follow from it.',
     'boostBudget lists the budget\'s cells by tier and, under over, every total a profile holds over its cell (the boost-budget check).',
-    'ruleChecks holds the three checks the balance rules promise, with the rows behind their findings: chainXp, each chain\'s total XP an hour of the gathering behind it (every link at its authored XP, Bare and no perks, over rawMinutes, the minutes its raw inputs take to gather, each at its Bare source\'s rate, a rare drop at its find rate; a chain ends at an item no station spends) against its tier\'s median (null with fewer than three chains), off past the tolerance and warn beyond chainXpWarnFactor times or under it (the chain-xp check, BALANCE_RULES section 1); batches, each drink and work potion\'s batch payback on the repeatable work it pays back best on at Typical (the work it saves an hour over the hours an hour its doses take to make, ingredients included, at the game\'s dose length: doseCycles), judged on the setup Typical holds on that work once its choices are made, short under factor (the batch-payback check, section 5); hallGuild, each Guild Hall rank\'s payback counting every boosted work the reference guild\'s heroes can work at once, against the payback curve (1 hour x 24^(L / 80) at the level its tier opens at), off past the tolerance either way (the hall-guild-payback check, section 5); unreachable where its price cannot be gathered by its stage (the hall-price-unreachable check), never off.',
+    'ruleChecks holds the three checks the balance rules promise, with the rows behind their findings: chainXp, each chain\'s total XP an hour of the gathering behind it (every link at its authored XP, Bare and no perks, over rawMinutes, the minutes its raw inputs take to gather, each at its Bare source\'s rate, a rare drop at its find rate; a chain ends at an item no station spends) against the median of the chains whose last link asks within 10 levels of its own, itself among them (level, its last link\'s; band, the levels compared, widened by 10 until it holds three chains; count, the chains in it; null with fewer than three chains in all), off past the tolerance and warn beyond chainXpWarnFactor times or under it (the chain-xp check, BALANCE_RULES section 1); batches, each drink and work potion\'s batch payback on the repeatable work it pays back best on at Typical (the work it saves an hour over the hours an hour its doses take to make, ingredients included, at the game\'s dose length: doseCycles), judged on the setup Typical holds on that work once its choices are made, short under factor (the batch-payback check, section 5); hallGuild, each Guild Hall rank\'s payback counting every boosted work the reference guild\'s heroes can work at once, against the payback curve (1 hour x 24^(L / 80) at the level its tier opens at), off past the tolerance either way (the hall-guild-payback check, section 5); unreachable where its price cannot be gathered by its stage (the hall-price-unreachable check), never off.',
     'coins holds the two coin curves (BALANCE_RULES section 7, Ledger settings, minutes of one hero\'s selling from a stage on: everyday for a Shop Token or a Foundation, one level\'s time; big for settling a place or a Guild Hall star, half the payback curve) and every price that asks coins with its curve, its minutes there, the income it is earned at (perHour) and the coins the curve proposes; off marks one beyond the tolerance from it.',
 ]);
 
@@ -274,8 +274,8 @@ function ruleChecksOf(pace) {
         tolerancePct: tolPct,
         chainXpWarnFactor: warnAt,
         chainXp: pace.chainXpRows().map((c) => ({
-            item: c.item, name: c.name, tier: c.tier, links: c.links, xp: round(c.xp, 2), raw: round(c.raw, 3), rawMinutes: round(c.rawHours * 60, 3), xpPerHour: round(c.xpPerHour, 1),
-            median: c.median === null ? null : round(c.median, 1), offPct: pct(c.off), off: past(c.off),
+            item: c.item, name: c.name, tier: c.tier, level: c.level, links: c.links, xp: round(c.xp, 2), raw: round(c.raw, 3), rawMinutes: round(c.rawHours * 60, 3), xpPerHour: round(c.xpPerHour, 1),
+            median: c.median === null ? null : round(c.median, 1), band: c.band, count: c.count, offPct: pct(c.off), off: past(c.off),
             warn: past(c.off) && (c.off + 1 > warnAt + 1e-9 || c.off + 1 < 1 / warnAt - 1e-9),
         })),
         batches: {
@@ -460,7 +460,7 @@ export function readoutText(out) {
         const short = rc.batches.rows.filter((b) => b.short).length;
         const slow = rc.hallGuild.filter((h) => h.off && !(h.offPct < 0)).length;
         const quick = rc.hallGuild.filter((h) => h.off && h.offPct < 0).length;
-        lines.push('', `Rule checks (±${rc.tolerancePct} %): ${rc.chainXp.length} chains, ${chainsOff} off their tier's median XP an hour of gathering (${chainsWarn} beyond ${rc.chainXpWarnFactor}x); ${rc.batches.rows.length} drink and potion batches, ${short} under ${rc.batches.factor}x their making; ${rc.hallGuild.length} Guild Hall ranks over all their work, ${slow} slower and ${quick} quicker than the payback curve.`);
+        lines.push('', `Rule checks (±${rc.tolerancePct} %): ${rc.chainXp.length} chains, ${chainsOff} off the median XP an hour of gathering of the chains at about their level (${chainsWarn} beyond ${rc.chainXpWarnFactor}x); ${rc.batches.rows.length} drink and potion batches, ${short} under ${rc.batches.factor}x their making; ${rc.hallGuild.length} Guild Hall ranks over all their work, ${slow} slower and ${quick} quicker than the payback curve.`);
     }
     const sev = Object.entries(out.counts.bySeverity).map(([k, n]) => `${n} ${k}`).join(', ') || 'none';
     lines.push('', `${out.counts.rows} entries (${out.counts.planned} Planned, marked), ${out.counts.checks} checks: ${sev}.`);

@@ -170,7 +170,7 @@ export default function LedgerSettings() {
           <div className="flex items-center gap-2">
             A chain's XP an hour of the gathering behind it warns beyond
             <NumberInput value={settings.chainXpWarnFactor} min={1} onCommit={(v) => save({ chainXpWarnFactor: v })} label="Chain XP warn factor" width={60} />
-            times (or under that fraction of) its tier's median; within, it is information (a placeholder until the owner sets a tolerance).
+            times (or under that fraction of) the median of the chains whose last link asks within 10 levels of its own; within, it is information (a placeholder until the owner sets a tolerance).
           </div>
           <div className="flex items-center gap-2">
             A chain is one maker and about
