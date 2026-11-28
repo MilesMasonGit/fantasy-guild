@@ -127,10 +127,12 @@ describe('The Combat chain in shipped data (7.7)', () => {
         expect(goblin.uses).toBe(1);
     });
 
-    it('a Goblin drops Bones, sometimes Copper Ore, and now and then its seed map or a Coal Prospecting Map', () => {
+    it('a Goblin drops Bones, sometimes Copper Ore, Oak Wood or Coal (a way back to them with no tool), and now and then its seed map or a Coal Prospecting Map', () => {
         expect(enemyDropsOf(goblin)).toEqual([
             { itemId: 'item_bones', chance: 100, minQty: 1, maxQty: 1 },
             { itemId: 'item_copper_ore', chance: 30, minQty: 1, maxQty: 1 },
+            { itemId: 'item_oak_wood', chance: 30, minQty: 1, maxQty: 1 },
+            { itemId: 'item_coal', chance: 30, minQty: 1, maxQty: 1 },
             { itemId: 'item_goblin_banner', chance: 0.5, minQty: 1, maxQty: 1 },
             { itemId: 'item_coal_prospecting_map', chance: 3, minQty: 1, maxQty: 1 },
         ]);
