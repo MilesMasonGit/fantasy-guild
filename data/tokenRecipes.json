@@ -8363,7 +8363,7 @@
       },
       {
         "itemId": "item_wheat_seed",
-        "chance": 40,
+        "chance": 43,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
@@ -8388,8 +8388,8 @@
     "stationChargeCost": 1,
     "xp": 3,
     "crop": {
-      "growMs": 3600000,
-      "load": 10,
+      "growMs": 2880000,
+      "load": 8,
       "ripeSprite": "t_field_wheat"
     },
     "sim": {
@@ -8426,7 +8426,7 @@
       },
       {
         "itemId": "item_lavender_seed",
-        "chance": 30,
+        "chance": 43,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
@@ -8451,8 +8451,8 @@
     "stationChargeCost": 1,
     "xp": 2,
     "crop": {
-      "growMs": 5400000,
-      "load": 8,
+      "growMs": 2700000,
+      "load": 4,
       "ripeSprite": "t_field_lavender"
     },
     "sim": {
@@ -8524,7 +8524,7 @@
       },
       {
         "itemId": "item_potato_seed",
-        "chance": 40,
+        "chance": 43,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
@@ -8549,8 +8549,8 @@
     "stationChargeCost": 1,
     "xp": 2,
     "crop": {
-      "growMs": 3600000,
-      "load": 10,
+      "growMs": 2880000,
+      "load": 8,
       "ripeSprite": "t_field_wheat"
     },
     "sim": {
@@ -8586,7 +8586,7 @@
       },
       {
         "itemId": "item_carrot_seed",
-        "chance": 40,
+        "chance": 43,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
@@ -8611,8 +8611,8 @@
     "stationChargeCost": 1,
     "xp": 3,
     "crop": {
-      "growMs": 3600000,
-      "load": 10,
+      "growMs": 2880000,
+      "load": 8,
       "ripeSprite": "t_field_wheat"
     },
     "sim": {
@@ -8861,8 +8861,8 @@
     "stationChargeCost": 1,
     "xp": 11,
     "crop": {
-      "growMs": 3600000,
-      "load": 10,
+      "growMs": 4320000,
+      "load": 12,
       "ripeSprite": "t_field_wheat"
     },
     "sim": {
@@ -8924,8 +8924,8 @@
     "stationChargeCost": 1,
     "xp": 13,
     "crop": {
-      "growMs": 3600000,
-      "load": 10,
+      "growMs": 4320000,
+      "load": 12,
       "ripeSprite": "t_field_wheat"
     },
     "sim": {
@@ -8987,8 +8987,8 @@
     "stationChargeCost": 1,
     "xp": 15,
     "crop": {
-      "growMs": 3600000,
-      "load": 10,
+      "growMs": 5400000,
+      "load": 15,
       "ripeSprite": "t_field_wheat"
     },
     "sim": {
@@ -9050,8 +9050,8 @@
     "stationChargeCost": 1,
     "xp": 19,
     "crop": {
-      "growMs": 3600000,
-      "load": 10,
+      "growMs": 5400000,
+      "load": 15,
       "ripeSprite": "t_field_wheat"
     },
     "sim": {
@@ -9087,7 +9087,7 @@
       },
       {
         "itemId": "item_corn_seed",
-        "chance": 40,
+        "chance": 37,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
@@ -9112,8 +9112,8 @@
     "stationChargeCost": 1,
     "xp": 30,
     "crop": {
-      "growMs": 3600000,
-      "load": 10,
+      "growMs": 5400000,
+      "load": 15,
       "ripeSprite": "t_field_wheat"
     },
     "sim": {
@@ -9149,7 +9149,7 @@
       },
       {
         "itemId": "item_emberroot_seed",
-        "chance": 40,
+        "chance": 35,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
@@ -9174,8 +9174,8 @@
     "stationChargeCost": 1,
     "xp": 40,
     "crop": {
-      "growMs": 3600000,
-      "load": 10,
+      "growMs": 7200000,
+      "load": 20,
       "ripeSprite": "t_field_wheat"
     },
     "sim": {
@@ -9211,7 +9211,7 @@
       },
       {
         "itemId": "item_voidcap_seed",
-        "chance": 40,
+        "chance": 35,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
@@ -9236,8 +9236,8 @@
     "stationChargeCost": 1,
     "xp": 42,
     "crop": {
-      "growMs": 3600000,
-      "load": 10,
+      "growMs": 7200000,
+      "load": 20,
       "ripeSprite": "t_field_wheat"
     },
     "sim": {
@@ -9263,8 +9263,8 @@
       {
         "itemId": "item_mint",
         "chance": 100,
-        "minQty": 2,
-        "maxQty": 3,
+        "minQty": 1,
+        "maxQty": 2,
         "baseQty": {
           "min": 1,
           "max": 2
@@ -9300,8 +9300,8 @@
     "stationChargeCost": 1,
     "xp": 3,
     "crop": {
-      "growMs": 5400000,
-      "load": 8,
+      "growMs": 2700000,
+      "load": 4,
       "ripeSprite": "t_field_lavender"
     },
     "sim": {
@@ -9364,8 +9364,8 @@
     "stationChargeCost": 1,
     "xp": 5,
     "crop": {
-      "growMs": 5400000,
-      "load": 8,
+      "growMs": 3360000,
+      "load": 5,
       "ripeSprite": "t_field_lavender"
     },
     "sim": {
@@ -9428,8 +9428,8 @@
     "stationChargeCost": 1,
     "xp": 10,
     "crop": {
-      "growMs": 5400000,
-      "load": 8,
+      "growMs": 3360000,
+      "load": 5,
       "ripeSprite": "t_field_lavender"
     },
     "sim": {
@@ -9466,7 +9466,7 @@
       },
       {
         "itemId": "item_moonpetal_seed",
-        "chance": 30,
+        "chance": 34,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
@@ -9491,8 +9491,8 @@
     "stationChargeCost": 1,
     "xp": 25,
     "crop": {
-      "growMs": 5400000,
-      "load": 8,
+      "growMs": 4080000,
+      "load": 6,
       "ripeSprite": "t_field_lavender"
     },
     "sim": {
@@ -9529,7 +9529,7 @@
       },
       {
         "itemId": "item_starflower_seed",
-        "chance": 30,
+        "chance": 32,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
@@ -9554,8 +9554,8 @@
     "stationChargeCost": 1,
     "xp": 58,
     "crop": {
-      "growMs": 5400000,
-      "load": 8,
+      "growMs": 4740000,
+      "load": 7,
       "ripeSprite": "t_field_lavender"
     },
     "sim": {
