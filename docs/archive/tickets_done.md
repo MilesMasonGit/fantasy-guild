@@ -614,3 +614,4 @@ T-748 — Typical judges a drink again as its setup grows and drops it once it s
 T-763 — coin checks leave a Guild Hall rank's coins to its payback; the coins lever writes Shop and ring prices only — 7f8df052d — 2026-11-28
 T-760 — chests leave the game: content packs (no-chests, retire-chests) and the code (world extras, value budget, Atlas treasure role, Chests panel); old saves load — 8362c6dd5 — 2026-11-28
 T-484 — closed with T-760: no chests remain to lose their Encyclopedia tick — 8362c6dd5 — 2026-11-28
+T-762 — the chain XP check compares chains whose last link asks within 10 levels (widened to 3 chains); 65 to 54 warnings — 867d72340 — 2026-11-28
