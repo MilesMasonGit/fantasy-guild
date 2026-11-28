@@ -26,10 +26,10 @@ import { SKILLS, SKILL_LAYERS } from '../../../../src/config/registries/skillReg
  *   levels (BALANCE_RULES section 1); the levels it then leaves slow are reported as `gaps`.
  * - **Costs and times**: a one-off step far longer than the pace allows (a Shop price, a build's
  *   inputs or time, a growth) is cut to the wait the pace allows there.
- * - **Coins** (brief 870 C3): a price that asks coins (a Shop Token's `shop.coins`, a Guild Hall
- *   rank's `coins`, a ring's `prices[ring].coins`) beyond the tolerance from the coin curve's number
- *   (`pace.coinPrices`) is set to it. Which prices ask coins is the author's: one asking none is
- *   never given a coin cost.
+ * - **Coins** (brief 870 C3): a price that asks coins (a Shop Token's `shop.coins`, a ring's
+ *   `prices[ring].coins`) beyond the tolerance from the coin curve's number (`pace.coinPrices`) is
+ *   set to it. Which prices ask coins is the author's: one asking none is never given a coin cost.
+ *   A Guild Hall rank's coins are never set here: the payback check judges them with its items.
  *
  * **A stage is its way out** (`pace.gateOf`, owner 2026-11-26): its budget times settling the next
  * place, never its full content, so no lever fits a stage's content into its budget. A way out off
@@ -74,7 +74,7 @@ export const BALANCE_TEXT = Object.freeze({
         limit: 'At its cap', other: 'Other'
     }),
     worldTables: 'World tables',
-    coins: (row) => `${row.name}${row.kind === 'hall' ? ` rank ${row.rank}` : ''} asks ${row.coins} coins; the coin curve asks the coins one hero earns selling at ${tierLabel(row.cap)} (${Math.round(row.perHour)} an hour${row.source ? `, ${row.source}` : ''}) in ${row.minutes} min (its ${row.curve} curve).`,
+    coins: (row) => `${row.name} asks ${row.coins} coins; the coin curve asks the coins one hero earns selling at ${tierLabel(row.cap)} (${Math.round(row.perHour)} an hour${row.source ? `, ${row.source}` : ''}) in ${row.minutes} min (its ${row.curve} curve).`,
     field: Object.freeze({
         'config.xp': 'XP a cycle', xp: 'XP a cycle', 'config.skillRequired': 'Level needed', levelRequirement: 'Level needed',
         durationMs: 'Time (ms)', 'config.cycleTimeMs': 'Cycle (ms)', 'grows.afterMs': 'Grow time (ms)', 'shop.coins': 'Shop coins'
@@ -327,20 +327,21 @@ function fieldLabel(field, lever) {
 /** The field a coin price row is written in: its record's kind, id and path. */
 function coinField(row) {
     if (row.kind === 'shop') return { kind: 'token', id: row.id, field: 'shop.coins' };
-    if (row.kind === 'hall') return { kind: 'hallStar', id: row.id, field: `ranks.${row.rank - 1}.coins` };
-    return { kind: 'world', id: 'world', field: `prices.${row.ring}.coins` };
+    if (row.kind === 'ring') return { kind: 'world', id: 'world', field: `prices.${row.ring}.coins` };
+    return null;
 }
 
-/** Every price that asks coins, beyond the tolerance from the coin curve's number, set to it. */
+/** Every Shop Token and ring price that asks coins, beyond the tolerance from the coin curve's number, set to it. */
 function coinPass(state) {
     // Nothing asks coins: nothing to price, and no coin income worked out for it.
     if (!state.eval.pace.asksCoins()) return false;
     const tol = state.settings.tolerancePct / 100;
     let changed = false;
     for (const row of state.eval.pace.coinPrices()) {
-        if (!(row.coins > 0) || !(row.proposed > 0)) continue;
+        const field = coinField(row);
+        if (!field || !(row.coins > 0) || !(row.proposed > 0)) continue;
         if (Math.abs(row.coins / row.proposed - 1) <= tol + 1e-9) continue;
-        changed = propose(state, { ...coinField(row), to: row.proposed, lever: LEVER.COINS, problem: BALANCE_TEXT.coins(row) }) || changed;
+        changed = propose(state, { ...field, to: row.proposed, lever: LEVER.COINS, problem: BALANCE_TEXT.coins(row) }) || changed;
     }
     return changed;
 }

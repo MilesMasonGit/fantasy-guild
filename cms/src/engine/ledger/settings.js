@@ -120,9 +120,9 @@ const DEFAULT_BOOST_TARGETS = {
  * would still rise with distance, since a later stage earns more an hour.
  * - **Everyday** (a Shop Token, a Foundation): one level's time at the tier's opening level on the
  *   pace rule, copper at level 10's (few purchases come in the first minutes).
- * - **Big** (settling a place, a Guild Hall star): half the payback curve, 1 hour x 24^(L / 80) at
- *   each tier's opening level (Plane 1 at level 10's 45 min, its own point), copper at its start. A
- *   star's rank adds no multiplier: each rank is priced at its own stage.
+ * - **Big** (settling a place): half the payback curve, 1 hour x 24^(L / 80) at each tier's opening
+ *   level (Plane 1 at level 10's 45 min, its own point), copper at its start.
+ * A Guild Hall rank is on neither: its coins and items together are judged by the payback check.
  * ⚠️ The points are written out, not worked out: tests pin the everyday ones to the pace rule and
  * the big ones to the payback rule at the tier levels, so a moved rule fails them until the points
  * move with it.

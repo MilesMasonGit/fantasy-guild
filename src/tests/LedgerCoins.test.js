@@ -317,7 +317,7 @@ describe('⭐ proposed coin costs: two curves by kind of purchase (BALANCE_RULES
         expect(coinMinutesAt(settingsOf({ bigCoinCurve: [] }), 1, COIN_CURVE.BIG)).toBeNull();
     });
 
-    it('a Shop Token on the everyday curve; a Guild Hall rank on the big one, with no multiplier for its rank', () => {
+    it('a Shop Token on the everyday curve; a Guild Hall rank on none, left to its payback', () => {
         const c = withStall(coinContent(), 0);
         c.hallSky = paceHallSky();
         const pace = paceOf(c);
@@ -326,12 +326,13 @@ describe('⭐ proposed coin costs: two curves by kind of purchase (BALANCE_RULES
         const stall = rows.find(r => r.kind === 'shop' && r.id === 'token_stall');
         expect(stall).toMatchObject({ tier: 0, coins: 0, curve: COIN_CURVE.EVERYDAY, minutes: 5, perHour: typical, proposed: roundDown(typical * 5 / 60) });
         expect(stall.source).toBeTruthy();
-        const hallIncome = pace.coinSupplyOf(BEFORE_HALL, 0).perHour;
-        const lore1 = rows.find(r => r.kind === 'hall' && r.id === 'ph_lore' && r.rank === 1);
-        const lore2 = rows.find(r => r.kind === 'hall' && r.id === 'ph_lore' && r.rank === 2);
-        expect(lore1).toMatchObject({ curve: COIN_CURVE.BIG, minutes: 30, proposed: roundDown(hallIncome * 30 / 60) });
-        // Both ranks are of the Starter Camp: the same coins, the rank adds nothing.
-        expect(lore2).toMatchObject({ curve: COIN_CURVE.BIG, minutes: 30, proposed: lore1.proposed });
+        const hall = rows.filter(r => r.kind === 'hall');
+        expect(hall.length).toBeGreaterThan(1);
+        for (const r of hall) {
+            expect(r, `${r.id} ${r.rank}`).toMatchObject({ curve: null, minutes: null, proposed: null });
+            expect(r.why).toMatch(/payback/);
+        }
+        expect(hall.find(r => r.id === 'ph_lore' && r.rank === 1).tier).toBe(0);
     });
 
     it("further out costs more: the curve's minutes and the income both rise by stage; a ring on the big curve", () => {
@@ -357,11 +358,9 @@ describe('⭐ proposed coin costs: two curves by kind of purchase (BALANCE_RULES
         const row = paceOf(withStall(coinContent(), 0), { coinCurve: [] }).coinPrices().find(r => r.id === 'token_stall');
         expect(row.proposed).toBeNull();
         expect(row.why).toMatch(/everyday coin curve/);
-        const c = withStall(coinContent(), 0);
-        c.hallSky = paceHallSky();
-        const hall = paceOf(c, { bigCoinCurve: [] }).coinPrices().find(r => r.kind === 'hall');
-        expect(hall.proposed).toBeNull();
-        expect(hall.why).toMatch(/big coin curve/);
+        const ring = paceOf({ ...contentOf(worldWorkspace()), worldTables: WORLD_FIXTURE_TABLES }, { bigCoinCurve: [] }).coinPrices().find(r => r.kind === 'ring');
+        expect(ring.proposed).toBeNull();
+        expect(ring.why).toMatch(/big coin curve/);
         const dry = paceOf(withStall(coinContent({ values: false }), 0)).coinPrices().find(r => r.id === 'token_stall');
         expect(dry.proposed).toBeNull();
         expect(dry.why).toMatch(/earns/);
@@ -469,19 +468,20 @@ describe('⭐ the balance tool sets the coins of a price that asks them', () => 
         expect(proposeBalance(withStall(coinContent(), 0), SPARSE, { rounds: 1 }).proposals.filter(p => p.lever === LEVER.COINS)).toEqual([]);
     });
 
-    it('a price asking coins is moved to the curve\'s number; one asking none is left alone', () => {
+    it('a price asking coins is moved to the curve\'s number; one asking none is left alone; a Guild Hall rank never', () => {
         const c = withStall(coinContent(), 1);
         c.hallSky = paceHallSky();
-        c.hallSky.stars.ph_lore.ranks[1].coins = 5;
+        // Every rank priced small, as its payback asks: far under what a big purchase's curve would give.
+        for (const star of Object.values(c.hallSky.stars)) for (const rank of star.ranks) rank.coins = 5;
         const want = paceOf(structuredClone(c)).coinPrices();
         const result = proposeBalance(c, SPARSE, { rounds: 1 });
         const coins = result.proposals.filter(p => p.lever === LEVER.COINS);
         const stall = coins.find(p => p.id === 'token_stall');
         expect(stall).toMatchObject({ kind: 'token', field: 'shop.coins', from: 1, to: want.find(r => r.id === 'token_stall').proposed });
-        const lore = coins.find(p => p.id === 'ph_lore');
-        expect(lore).toMatchObject({ kind: 'hallStar', field: 'ranks.1.coins', from: 5, to: want.find(r => r.id === 'ph_lore' && r.rank === 2).proposed });
-        // The Plot and Lore's first rank ask none: no proposal.
-        expect(coins.filter(p => p.id === 'token_plot' || p.field === 'ranks.0.coins')).toEqual([]);
+        expect(coins.filter(p => p.kind === 'hallStar' || p.field.startsWith('ranks.'))).toEqual([]);
+        expect(result.proposals.filter(p => p.kind === 'hallStar' && p.field.endsWith('.coins'))).toEqual([]);
+        // The Plot asks none: no proposal.
+        expect(coins.filter(p => p.id === 'token_plot')).toEqual([]);
         // The content handed in is never changed.
         expect(c.tokens.token_stall.shop.coins).toBe(1);
     });

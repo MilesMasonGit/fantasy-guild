@@ -302,7 +302,7 @@ export default function LedgerSettings() {
         </div>
       </Card>
 
-      <Card title="Coin costs" help="The two coin curves (BALANCE_RULES section 7): from a stage on, a coin cost asks the coins one hero earns by selling in this many minutes there. Everyday (a Shop Token, a Foundation): one level's time on the pace curve, so these move with the pace step. Big (settling a place, a Guild Hall star): half the payback curve; a star's rank adds no multiplier, each rank is priced at its own stage. A later stage earns more an hour, so the same minutes already cost more further out. The balancing preview sets the prices that ask coins to these numbers; which prices ask coins is the content's.">
+      <Card title="Coin costs" help="The two coin curves (BALANCE_RULES section 7): from a stage on, a coin cost asks the coins one hero earns by selling in this many minutes there. Everyday (a Shop Token, a Foundation): one level's time on the pace curve, so these move with the pace step. Big (settling a place): half the payback curve. A Guild Hall rank is on neither curve: its coins and items together are judged by its payback. A later stage earns more an hour, so the same minutes already cost more further out. The balancing preview sets the prices that ask coins to these numbers; which prices ask coins is the content's.">
         {COIN_CURVES.map(({ field, kind, label, article }) => {
           const points = settings[field];
           return (
