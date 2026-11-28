@@ -134,10 +134,10 @@
           "price": [
             {
               "itemId": "item_oak_wood",
-              "quantity": 50
+              "quantity": 1
             }
           ],
-          "coins": 1500,
+          "coins": 33,
           "rules": [
             {
               "id": "stm_star_forestry_speed_1_1",
@@ -166,10 +166,10 @@
           "price": [
             {
               "itemId": "item_fir_wood",
-              "quantity": 34
+              "quantity": 1
             }
           ],
-          "coins": 9100,
+          "coins": 390,
           "rules": [
             {
               "id": "stm_star_forestry_speed_2_2",
@@ -214,10 +214,10 @@
           "price": [
             {
               "itemId": "item_oak_wood",
-              "quantity": 600
+              "quantity": 14
             }
           ],
-          "coins": 1500,
+          "coins": 35,
           "rules": [
             {
               "id": "stm_star_forestry_yield_1_3",
@@ -246,10 +246,10 @@
           "price": [
             {
               "itemId": "item_fir_wood",
-              "quantity": 130
+              "quantity": 5
             }
           ],
-          "coins": 9100,
+          "coins": 350,
           "rules": [
             {
               "id": "stm_star_forestry_yield_2_4",
@@ -294,10 +294,10 @@
           "price": [
             {
               "itemId": "item_oak_wood",
-              "quantity": 2000
+              "quantity": 39
             }
           ],
-          "coins": 1500,
+          "coins": 30,
           "rules": [
             {
               "id": "stm_star_forestry_regrowth_1_6",
@@ -359,10 +359,10 @@
           "price": [
             {
               "itemId": "item_copper_ore",
-              "quantity": 510
+              "quantity": 41
             }
           ],
-          "coins": 1500,
+          "coins": 120,
           "rules": [
             {
               "id": "stm_star_mining_speed_1_10",
@@ -391,10 +391,10 @@
           "price": [
             {
               "itemId": "item_iron_ore",
-              "quantity": 135
+              "quantity": 20
             }
           ],
-          "coins": 9100,
+          "coins": 1400,
           "rules": [
             {
               "id": "stm_star_mining_speed_2_11",
@@ -439,10 +439,10 @@
           "price": [
             {
               "itemId": "item_copper_ore",
-              "quantity": 1300
+              "quantity": 38
             }
           ],
-          "coins": 1500,
+          "coins": 44,
           "rules": [
             {
               "id": "stm_star_mining_yield_1_12",
@@ -471,10 +471,10 @@
           "price": [
             {
               "itemId": "item_iron_ore",
-              "quantity": 290
+              "quantity": 41
             }
           ],
-          "coins": 9100,
+          "coins": 1300,
           "rules": [
             {
               "id": "stm_star_mining_yield_2_13",
@@ -519,10 +519,10 @@
           "price": [
             {
               "itemId": "item_copper_ore",
-              "quantity": 3100
+              "quantity": 37
             }
           ],
-          "coins": 1500,
+          "coins": 18,
           "rules": [
             {
               "id": "stm_star_mining_vein_rest_1_15",
@@ -550,10 +550,10 @@
           "price": [
             {
               "itemId": "item_iron_ore",
-              "quantity": 690
+              "quantity": 87
             }
           ],
-          "coins": 9100,
+          "coins": 1100,
           "rules": [
             {
               "id": "stm_star_mining_vein_rest_2_16",
@@ -597,10 +597,10 @@
           "price": [
             {
               "itemId": "item_redberry",
-              "quantity": 2700
+              "quantity": 75
             }
           ],
-          "coins": 1500,
+          "coins": 42,
           "rules": [
             {
               "id": "stm_star_smithing_speed_1_19",
@@ -629,10 +629,10 @@
           "price": [
             {
               "itemId": "item_trout",
-              "quantity": 1100
+              "quantity": 83
             }
           ],
-          "coins": 9100,
+          "coins": 690,
           "rules": [
             {
               "id": "stm_star_smithing_speed_2_20",
@@ -677,10 +677,10 @@
           "price": [
             {
               "itemId": "item_redberry",
-              "quantity": 2800
+              "quantity": 34
             }
           ],
-          "coins": 1500,
+          "coins": 18,
           "rules": [
             {
               "id": "stm_star_smithing_yield_1_21",
@@ -709,10 +709,10 @@
           "price": [
             {
               "itemId": "item_trout",
-              "quantity": 730
+              "quantity": 49
             }
           ],
-          "coins": 9100,
+          "coins": 610,
           "rules": [
             {
               "id": "stm_star_smithing_yield_2_22",
@@ -757,10 +757,10 @@
           "price": [
             {
               "itemId": "item_raw_shrimp",
-              "quantity": 1000
+              "quantity": 26
             }
           ],
-          "coins": 1500,
+          "coins": 40,
           "rules": [
             {
               "id": "stm_star_fishing_speed_1_24",
@@ -789,10 +789,10 @@
           "price": [
             {
               "itemId": "item_trout",
-              "quantity": 950
+              "quantity": 85
             }
           ],
-          "coins": 9100,
+          "coins": 820,
           "rules": [
             {
               "id": "stm_star_fishing_speed_2_25",
@@ -837,10 +837,10 @@
           "price": [
             {
               "itemId": "item_raw_shrimp",
-              "quantity": 940
+              "quantity": 9
             }
           ],
-          "coins": 1500,
+          "coins": 14,
           "rules": [
             {
               "id": "stm_star_fishing_yield_1_26",
@@ -869,10 +869,10 @@
           "price": [
             {
               "itemId": "item_trout",
-              "quantity": 680
+              "quantity": 49
             }
           ],
-          "coins": 9100,
+          "coins": 660,
           "rules": [
             {
               "id": "stm_star_fishing_yield_2_27",
@@ -917,10 +917,10 @@
           "price": [
             {
               "itemId": "item_redberry",
-              "quantity": 2700
+              "quantity": 49
             }
           ],
-          "coins": 1500,
+          "coins": 27,
           "rules": [
             {
               "id": "stm_star_farming_speed_1_31",
@@ -981,10 +981,10 @@
           "price": [
             {
               "itemId": "item_grapes",
-              "quantity": 870
+              "quantity": 7
             }
           ],
-          "coins": 9100,
+          "coins": 76,
           "rules": [
             {
               "id": "stm_star_farming_speed_3_33",
@@ -1029,10 +1029,10 @@
           "price": [
             {
               "itemId": "item_redberry",
-              "quantity": 2600
+              "quantity": 20
             }
           ],
-          "coins": 1500,
+          "coins": 12,
           "rules": [
             {
               "id": "stm_star_farming_yield_1_34",
@@ -1093,10 +1093,10 @@
           "price": [
             {
               "itemId": "item_grapes",
-              "quantity": 710
+              "quantity": 4
             }
           ],
-          "coins": 9100,
+          "coins": 53,
           "rules": [
             {
               "id": "stm_star_farming_yield_3_36",
@@ -1141,10 +1141,10 @@
           "price": [
             {
               "itemId": "item_redberry",
-              "quantity": 6100
+              "quantity": 44
             }
           ],
-          "coins": 1500,
+          "coins": 11,
           "rules": [
             {
               "id": "stm_star_farming_refill_1_38",
@@ -1491,10 +1491,10 @@
           "price": [
             {
               "itemId": "item_grapes",
-              "quantity": 2200
+              "quantity": 7
             }
           ],
-          "coins": 9100,
+          "coins": 31,
           "rules": [
             {
               "id": "stm_star_farming_refill_3_56",
@@ -1682,10 +1682,10 @@
           "price": [
             {
               "itemId": "item_redberry",
-              "quantity": 3200
+              "quantity": 51
             }
           ],
-          "coins": 1500,
+          "coins": 24,
           "rules": [
             {
               "id": "stm_star_cooking_speed_1_68",
@@ -1746,10 +1746,10 @@
           "price": [
             {
               "itemId": "item_trout",
-              "quantity": 1000
+              "quantity": 51
             }
           ],
-          "coins": 9100,
+          "coins": 460,
           "rules": [
             {
               "id": "stm_star_cooking_speed_3_70",
@@ -1794,10 +1794,10 @@
           "price": [
             {
               "itemId": "item_redberry",
-              "quantity": 3000
+              "quantity": 20
             }
           ],
-          "coins": 1500,
+          "coins": 10,
           "rules": [
             {
               "id": "stm_star_cooking_yield_1_71",
@@ -1858,10 +1858,10 @@
           "price": [
             {
               "itemId": "item_trout",
-              "quantity": 810
+              "quantity": 35
             }
           ],
-          "coins": 9100,
+          "coins": 400,
           "rules": [
             {
               "id": "stm_star_cooking_yield_3_73",
@@ -1906,10 +1906,10 @@
           "price": [
             {
               "itemId": "item_redberry",
-              "quantity": 2700
+              "quantity": 52
             }
           ],
-          "coins": 1500,
+          "coins": 29,
           "rules": [
             {
               "id": "stm_star_crafting_speed_1_75",
@@ -1970,10 +1970,10 @@
           "price": [
             {
               "itemId": "item_trout",
-              "quantity": 880
+              "quantity": 55
             }
           ],
-          "coins": 9100,
+          "coins": 570,
           "rules": [
             {
               "id": "stm_star_crafting_speed_3_77",
@@ -2018,10 +2018,10 @@
           "price": [
             {
               "itemId": "item_redberry",
-              "quantity": 3000
+              "quantity": 24
             }
           ],
-          "coins": 1500,
+          "coins": 12,
           "rules": [
             {
               "id": "stm_star_crafting_yield_1_78",
@@ -2082,10 +2082,10 @@
           "price": [
             {
               "itemId": "item_trout",
-              "quantity": 820
+              "quantity": 35
             }
           ],
-          "coins": 9100,
+          "coins": 390,
           "rules": [
             {
               "id": "stm_star_crafting_yield_3_80",
@@ -2130,10 +2130,10 @@
           "price": [
             {
               "itemId": "item_redberry",
-              "quantity": 2700
+              "quantity": 79
             }
           ],
-          "coins": 1500,
+          "coins": 44,
           "rules": [
             {
               "id": "stm_star_construction_speed_1_82",
@@ -2162,10 +2162,10 @@
           "price": [
             {
               "itemId": "item_trout",
-              "quantity": 730
+              "quantity": 64
             }
           ],
-          "coins": 9100,
+          "coins": 800,
           "rules": [
             {
               "id": "stm_star_construction_speed_2_83",
@@ -2210,10 +2210,10 @@
           "price": [
             {
               "itemId": "item_lavender",
-              "quantity": 32
+              "quantity": 14
             }
           ],
-          "coins": 9100,
+          "coins": 3900,
           "rules": [
             {
               "id": "stm_star_alchemy_speed_1_86",
@@ -2258,10 +2258,10 @@
           "price": [
             {
               "itemId": "item_lavender",
-              "quantity": 320
+              "quantity": 50
             }
           ],
-          "coins": 9100,
+          "coins": 1400,
           "rules": [
             {
               "id": "stm_star_alchemy_yield_1_87",
@@ -2306,10 +2306,10 @@
           "price": [
             {
               "itemId": "item_lavender",
-              "quantity": 470
+              "quantity": 21
             }
           ],
-          "coins": 9100,
+          "coins": 410,
           "rules": [
             {
               "id": "stm_star_alchemy_herb_refill_1_89",
@@ -2559,10 +2559,10 @@
           "price": [
             {
               "itemId": "item_oak_seedling",
-              "quantity": 76
+              "quantity": 1
             }
           ],
-          "coins": 1500,
+          "coins": 26,
           "rules": [],
           "lines": [
             {
@@ -2593,10 +2593,10 @@
           "price": [
             {
               "itemId": "item_fir_wood",
-              "quantity": 160
+              "quantity": 4
             }
           ],
-          "coins": 9100,
+          "coins": 240,
           "rules": [],
           "lines": [
             {
@@ -2626,10 +2626,10 @@
           "price": [
             {
               "itemId": "item_stone",
-              "quantity": 2200
+              "quantity": 20
             }
           ],
-          "coins": 1500,
+          "coins": 14,
           "rules": [],
           "lines": [
             {
@@ -2660,10 +2660,10 @@
           "price": [
             {
               "itemId": "item_iron_ore",
-              "quantity": 580
+              "quantity": 20
             }
           ],
-          "coins": 9100,
+          "coins": 310,
           "rules": [],
           "lines": [
             {
@@ -2693,10 +2693,10 @@
           "price": [
             {
               "itemId": "item_copper_ore",
-              "quantity": 2700
+              "quantity": 151
             }
           ],
-          "coins": 1500,
+          "coins": 84,
           "rules": [],
           "lines": [
             {
@@ -2727,10 +2727,10 @@
           "price": [
             {
               "itemId": "item_iron_ore",
-              "quantity": 660
+              "quantity": 72
             }
           ],
-          "coins": 9100,
+          "coins": 990,
           "rules": [],
           "lines": [
             {
@@ -2760,10 +2760,10 @@
           "price": [
             {
               "itemId": "item_copper_ore",
-              "quantity": 2200
+              "quantity": 13
             }
           ],
-          "coins": 1500,
+          "coins": 9,
           "rules": [],
           "lines": [
             {
@@ -2794,10 +2794,10 @@
           "price": [
             {
               "itemId": "item_iron_ore",
-              "quantity": 580
+              "quantity": 18
             }
           ],
-          "coins": 9100,
+          "coins": 280,
           "rules": [],
           "lines": [
             {
@@ -2861,10 +2861,10 @@
           "price": [
             {
               "itemId": "item_trout",
-              "quantity": 2200
+              "quantity": 80
             }
           ],
-          "coins": 9100,
+          "coins": 330,
           "rules": [],
           "lines": [
             {
@@ -2894,10 +2894,10 @@
           "price": [
             {
               "itemId": "item_trout",
-              "quantity": 1200
+              "quantity": 6
             }
           ],
-          "coins": 9100,
+          "coins": 45,
           "rules": [],
           "lines": [
             {
@@ -2927,10 +2927,10 @@
           "price": [
             {
               "itemId": "item_fir_seedling",
-              "quantity": 38
+              "quantity": 1
             }
           ],
-          "coins": 9100,
+          "coins": 5,
           "rules": [],
           "lines": [
             {
@@ -3167,10 +3167,10 @@
           "price": [
             {
               "itemId": "item_trout",
-              "quantity": 30000
+              "quantity": 40
             }
           ],
-          "coins": 9100,
+          "coins": 12,
           "rules": [
             {
               "id": "stm_star_well_lap_3",
