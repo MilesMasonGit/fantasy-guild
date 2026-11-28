@@ -612,3 +612,5 @@ T-757 — Recalculate writes an untuned chance back to baseChance; pinned output
 T-734 — Typical buys a Guild Hall rank on the payback curve, the same sum as the prices (part B; part A 0be536118) — dab95deb3 — 2026-11-27
 T-748 — Typical judges a drink again as its setup grows and drops it once it stops paying back; T-749 second number retired — 7811ffcba — 2026-11-27
 T-763 — coin checks leave a Guild Hall rank's coins to its payback; the coins lever writes Shop and ring prices only — 7f8df052d — 2026-11-28
+T-760 — chests leave the game: content packs (no-chests, retire-chests) and the code (world extras, value budget, Atlas treasure role, Chests panel); old saves load — 8362c6dd5 — 2026-11-28
+T-484 — closed with T-760: no chests remain to lose their Encyclopedia tick — 8362c6dd5 — 2026-11-28
