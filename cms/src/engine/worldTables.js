@@ -45,6 +45,12 @@ export function withBiomeRow(world, biome, row) {
   return { ...world, biomes: { ...(isPlainObject(world.biomes) ? world.biomes : {}), [biome]: row } };
 }
 
+/** The record with each further place in a ring asking `growth` times the one before (`placePriceGrowth`). */
+export function withPlacePriceGrowth(world, growth) {
+  if (!isPlainObject(world) || !(Number.isFinite(growth) && growth >= 1)) return world;
+  return { ...world, placePriceGrowth: growth };
+}
+
 /** Whether the workspace holds tables to write. */
 export function holdsWorld(workspace) {
   return isPlainObject(workspace?.world);
@@ -79,7 +85,7 @@ export function keyedWorld(raw) {
 }
 
 /** The parts of a record compared as wholes in a review: changed or not. */
-const WHOLE_PARTS = Object.freeze(['kits', 'arrival', 'prices', 'keys', 'extras', 'ringValue', 'specialties', 'heroTokens', 'neighbours', 'wild', 'biomes']);
+const WHOLE_PARTS = Object.freeze(['kits', 'arrival', 'prices', 'keys', 'extras', 'ringValue', 'specialties', 'heroTokens', 'neighbours', 'wild', 'biomes', 'placePriceGrowth']);
 
 /**
  * What a world entry changes, for the review page: origins and guaranteed camps in and out per line

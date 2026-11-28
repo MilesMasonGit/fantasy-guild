@@ -17,10 +17,10 @@ import { worldTables } from '../../config/registries/worldTablesRegistry.js';
 import '../../config/registries/hallStarRegistry.js';
 import { authoredStars } from '../../config/guildUpgrades.js';
 import { GameState } from '../../state/GameState.js';
-import { lineById } from '../../config/worldTablesShape.js';
+import { lineById, placePriceFactor } from '../../config/worldTablesShape.js';
 import { materialsFromTokens } from './materials.js';
 import { currentWorld } from './worldState.js';
-import { HALL_CELL, CELL_STATE, settledIds, cellStates, priceRows, cellOutputs } from './frontier.js';
+import { HALL_CELL, CELL_STATE, settledIds, cellStates, settledInRing, priceRows, cellOutputs } from './frontier.js';
 import { recipesOfCell } from './cellRegion.js';
 import { priceTemplateOf } from './generate.js';
 import { ringLock } from './ringStars.js';
@@ -82,12 +82,20 @@ function coinsAsked(cell) {
     return cell?.ring >= 1 ? priceTemplateOf(worldTables(), cell.ring)?.coins || 0 : 0;
 }
 
+/** How far a cell's price has grown: by the places the guild has settled in its ring so far (`placePriceGrowth`). */
+function priceFactor(cell) {
+    const world = currentWorld();
+    if (!world || !(cell?.ring >= 1)) return 1;
+    return placePriceFactor(worldTables(), settledInRing(world, settledCellIds(world), cell.ring, cell.id));
+}
+
 const guild = () => ({
     itemCount: (itemId) => InventoryManager.getItemCount(itemId),
     itemKnown: (itemId) => getItem(itemId) != null,
     skillLevel: guildSkillLevel,
     coinsAsked,
-    coinCount: getCoins
+    coinCount: getCoins,
+    priceFactor
 });
 
 /** The settled cells' ids, the Hall's always among them; empty with no world. */
@@ -100,7 +108,7 @@ export function cellStatesNow(world = currentWorld()) {
     return world ? cellStates(world, settledCellIds(world)) : new Map();
 }
 
-/** A cell's price against the Bank and the heroes now (`frontier.priceRows`). */
+/** A cell's price against the Bank and the heroes now, grown by its ring's places settled so far (`frontier.priceRows`). */
 export function priceOf(cell) {
     return priceRows(cell, guild());
 }

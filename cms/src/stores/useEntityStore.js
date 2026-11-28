@@ -9,7 +9,7 @@ import {
 } from '../utils/constants';
 import { normaliseStarterCamp, emptyStarterCamp, withBankCount, withoutToken } from '../engine/starterCamp';
 import { withPerkRow, withoutPerkRow } from '../engine/skillPerks';
-import { withBiomeRow } from '../engine/worldTables';
+import { withBiomeRow, withPlacePriceGrowth } from '../engine/worldTables';
 import { pendingSpriteRenames, applySpriteRenamesTo } from '../engine/spriteRenames';
 import { workspaceStorage } from '../engine/diskWorkspace';
 import { seedStoredWorkspace, workspaceFromImport } from '../engine/workspaceSeeds';
@@ -633,6 +633,8 @@ export const useEntityStore = create(
             world: null,
             /** Replace one biome's terrain row (the World page's biome table); nothing while the workspace holds no world tables. */
             setBiomeRow: (biome, row) => set((s) => (s.world ? { world: withBiomeRow(s.world, biome, row) } : {})),
+            /** How much dearer each further place in a ring is than the one before (`placePriceGrowth`). */
+            setPlacePriceGrowth: (growth) => set((s) => (s.world ? { world: withPlacePriceGrowth(s.world, growth) } : {})),
             /** The events table (`engine/events.js`), keyed by id. ⚠️ Null means this workspace never held one, and Sync then leaves `data/events.json` alone. */
             events: null,
             /** What was renamed since the last Sync, per collection: the id at the last Sync → the id now (`engine/renames.js`). Written by every id change, not by hand. */

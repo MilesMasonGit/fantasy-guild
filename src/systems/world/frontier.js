@@ -28,6 +28,13 @@ export function settledIds(world, regions = []) {
     return ids;
 }
 
+/** How many cells of `ring` are settled, `exceptId` not counted: the places a guild has settled there before. */
+export function settledInRing(world, settled, ring, exceptId = null) {
+    let n = 0;
+    for (const cell of world?.cells || []) if (cell.ring === ring && cell.id !== exceptId && settled.has(cell.id)) n++;
+    return n;
+}
+
 /** Each cell's state, by id. */
 export function cellStates(world, settled) {
     const out = new Map();
@@ -51,16 +58,23 @@ export function cellStates(world, settled) {
  * The coins are not stored on the cell: `guild.coinsAsked(cell)` reads them from the world tables
  * now (by ring), so tables that start asking coins reach a world written before.
  *
+ * The stored price is the ring's first place's: `guild.priceFactor(cell)` grows its coins and item
+ * quantities (rounded) by the places the guild has settled in that ring so far, so the order the
+ * player settles in decides it. The levels asked do not grow.
+ *
  * ⚠️ The world's prices are written once, at the new game, so an item deleted or renamed in the
  * CMS since would make its place unpayable for good: such a row is not asked (and not paid), and
  * the stored price keeps it, so restoring the id restores the row.
  *
  * @param {object} cell a world cell
  * @param {{ itemCount: (itemId: string) => number, skillLevel: (skill: string) => number,
- *   itemKnown?: (itemId: string) => boolean, coinsAsked?: (cell: object) => number, coinCount?: () => number }} guild
+ *   itemKnown?: (itemId: string) => boolean, coinsAsked?: (cell: object) => number, coinCount?: () => number,
+ *   priceFactor?: (cell: object) => number }} guild
  */
-export function priceRows(cell, { itemCount, skillLevel, itemKnown = () => true, coinsAsked = () => 0, coinCount = () => 0 }) {
+export function priceRows(cell, { itemCount, skillLevel, itemKnown = () => true, coinsAsked = () => 0, coinCount = () => 0, priceFactor = () => 1 }) {
     const req = cell?.requires || { items: [], skills: [] };
+    const factor = Number(priceFactor(cell));
+    const grown = (n) => Math.round(n * (Number.isFinite(factor) && factor > 0 ? factor : 1));
     const dropped = [];
     const items = [];
     for (const { itemId, qty } of req.items || []) {
@@ -69,13 +83,14 @@ export function priceRows(cell, { itemCount, skillLevel, itemKnown = () => true,
             continue;
         }
         const have = Math.max(0, Math.floor(Number(itemCount(itemId)) || 0));
-        items.push({ itemId, need: qty, have, short: have < qty });
+        const need = grown(qty);
+        items.push({ itemId, need, have, short: have < need });
     }
     const skills = (req.skills || []).map(({ skill, level }) => {
         const have = Math.max(0, Math.floor(Number(skillLevel(skill)) || 0));
         return { skill, need: level, have, short: have < level };
     });
-    const need = cell?.requires ? Math.max(0, Math.floor(Number(coinsAsked(cell)) || 0)) : 0;
+    const need = cell?.requires ? grown(Math.max(0, Math.floor(Number(coinsAsked(cell)) || 0))) : 0;
     const have = need > 0 ? Math.max(0, Math.floor(Number(coinCount()) || 0)) : 0;
     const coins = need > 0 ? { need, have, short: have < need } : null;
     return { items, skills, coins, dropped, met: !items.some(r => r.short) && !skills.some(r => r.short) && !coins?.short };

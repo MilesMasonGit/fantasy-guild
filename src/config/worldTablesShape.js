@@ -39,6 +39,7 @@ import { normaliseBiomeTable } from './biomeTerrain.js';
  *   valueTolerance: 0.1,
  *   prices: { 1: { items: [{ qty: 20 }, { qty: 10, from: 'hall' }, { qty: 2, item: 'item_rope' }],
  *                  skills: [{ skill: 'line', level: 5 }], coins: 0 }, 2: ..., 3: ... },  // coins: asked beside the items, read live at settling
+ *   placePriceGrowth: 1.25,         // each further place settled in a ring asks this many times the one before
  *   wild: { rings: 3, priceGrowth: 1.5, levelStep: 10, valueGrowth: 1.5, extremeShare: 0.5,
  *           compositionShare: 0.75,  // how much of a one-resource wild mat its one resource takes
  *           layouts: [{ id: 'islands', weight: 1 }] },
@@ -95,6 +96,7 @@ const DEFAULTS = Object.freeze({
     blendsPerNeighbour: 1,
     pityWindow: 4,
     valueTolerance: 0.1,
+    placePriceGrowth: 1.25,
     wild: Object.freeze({ rings: 3, priceGrowth: 1.5, levelStep: 10, valueGrowth: 1.5, extremeShare: 0.5, compositionShare: 0.75 })
 });
 
@@ -350,6 +352,12 @@ export function normaliseWorldTables(raw) {
     const terrain = normaliseBiomeTable(raw.biomes, listOf(raw.kits));
     issues.push(...biomeTableProblems({ kits, biomes: terrain.biomes, biomesMissing: terrain.missing }));
 
+    const growthWritten = raw.placePriceGrowth;
+    const placePriceGrowth = finite(growthWritten) && growthWritten >= 1 ? growthWritten : DEFAULTS.placePriceGrowth;
+    if (growthWritten !== undefined && placePriceGrowth !== growthWritten) {
+        issues.push(`The place price growth "${growthWritten}" is not a number of 1 or more, so it is ${DEFAULTS.placePriceGrowth}`);
+    }
+
     const tolerance = finite(raw.valueTolerance) && raw.valueTolerance >= 0 && raw.valueTolerance < 1
         ? raw.valueTolerance : DEFAULTS.valueTolerance;
 
@@ -369,6 +377,7 @@ export function normaliseWorldTables(raw) {
         ringValue,
         valueTolerance: tolerance,
         prices,
+        placePriceGrowth,
         heroTokens: heroTokensTable(raw.heroTokens),
         specialtyHeroes: finite(raw.specialtyHeroes) && raw.specialtyHeroes >= 0 ? raw.specialtyHeroes : DEFAULTS.specialtyHeroes,
         arrival: perRing(raw.arrival, arrivalOf),
@@ -422,3 +431,18 @@ export function kitBiome(tables, kitId) {
 export function lineById(tables, id) {
     return tables?.lines?.find(l => l.id === id) || null;
 }
+
+/** The place price growth when the tables say none. */
+export const PLACE_PRICE_GROWTH_DEFAULT = DEFAULTS.placePriceGrowth;
+
+/**
+ * What a ring's price is multiplied by for a place settled after `before` others of that ring: the
+ * growth to that power (owner: each further place costs a quarter more). The level asked is not.
+ */
+export function placePriceFactor(tables, before) {
+    const growth = finite(tables?.placePriceGrowth) && tables.placePriceGrowth >= 1 ? tables.placePriceGrowth : DEFAULTS.placePriceGrowth;
+    return Math.pow(growth, Math.max(0, Math.floor(Number(before) || 0)));
+}
+
+/** A ring's coins or an item's quantity for a place settled after `before` others of the ring, whole. */
+export const grownPrice = (qty, tables, before) => Math.round((Number(qty) || 0) * placePriceFactor(tables, before));
