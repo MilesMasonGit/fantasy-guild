@@ -341,33 +341,21 @@ describe('the §6 circularity check: every chain is reachable from the Starter C
  * them becomes reachable or stops being asked for, so the list cannot outlive its reason.
  */
 const NOT_YET_PLACED = Object.freeze({
-    // The furnace offers every metal; only copper and iron have veins on a plane-1 or plane-2 map.
-    item_silver_ore: 'a later plane: only the Silver Ore Vein makes it, and no map places one',
-    item_silver_ingot: 'a later plane: smelted from Silver Ore (furnace, level 30)',
+    // The furnace offers every metal; only copper, iron, silver and mythril have veins on a plane-1 or plane-2 map.
     item_gold_ore: 'a later plane: only the Gold Ore Vein makes it, and no map places one',
     item_gold_ingot: 'a later plane: smelted from Gold Ore (furnace, level 45)',
-    item_mythril_ore: 'a later plane: only the Mythril Ore Vein makes it, and no map places one',
-    item_mythril_ingot: 'a later plane: smelted from Mythril Ore (furnace, level 60)',
     item_adamantine_ore: 'a later plane: only the Adamantine veins make it, and no map places one',
     item_adamantine_ingot: 'a later plane: smelted from Adamantine Ore (furnace, level 75)',
     item_darkmetal_ore: 'a later plane: only the Darkmetal Ore Vein makes it, and no map places one',
     item_darkmetal_ingot: 'a later plane: smelted from Darkmetal Ore (furnace, level 90)',
-    // The brewery offers lemonade (level 15) and limeade (level 25), but no map places their trees.
-    item_lemon: 'only the Lemon Tree makes it, and no map places one (the brewery asks for it at level 15)',
+    // The brewery offers limeade (level 25), but no map places the Lime Tree.
     item_lime: 'only the Lime Tree makes it, and no map places one (the brewery asks for it at level 25)',
     // Ring 3 of the world (brief 330 W6): Farmland plants their forests and the smithy forges the
     // pickaxes past iron, but their trees and metals stand only in ring 3.
-    item_birch_seedling: 'ring 3: only the Birch Tree drops it (Farmland plants a Birch Forest from it)',
-    item_birch_wood: 'ring 3: only the Birch Tree and a planted Birch Forest make it',
-    item_maple_seedling: 'ring 3: only the Maple Tree drops it (Farmland plants a Maple Forest from it)',
-    item_maple_wood: 'ring 3: only the Maple Tree and a planted Maple Forest make it',
     item_mahogany_seedling: 'ring 3: only the Mahogany Tree drops it (Farmland plants a Mahogany Forest from it)',
     item_mahogany_wood: 'ring 3: only the Mahogany Tree and a planted Mahogany Forest make it',
-    item_mythril_pickaxe: 'ring 3: forged from Mythril Ingots (smithy, level 60)',
     item_adamantium_pickaxe: 'ring 3: forged from Adamantine Ingots (smithy, level 75)',
     item_darkmetal_pickaxe: 'ring 3: forged from Darkmetal Ingots (smithy, level 90)',
-    token_birch_forest: 'ring 3: planted from Birch Seedlings',
-    token_maple_forest: 'ring 3: planted from Maple Seedlings',
     token_mahogany_forest: 'ring 3: planted from Mahogany Seedlings',
     // Later-ring content Synced since: its veins and trees, the planks, frames, blocks, chains and
     // tools made from them, and the better buildings built from those.
@@ -375,7 +363,6 @@ const NOT_YET_PLACED = Object.freeze({
     item_basalt: 'only the Basalt Vein makes it, and no plane-1 or plane-2 map places one',
     item_basalt_block: 'made from Basalt, which the two planes do not reach yet',
     item_cedar_seedling: 'only the Cedar Tree makes it, and it needs a Mythril Woodaxe the two planes cannot make yet',
-    item_cedar_wood: 'only the Cedar Tree makes it, and it needs a Mythril Woodaxe the two planes cannot make yet',
     item_darkmetal_woodaxe: 'made from Darkmetal Ingot, Mahogany Wood, which the two planes do not reach yet',
     item_dragonscale: 'made from Red Scale, which the two planes do not reach yet',
     item_ebony_frame: 'made from Ebony Plank, Mythril Nails, which the two planes do not reach yet',
@@ -386,46 +373,25 @@ const NOT_YET_PLACED = Object.freeze({
     item_gold_ring_band: 'made from Gold Ingot, which the two planes do not reach yet',
     item_mahogany_frame: 'made from Mahogany Plank, Mythril Nails, which the two planes do not reach yet',
     item_mahogany_plank: 'made from Mahogany Wood, which the two planes do not reach yet',
-    item_maple_frame: 'made from Maple Plank, Mythril Nails, which the two planes do not reach yet',
-    item_maple_plank: 'made from Maple Wood, which the two planes do not reach yet',
-    item_marble: 'only the Marble Vein makes it, and no plane-1 or plane-2 map places one',
-    item_marble_block: 'made from Marble, which the two planes do not reach yet',
-    item_master_rod: 'made from Maple Plank, Mythril Nails, Beeswax Comb, which the two planes do not reach yet',
-    item_mushroom: 'only the Giant Mushroom makes it, and no plane-1 or plane-2 map places one',
-    item_mythril_nails: 'made from Mythril Ingot, which the two planes do not reach yet',
-    item_mythril_woodaxe: 'made from Mythril Ingot, Maple Wood, which the two planes do not reach yet',
     item_red_scale: 'only the Fossil Bed makes it, and no plane-1 or plane-2 map places one',
-    item_silver_chain: 'made from Silver Ingot, which the two planes do not reach yet',
-    item_silver_ring_band: 'made from Silver Ingot, which the two planes do not reach yet',
-    item_studded_leather: 'made from Hard Leather, Mythril Nails, which the two planes do not reach yet',
-    token_alchemists_hall: 'built from Maple Frame, Marble Block, Roof Tiles, Iron Gears, which the two planes do not reach yet',
     token_banquet_hall: 'built from Mahogany Frame, Marble Block, Roof Tiles, Iron Gears, which the two planes do not reach yet',
-    token_brewery: 'built from Maple Frame, Marble Block, Roof Tiles, Iron Gears, which the two planes do not reach yet',
     token_cedar_forest: 'built from Cedar Seedling, which the two planes do not reach yet',
     token_deep_workings: 'built from Mahogany Frame, Marble Block, Roof Tiles, Iron Gears, which the two planes do not reach yet',
     token_ebony_forest: 'built from Ebony Seedling, which the two planes do not reach yet',
     token_fish_market: 'built from Mahogany Frame, Marble Block, Roof Tiles, Iron Gears, which the two planes do not reach yet',
-    token_foresters_lodge: 'built from Maple Frame, Marble Block, Roof Tiles, Iron Gears, which the two planes do not reach yet',
     token_grand_forge: 'built from Mahogany Frame, Marble Block, Roof Tiles, Iron Gears, which the two planes do not reach yet',
-    token_greenhouse: 'built from Maple Frame, Marble Block, Roof Tiles, Iron Gears, which the two planes do not reach yet',
     token_grovekeepers_hut: 'built from Mahogany Frame, Marble Block, Roof Tiles, Iron Gears, which the two planes do not reach yet',
     token_jewellers_hall: 'built from Mahogany Frame, Marble Block, Roof Tiles, Iron Gears, which the two planes do not reach yet',
     token_manor_farm: 'built from Mahogany Frame, Marble Block, Roof Tiles, Iron Gears, which the two planes do not reach yet',
-    token_master_smithy: 'built from Maple Frame, Marble Block, Roof Tiles, Iron Gears, which the two planes do not reach yet',
     token_masters_study: 'built from Mahogany Frame, Marble Block, Roof Tiles, Iron Gears, which the two planes do not reach yet',
-    token_tannery: 'built from Maple Frame, Marble Block, Roof Tiles, Iron Gears, which the two planes do not reach yet',
     token_town_square: 'built from Ebony Frame, Basalt Block, Gold Ingot, which the two planes do not reach yet',
     // A station offers every tier, and the later tiers wait for later planes (content session,
     // 2026-11-26): the Excavation offers a Dig for every vein, but a later vein's Prospecting Map
     // comes only from that vein's own rare finds, as no copper-tier drop feeds a late material.
-    item_silver_prospecting_map: 'a later plane: only the Silver Ore Vein finds it (the Excavation\'s Dig Silver Vein asks for it)',
     item_gold_prospecting_map: 'a later plane: only the Gold Ore Vein finds it (the Excavation\'s Dig Gold Vein asks for it)',
-    item_mythril_prospecting_map: 'a later plane: only the Mythril Ore Vein finds it (the Excavation\'s Dig Mythril Vein asks for it)',
     item_adamantine_prospecting_map: 'a later plane: only the Adamantine veins find it (the Excavation\'s Dig Adamantine Vein asks for it)',
     item_darkmetal_prospecting_map: 'a later plane: only the Darkmetal Ore Vein finds it (the Excavation\'s Dig Darkmetal Vein asks for it)',
-    token_silver_ore_vein: 'a later plane: dug from a Silver Prospecting Map, which only a Silver Ore Vein finds',
     token_gold_ore_vein: 'a later plane: dug from a Gold Prospecting Map, which only a Gold Ore Vein finds',
-    token_mythril_ore_vein: 'a later plane: dug from a Mythril Prospecting Map, which only a Mythril Ore Vein finds',
     token_adamantium_ore: 'a later plane: dug from an Adamantine Prospecting Map, which only an Adamantine vein finds',
     token_darkmetal_ore_vein: 'a later plane: dug from a Darkmetal Prospecting Map, which only a Darkmetal Ore Vein finds',
     // The harpoon fish moved later (Shark Waters arrive only in Flower Meadow, the Fishing Spot's
@@ -433,19 +399,13 @@ const NOT_YET_PLACED = Object.freeze({
     item_shark: 'a later plane: only Shark Waters land it, in Flower Meadow (Cooked Shark, cooking level 83, and Bait from Shark ask for it)',
     item_cooked_shark: 'a later plane: cooked from Shark (cooking, level 83)',
     item_stingray: 'a later plane: only a harpoon in Flower Meadow or Cherry Grove lands it (Bait from Stingray, fishing level 54, asks for it)',
-    item_mythril_harpoon: 'a later plane: forged from Mythril Ingots and Maple Planks (smithy, level 54)',
     item_adamantine_harpoon: 'a later plane: forged from Adamantine Ingots and Mahogany Planks (smithy, level 63)',
     item_darkmetal_harpoon: 'a later plane: forged from Darkmetal Ingots and Ebony Planks (smithy, level 83)',
     // Plane 3's lairs: the Battlefield offers a Build for every lair, but a lair's map drops only
     // from its own enemy, which only that lair on plane 3 spawns.
-    item_blue_scale: 'plane 3: only the Blue Drake drops it, and only the Drake Roost spawns one',
-    item_drake_roost_map: 'plane 3: only the Blue Drake drops it (the Battlefield\'s Build Drake Roost asks for it)',
-    item_treant_grove_map: 'plane 3: only the Treant drops it (the Battlefield\'s Build Treant Grove asks for it)',
     item_troll_bridge_map: 'plane 3: only the Troll drops it (the Battlefield\'s Build Troll Bridge asks for it)',
     item_phoenix_nest_map: 'plane 3: only the Phoenix drops it (the Battlefield\'s Build Phoenix Nest asks for it)',
     item_void_rift_map: 'plane 3: only the Void Beast drops it (the Battlefield\'s Build Void Rift asks for it)',
-    token_drake_roost: 'plane 3: built from a Drake Roost Map, which only a Blue Drake drops',
-    token_treant_grove: 'plane 3: built from a Treant Grove Map, which only a Treant drops',
     token_troll_bridge: 'plane 3: built from a Troll Bridge Map, which only a Troll drops',
     token_phoenix_nest: 'plane 3: built from a Phoenix Nest Map, which only a Phoenix drops',
     token_void_rift: 'plane 3: built from a Void Rift Map, which only a Void Beast drops'
@@ -456,12 +416,9 @@ const NOT_YET_PLACED = Object.freeze({
  * finding for the owner, like {@link NOT_YET_PLACED}: the check below fails once a tool reaches one.
  */
 const NO_TOOL_YET = Object.freeze({
-    token_cedar_tree: 'a tier-3 woodaxe: the Mythril Woodaxe, from Mythril Ingots the two planes do not reach',
     token_mahogany_tree: 'a tier-4 woodaxe: the Adamantine Woodaxe, from Adamantine Ingots the two planes do not reach',
     token_ebony_tree: 'a tier-5 woodaxe: the Darkmetal Woodaxe, from Darkmetal Ingots the two planes do not reach',
     // The later veins the Excavation's Digs offer (NOT_YET_PLACED: their maps wait for later planes).
-    token_gold_ore_vein: 'a tier-3 pickaxe: the Mythril Pickaxe, from Mythril Ingots the two planes do not reach',
-    token_adamantium_ore: 'a tier-3 pickaxe: the Mythril Pickaxe, from Mythril Ingots the two planes do not reach',
     token_darkmetal_ore_vein: 'a tier-4 pickaxe: the Adamantine Pickaxe, from Adamantine Ingots the two planes do not reach'
 });
 

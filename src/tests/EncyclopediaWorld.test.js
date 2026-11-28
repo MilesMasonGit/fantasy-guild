@@ -17,20 +17,20 @@ const captionText = (way) => t(`encyclopedia.via.${way.caption}`, way.captionArg
 describe('the shipped encyclopedia reads the world tables', () => {
     const book = encyclopedia();
 
-    it('Iron Ore Vein comes in from Ores ring 2, settled at Mining 15', () => {
+    it('Iron Ore Vein comes in from Ores ring 1, settled at Mining 5', () => {
         const ways = waysIn(book, tokenKey('token_iron_ore_vein'));
         const [first] = ways;
         expect(first.how).toBe(HOW.WORLD);
         expect(first.from).toBeNull();
-        expect(captionText(first)).toBe('Ores ring 2\nsettled on the world map');
-        expect(wayInRequirement(book, first)).toEqual({ skill: 'mining', level: 15 });
+        expect(captionText(first)).toBe('Ores ring 1\nsettled on the world map');
+        expect(wayInRequirement(book, first)).toEqual({ skill: 'mining', level: 5 });
     });
 
     it('settling Arcane asks Magic itself, not Combat', () => {
         // Quartz also stands at ring 2, where Ores and Arcane share it; its Arcane-only ring is the 3rd.
         const arcane = waysIn(book, tokenKey('token_quartz_deposit')).filter(worldOf).find(w => w.place?.line === 'Arcane');
-        expect(captionText(arcane)).toBe('Arcane ring 3\nsettled on the world map');
-        expect(wayInRequirement(book, arcane)).toEqual({ skill: 'magic', level: 30 });
+        expect(captionText(arcane)).toBe('Arcane ring 2\nsettled on the world map');
+        expect(wayInRequirement(book, arcane)).toEqual({ skill: 'magic', level: 24 });
     });
 
     it('a guaranteed camp shows its ring', () => {
