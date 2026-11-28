@@ -231,10 +231,11 @@ The base times (6, 8 and 12 seconds) are starting values (agent's call). Builds,
 | Purchase | The coin part asks | At copper | Mythril | Darkmetal |
 |---|---|---|---|---|
 | **Everyday** (a Shop Token, a Foundation) | **One level's time** at that stage, on the pace curve | 5 min | 32 min | 6 h |
-| **Big** (settling a place, a Guild Hall star) | **Half the item price's work**, on the payback curve (section 5) | 30 min | 2.5 h | 12 h |
+| **Big** (settling a place; not a Guild Hall rank, see below) | **Half the item price's work**, on the payback curve (section 5) | 30 min | 2.5 h | 12 h |
 
 - The everyday points for the ledger's coin curve, in minutes: copper 5, iron 9, silver 17, mythril 32, gold 59, adamantine 107, darkmetal 361 (each tier's opening level's time at the 6.25 % pace; copper takes level 10's, since few purchases come in the first minutes). They move with the pace step.
 - The big points are half of 1 hour × 24^(L / 80): 30 min, 66 min, 99 min, 2.5 h, 3.6 h, 5.4 h, 12 h.
+- **A Guild Hall rank is a small, cheap step** (owner, 2026-11-27, replacing its place on the big curve): its whole price, items and coins together, is what the rank saves over the payback time of section 5, so about 3 minutes of work for a 5 % rank at the start, about 10 at iron and hours late in the game. The two rules pulled apart: priced as a big purchase a first rank cost about 2 hours of work and took about 47 hours to earn back, against a payback of 1 hour, and a typical player, who buys on that same sum, bought almost none. Coins keep their share of each rank's price (staged 2026-11-27: a first rank about 37 items and 27 coins, an iron rank about 35 items and 400 coins; they were 1,500 and 9,100 coins). Bunk Beds, which add a hero, are not priced this way.
 - **A Hall star's coins follow its item price at each rank**, with no extra multiplier for rank (balancer's call). Distance is the stage: a far place sits at a later stage, so it costs more.
 - One level's time is half the gate rule's limit of two levels (section 6), so coins and items together stay inside it.
 
