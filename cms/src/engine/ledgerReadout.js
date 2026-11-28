@@ -400,7 +400,6 @@ export function ledgerReadout(state = {}, { report = null, layouts = true, withP
 }
 
 const fmtMin = (m) => (m === null ? 'never' : m < 60 ? `${round(m, 1)} min` : m < 1440 ? `${round(m / 60, 1)} h` : `${round(m / 1440, 1)} d`);
-const ordinal = (n) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th'}`;
 
 /** A short summary in words: days to 99 per skill, the stages, the checks by severity. */
 export function readoutText(out) {
@@ -412,7 +411,7 @@ export function readoutText(out) {
     lines.push('', 'Stage | the way out at Maxed (what the budget times) | budget | heroes | full content, information: Maxed time, entries (untimed), the heroes\' work');
     for (const s of out.stages) {
         const g = s.gate;
-        const further = g?.order > 1 ? ` (ring ${g.ring}'s ${ordinal(g.order)} place, the ring's ${g.ringCoins})` : '';
+        const further = g?.order > 1 ? ` (ring ${g.ring}'s ${PACE_TEXT.ordinal(g.order)} place, the ring's ${g.ringCoins})` : '';
         const asks = g ? [...g.asks.map((a) => `${a.skill} ${a.level}`), ...(g.coins > 0 ? [`${g.coins} coins${further}`] : [])].join(' + ') : '';
         const way = g ? `${fmtMin(g.minutes)}${s.offPct === null ? '' : ` (${s.offPct > 0 ? '+' : ''}${s.offPct} %)`}: ${g.name}, ${asks}${g.byWork ? ', its heroes set it' : ''}${g.floor ? `, a floor (${g.floorWhy.join('; ')})` : ''}` : s.gateWhy;
         const c = s.content;

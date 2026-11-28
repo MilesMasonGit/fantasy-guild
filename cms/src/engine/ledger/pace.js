@@ -128,6 +128,8 @@ export const PACE_TEXT = Object.freeze({
     /** A number to two places, no trailing zeros: "4.67", "2". */
     figure: (n) => `${Math.round(n * 100) / 100}`,
     pieces: (n) => (n === 1 ? 'one piece of work' : `${n} pieces of work`),
+    /** A place's order in its ring: "1st", "2nd", "3rd", "11th". */
+    ordinal: (n) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th'}`,
     earning: (n) => `earning ${n} ${n === 1 ? 'coin' : 'coins'}`,
     noCoins: 'nothing earns its coins by then',
     coinSupply: (name, coins, stage) => `${name} asks ${coins} ${coins === 1 ? 'coin' : 'coins'}, but nothing the guild has by ${stage} earns coins: give what its work makes a coin worth (a value), an enemy a Coin drop or a steal table coins.`,

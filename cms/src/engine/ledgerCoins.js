@@ -63,7 +63,6 @@ export function furtherPlaces(coins, ring, growth = PLACE_PRICE_GROWTH_DEFAULT) 
     const tables = { placePriceGrowth: growth };
     return [2, 3, 6 * ring].filter((n, i, all) => all.indexOf(n) === i).map((n) => ({ place: n, coins: grownPrice(coins, tables, n - 1) }));
 }
-const ordinal = (n) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th'}`;
 
 /** The coins in plain text, for the change pack tool. */
 export function coinsText(result, { rows = 40 } = {}) {
@@ -92,8 +91,8 @@ export function coinsText(result, { rows = 40 } = {}) {
         const settled = p.kind === 'ring' ? result.places?.[p.ring] || [] : [];
         const further = p.kind !== 'ring' || !(p.coins > 0) ? ''
             : settled.length
-                ? ` for its first place, each further place ${growth} times the one before; Typical settles its ${settled.length} place${settled.length === 1 ? '' : 's'} in this order (coins asked, had at): ${settled.map((s) => `${ordinal(s.order)} ${s.name} ${s.coins} at ${PACE_TEXT.hours(s.hours)}`).join(', ')}`
-                : ` for its first place, each further place ${growth} times the one before (${furtherPlaces(p.coins, p.ring, result.placePriceGrowth).map((f) => `${ordinal(f.place)} ${f.coins}`).join(', ')})`;
+                ? ` for its first place, each further place ${growth} times the one before; Typical settles its ${settled.length} place${settled.length === 1 ? '' : 's'} in this order (coins asked, had at): ${settled.map((s) => `${PACE_TEXT.ordinal(s.order)} ${s.name} ${s.coins} at ${PACE_TEXT.hours(s.hours)}`).join(', ')}`
+                : ` for its first place, each further place ${growth} times the one before (${furtherPlaces(p.coins, p.ring, result.placePriceGrowth).map((f) => `${PACE_TEXT.ordinal(f.place)} ${f.coins}`).join(', ')})`;
         lines.push(`- ${p.name} (${p.kind}${at(p)}): ${now(p)}${further}; ${p.proposed !== null ? `proposed ${p.proposed} (${p.minutes} min on the ${p.curve} curve of ${round(p.perHour)} an hour)` : `no proposal: ${p.why}`}`);
     }
     if (curved.length > rows) lines.push(`- and ${curved.length - rows} more`);

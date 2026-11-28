@@ -295,9 +295,10 @@ function Layouts({ pace, onOpen }) {
   );
 }
 
-/** What a way out asks, in words: "Mining 10 + 420 coins". */
+/** What a way out asks, in words: "Mining 10 + 420 coins", a further place of its ring with its order: "+ 656 coins (its ring's 3rd place)". */
 function wayOutAsks(g) {
-  const parts = [...g.asks.map((a) => `${PACE_TEXT.skill(a.skill)} ${a.level}`), ...(g.coins > 0 ? [PACE_TEXT.coins(g.coins)] : [])];
+  const further = g.order > 1 ? ` (its ring's ${PACE_TEXT.ordinal(g.order)} place)` : '';
+  const parts = [...g.asks.map((a) => `${PACE_TEXT.skill(a.skill)} ${a.level}`), ...(g.coins > 0 ? [`${PACE_TEXT.coins(g.coins)}${further}`] : [])];
   return parts.join(' + ') || 'nothing';
 }
 
