@@ -74,9 +74,9 @@ describe('npm run cms -- ledger', () => {
         expect(fs.readdirSync(path.join(dir, 'workspace'))).toEqual(['workspace.json']);
 
         const out = JSON.parse(fs.readFileSync(jsonFile, 'utf8'));
-        expect(out).toMatchObject({ format: 'fantasy-guild-ledger-readout', version: 7, profiles: { opt: 'maxed', typ: 'typical', bare: 'bare' } });
+        expect(out).toMatchObject({ format: 'fantasy-guild-ledger-readout', version: 8, profiles: { opt: 'maxed', typ: 'typical', bare: 'bare' } });
         expect(out.workspace).toMatchObject({ revision: 1 });
-        for (const section of ['guild', 'pace', 'rows', 'stages', 'layouts', 'boostBudget', 'ruleChecks', 'checks', 'notes', 'units', 'counts']) expect(out, section).toHaveProperty(section);
+        for (const section of ['guild', 'pace', 'rows', 'stages', 'places', 'layouts', 'boostBudget', 'ruleChecks', 'checks', 'notes', 'units', 'counts']) expect(out, section).toHaveProperty(section);
 
         // Each skill's pace: levels 1 to 98 (the time to the next), hero and guild time at all three profiles, and the gatherers a level's work needs.
         expect(Object.keys(out.pace)).toEqual(expect.arrayContaining(['mining', 'forestry', 'construction']));

@@ -727,8 +727,9 @@ function wayOutTime(hours, budgetMinutes) {
  * What would bring a stage's way out to its budget (within the tolerance), as the world tables
  * would have to move it: `{ level, coins }`, each null when it cannot. `level`
  * (`{ skill, from, to, hours }`) is the level its slowest timed ask would need, the other asks as
- * they are; `coins` (`{ ring, from, to, hours }`) the coins its ring would need, to two figures, for
- * a place that asks coins (one asking none is never given a coin cost). `hours` is the way out then.
+ * they are; `coins` (`{ ring, from, to, hours }`) the coins its ring would need (the ring's price,
+ * which a further place asks grown by its order), to two figures, for a place that asks coins (one
+ * asking none is never given a coin cost). `hours` is the way out then.
  * Never written: the owner and the balancer decide.
  */
 export function wayOutSuggestion(pace, tier, budgetMinutes) {
@@ -753,18 +754,20 @@ export function wayOutSuggestion(pace, tier, budgetMinutes) {
         if (best && within(best.hours)) out.level = { skill: ask.skill, from: ask.level, to: best.level, hours: best.hours };
     }
 
-    if (g.coins > 0) {
+    // The ring's price, which the place asks grown by its order in the ring: what the world tables hold.
+    const ringCoins = g.ringCoins ?? g.coins;
+    if (ringCoins > 0) {
         // More coins only lengthen the price: bisect on the coins asked.
         const at = (coins) => pace.wayOutWith(tier, { coins }).hours;
-        let lo = slow ? 0 : g.coins;
-        let hi = slow ? g.coins : g.coins * MAX_COIN_FACTOR;
+        let lo = slow ? 0 : ringCoins;
+        let hi = slow ? ringCoins : ringCoins * MAX_COIN_FACTOR;
         for (let i = 0; i < 40 && hi - lo > 0.5; i++) {
             const mid = (lo + hi) / 2;
             if (at(mid) > B) hi = mid; else lo = mid;
         }
         const coins = slow ? Math.max(1, roundDown(lo)) : roundUp(hi);
         const hours = at(coins);
-        if (coins !== g.coins && within(hours)) out.coins = { ring: g.ring, from: g.coins, to: coins, hours };
+        if (coins !== ringCoins && within(hours)) out.coins = { ring: g.ring, from: ringCoins, to: coins, hours };
     }
     return out;
 }
