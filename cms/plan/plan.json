@@ -2166,10 +2166,6 @@
         "status": "live",
         "tier": 1
       },
-      "token_copper_chest": {
-        "status": "live",
-        "tier": 1
-      },
       "token_fir_stump": {
         "status": "live",
         "tier": 2,
@@ -2224,10 +2220,6 @@
         "tier": 2
       },
       "token_toxic_pool": {
-        "status": "live",
-        "tier": 2
-      },
-      "token_iron_chest": {
         "status": "live",
         "tier": 2
       },

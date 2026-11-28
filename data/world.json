@@ -658,31 +658,11 @@
     "combat"
   ],
   "pityWindow": 4,
-  "extras": [
-    {
-      "id": "token_copper_chest",
-      "kind": "treasure",
-      "value": 6,
-      "rings": [
-        1
-      ],
-      "max": 2
-    },
-    {
-      "id": "token_iron_chest",
-      "kind": "treasure",
-      "value": 12,
-      "rings": [
-        1,
-        2
-      ],
-      "max": 2
-    }
-  ],
+  "extras": [],
   "ringValue": {
-    "1": 6,
-    "2": 12,
-    "3": 12
+    "1": 0,
+    "2": 0,
+    "3": 0
   },
   "valueTolerance": 0.1,
   "prices": {
