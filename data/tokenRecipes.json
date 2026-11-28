@@ -8835,7 +8835,7 @@
       },
       {
         "itemId": "item_turnip_seed",
-        "chance": 40,
+        "chance": 38,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
@@ -8843,7 +8843,7 @@
           "max": 1
         },
         "variable": true,
-        "baseChance": 40
+        "baseChance": 38
       },
       {
         "itemId": "item_worm",
@@ -8898,7 +8898,7 @@
       },
       {
         "itemId": "item_cabbage_seed",
-        "chance": 40,
+        "chance": 38,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
@@ -8906,7 +8906,7 @@
           "max": 1
         },
         "variable": true,
-        "baseChance": 40
+        "baseChance": 38
       },
       {
         "itemId": "item_worm",
@@ -8961,7 +8961,7 @@
       },
       {
         "itemId": "item_garlic_seed",
-        "chance": 40,
+        "chance": 37,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
@@ -8969,7 +8969,7 @@
           "max": 1
         },
         "variable": true,
-        "baseChance": 40
+        "baseChance": 37
       },
       {
         "itemId": "item_worm",
@@ -9024,7 +9024,7 @@
       },
       {
         "itemId": "item_tomato_seed",
-        "chance": 40,
+        "chance": 37,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
@@ -9032,7 +9032,7 @@
           "max": 1
         },
         "variable": true,
-        "baseChance": 40
+        "baseChance": 37
       },
       {
         "itemId": "item_worm",
@@ -9274,7 +9274,7 @@
       },
       {
         "itemId": "item_mint_seed",
-        "chance": 30,
+        "chance": 60,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
@@ -9282,7 +9282,7 @@
           "max": 1
         },
         "variable": true,
-        "baseChance": 30
+        "baseChance": 43
       },
       {
         "itemId": "item_worm",
@@ -9338,7 +9338,7 @@
       },
       {
         "itemId": "item_rose_seed",
-        "chance": 30,
+        "chance": 38,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
@@ -9346,7 +9346,7 @@
           "max": 1
         },
         "variable": true,
-        "baseChance": 30
+        "baseChance": 38
       },
       {
         "itemId": "item_worm",
@@ -9402,7 +9402,7 @@
       },
       {
         "itemId": "item_mandrake_seed",
-        "chance": 30,
+        "chance": 38,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
@@ -9410,7 +9410,7 @@
           "max": 1
         },
         "variable": true,
-        "baseChance": 30
+        "baseChance": 38
       },
       {
         "itemId": "item_worm",

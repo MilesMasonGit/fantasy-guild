@@ -1621,7 +1621,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "consumable",
-    "value": 28,
+    "value": 27,
     "valueSource": "recipe_elixir_of_valor",
     "autoSyncId": true,
     "effects": [
@@ -1635,7 +1635,7 @@
       "Potion",
       "Elixir"
     ],
-    "coinWorth": 28
+    "coinWorth": 27
   },
   "item_elixir_of_ironskin": {
     "name": "Elixir of Ironskin",
@@ -6764,14 +6764,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 2,
+    "value": 1,
     "valueSource": "recipe_mint",
     "autoSyncId": true,
     "id": "item_mint",
     "tags": [
       "Herb"
     ],
-    "coinWorth": 2
+    "coinWorth": 1
   },
   "item_mint_seed": {
     "name": "Mint Seed",
@@ -6834,14 +6834,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 6,
+    "value": 5,
     "valueSource": "recipe_mandrake",
     "autoSyncId": true,
     "id": "item_mandrake",
     "tags": [
       "Herb"
     ],
-    "coinWorth": 6
+    "coinWorth": 5
   },
   "item_mandrake_seed": {
     "name": "Mandrake Seed",
