@@ -30,6 +30,18 @@ None is a wall: the slowest level in any of them is 1.3x the curve. Times are fo
 | Mining | 91-98 | 4.9 days optimized, 9.3 typical on the Fossil Bed | A capstone Token at 95 or later | 2026-11-25 |
 | Tailor | 92-98 | 4.4 days optimized, 8.3 typical on Void Cape | A capstone at 96 or later | 2026-11-25 |
 
+## The rings spread out: places to re-place (2026-11-27)
+
+*For: content agent.* The owner ruled that the three strict rings arrive at about level 10, 30 and 50 (BALANCE_RULES section 8), where today they come at about 10, 20 and 30. What each ring holds has to follow:
+
+- **Ring 1** (arrive about level 10): the copper-age places and the iron-age ones (iron vein, fir tree and the rest of today's ring 2), so iron still opens at level 20.
+- **Ring 2** (about level 30): silver and gold, levels 30 to 50.
+- **Ring 3** (about level 50): mythril onward, with the wild rings beyond.
+
+What is needed: the world lines' origins by ring (the world record), the camps and chests that follow a ring, and each entry's stage in the plan, as a change pack for the owner. A suggestion, not a ruling on any one place: where a place sits at the edge of a band, the content philosophy decides.
+
+The balancer follows with one pack for the ring levels, the ring coins and the stage time targets once the places are re-placed, and re-runs the ledger. Until then rings 2 and 3 keep today's levels and coins.
+
 ## Early makers run slow with one hero (2026-11-27, corrected the same day)
 
 *Not missing content, and not for `/content` yet. First listed as early levels with no work of their own;
