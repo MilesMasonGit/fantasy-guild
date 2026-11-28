@@ -130,6 +130,7 @@ export const PACE_TEXT = Object.freeze({
     noCurve: (curve, stage) => `no ${curve} coin curve point at or before ${stage}`,
     noIncome: (stage) => `nothing the guild has by ${stage} earns coins by selling`,
     notReached: 'never reached',
+    hallByPayback: 'a Guild Hall rank is judged by its payback, its items and coins together (the hall-guild-payback check), not by a coin curve',
     /** Why a way out is a floor (`gateOf(...).floor`): the real one asks more. */
     wayOutFloor: Object.freeze({
         goods: 'its goods price (the world seed\'s) is not counted',
@@ -1948,13 +1949,14 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
      * - A Shop Token (a Foundation is one), on the everyday curve: at its stage (the owner's tier,
      *   else when first reached), paid when its step may start at Typical (as its stage begins when no
      *   path times it).
-     * - A Guild Hall rank, on the big curve: at its tier (else its price's), earned at Typical before
-     *   the Hall as its items are, as its stage begins. Its rank adds no multiplier.
+     * - A Guild Hall rank, on no curve: a rank is a small step priced by what it saves, so its coins are
+     *   left to the payback check ({@link hallPaybacks}), which sums them with its items. Its row is
+     *   listed at its tier (else its price's) with no proposal.
      * - Settling a ring-n cell, on the big curve: at stage n, earned with what the stage before gives
      *   (`ringBudgetTier`), when its first cell's step may start.
      * A stage past the last the pace knows is earned at the last.
      *
-     * @returns {{ kind: 'shop'|'hall'|'ring', id, name, rank?, ring?, coins, curve: 'everyday'|'big', tier, cap, at,
+     * @returns {{ kind: 'shop'|'hall'|'ring', id, name, rank?, ring?, coins, curve: 'everyday'|'big'|null, tier, cap, at,
      *   minutes, perHour, source, proposed: number|null, why: string|null }[]} `coins` what it asks now;
      *   `at` the hours from a new game it is paid at; `proposed` null with `why` when its curve has no
      *   point there or nothing earns coins by then
@@ -1982,7 +1984,8 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         for (const track of profiles.hallTracks) {
             for (let rank = 1; rank <= track.maxRank; rank++) {
                 const tier = track.tier(rank) ?? priceTierOf(track.price(rank));
-                rows.push(propose({ kind: 'hall', id: track.id, name: track.name, rank, coins: track.coins(rank) }, COIN_CURVE.BIG, BEFORE_HALL, tier, tier, null));
+                const cap = tier === null ? null : Math.min(maxTier, tier);
+                rows.push({ kind: 'hall', id: track.id, name: track.name, rank, coins: track.coins(rank), curve: null, tier, cap, at: null, minutes: null, perHour: 0, source: null, proposed: null, why: PACE_TEXT.hallByPayback });
             }
         }
         const tables = ledger.world.worldTables;

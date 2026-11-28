@@ -228,7 +228,8 @@ function workNumbers(pace, report, work) {
 /**
  * The two coin curves (BALANCE_RULES section 7) and every price that asks coins on its curve, with
  * what the curve proposes and whether it is beyond the tolerance from it (as the balancing preview
- * reads it). No price asking coins: no coin income is worked out.
+ * reads it); a Guild Hall rank is listed on no curve and never off (its payback judges it). No price
+ * asking coins: no coin income is worked out.
  */
 function coinsOf(pace) {
     const curves = { everyday: pace.settings.coinCurve.map((p) => ({ ...p })), big: pace.settings.bigCoinCurve.map((p) => ({ ...p })) };
@@ -417,7 +418,8 @@ export function readoutText(out) {
         } else {
             const kinds = ['shop', 'hall', 'ring'].map((k) => [k, asking.filter((p) => p.kind === k).length]).filter(([, n]) => n).map(([k, n]) => `${k} ${n}`).join(', ');
             const off = asking.filter((p) => p.off).length;
-            lines.push(`Coin prices: ${asking.length} ask${asking.length === 1 ? 's' : ''} coins (${kinds}); ${off} beyond the tolerance from ${off === 1 ? 'its' : 'their'} curve's proposal.`);
+            const hall = asking.some((p) => p.kind === 'hall') ? ' (Guild Hall ranks on no curve: judged by their payback)' : '';
+            lines.push(`Coin prices: ${asking.length} ask${asking.length === 1 ? 's' : ''} coins (${kinds}); ${off} beyond the tolerance from ${off === 1 ? 'its' : 'their'} curve's proposal${hall}.`);
         }
     }
     const rc = out.ruleChecks;

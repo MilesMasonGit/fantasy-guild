@@ -18,8 +18,9 @@ import { coinsOf, shopCoinsOf, enemyCoinDropOf, stealCoinsOf } from '../../../..
  *   prices with it.
  * - **A proposed coin cost** is the coins one hero earns in its coin curve's minutes at the price's
  *   stage, rounded down to two figures (`pace.coinPrices`): the everyday curve for a Shop Token or a
- *   Foundation (`settings.coinCurve`), the big one for settling a place or a Guild Hall star
- *   (`settings.bigCoinCurve`), with no multiplier for a star's rank (BALANCE_RULES section 7).
+ *   Foundation (`settings.coinCurve`), the big one for settling a place (`settings.bigCoinCurve`).
+ *   A Guild Hall rank's coins are on no curve: the payback check judges them with its items
+ *   (BALANCE_RULES section 7).
  *
  * Pure.
  */

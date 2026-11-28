@@ -7,6 +7,7 @@ import crypto from 'crypto';
 import { runCli, USAGE } from '../../cms/cliCommands.mjs';
 import { saveWorkspaceFile } from '../../cms/workspaceFile.js';
 import { ledgerReadout, readoutText } from '../../cms/src/engine/ledgerReadout.js';
+import { workspaceCoins, coinsText } from '../../cms/src/engine/ledgerCoins.js';
 import { paceWorkspace } from './fixtures/paceWorld.js';
 import { WORLD_FIXTURE_RAW, worldWorkspace } from './fixtures/ledgerWorldMap.js';
 
@@ -301,6 +302,30 @@ describe('the read-out\'s coins', () => {
         const text = readoutText(out).join('\n');
         expect(text).toMatch(/^Coin curves, minutes of one hero's selling from a stage on: everyday Starter Camp 5, Plane 2 9, .*Plane 7 361; big Starter Camp 30, Plane 1 45, Plane 2 66, .*Plane 7 720\.$/m);
         expect(text).toMatch(/^Coin prices: 1 asks coins \(ring 1\); 1 beyond the tolerance from its curve's proposal\.$/m);
+    });
+
+    it('⭐ a Guild Hall rank priced small is on no curve and never off: its payback judges it', () => {
+        const world = structuredClone(WORLD_FIXTURE_RAW);
+        world.prices[1] = { ...world.prices[1], coins: 30 };
+        const ws = { ...worldWorkspace(), world };
+        ws.items.item_copper_ore.value = 1;
+        for (const star of Object.values(ws.hallStars)) for (const rank of star.ranks) rank.coins = 5;
+        const out = ledgerReadout(ws, { layouts: false });
+        const hall = out.coins.prices.filter((p) => p.kind === 'hall');
+        expect(hall.length).toBe(Object.values(ws.hallStars).reduce((n, s) => n + s.ranks.length, 0));
+        for (const p of hall) {
+            expect(p).toMatchObject({ coins: 5, curve: null, minutes: null, proposed: null, off: false });
+            expect(p.why).toMatch(/payback/);
+        }
+        // A ring keeps its curve.
+        expect(out.coins.prices.find((p) => p.kind === 'ring')).toMatchObject({ curve: 'big', off: true });
+        const text = readoutText(out).join('\n');
+        expect(text).toMatch(new RegExp(`^Coin prices: ${hall.length + 1} ask coins \\(hall ${hall.length}, ring 1\\); 1 beyond the tolerance from its curve's proposal \\(Guild Hall ranks on no curve: judged by their payback\\)\\.$`, 'm'));
+        const coins = coinsText(workspaceCoins(ws));
+        expect(coins).toMatch(/^Guild Hall ranks: \d+, \d+ asking coins\. On no coin curve: a rank is a small step judged by its payback/m);
+        expect(coins).toMatch(/^- Ring 2 Star rank 1 at .+: asks 5$/m);
+        expect(coins).not.toMatch(/Ring 2 Star.*proposed/);
+        expect(coins).toMatch(/^- Ring 1 \(ring at .+\): asks 30 .*proposed \d+/m);
     });
 
     it('lists no prices when nothing asks coins, and still shows the curves', () => {

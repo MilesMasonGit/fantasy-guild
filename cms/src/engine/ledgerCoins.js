@@ -73,18 +73,25 @@ export function coinsText(result, { rows = 40 } = {}) {
     }
     lines.push('A worker\'s selling an hour at Typical, from each stage\'s start to its end: what the coin curves price on (kills and thefts never set a price):');
     for (const s of result.supply) if (s.selling) lines.push(`- ${s.label}: ${from(s.selling)} ${to(s.selling)}`);
-    const asking = result.prices.filter((p) => p.coins > 0);
-    lines.push(`Prices: ${result.prices.length}, ${asking.length} asking coins. What the coin curves propose for each (the coins one hero earns selling there in its curve's minutes: everyday for a Shop Token, big for a Guild Hall rank or a ring):`);
-    for (const p of result.prices.slice(0, rows)) {
-        const what = `${p.name}${p.kind === 'hall' ? ` rank ${p.rank}` : ''}`;
-        const now = p.coins > 0 ? `asks ${p.coins}` : 'asks none';
-        const at = p.tier === null ? '' : ` at ${tierLabel(p.tier)}`;
+    const curved = result.prices.filter((p) => p.kind !== 'hall');
+    const hall = result.prices.filter((p) => p.kind === 'hall');
+    const asking = curved.filter((p) => p.coins > 0);
+    const now = (p) => (p.coins > 0 ? `asks ${p.coins}` : 'asks none');
+    const at = (p) => (p.tier === null ? '' : ` at ${tierLabel(p.tier)}`);
+    lines.push(`Prices: ${curved.length}, ${asking.length} asking coins. What the coin curves propose for each (the coins one hero earns selling there in its curve's minutes: everyday for a Shop Token, big for a ring):`);
+    for (const p of curved.slice(0, rows)) {
         const further = p.kind === 'ring' && p.coins > 0
             ? ` for its first place, each further place ${result.placePriceGrowth ?? PLACE_PRICE_GROWTH_DEFAULT} times the one before (${furtherPlaces(p.coins, p.ring, result.placePriceGrowth).map((f) => `${ordinal(f.place)} ${f.coins}`).join(', ')})`
             : '';
-        lines.push(`- ${what} (${p.kind}${at}): ${now}${further}; ${p.proposed !== null ? `proposed ${p.proposed} (${p.minutes} min on the ${p.curve} curve of ${round(p.perHour)} an hour)` : `no proposal: ${p.why}`}`);
+        lines.push(`- ${p.name} (${p.kind}${at(p)}): ${now(p)}${further}; ${p.proposed !== null ? `proposed ${p.proposed} (${p.minutes} min on the ${p.curve} curve of ${round(p.perHour)} an hour)` : `no proposal: ${p.why}`}`);
     }
-    if (result.prices.length > rows) lines.push(`- and ${result.prices.length - rows} more`);
+    if (curved.length > rows) lines.push(`- and ${curved.length - rows} more`);
+    if (hall.length) {
+        const hallAsking = hall.filter((p) => p.coins > 0);
+        lines.push(`Guild Hall ranks: ${hall.length}, ${hallAsking.length} asking coins. On no coin curve: a rank is a small step judged by its payback, its items and coins together (the hall-guild-payback check), so nothing is proposed for its coins:`);
+        for (const p of hallAsking.slice(0, rows)) lines.push(`- ${p.name} rank ${p.rank}${at(p)}: ${now(p)}`);
+        if (hallAsking.length > rows) lines.push(`- and ${hallAsking.length - rows} more`);
+    }
     const half = (row, each, word) => `half a worker's selling there (${round(row.sellingPerHour)} an hour) is ${each ?? '—'} a ${word}`;
     lines.push('Enemies: Coin drop now, what one kill\'s loot sells for (proposed), the kills an hour one hero makes at Typical with the coins they drop, and half a worker\'s selling a kill:');
     for (const d of result.drops) {
