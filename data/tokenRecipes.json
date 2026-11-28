@@ -748,7 +748,7 @@
       }
     ],
     "durationMs": 13500,
-    "xp": 8,
+    "xp": 11,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
@@ -909,13 +909,14 @@
       }
     ],
     "durationMs": 21000,
-    "xp": 13,
+    "xp": 18,
     "stationKinds": [
       "smithy"
     ],
     "sim": {
       "tempo": "medium",
-      "purpose": "iph"
+      "purpose": "iph",
+      "xpPinned": true
     }
   },
   {
@@ -13858,7 +13859,7 @@
     ],
     "durationMs": 13200,
     "stationChargeCost": 1,
-    "xp": 8,
+    "xp": 13,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
@@ -13902,7 +13903,7 @@
       }
     ],
     "durationMs": 13700,
-    "xp": 9,
+    "xp": 12,
     "sim": {
       "tempo": "medium",
       "purpose": "iph",
