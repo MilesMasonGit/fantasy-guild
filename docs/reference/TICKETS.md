@@ -26,7 +26,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-759**
+**Next free number: T-760**
 
 ---
 
@@ -46,6 +46,7 @@ here.
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
+| T-759 | P2 | open | *For: director.* **The ledger judges the rings by their target level** (owner, 2026-11-27: the three rings arrive at about level 10, 30 and 50; BALANCE_RULES section 8). Three things in `cms/src/engine/ledger/` still assume one ring per stage. (1) The way out of a stage is the first place of the next stage, which is now a ring 1 place for iron, so no check says when a guild reaches ring 2 or ring 3: add a read-out and a check of each ring's arrival against the pace curve's time at its target level (35 min, 3 h 50, 14 h 48). (2) The coin curve classes a ring by its number (ring 2 as Plane 2's 66 minutes, ring 3 as Plane 3's 99), so it proposes 8,000 and 32,000 where the rule gives about 15,000 and 150,000: class a ring by the level its band opens at (level 30 and 50; the big curve's 99 and 219 minutes). (3) The coins of a late place are timed at an early income: with ring 3 at level 45 and 150,000 coins, Gold Ore Vein arrives 43 hours in, which is about 4,600 coins an hour, where a maxed worker sells 20,000 to 65,000 by then; and the selling table ends at Plane 3. Time a place's coins at the income of the hour it is bought. | BAL |
 | T-758 | P2 | open | *For: director.* **A world camp takes its stage from its enemies, as a world place does from its materials**: the ledger gives a line origin the plan tier of its main material (`worldRungs`, `ledger/engine.js`), but a guaranteed camp only its ring, so once the rings follow level bands (owner, 2026-11-28: ring 1 levels 10 to 29) the iron-age camps in ring 1 (Ember Vents, Sulphur Rocks, Frog Pond, Smoking Crater, Basking Stone, Toxic Pool) read as ring 1 stage, and the iron ore, fir wood and lizard scale they drop pull the iron gear with them: 63 'reachable before its tier' warnings in the rings pack's gate, none real in play (the fights ask Combat 15 to 25). Done when a camp's rung is the highest plan tier of the enemies it spawns, as an origin's is of its materials, and the rings pack's gate loses those warnings. | CON |
 | T-756 | P2 | closed | *For: director.* **Withdrawn (owner, 2026-11-27): the rings keep the levels they ask.** Measured with the coin prices, level 10 and 20 put the Starter Camp's way out at about 65 minutes against 35. The owner chose ring 1 at level 5 with 2,100 coins, which a player reaches at about level 10; ring 2 is being talked through with the balancer (BALANCE_RULES section 8). The levels are a world setting a pack can carry (`prices.<ring>.skills`), so nothing is needed in code. | BAL |
 | T-754 | P3 | open | *For: director (engineer).* **Recalculate never offers a source that deadlocks the price walk**: today the "would out-rank Apple Tree" card for Apple Seed, if accepted, blocks 169 rows and leaves 78 more items with no value, because Apple Tree anchors the Bird Nest and waits on Apple Seed while the seed's new source (Search, later the Nest's Use) waits on the Nest. The election should neither offer nor keep a source that needs an item whose anchor co-produces the drop. Until then: don't accept that card. | T-751 engineer 2026-11-27 |
