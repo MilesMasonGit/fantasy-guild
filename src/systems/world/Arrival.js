@@ -22,7 +22,7 @@ import { isEnemyDef } from '../../config/registries/enemyProfile.js';
 /**
  * A newly settled place arrives occupied (owner): its mat darkened, with a small fixed
  * encounter on it, 3 to 6 enemies sized to the ring, never a boss (the cell's `arrival`,
- * `generate.js` step 10). They stand spread out across the mat ({@link spreadOf}), each alone, out
+ * `generate.js` step 9). They stand spread out across the mat ({@link spreadOf}), each alone, out
  * of the Guild Hall's clearing, belong to no camp and never come back: each has one use. They
  * stand still until a hero is sent at them (no ambushes, brief 500). Until every one is beaten the
  * mat is held (`board/Occupation.js`): heroes may fight and nothing else, and the mat is drawn

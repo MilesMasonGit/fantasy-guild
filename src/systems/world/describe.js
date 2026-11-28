@@ -21,7 +21,6 @@ export const WORLD_TEXT = Object.freeze({
     origins: 'origins',
     requires: 'requires',
     gatheredAt: 'gathered at',
-    hidden: 'hidden',
     nothing: 'nothing',
     specialty: 'specialty',
     extreme: 'extreme',
@@ -59,7 +58,7 @@ export function hexPicture(world, { lineName = same } = {}) {
  *
  * @param {object} world a `generateWorld` result
  * @param {object} [options]
- * @param {(id: string) => string} [options.tokenName] an origin's (or a treasure's) name
+ * @param {(id: string) => string} [options.tokenName] an origin's name
  * @param {(id: string) => string} [options.itemName] an item's name
  * @param {(id: string) => string} [options.lineName] a line's name
  * @param {(id: string) => string} [options.kitName] a kit's name
@@ -83,7 +82,6 @@ export function worldText(world, {
         });
         return parts.length ? parts.join(', ') : WORLD_TEXT.nothing;
     };
-    const extraName = (e) => (e.kind === 'treasure' ? tokenName(e.id) : itemName(e.id));
 
     for (let n = 0; n <= world.rings; n++) {
         const ring = world.cells.filter(c => c.ring === n);
@@ -103,8 +101,6 @@ export function worldText(world, {
                 ...req.skills.map(s => `${skillName(s.skill)} ${s.level}`)
             ];
             lines.push(`         ${WORLD_TEXT.requires}: ${asks.length ? asks.join(', ') : WORLD_TEXT.nothing}${cell.payFrom.length ? ` · ${WORLD_TEXT.gatheredAt} ${cell.payFrom.join(' + ')}` : ''}`);
-            const hidden = cell.extras.map(e => `${extraName(e)} (${e.kind} ${e.value})`);
-            lines.push(`         ${WORLD_TEXT.hidden}: ${hidden.length ? `${hidden.join(', ')} = ${cell.value}` : WORLD_TEXT.nothing}`);
             if (cell.extreme) {
                 const what = cell.extreme.kind === 'composition' ? WORLD_TEXT.composition(tokenName(cell.extreme.focus)) : WORLD_TEXT.layout(cell.extreme.layout);
                 lines.push(`         ${WORLD_TEXT.extreme}: ${what}`);

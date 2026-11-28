@@ -92,7 +92,6 @@ export const CHECKS = Object.freeze({
     'world-key-reach': { group: 'F', severity: SEVERITY.WARN, label: 'A key material not a step from every frontier' },
     'world-coverage': { group: 'F', severity: SEVERITY.WARN, label: 'Not covered by the inner rings' },
     'world-no-wedge': { group: 'F', severity: SEVERITY.WARN, label: 'A wild origin no wedge places' },
-    'world-value': { group: 'F', severity: SEVERITY.WARN, label: "A cell's extras off its ring's value" },
     'world-ring-star': { group: 'F', severity: SEVERITY.WARN, label: 'A ring with no Guild Hall star, or one that cannot be lit before it' },
     'world-rule': { group: 'F', severity: SEVERITY.WARN, label: 'Breaks another rule of the world' },
 });

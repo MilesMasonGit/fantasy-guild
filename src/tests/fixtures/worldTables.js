@@ -27,22 +27,13 @@ export const FIXTURE_WORLD_RAW = Object.freeze({
     kits: ['highland', 'woodland', 'plains', 'wetland', 'riverside'].map(id => ({ id, name: id })),
     specialties: ['mining', 'forestry', 'farming', 'fishing', 'alchemy', 'combat'],
     pityWindow: 4,
-    extras: [
-        ...LINES.map(line => ({ id: `chest_rich_${line}`, kind: 'treasure', value: 10, lines: [line] })),
-        { id: 'chest_camp', kind: 'treasure', value: 8 },
-        { id: 'chest_den', kind: 'treasure', value: 8, rings: [2, 3] },
-        { id: 'chest_small', kind: 'treasure', value: 6, rings: [1, 2], max: 2 },
-        { id: 'chest_big', kind: 'treasure', value: 12, rings: [2, 3], max: 2 }
-    ],
-    ringValue: { 1: 16, 2: 24, 3: 32 },
-    valueTolerance: 0.1,
     prices: {
         1: { items: [{ qty: 20 }, { qty: 10 }], skills: [{ skill: 'line', level: 5 }] },
         2: { items: [{ qty: 40 }, { qty: 20 }, { qty: 20, from: 'hall' }], skills: [{ skill: 'line', level: 15 }] },
         3: { items: [{ qty: 80 }, { qty: 40 }, { qty: 40, from: 'hall' }, { qty: 5, item: 'i_rope' }], skills: [{ skill: 'line', level: 30 }, { skill: 'specialty', level: 20 }] }
     },
     wild: {
-        rings: 3, priceGrowth: 1.5, levelStep: 10, valueGrowth: 1.5, extremeShare: 0.5,
+        rings: 3, priceGrowth: 1.5, levelStep: 10, extremeShare: 0.5,
         layouts: [{ id: 'islands' }, { id: 'chasm' }, { id: 'mostly_water' }, { id: 'cramped' }]
     }
 });

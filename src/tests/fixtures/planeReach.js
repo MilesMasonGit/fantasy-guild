@@ -56,8 +56,7 @@ export function effectYields(def) {
 
 /**
  * The Tokens the world map's cells of rings 1 to `maxRing` write, from the world tables in force:
- * each line's origins, key origins and guaranteed camps of those rings, and their chests. Any cell may draw any
- * extra its ring allows.
+ * each line's origins, key origins and guaranteed camps of those rings.
  */
 export function worldTokens(maxRing) {
     const tables = worldTables();
@@ -72,10 +71,6 @@ export function worldTokens(maxRing) {
     }
     // Every kit's camps, and the boss camp a combat specialty makes one of them.
     for (const kit of tables.kits) for (const id of [...kit.camps, ...kit.bossCamps]) out.add(id);
-    for (const extra of tables.extras) {
-        if (extra.rings && !extra.rings.some(r => r <= maxRing)) continue;
-        if (extra.kind === 'treasure') out.add(extra.id);
-    }
     return out;
 }
 
@@ -83,7 +78,7 @@ export function worldTokens(maxRing) {
  * The fishing spot kinds that drift in by themselves on the water of a place the planes hold: the
  * Starter Camp's pond (meadow, fresh water, `StarterCampPond.test.js`) and the ground of every kit
  * a world cell may stand on, with the water its biome's terrain row may roll. Any cell may draw any
- * kit, as any may draw any extra its ring allows. A spot kind that only an event lands is not here.
+ * kit. A spot kind that only an event lands is not here.
  */
 export function arrivingSpots() {
     const places = planePlaces();

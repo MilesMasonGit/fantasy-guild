@@ -16,7 +16,6 @@ import { WATER_KIND, SMALL_WATER } from './WaterShapes.js';
  *     { id: 'world_cell_3', kind: 'base', biome: 'forest', points: 40,
  *       nodes:     [{ typeId: 'token_oak_tree', weight: 6 }, { typeId: 'token_redberry_bush', weight: 1 }],
  *       camps:     [{ typeId: 'token_goblin_camp', count: 1 }],   // optional, the map's own
- *       treasures: [{ typeId: 'token_copper_chest', count: 1 }],  // optional, the map's own
  *       terrain: 'grass', water: 0,                               // optional, see BIOME_GROUND
  *       inland: ['pond'] }                                        // optional, see BIOME_WATER
  *
@@ -32,17 +31,17 @@ import { WATER_KIND, SMALL_WATER } from './WaterShapes.js';
  * ## The rules
  * 1. **Base Maps blend.** Each writes `points / (number of Base Maps)` nodes, split by its weights,
  *    so a hybrid keeps the density of one map and two copies of a map write what one does. Their
- *    own camps and treasures take the most any one of them has, per Token.
- * 2. **The cap**: the whole budget, camps and treasures included, is clamped to
- *    {@link nodeLimit}: the cap less {@link buildReserve}. Camps and treasures are kept and nodes
- *    trimmed in proportion; only if camps and treasures alone overflow are they trimmed too.
+ *    own camps take the most any one of them has, per Token.
+ * 2. **The cap**: the whole budget, camps included, is clamped to
+ *    {@link nodeLimit}: the cap less {@link buildReserve}. Camps are kept and nodes
+ *    trimmed in proportion; only if camps alone overflow are they trimmed too.
  * 3. Counts are whole numbers by largest remainder ({@link apportion}).
  * 4. **Biomes and ground.** Each node entry carries the biome that writes most of its points. The
  *    summary's `ground` says which terrain each biome's ground is, how much of the mat is sea
  *    (blended like points), which biomes bring the sea, the inland water the main biome brings
  *    (`BIOME_WATER`, one variety picked by the layout's seed) and the small water each other biome
- *    brings (`BIOME_SMALL_WATER`); `Layout.js` builds the terrain grid from it. Camps and treasures
- *    take the ground where they land.
+ *    brings (`BIOME_SMALL_WATER`); `Layout.js` builds the terrain grid from it. Camps take the
+ *    ground where they land.
  *
  * A recipe of a kind the engine does not know is skipped, never guessed at.
  */
@@ -116,10 +115,10 @@ export function groundOf(map) {
     return { terrain: map.terrain || known.terrain || DEFAULT_TERRAIN, water: Math.min(1, Math.max(0, water)), inland };
 }
 
-/** What a budget entry is for: a node to work, an enemy camp, or a one-time treasure. */
-export const ROLE = Object.freeze({ NODE: 'node', CAMP: 'camp', TREASURE: 'treasure' });
+/** What a budget entry is for: a node to work, or an enemy camp. */
+export const ROLE = Object.freeze({ NODE: 'node', CAMP: 'camp' });
 
-const ROLE_ORDER = [ROLE.NODE, ROLE.CAMP, ROLE.TREASURE];
+const ROLE_ORDER = [ROLE.NODE, ROLE.CAMP];
 
 /**
  * The share of the Token cap kept back from map nodes, for what the player builds (and the enemies
@@ -216,7 +215,6 @@ export function budget(ingredients, { cap } = {}) {
     };
     const pointsOf = (typeId) => [...(points.get(typeId)?.values() || [])].reduce((a, b) => a + b, 0);
     const camps = new Map();
-    const treasures = new Map();
     const biomes = {};
     const terrains = {};
     const shore = new Set();
@@ -241,11 +239,9 @@ export function budget(ingredients, { cap } = {}) {
         const entries = (map.nodes || []).filter(n => n?.typeId && positive(n.weight, 0) > 0);
         const weightSum = entries.reduce((n, e) => n + e.weight, 0);
         for (const e of entries) addPoints(e.typeId, map.biome || '', share * e.weight / weightSum);
-        for (const [list, into] of [[map.camps, camps], [map.treasures, treasures]]) {
-            for (const poi of list || []) {
-                if (!poi?.typeId) continue;
-                into.set(poi.typeId, Math.max(into.get(poi.typeId) || 0, Math.floor(positive(poi.count, 1))));
-            }
+        for (const camp of map.camps || []) {
+            if (!camp?.typeId) continue;
+            camps.set(camp.typeId, Math.max(camps.get(camp.typeId) || 0, Math.floor(positive(camp.count, 1))));
         }
     }
     // The main biome writes the most nodes (the Forest of a Forest and a small Coast), else, with no
@@ -259,7 +255,6 @@ export function budget(ingredients, { cap } = {}) {
     const limit = nodeLimit(cap);
     const fixedWanted = {};
     for (const [typeId, n] of camps) fixedWanted[`${ROLE.CAMP}|${typeId}`] = n;
-    for (const [typeId, n] of treasures) fixedWanted[`${ROLE.TREASURE}|${typeId}`] = n;
     const fixedTotal = Object.values(fixedWanted).reduce((a, b) => a + b, 0);
     const fixed = fixedTotal > limit ? apportion(fixedWanted, limit) : fixedWanted;
     const fixedKept = Object.values(fixed).reduce((a, b) => a + b, 0);
@@ -326,7 +321,7 @@ export const SUMMARY_TEXT = Object.freeze({
 
 /**
  * The Node Summary in words, for the dev console's preview:
- * one line per Token in budget order (nodes, then camps, then treasures).
+ * one line per Token in budget order (nodes, then camps).
  *
  * @param {object|object[]} nodeSummary  a {@link budget} result, or just its `entries`
  * @param {{nameOf?: (typeId: string) => string}} [options]  Token names; the registry's by default

@@ -47,12 +47,12 @@ describe('what is recorded', () => {
 
     it('a Token that came with a settled place, from when the guild holds it, for good', () => {
         const board = createEmptyBoard();
-        board.tokens = { chest_1: { id: 'chest_1', typeId: 'token_copper_chest' }, ore_1: { id: 'ore_1', typeId: 'token_iron_ore_vein' } };
+        board.tokens = { geode_1: { id: 'geode_1', typeId: 'token_geode' }, ore_1: { id: 'ore_1', typeId: 'token_iron_ore_vein' } };
         const { region } = Atlas.createRegion({ ingredients: [], board });
-        expect(GameState.state.collection.tokensHad).toMatchObject({ token_copper_chest: true, token_iron_ore_vein: true });
-        // Opened and gone, with no copy standing anywhere: still ticked.
-        delete Atlas.getRegion(region.id).board.tokens.chest_1;
-        expect(collectedOf().tokens.has('token_copper_chest')).toBe(true);
+        expect(GameState.state.collection.tokensHad).toMatchObject({ token_geode: true, token_iron_ore_vein: true });
+        // Worked out and gone, with no copy standing anywhere: still ticked.
+        delete Atlas.getRegion(region.id).board.tokens.geode_1;
+        expect(collectedOf().tokens.has('token_geode')).toBe(true);
     });
 
     it('an enemy once beaten (the kill count)', () => {

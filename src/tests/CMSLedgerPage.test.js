@@ -10,7 +10,7 @@ import { sourcesOf, usesOf, layoutTree, effortText, firstReachText, TREE_LAYOUT 
 import LedgerPanel from '../../cms/src/components/ledger/LedgerPanel.jsx';
 import { buildLedger, itemKey, tokenKey, recipeKey } from '../systems/progression/ledger/engine.js';
 import { tierLabel } from '../systems/progression/ledger/plan.js';
-import { ledgerWorkspace, ledgerContent, withIronChest, withWorld } from './fixtures/ledgerWorld.js';
+import { ledgerWorkspace, ledgerContent, withIronCache, withWorld } from './fixtures/ledgerWorld.js';
 
 /**
  * The Ledger's problems list and item page (brief 290 L3) on the fixture world: the checks with the
@@ -77,9 +77,9 @@ describe('the page, worked out', () => {
     });
 
     it('puts an earlier one-off find beside first reach, not in it', () => {
-        const l = buildLedger(withIronChest());
-        expect(firstReachText(l.reachOf(itemKey('item_iron_ore')), tierLabel)).toBe('Plane 2 · Mining 15 · a one-off find at Plane 1 (Iron Chest)');
-        const chest = sourcesOf(l, itemKey('item_iron_ore')).find((s) => s.viaKey === tokenKey('token_iron_chest'));
+        const l = buildLedger(withIronCache());
+        expect(firstReachText(l.reachOf(itemKey('item_iron_ore')), tierLabel)).toBe('Plane 2 · Mining 15 · a one-off find at Plane 1 (Iron Cache)');
+        const chest = sourcesOf(l, itemKey('item_iron_ore')).find((s) => s.viaKey === tokenKey('token_iron_cache'));
         expect(chest).toMatchObject({ tier: 1, oneOff: true });
     });
 });

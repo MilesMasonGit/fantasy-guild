@@ -504,7 +504,7 @@ const lineWord = (word, tip = word, args = null) => ({ word, tip, args });
 const isBuilt = (book, recipe) => stationsOf(book, recipe).some(r => r.how === HOW.BUILD);
 
 /**
- * The word for what comes out of a box (`key`) along a way: a vein gives, a chest opens, an enemy
+ * The word for what comes out of a box (`key`) along a way: a vein gives, an enemy
  * drops, a rare find is found, an item used gives its drops; a catch's hover names its tool and
  * bait, a Hall track's its ranks.
  */
@@ -517,7 +517,7 @@ function givesWord(book, key, how, way = null) {
             : lineWord('catch', 'catchWith', { tool: way.toolKind });
     }
     switch (how) {
-        case HOW.WORK: return book.isTreasure(key) ? lineWord('opens') : lineWord('gives');
+        case HOW.WORK: return lineWord('gives');
         case HOW.TRICKLE:
         case HOW.UPGRADE: return lineWord('gives', 'givesPassive');
         case HOW.CATCH: return lineWord('catch');

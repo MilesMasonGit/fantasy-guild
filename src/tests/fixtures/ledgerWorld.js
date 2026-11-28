@@ -176,11 +176,15 @@ export function withoutOrigin(content, id) {
     return { ...content, worldTables: { ...tables, lines } };
 }
 
-/** The fixture with an Iron Chest (one Charge, never back) as a chest of ring 1. */
-export function withIronChest() {
-    const ws = ledgerContent({ ...LEDGER_WORLD_RAW, extras: [{ id: 'token_iron_chest', kind: 'treasure', value: 6, rings: [1] }], ringValue: { 1: 6 } });
-    ws.tokens.token_iron_chest = {
-        id: 'token_iron_chest', name: 'Iron Chest', uses: 1,
+/**
+ * The fixture with an Iron Cache (one Charge, never back) that only some worlds hold: the kit's only
+ * everyday camp, standing where its combat work is, from ring 1.
+ */
+export function withIronCache() {
+    const kits = LEDGER_WORLD_RAW.kits.map(kit => ({ ...kit, work: { ...kit.work, combat: 1 }, camps: ['token_iron_cache'] }));
+    const ws = ledgerContent({ ...LEDGER_WORLD_RAW, kits });
+    ws.tokens.token_iron_cache = {
+        id: 'token_iron_cache', name: 'Iron Cache', uses: 1,
         config: { skill: 'crafting', skillRequired: 1, cycleTimeMs: 10000, xp: 1, inputs: [], outputs: [{ itemId: 'item_iron_ore', chance: 100, minQty: 4, maxQty: 8 }] },
     };
     return ws;

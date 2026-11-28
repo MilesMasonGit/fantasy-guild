@@ -908,7 +908,7 @@ function familyMembers(book, setup, skill) {
  * How the worked Token comes back after it runs out, and so how many cycles an hour it can offer one
  * hero standing by it: unlimited; refilled after a rest (a vein, a ripe Field's next crop); regrown
  * through a chain of growths back to itself (a felled tree, its stump, its sapling); or worn out for
- * good (a chest). `cycles` is a life's cycles, on average for one that runs out by chance (one that
+ * good (a one-use Token). `cycles` is a life's cycles, on average for one that runs out by chance (one that
  * comes back: each charge a roll at its chance, `Charges.applyDelta`).
  */
 function lifecycleOf(book, def, recipe, cycleMs, setup, guild, notes, kind, skill) {

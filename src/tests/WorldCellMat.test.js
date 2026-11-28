@@ -99,13 +99,21 @@ describe('⭐ a cell\'s mat (the placeholder tables)', () => {
         expect(seen).toBeGreaterThan(20);
     });
 
-    it('stands on its kit\'s ground with its kit\'s Stone; its chests ride along', () => {
-        const cell = strictCells(worldOf(1000)).find(c => c.extras.length);
+    it('stands on its kit\'s ground with its kit\'s Stone', () => {
+        const cell = strictCells(worldOf(1000))[0];
         const mat = cellMat(cell, TABLES, LOOKUPS);
         const kit = TABLES.kits.find(k => k.id === cell.kit);
         expect(mat.biome).toBe(kit.biome);
         expect(mat.stone).toEqual({ outcrops: TABLES.biomes[kit.biome].stone[0], ridge: false });
-        expect(mat.treasures.reduce((n, t) => n + t.count, 0)).toBe(cell.extras.filter(e => e.kind === 'treasure').length);
+    });
+
+    it('a cell an old save kept with chests in its extras writes the same mat, with no chest', () => {
+        const cell = strictCells(worldOf(1000))[0];
+        const old = { ...cell, extras: [{ id: 'token_copper_chest', kind: 'treasure', value: 6 }], value: 6 };
+        const mat = cellMat(old, TABLES, LOOKUPS);
+        expect(mat).toEqual(cellMat(cell, TABLES, LOOKUPS));
+        expect(mat).not.toHaveProperty('treasures');
+        expect(recipesOfCell(old, { tables: TABLES, ...LOOKUPS }).recipes[0]).not.toHaveProperty('treasures');
     });
 
     it('carries the cell\'s arrival: 3 to 6 enemies, more further out', () => {
@@ -161,7 +169,7 @@ describe('a wild cell\'s oddness', () => {
 
 describe('the recipes a mat is written from', () => {
     it('one base recipe Budget writes exactly', () => {
-        const cell = strictCells(worldOf(1000)).find(c => c.extras.length);
+        const cell = strictCells(worldOf(1000))[0];
         const { mat, recipes } = recipesOfCell(cell, { tables: TABLES, ...LOOKUPS, name: 'Test Place' });
         expect(recipes).toHaveLength(1);
         expect(recipes[0]).toMatchObject({ id: cellRecipeId(cell), kind: 'base', name: 'Test Place', biome: mat.biome });
@@ -174,7 +182,7 @@ describe('the recipes a mat is written from', () => {
     });
 
     it('a mat with no Stone and no odd water names neither', () => {
-        const mat = { biome: 'meadow', nodes: [{ typeId: 'a', count: 2 }], camps: [], treasures: [], stone: { outcrops: 0, ridge: false }, water: null, inland: null };
+        const mat = { biome: 'meadow', nodes: [{ typeId: 'a', count: 2 }], camps: [], stone: { outcrops: 0, ridge: false }, water: null, inland: null };
         const [base] = recipesOfMat(mat, { id: 'x' });
         expect(base).toEqual({ id: 'x', kind: 'base', name: '', biome: 'meadow', points: 2, nodes: [{ typeId: 'a', weight: 2 }] });
         expect(budget([base], { cap: 128 }).ground).not.toHaveProperty('stone');

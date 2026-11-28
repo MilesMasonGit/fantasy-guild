@@ -1,10 +1,9 @@
 // a node budget and a seed → where each Token stands, and the ground under them
 
 import { mulberry32 } from './seededRandom.js';
-import { STANDARD_REACH_U } from '../../config/registries/reachRegistry.js';
 import {
     TERRAIN, DEFAULT_TERRAIN, TERRAIN_CELL, MAX_WATER_SHARE, terrainGrid, cellIndex, cellCentre,
-    shoreDistance, islandsOf, followNodes, encodeTerrain
+    shoreDistance, followNodes, encodeTerrain
 } from './TerrainMap.js';
 import { directionSample, planWater, readWater, sampleWater, fieldAt, withoutInland, smallWater, emptyWater } from './WaterShapes.js';
 import { planStone, readStone, sampleStone } from './StoneShapes.js';
@@ -25,8 +24,6 @@ import { planStone, readStone, sampleStone } from './StoneShapes.js';
  * - **Stone** next (`StoneShapes`), when the budget asks for some (`summary.ground.stone`): outcrops
  *   of bare rock, never on the water or in the Hall's clearing. A Stone cell keeps its terrain
  *   whatever stands on it, and only rock kinds (ore, stone) grow there; they lean to it.
- * - **A treasure's island** is kept free: a treasure takes the driest spot of an island of dry
- *   cells the water surrounds, when one is dry enough, one island per treasure.
  * - **Camps** pick their nook in the outer band ({@link NOOK_BAND}), and a grove of the budget's
  *   commonest tree wraps the side of it facing the Hall. The camp itself stands there once every
  *   node does, so it is judged on the ground the nodes bring.
@@ -40,21 +37,18 @@ import { planStone, readStone, sampleStone } from './StoneShapes.js';
  *   start their groves on it first of all, and their members keep to it while it has room. **Rarer further out**: a species
  *   the budget gives at most {@link RARE_COUNT} of, beside others it gives more of, grows at the
  *   mat's edge. Every preference gives way, last first, when no spot has it.
- * - **Treasures** last, on their island, else in the most hidden spot away from the Hall
- *   ({@link HIDE_BAND}): the one with the most nodes round it, those nearer the Hall than it
- *   (screening it) counting double.
- * - **Small waters** after that, once every Token stands: each other biome's
+ * - **Small waters** last, once every Token stands: each other biome's
  *   (`summary.ground.small`) in a gap of its own ground, clear of every Token and of the other
  *   water, or none where none fits. Nothing placed moves for them.
  *
  * **The ground follows the nodes**: a node's own cell takes its biome's terrain, any other dry
- * cell the terrain of the nearest node in reach, else the Region's main biome's. Camps and
- * treasures take the ground where they land. Every placed Token records its biome, so the cell
+ * cell the terrain of the nearest node in reach, else the Region's main biome's. Camps take
+ * the ground where they land. Every placed Token records its biome, so the cell
  * under its centre always has that biome's terrain, except a node that stands in the water (a
  * boat) or on Stone: its cell stays water or Stone, while the dry cells round it follow it like any
  * node's.
  *
- * The result lists the Tokens in budget order (nodes, then camps, then treasures), whatever
+ * The result lists the Tokens in budget order (nodes, then camps), whatever
  * order they were placed in, so a new seed moves only coordinates; a tie for the nearest node
  * goes to the one listed first.
  *
@@ -62,7 +56,7 @@ import { planStone, readStone, sampleStone } from './StoneShapes.js';
  * mat, centres at least the hitbox gap apart, plus clear of the Hall's ring, on a terrain the
  * `terrainAllows` seam accepts (by default anywhere dry; `layoutInputs` supplies each Token's
  * "Stands on"), and not refused by the optional `allows` hook (`layoutInputs.cannotCheck` asks the
- * game's `Cannot` rules). A grove, camp or treasure also starts on ground its Token may stand on.
+ * game's `Cannot` rules). A grove or camp also starts on ground its Token may stand on.
  * Nodes are spaced more loosely than that when the budget leaves room ({@link COMFORT_GAP}),
  * packing tighter as a recipe writes more.
  *
@@ -126,12 +120,6 @@ export const RARE_KEEP = 0.78;
 
 /** A water kind's grove starts one to this many cells from inland water, and its members keep within it. */
 export const NEAR_WATER = 3;
-
-/** A hidden treasure stands at least this far out (as {@link campBand}). */
-export const HIDE_BAND = 0.6;
-
-/** Accepted draws when looking for the most hidden spot. */
-const HIDE_DRAWS = 40;
 
 /**
  * A grove's bell: its width as a share of the comfortable gap for a grove of {@link GROVE_MEAN}
@@ -206,10 +194,9 @@ const STANDARD_ART = 64;
 const HEX = Math.sqrt(3) / 2;
 const EPS = 1e-6;
 
-/** Best-candidate draws when choosing a camp, grove or treasure centre. */
+/** Best-candidate draws when choosing a camp or grove centre. */
 const CAMP_DRAWS = 8;
 const GROVE_DRAWS = 10;
-const TREASURE_DRAWS = 16;
 
 /** Growing a grove the old way (a member that found no spot in its bell): rounds of draws, each round reaching further. */
 const GROW_ROUNDS = 4;
@@ -220,7 +207,6 @@ const SCAN_STEP = 8;
 
 const ROLE_CAMP = 'camp';
 const ROLE_NODE = 'node';
-const ROLE_TREASURE = 'treasure';
 
 const KINDS = Object.values(AFFINITY);
 
@@ -414,7 +400,7 @@ export function layout(summary, {
     const cols = Math.ceil(w / cell) + 1;
     const grid = new Map();
     const placed = [];
-    // Spots kept for a camp or a treasure while the nodes grow: in the grid, so nodes keep their
+    // Spots kept for a camp while the nodes grow: in the grid, so nodes keep their
     // distance, but not yet placed.
     const held = [];
 
@@ -475,7 +461,7 @@ export function layout(summary, {
     /**
      * `loose`: only the game's own gap, not the comfortable one (the last resort); `scale`: a
      * grove's tighter gap between nodes. A node brings its own ground to its cell, so it is judged
-     * on its biome's terrain and may not share a cell with a node of another; a camp or treasure is
+     * on its biome's terrain and may not share a cell with a node of another; a camp is
      * judged on the ground already there.
      */
     const legal = (item, x, y, loose = false, scale = 1) => {
@@ -508,8 +494,8 @@ export function layout(summary, {
     };
 
     /**
-     * Whether a Token could stand on the ground under `p`, by its terrain alone: where a grove, a
-     * camp or a treasure starts. A node brings its biome's terrain to a dry cell; anything else is
+     * Whether a Token could stand on the ground under `p`, by its terrain alone: where a grove or a
+     * camp starts. A node brings its biome's terrain to a dry cell; anything else is
      * judged on the ground already there.
      */
     const groundFits = (item, p) => {
@@ -705,20 +691,6 @@ export function layout(summary, {
         };
     });
 
-    // A treasure's island, kept before anything else can stand on it.
-    const treasurePlans = items.filter(it => it.role === ROLE_TREASURE).map(item => ({ item, held: null }));
-    if (treasurePlans.length && drawnAt) {
-        const isles = islandSpots(cells, water, cellAt(hall.x, hall.y), drawnAt);
-        let next = 0;
-        for (const plan of treasurePlans) {
-            if (next >= isles.length) break;
-            const spot = isles[next].find(p => legal(plan.item, p.x, p.y));
-            if (!spot) continue;
-            next++;
-            plan.held = hold({ typeId: plan.item.typeId, role: ROLE_TREASURE, x: spot.x, y: spot.y, body: bodyOf(plan.item.typeId) });
-        }
-    }
-
     // Each camp's nook, and a grove wrapped round the side of it facing the Hall.
     const wrapRank = (s) => (s.kind === AFFINITY.GRASS ? 0 : s.kind === AFFINITY.WATER ? 2 : 1);
     const wrapSpecies = () => {
@@ -869,54 +841,6 @@ export function layout(summary, {
         place(item, spotNear(item, anchor, []));
     }
 
-    /** The legal spot far from the Hall with the most nodes round it, those nearer the Hall (screening it) counting double. */
-    const hidden = (item) => {
-        const { art } = bodyOf(item.typeId);
-        let best = null;
-        let bestScore = -1;
-        let bestFar = -1;
-        let accepted = 0;
-        for (let tries = 0; accepted < HIDE_DRAWS && tries < HIDE_DRAWS * 40; tries++) {
-            const p = onMat(art);
-            if (campBand(p, art, mat) < HIDE_BAND || !groundFits(item, p) || !legal(item, p.x, p.y)) continue;
-            accepted++;
-            const far = (p.x - hall.x) * (p.x - hall.x) + (p.y - hall.y) * (p.y - hall.y);
-            let score = 0;
-            for (const q of placed) {
-                if (q.role !== ROLE_NODE) continue;
-                const dx = q.x - p.x;
-                const dy = q.y - p.y;
-                if (dx * dx + dy * dy >= STANDARD_REACH_U * STANDARD_REACH_U) continue;
-                score += (q.x - hall.x) * (q.x - hall.x) + (q.y - hall.y) * (q.y - hall.y) < far ? 2 : 1;
-            }
-            if (score > bestScore || (score === bestScore && far > bestFar)) {
-                best = p;
-                bestScore = score;
-                bestFar = far;
-            }
-        }
-        return best;
-    };
-
-    for (const plan of treasurePlans) {
-        const { item } = plan;
-        if (plan.held) {
-            release(plan.held);
-            if (legal(item, plan.held.x, plan.held.y)) {
-                place(item, { x: plan.held.x, y: plan.held.y });
-                continue;
-            }
-        }
-        const spot = hidden(item);
-        if (spot) {
-            place(item, spot);
-            continue;
-        }
-        const { art } = bodyOf(item.typeId);
-        const anchor = roomiest(art, TREASURE_DRAWS, p => outsideRing(p.x, p.y, art) && groundFits(item, p), placed);
-        place(item, spotNear(item, anchor, []));
-    }
-
     // The other biomes' small waters, into gaps of their own ground.
     const smalls = Object.entries(ground.small);
     if (smalls.length) {
@@ -970,33 +894,6 @@ export function layout(summary, {
 }
 
 /**
- * Each island the water surrounds, as the points a treasure could stand on there: every point
- * of a 8-unit lattice in its cells that the drawn water leaves dry by {@link DRY_GAP}, the
- * driest (its middle) first. The islands with the driest middles first; none that is too wet.
- */
-function islandSpots(cells, water, home, drawnAt) {
-    const out = [];
-    for (const isle of islandsOf(cells, water, home)) {
-        const points = [];
-        for (const i of isle) {
-            const c = cellCentre(cells, i);
-            for (let j = 0; j < 4; j++) {
-                for (let k = 0; k < 4; k++) {
-                    const x = c.x - 12 + 8 * k;
-                    const y = c.y - 12 + 8 * j;
-                    const f = drawnAt(x, y);
-                    if (f <= -DRY_GAP) points.push({ x, y, f });
-                }
-            }
-        }
-        if (!points.length) continue;
-        points.sort((a, b) => a.f - b.f);
-        out.push(points);
-    }
-    return out.sort((a, b) => a[0].f - b[0].f);
-}
-
-/**
  * Whether a small water, sampled alone, fits where it lies: some cells of its own, every one of
  * them and every point it draws on in its biome's dry ground and two cells clear of other water,
  * and every standing Token's centre off it by the dry gap.
@@ -1044,11 +941,11 @@ function groundOf(summary) {
     };
 }
 
-/** One item per Token to place, nodes, then camps, then treasures, in budget order; `order` its place in that list. */
+/** One item per Token to place, nodes, then camps, in budget order; `order` its place in that list. */
 function expand(summary) {
     const entries = Array.isArray(summary) ? summary : (summary?.entries || []);
     const items = [];
-    for (const role of [ROLE_NODE, ROLE_CAMP, ROLE_TREASURE]) {
+    for (const role of [ROLE_NODE, ROLE_CAMP]) {
         for (const e of entries) {
             if (e?.role !== role || !e.typeId) continue;
             const count = Math.max(0, Math.floor(e.count) || 0);

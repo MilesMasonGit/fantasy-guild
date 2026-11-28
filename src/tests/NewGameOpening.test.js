@@ -40,8 +40,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
  * the CMS (`data/starterCamp.json`), or the built-in camp while there is none. Then the roadmap §6
  * circularity check: from the Starter Camp, its Bank and the Shop, every chain is reachable; and
  * every material, tool and building of planes 1 and 2 is, on the SHIPPED data. A plane is a ring of
- * the world map now: map items are retired, and a world cell of ring n writes its origins and its
- * hidden extras.
+ * the world map now: map items are retired, and a world cell of ring n writes its origins.
  *
  * ⚠️ The fixtures are registered here, not through `fixtures/testTokens.js`: that file registers
  * fixture recipe pools over the shipped ones, which would falsify the circularity check.

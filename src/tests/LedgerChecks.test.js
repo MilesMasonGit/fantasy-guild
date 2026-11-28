@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 import { buildLedger, itemKey, tokenKey, recipeKey } from '../systems/progression/ledger/engine.js';
 import { runChecks, CHECKS, filterFindings, findingsByKey, STARTER_CAMP_KEY } from '../../cms/src/engine/ledger/checks.js';
 import { normaliseWorldTables } from '../config/worldTablesShape.js';
-import { ledgerContent, withIronChest, withoutOrigin } from './fixtures/ledgerWorld.js';
+import { ledgerContent, withIronCache, withoutOrigin } from './fixtures/ledgerWorld.js';
 
 /**
  * The ledger's checks A to C (`ledger/checks.js`) on the fixture world (`fixtures/ledgerWorld.js`),
@@ -107,15 +107,15 @@ describe('checks on the fixture world', () => {
     });
 
     it('B and C: a one-off find is no leak; an entry only one gets is luck only', () => {
-        const ws = withIronChest();
-        // Ring 1's chest gives Iron Ore at plane 1, but ring 2's veins are the way the plan means.
+        const ws = withIronCache();
+        // Ring 1's cache gives Iron Ore at plane 1, but ring 2's veins are the way the plan means.
         expect(on(checksOf(ws), itemKey('item_iron_ore'), 'leak')).toHaveLength(0);
         expect(on(checksOf(ws), itemKey('item_iron_ore'), 'luck-only')).toHaveLength(0);
         const findings = checksOf(withoutOrigin(ws, 'token_iron_vein'));
         const ore = on(findings, itemKey('item_iron_ore'), 'luck-only')[0];
         expect(ore).toMatchObject({ severity: 'warn' });
-        expect(ore.message).toBe('Only ever through a one-off find (Iron Chest), which wears out for good, and no sure way.');
-        expect(on(findings, itemKey('item_iron_ingot'), 'luck-only')[0].message).toMatch(/one-off find \(Iron Chest\)/);
+        expect(ore.message).toBe('Only ever through a one-off find (Iron Cache), which wears out for good, and no sure way.');
+        expect(on(findings, itemKey('item_iron_ingot'), 'luck-only')[0].message).toMatch(/one-off find \(Iron Cache\)/);
     });
 
     it('B: Live content that needs a Planned entry is a Block; stubs nothing points to, and items with no tier, are noted', () => {

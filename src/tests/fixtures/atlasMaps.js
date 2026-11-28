@@ -44,6 +44,3 @@ export const OVERGROWN_FOREST = Object.freeze({
 
 /** A map with an enemy camp of its own. */
 export const withGoblinCamp = (map) => ({ ...map, camps: [{ typeId: 'token_goblin_camp', count: 1 }] });
-
-/** A map with a treasure of its own. */
-export const withRuins = (map) => ({ ...map, treasures: [{ typeId: 'token_ruins', count: 1 }] });

@@ -35,7 +35,6 @@ export function recipesOfMat(mat, { id, name = '' }) {
         nodes
     };
     if (mat.camps.length) base.camps = mat.camps.map(c => ({ ...c }));
-    if (mat.treasures.length) base.treasures = mat.treasures.map(t => ({ ...t }));
     if (Number.isFinite(mat.water)) base.water = mat.water;
     if (Array.isArray(mat.inland)) base.inland = [...mat.inland];
     else if (mat.inland) base.inland = mat.inland;

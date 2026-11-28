@@ -177,14 +177,15 @@ describe('a save holding items the content no longer has', () => {
         expect(typeof bannerForRegion(region)).toBe('string');
     });
 
-    it('a kept world whose cell still lists a modifier extra settles without it', async () => {
+    it('a kept world whose cell still lists old extras (a chest, a modifier) settles without them', async () => {
         writeSlot(() => { World.createWorld({ seed: 1 }); });
         await loadAndPlay(1);
         const cell = GameState.state.world.cells.find(c => c.ring === 1);
-        const chests = cell.extras.filter(e => e.kind === 'treasure').length;
-        cell.extras = [...cell.extras, { id: GONE_MODIFIER, kind: 'modifier', value: 10 }];
+        cell.extras = [{ id: 'token_copper_chest', kind: 'treasure', value: 6 }, { id: GONE_MODIFIER, kind: 'modifier', value: 10 }];
+        cell.value = 16;
         const written = Settling.writePlace(cell);
         expect(written.success).toBe(true);
-        expect(written.mat.treasures.reduce((n, t) => n + t.count, 0)).toBe(chests);
+        expect(written.mat).not.toHaveProperty('treasures');
+        expect(JSON.stringify(written.mat)).not.toContain('token_copper_chest');
     });
 });

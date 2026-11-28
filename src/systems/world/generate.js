@@ -30,14 +30,12 @@ import { STRICT_RINGS, PRICE_FROM, SKILL_OF, MAX_ARRIVAL, lineById, kitById as k
  *    goes to one cell of that ring (owner: every Live enemy has a guaranteed place in every world),
  *    one of its own `kits` where the ring has one, else one whose kit names it, else any; always the
  *    least loaded of those, so they spread over the ring.
- * 7. **Extras** (a place's chests): a strict cell's are worth its ring's value within
- *    `valueTolerance`; a wild cell's aim at the last strict ring's value grown per ring.
- * 8. **Requirements.** A cell's price is gathered from one cell one ring in (the Hall's for ring 1)
+ * 7. **Requirements.** A cell's price is gathered from one cell one ring in (the Hall's for ring 1)
  *    and, where its ring's template says, the Hall's cell: two places at most, all of earlier rings.
  *    Its skill levels follow the template. Wild rings grow the last strict ring's template.
- * 9. **Wild extremes.** Each wild cell is either one origin almost everywhere (`composition`) or
+ * 8. **Wild extremes.** Each wild cell is either one origin almost everywhere (`composition`) or
  *    an odd layout.
- * 10. **Arrivals.** The enemies a place arrives with (`arrival`): its ring's count and enemies
+ * 9. **Arrivals.** The enemies a place arrives with (`arrival`): its ring's count and enemies
  *    (never a boss: bosses come from camps); wild rings ring 3's, one enemy more per ring out, at
  *    most `MAX_ARRIVAL`.
  *
@@ -61,7 +59,6 @@ export const PROBLEM = Object.freeze({
     EMPTY_TABLE: 'empty-table',
     KEY_UNPLACED: 'key-unplaced',
     NO_SPECIALTIES: 'no-specialties',
-    VALUE: 'value',
     NO_PRICE_SOURCE: 'no-price-source',
     NO_PRICE_MATERIAL: 'no-price-material'
 });
@@ -71,14 +68,12 @@ export const WORLD_GEN_TEXT = Object.freeze({
     emptyTable: (line, ring) => `The ${line} line has no origins for ring ${ring}: its cells there have no main origin`,
     keyUnplaced: (key, ring) => `The key origin ${key} could not be put within reach of every ring ${ring - 1} cell`,
     noSpecialties: 'The tables list no specialties: no cell has one',
-    value: (cell, value, target) => `Cell ${cell}'s extras are worth ${value}, not within the tolerance of its ring's ${target}`,
     noPriceSource: (cell) => `No cell one ring in from ${cell} yields a material to ask for: its price falls back on the Hall's cell`,
     noPriceMaterial: (cell) => `Cell ${cell}'s price found no material to ask for in the places it is gathered from`
 });
 
 const HALL_ID = cellId(0, 0);
 const MAX_LEVEL = 99;
-const VALUE_ATTEMPTS = 32;
 
 /** A random stream for one step of one ring, from the run seed. */
 function streamOf(seed, step, ring = '') {
@@ -186,12 +181,6 @@ function materialsAt(cells, materialsOf) {
     return out;
 }
 
-/** The value a wild ring's extras aim at: the last strict ring's, grown per ring beyond. */
-function valueTarget(tables, ring) {
-    if (ring <= STRICT_RINGS) return tables.ringValue[ring] || 0;
-    return (tables.ringValue[STRICT_RINGS] || 0) * power(tables.wild.valueGrowth, ring - STRICT_RINGS);
-}
-
 /** A ring's price template: its own in the strict rings, the last strict ring's grown beyond. */
 export function priceTemplateOf(tables, ring) {
     if (ring <= STRICT_RINGS) return tables.prices[ring];
@@ -240,8 +229,6 @@ export function generateWorld({ seed, tables, materialsOf = () => [], hallOrigin
             origins: [],
             kit: null,
             specialty: null,
-            extras: [],
-            value: 0,
             requires: null,
             payFrom: [],
             extreme: null,
@@ -416,48 +403,7 @@ export function generateWorld({ seed, tables, materialsOf = () => [], hallOrigin
         }
     }
 
-    // 7. Extras within the ring's value.
-    for (let n = 1; n <= rings; n++) {
-        const random = streamOf(runSeed, 'extras', n);
-        const tier = Math.min(n, STRICT_RINGS);
-        const target = valueTarget(tables, n);
-        const low = target * (1 - tables.valueTolerance);
-        const high = target * (1 + tables.valueTolerance);
-        for (const cell of ringOf(n)) {
-            if (!(target > 0)) continue;
-            const lines = new Set([cell.wedge, ...cell.origins.map(o => o.line).filter(Boolean)]);
-            const copies = [];
-            for (const extra of tables.extras) {
-                if (extra.rings && !extra.rings.includes(tier)) continue;
-                if (extra.lines && !extra.lines.some(l => lines.has(l))) continue;
-                for (let k = 0; k < extra.max; k++) copies.push(extra);
-            }
-            let best = null;
-            for (let attempt = 0; attempt < VALUE_ATTEMPTS; attempt++) {
-                const left = [...copies];
-                const picked = [];
-                let sum = 0;
-                while (left.length) {
-                    const extra = pickWeighted(random, left, e => e.weight);
-                    left.splice(left.indexOf(extra), 1);
-                    if (sum + extra.value <= high) {
-                        picked.push(extra);
-                        sum += extra.value;
-                    }
-                    if (sum >= low) break;
-                }
-                if (!best || Math.abs(sum - target) < Math.abs(best.sum - target)) best = { picked, sum };
-                if (sum >= low) break;
-            }
-            cell.extras = best.picked.map(e => ({ id: e.id, kind: e.kind, value: e.value }));
-            cell.value = best.sum;
-            if (n <= STRICT_RINGS && (best.sum < low || best.sum > high)) {
-                problems.push({ kind: PROBLEM.VALUE, cellId: cell.id, message: WORLD_GEN_TEXT.value(cell.id, best.sum, target) });
-            }
-        }
-    }
-
-    // 8. Requirements, gathered from one cell one ring in and, where the template says, the Hall's.
+    // 7. Requirements, gathered from one cell one ring in and, where the template says, the Hall's.
     const hallMaterials = materialsAt([hall], materialsOf);
     for (let n = 1; n <= rings; n++) {
         const random = streamOf(runSeed, 'requires', n);
@@ -511,7 +457,7 @@ export function generateWorld({ seed, tables, materialsOf = () => [], hallOrigin
         }
     }
 
-    // 9. Wild extremes.
+    // 8. Wild extremes.
     for (let n = STRICT_RINGS + 1; n <= rings; n++) {
         const random = streamOf(runSeed, 'wild', n);
         for (const cell of ringOf(n)) {
@@ -523,7 +469,7 @@ export function generateWorld({ seed, tables, materialsOf = () => [], hallOrigin
         }
     }
 
-    // 10. Arrivals.
+    // 9. Arrivals.
     for (let n = 1; n <= rings; n++) {
         const random = streamOf(runSeed, 'arrival', n);
         const table = tables.arrival?.[Math.min(n, STRICT_RINGS)];

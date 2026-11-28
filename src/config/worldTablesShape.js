@@ -33,14 +33,10 @@ import { normaliseBiomeTable } from './biomeTerrain.js';
  *                   bossChance: 0, bosses: [] }, 2: ..., 3: ... },   // the enemies a settled place arrives with
  *   specialties: ['mining', 'forestry', ...],                // the specialty bag of every strict ring
  *   pityWindow: 4,                  // a specialty absent from this many cells in a row comes next
- *   extras: [{ id: 'token_copper_chest', kind: 'treasure', value: 6, lines: ['ores'], rings: [1, 2],
- *              max: 2, weight: 1 }],                       // a place's chests
- *   ringValue: { 1: 6, 2: 12, 3: 12 },                      // what a cell's extras are worth, per ring
- *   valueTolerance: 0.1,
  *   prices: { 1: { items: [{ qty: 20 }, { qty: 10, from: 'hall' }, { qty: 2, item: 'item_rope' }],
  *                  skills: [{ skill: 'line', level: 5 }], coins: 0 }, 2: ..., 3: ... },  // coins: asked beside the items, read live at settling
  *   placePriceGrowth: 1.25,         // each further place settled in a ring asks this many times the one before
- *   wild: { rings: 3, priceGrowth: 1.5, levelStep: 10, valueGrowth: 1.5, extremeShare: 0.5,
+ *   wild: { rings: 3, priceGrowth: 1.5, levelStep: 10, extremeShare: 0.5,
  *           compositionShare: 0.75,  // how much of a one-resource wild mat its one resource takes
  *           layouts: [{ id: 'islands', weight: 1 }] },
  *   biomes: { meadow: { water: ['lake', 'river'], sea: [0, 0], stone: [1, 2] }, ... }
@@ -62,6 +58,9 @@ import { normaliseBiomeTable } from './biomeTerrain.js';
  * one enemy more per ring out. A boss comes from a camp only: an old `bossChance` or `bosses` left
  * in the data is ignored.
  *
+ * A world no longer hides chests: an old `extras`, `ringValue`, `valueTolerance` or
+ * `wild.valueGrowth` left in the data is ignored.
+ *
  * A kit's old `stone` count is read only while the record has no `biomes` table (`biomeTerrain.js`).
  *
  * Pure, importing only the pure biome table: the CMS reads it too.
@@ -74,8 +73,6 @@ export const STRICT_RINGS = 3;
 
 /** One wedge per hex side. */
 export const LINE_COUNT = 6;
-
-export const EXTRA_KIND = Object.freeze({ TREASURE: 'treasure' });
 
 /** Where a price slot's material is gathered. */
 export const PRICE_FROM = Object.freeze({ SOURCE: 'source', HALL: 'hall' });
@@ -95,9 +92,8 @@ const DEFAULTS = Object.freeze({
     mainPerCell: 1,
     blendsPerNeighbour: 1,
     pityWindow: 4,
-    valueTolerance: 0.1,
     placePriceGrowth: 1.25,
-    wild: Object.freeze({ rings: 3, priceGrowth: 1.5, levelStep: 10, valueGrowth: 1.5, extremeShare: 0.5, compositionShare: 0.75 })
+    wild: Object.freeze({ rings: 3, priceGrowth: 1.5, levelStep: 10, extremeShare: 0.5, compositionShare: 0.75 })
 });
 
 const MAX_LEVEL = 99;
@@ -191,20 +187,6 @@ function priceTemplate(raw) {
     };
 }
 
-function extraOf(raw) {
-    if (!isObject(raw)) return null;
-    const id = text(raw.id);
-    const kind = Object.values(EXTRA_KIND).includes(raw.kind) ? raw.kind : null;
-    const value = positive(raw.value, 0);
-    if (!id || !kind || !(value > 0)) return null;
-    const out = { id, kind, value, max: wholeAtLeast(raw.max, 1, 1), weight: positive(raw.weight, 1) };
-    const rings = listOf(raw.rings).filter(n => Number.isInteger(n) && n >= 1 && n <= STRICT_RINGS);
-    const lines = idList(raw.lines);
-    if (rings.length) out.rings = [...new Set(rings)].sort((a, b) => a - b);
-    if (lines.length) out.lines = lines;
-    return out;
-}
-
 function wildOf(raw) {
     const block = isObject(raw) ? raw : {};
     const d = DEFAULTS.wild;
@@ -213,7 +195,6 @@ function wildOf(raw) {
         rings: wholeAtLeast(block.rings, 0, d.rings),
         priceGrowth: finite(block.priceGrowth) && block.priceGrowth >= 1 ? block.priceGrowth : d.priceGrowth,
         levelStep: finite(block.levelStep) && block.levelStep >= 0 ? Math.round(block.levelStep) : d.levelStep,
-        valueGrowth: finite(block.valueGrowth) && block.valueGrowth >= 1 ? block.valueGrowth : d.valueGrowth,
         extremeShare: share,
         compositionShare: finite(block.compositionShare) && block.compositionShare > 0 && block.compositionShare <= 1
             ? block.compositionShare : d.compositionShare,
@@ -326,14 +307,6 @@ export function normaliseWorldTables(raw) {
         neighbours.push({ a, b, weight: Math.max(1, Math.round(positive(row.weight, 1))) });
     }
 
-    const extras = [];
-    for (const row of listOf(raw.extras)) {
-        const extra = extraOf(row);
-        if (extra) extras.push(extra);
-        else issues.push(`An extra was dropped: it needs an id, the kind treasure and a value above 0`);
-    }
-
-    const ringValue = perRing(raw.ringValue, v => (finite(v) && v >= 0 ? v : 0));
     const prices = perRing(raw.prices, priceTemplate);
     for (let ring = 1; ring <= STRICT_RINGS; ring++) {
         const written = isObject(raw.prices) && isObject(raw.prices[ring]) ? raw.prices[ring].coins : undefined;
@@ -358,9 +331,6 @@ export function normaliseWorldTables(raw) {
         issues.push(`The place price growth "${growthWritten}" is not a number of 1 or more, so it is ${DEFAULTS.placePriceGrowth}`);
     }
 
-    const tolerance = finite(raw.valueTolerance) && raw.valueTolerance >= 0 && raw.valueTolerance < 1
-        ? raw.valueTolerance : DEFAULTS.valueTolerance;
-
     return {
         version: WORLD_TABLES_VERSION,
         lines,
@@ -373,9 +343,6 @@ export function normaliseWorldTables(raw) {
         camps,
         specialties,
         pityWindow: wholeAtLeast(raw.pityWindow, 1, DEFAULTS.pityWindow),
-        extras,
-        ringValue,
-        valueTolerance: tolerance,
         prices,
         placePriceGrowth,
         heroTokens: heroTokensTable(raw.heroTokens),

@@ -3,7 +3,7 @@ import {
     budget, describe as describeBudget, nodeLimit, buildReserve, apportion,
     BUILD_RESERVE_SHARE, ROLE
 } from '../systems/atlas/Budget.js';
-import { FOREST, MOUNTAIN, COAST, OVERGROWN_FOREST, withGoblinCamp, withRuins } from './fixtures/atlasMaps.js';
+import { FOREST, MOUNTAIN, COAST, OVERGROWN_FOREST, withGoblinCamp } from './fixtures/atlasMaps.js';
 
 /**
  * The generation engine's first half: map ingredients → how many of each Token a Region gets.
@@ -41,10 +41,9 @@ group('the node budget', () => {
 
         it('slot order does not matter', () => {
             const camped = withGoblinCamp(FOREST);
-            const ruined = withRuins(MOUNTAIN);
-            const slots = [camped, ruined, COAST];
+            const slots = [camped, MOUNTAIN, COAST];
             const reference = budget(slots, { cap: CAP });
-            const orders = [[COAST, ruined, camped], [ruined, camped, COAST], [ruined, COAST, camped]];
+            const orders = [[COAST, MOUNTAIN, camped], [MOUNTAIN, camped, COAST], [MOUNTAIN, COAST, camped]];
             for (const order of orders) expect(budget(order, { cap: CAP })).toEqual(reference);
         });
 
@@ -82,17 +81,18 @@ group('the node budget', () => {
             expect(countsOf(budget([forest, forest, mountain], { cap: CAP }))).toEqual({ oak: 27, copper: 13 });
         });
 
-        it('brings its own camps and treasures, which a second copy does not double', () => {
-            const jungle = base('jungle', 30, [{ typeId: 'oak', weight: 1 }], {
-                camps: [{ typeId: 'den', count: 1 }],
-                treasures: [{ typeId: 'ruins', count: 1 }]
-            });
+        it('brings its own camps, which a second copy does not double', () => {
+            const jungle = base('jungle', 30, [{ typeId: 'oak', weight: 1 }], { camps: [{ typeId: 'den', count: 1 }] });
             const one = budget([jungle], { cap: CAP });
             const two = budget([jungle, jungle], { cap: CAP });
             expect(countsOf(one, ROLE.CAMP)).toEqual({ den: 1 });
-            expect(countsOf(one, ROLE.TREASURE)).toEqual({ ruins: 1 });
             expect(countsOf(two, ROLE.CAMP)).toEqual({ den: 1 });
-            expect(countsOf(two, ROLE.TREASURE)).toEqual({ ruins: 1 });
+        });
+
+        it('an old list of treasures on a map writes nothing: a Region holds no chests', () => {
+            const jungle = base('jungle', 30, [{ typeId: 'oak', weight: 1 }]);
+            const old = budget([{ ...jungle, treasures: [{ typeId: 'ruins', count: 1 }] }], { cap: CAP });
+            expect(old).toEqual(budget([jungle], { cap: CAP }));
         });
 
         it('records biome weights for the terrain, one per Base Map slotted', () => {
@@ -162,26 +162,20 @@ group('the node budget', () => {
             expect(at256.clamped).toBe(false);
         });
 
-        it('keeps every camp and treasure when it trims, and takes their room from the nodes', () => {
-            const big = base('big', 120, [{ typeId: 'oak', weight: 1 }], {
-                camps: [{ typeId: 'goblin_camp', count: 2 }],
-                treasures: [{ typeId: 'ruins', count: 1 }]
-            });
+        it('keeps every camp when it trims, and takes their room from the nodes', () => {
+            const big = base('big', 120, [{ typeId: 'oak', weight: 1 }], { camps: [{ typeId: 'goblin_camp', count: 2 }] });
             const summary = budget([big], { cap: 128 });
             expect(summary.total).toBe(64);
             expect(countsOf(summary, ROLE.CAMP)).toEqual({ goblin_camp: 2 });
-            expect(countsOf(summary, ROLE.TREASURE)).toEqual({ ruins: 1 });
-            expect(countsOf(summary)).toEqual({ oak: 61 });
+            expect(countsOf(summary)).toEqual({ oak: 62 });
         });
 
-        it('trims even camps and treasures when they alone overflow a tiny cap', () => {
+        it('trims even camps when they alone overflow a tiny cap', () => {
             const summary = budget([base('sites', 0, [], {
-                camps: [{ typeId: 'goblin_camp', count: 5 }],
-                treasures: [{ typeId: 'ruins', count: 5 }]
+                camps: [{ typeId: 'goblin_camp', count: 5 }, { typeId: 'wolf_den', count: 5 }]
             })], { cap: 8 });
             expect(summary.total).toBe(4);
-            expect(countsOf(summary, ROLE.CAMP)).toEqual({ goblin_camp: 2 });
-            expect(countsOf(summary, ROLE.TREASURE)).toEqual({ ruins: 2 });
+            expect(countsOf(summary, ROLE.CAMP)).toEqual({ goblin_camp: 2, wolf_den: 2 });
         });
 
         it('the sample Forest with Overgrown fits the base cap untrimmed', () => {
@@ -192,18 +186,16 @@ group('the node budget', () => {
     });
 
     group('entries', () => {
-        it('list nodes first (most first), then camps, then treasures, and drop zeros', () => {
+        it('list nodes first (most first), then camps, and drop zeros', () => {
             const summary = budget([
                 base('b', 10, [{ typeId: 'few', weight: 1 }, { typeId: 'many', weight: 4 }, { typeId: 'none', weight: 0 }], {
-                    treasures: [{ typeId: 'ruins' }],
                     camps: [{ typeId: 'den' }]
                 })
             ], { cap: CAP });
             expect(summary.entries).toEqual([
                 { typeId: 'many', role: ROLE.NODE, count: 8, biome: 'b' },
                 { typeId: 'few', role: ROLE.NODE, count: 2, biome: 'b' },
-                { typeId: 'den', role: ROLE.CAMP, count: 1, biome: null },
-                { typeId: 'ruins', role: ROLE.TREASURE, count: 1, biome: null }
+                { typeId: 'den', role: ROLE.CAMP, count: 1, biome: null }
             ]);
         });
 
@@ -240,8 +232,8 @@ group('biomes and ground', () => {
         expect(budget([coast, coast, forest], { cap: CAP }).ground.main).toBe('coast');
     });
 
-    it('camps and treasures take the ground where they land, so the budget gives them none', () => {
-        const summary = budget([withRuins(withGoblinCamp(forest))], { cap: CAP });
+    it('camps take the ground where they land, so the budget gives them none', () => {
+        const summary = budget([withGoblinCamp(forest)], { cap: CAP });
         expect(summary.entries.filter(e => e.role !== ROLE.NODE).every(e => e.biome === null)).toBe(true);
     });
 
@@ -269,23 +261,22 @@ group('biomes and ground', () => {
 });
 
 group('describe(): the node summary in words', () => {
-    const names = { oak: 'Oak Tree', berry: 'Redberry Bush', goblin_camp: 'Goblin Camp', ruins: 'Old Ruins' };
+    const names = { oak: 'Oak Tree', berry: 'Redberry Bush', goblin_camp: 'Goblin Camp' };
     const nameOf = (id) => names[id];
 
     it('one line per Token, with the count, grouped by role', () => {
         const summary = budget([
             base('forest', 40, [{ typeId: 'oak', weight: 3 }, { typeId: 'berry', weight: 1 }], {
-                camps: [{ typeId: 'goblin_camp' }],
-                treasures: [{ typeId: 'ruins' }]
+                camps: [{ typeId: 'goblin_camp' }]
             })
         ], { cap: CAP });
         const words = describeBudget(summary, { nameOf });
         expect(words.lines.map(l => l.text)).toEqual([
-            '30 × Oak Tree', '10 × Redberry Bush', '1 × Goblin Camp', '1 × Old Ruins'
+            '30 × Oak Tree', '10 × Redberry Bush', '1 × Goblin Camp'
         ]);
-        expect(words.lines.map(l => l.role)).toEqual([ROLE.NODE, ROLE.NODE, ROLE.CAMP, ROLE.TREASURE]);
-        expect(words.headline).toBe('42 Tokens');
-        expect(words.text.split('\n')[0]).toBe('42 Tokens');
+        expect(words.lines.map(l => l.role)).toEqual([ROLE.NODE, ROLE.NODE, ROLE.CAMP]);
+        expect(words.headline).toBe('41 Tokens');
+        expect(words.text.split('\n')[0]).toBe('41 Tokens');
     });
 
     it('says when the cap trimmed the map', () => {

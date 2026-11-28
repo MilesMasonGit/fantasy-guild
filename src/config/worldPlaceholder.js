@@ -2,7 +2,7 @@
 
 /**
  * ⚠️ PLACEHOLDER. The owner ruled that the world's content (which origins sit in which ring of each
- * wedge, the kits, the prices, the extras' values) comes through the ledger as a CMS pack (brief 330
+ * wedge, the kits, the prices) comes through the ledger as a CMS pack (brief 330
  * W6). Until `data/world.json` exists the game generates from these tables, so the machinery runs
  * on something readable. Every number here is a stand-in; nothing here is a design decision.
  *
@@ -104,19 +104,13 @@ export const PLACEHOLDER_WORLD_TABLES = Object.freeze({
     },
     specialties: ['mining', 'forestry', 'farming', 'fishing', 'alchemy', 'combat'],
     pityWindow: 4,
-    extras: [
-        { id: 'token_copper_chest', kind: 'treasure', value: 6, rings: [1, 2], max: 2 },
-        { id: 'token_iron_chest', kind: 'treasure', value: 12, rings: [2, 3], max: 2 }
-    ],
-    ringValue: { 1: 6, 2: 12, 3: 12 },
-    valueTolerance: 0.1,
     prices: {
         1: { items: [{ qty: 20 }, { qty: 10 }], skills: [{ skill: 'line', level: 5 }] },
         2: { items: [{ qty: 40 }, { qty: 20 }, { qty: 20, from: 'hall' }], skills: [{ skill: 'line', level: 15 }] },
         3: { items: [{ qty: 80 }, { qty: 40 }, { qty: 40, from: 'hall' }], skills: [{ skill: 'line', level: 30 }] }
     },
     wild: {
-        rings: 3, priceGrowth: 1.5, levelStep: 10, valueGrowth: 1.5, extremeShare: 0.5, compositionShare: 0.75,
+        rings: 3, priceGrowth: 1.5, levelStep: 10, extremeShare: 0.5, compositionShare: 0.75,
         // The owner's odd layouts: islands, a chasm, mostly water, little building room.
         layouts: [{ id: 'islands', weight: 1 }, { id: 'chasm', weight: 1 }, { id: 'mostly_water', weight: 1 }, { id: 'cramped', weight: 1 }]
     }

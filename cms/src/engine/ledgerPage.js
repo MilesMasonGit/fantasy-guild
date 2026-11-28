@@ -41,7 +41,7 @@ export function recordOf(state, key) {
 
 /**
  * Every way an entry is had: `[{ id, how, howText, viaKey, viaName, atName, chance, oneOff, gates, tier }]`,
- * the earliest first, then the surest. `oneOff`: the Token doing it wears out for good (a chest). For a recipe's output, `viaKey` is the recipe and `atName` the
+ * the earliest first, then the surest. `oneOff`: the Token doing it wears out for good (a one-use Token). For a recipe's output, `viaKey` is the recipe and `atName` the
  * station it is first run at.
  */
 export function sourcesOf(ledger, key, index = ruleIndex(ledger.world)) {
@@ -148,7 +148,7 @@ export function effortText(ms) {
 
 /**
  * First reach in words: "Plane 1 · Mining 15, Smithing 10", or "Never" / "Planned", with an earlier
- * one-off find on the side: "… · a one-off find at Plane 1 (Iron Chest)".
+ * one-off find on the side: "… · a one-off find at Plane 1 (Iron Cache)".
  */
 export function firstReachText(at, tierLabel) {
     if (!at) return '—';

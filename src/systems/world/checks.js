@@ -26,7 +26,6 @@ export const WORLD_CHECK = Object.freeze({
     KEY_REACH: 'key-reach',
     BAG: 'specialty-bag',
     PITY: 'pity',
-    VALUE: 'value',
     PRICE_RING: 'price-ring',
     PRICE_PLACES: 'price-places',
     PRICE_RISES: 'price-rises',
@@ -46,7 +45,6 @@ export const WORLD_CHECK_TEXT = Object.freeze({
     keyReach: (cell, key) => `Cell ${cell} has no cell one ring out holding the key origin ${key}`,
     bag: (ring) => `Ring ${ring}'s specialties are not an even bag`,
     pity: (cell, ring) => `Cell ${cell} (ring ${ring}) broke the pity rule: a specialty missing for too long did not come next`,
-    value: (cell, value, target) => `Cell ${cell}'s extras are worth ${value}, outside its ring's ${target}`,
     priceRing: (cell, item, ring) => `Cell ${cell} asks for ${item}, a material of ring ${ring}, not of an earlier ring`,
     pricePlaces: (cell) => `Cell ${cell}'s price cannot be gathered from one or two earlier places beside it`,
     priceRises: (ring) => `Ring ${ring}'s cells do not all cost more than ring ${ring - 1}'s`,
@@ -173,16 +171,6 @@ export function worldFindings(world, tables, { materialsOf = () => [], hallOrigi
             if (due.length && !due.includes(cell.specialty)) {
                 find(WORLD_CHECK.PITY, WORLD_CHECK_TEXT.pity(cell.id, cell.ring), { cellId: cell.id, ring: cell.ring });
             }
-        }
-    }
-
-    // The value budget in the strict rings.
-    for (const cell of world.cells) {
-        if (cell.ring < 1 || cell.ring > STRICT_RINGS) continue;
-        const target = tables.ringValue[cell.ring] || 0;
-        const value = cell.extras.reduce((n, e) => n + e.value, 0);
-        if (Math.abs(value - target) > target * tables.valueTolerance + 1e-9 || value !== cell.value) {
-            find(WORLD_CHECK.VALUE, WORLD_CHECK_TEXT.value(cell.id, value, target), { cellId: cell.id });
         }
     }
 

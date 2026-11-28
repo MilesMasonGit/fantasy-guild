@@ -145,13 +145,12 @@ describe('the placeholder tables', () => {
         const tables = normaliseWorldTables(PLACEHOLDER_WORLD_TABLES);
         const ids = tables.lines.flatMap(l => [1, 2, 3].flatMap(n => l.origins[n].map(o => o.id)));
         const keys = [1, 2, 3].flatMap(n => tables.keys[n]);
-        const treasures = tables.extras.filter(e => e.kind === 'treasure').map(e => e.id);
-        for (const id of [...ids, ...keys, ...treasures]) expect(getTokenType(id), id).toBeTruthy();
+        for (const id of [...ids, ...keys]) expect(getTokenType(id), id).toBeTruthy();
     });
 
-    it('hold no hidden extras: only chests (owner, 2026-11-02)', () => {
-        expect(PLACEHOLDER.extras.map(e => e.kind)).toEqual(PLACEHOLDER.extras.map(() => 'treasure'));
-        expect(PLACEHOLDER.extras.length).toBeGreaterThan(0);
+    it('hide no chests: a world holds none (owner, 2026-11-27)', () => {
+        expect(PLACEHOLDER_WORLD_TABLES).not.toHaveProperty('extras');
+        expect(PLACEHOLDER_WORLD_TABLES).not.toHaveProperty('ringValue');
     });
 
     it('over 500 seeds the only findings are today\'s holes, each one also listed by the generation', () => {
@@ -219,7 +218,7 @@ describe('the world tables\' shape', () => {
 
     it('defaults what is missing, and says what it dropped', () => {
         const bare = normaliseWorldTables({ lines: FIXTURE_WORLD_RAW.lines.map(l => ({ id: l.id })) });
-        expect(bare).toMatchObject({ neighbourStrength: 8, mainPerCell: 1, blendsPerNeighbour: 1, pityWindow: 4, valueTolerance: 0.1 });
+        expect(bare).toMatchObject({ neighbourStrength: 8, mainPerCell: 1, blendsPerNeighbour: 1, pityWindow: 4 });
         expect(bare.wild).toMatchObject({ rings: 3, priceGrowth: 1.5, levelStep: 10 });
         expect(bare.lines[0].origins).toEqual({ 1: [], 2: [], 3: [] });
 
@@ -232,8 +231,8 @@ describe('the world tables\' shape', () => {
         });
         expect(messy.lines[0].kits).toEqual({});
         expect(messy.neighbours).toEqual([]);
-        expect(messy.extras).toEqual([]);
-        expect(messy.issues).toHaveLength(4);
+        expect(messy).not.toHaveProperty('extras');
+        expect(messy.issues).toHaveLength(3);
     });
 
     it('tests may swap the tables in force; tables that cannot generate are refused', () => {

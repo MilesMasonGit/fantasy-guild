@@ -18,8 +18,7 @@ import { WORLD_FIXTURE_RAW, WORLD_FIXTURE_TABLES, worldWorkspace, contentOf } fr
  * The ledger meets the world (brief 330 W5): origins carry a wedge and a ring in their plan; the
  * World plan generates a world for a seed from the tables with the plan's places laid on; checks F
  * read it (a ring-N cell asking ring-N materials, key materials not a step from every frontier, the
- * inner rings not covering every Live entry, a wild origin no wedge places, a cell's extras off its
- * ring's value), and many worlds are swept for the rules, per-skill bands and price spreads.
+ * inner rings not covering every Live entry, a wild origin no wedge places), and many worlds are swept for the rules, per-skill bands and price spreads.
  *
  * The fixture (`fixtures/ledgerWorldMap.js`) keeps every rule, so each block below breaks one.
  */
@@ -105,7 +104,7 @@ describe('the planned tables: the plan lays its places on the tables', () => {
 
 describe('checks F on a world that keeps every rule', () => {
     it('every F check has its group, a severity and words', () => {
-        expect(F_CHECKS).toEqual([WORLD_F.PRICE_RING, WORLD_F.KEY_REACH, WORLD_F.COVERAGE, WORLD_F.NO_WEDGE, WORLD_F.VALUE, WORLD_F.RING_STAR]);
+        expect(F_CHECKS).toEqual([WORLD_F.PRICE_RING, WORLD_F.KEY_REACH, WORLD_F.COVERAGE, WORLD_F.NO_WEDGE, WORLD_F.RING_STAR]);
         for (const id of [...F_CHECKS, WORLD_F.RULE]) {
             expect(CHECKS[id]).toMatchObject({ group: 'F' });
             expect(CHECKS[id].label.length).toBeGreaterThan(5);
@@ -225,18 +224,6 @@ describe('F: a wild origin no wedge places', () => {
 
     it('a Parked wild origin is left alone', () => {
         expect(originFindings(contentOf(withGold(worldWorkspace(), { status: 'parked' })), { baseTables: WORLD_FIXTURE_TABLES })).toEqual([]);
-    });
-});
-
-describe('F: a cell\'s value off by more than ±10 %', () => {
-    it('a strict cell whose extras are worth more than its ring\'s value and tolerance is found', () => {
-        const p = plan(worldWorkspace(), 7);
-        const cell = p.world.cells.find(c => c.ring === 1);
-        cell.extras = [{ id: 'token_fixture_chest', kind: 'treasure', value: 10 }, { id: 'token_fixture_chest', kind: 'treasure', value: 10 }];
-        cell.value = 20;
-        const hits = of(worldChecks(p), WORLD_F.VALUE);
-        expect(hits.map(f => f.cellId)).toEqual([cell.id]);
-        expect(hits[0].subject).toBe('ring 1');
     });
 });
 

@@ -69,7 +69,7 @@ describe('the World plan', () => {
         expect([...cells(view)].map((c) => c.textContent).join('|')).not.toBe(before);
     });
 
-    it('opens a cell: its wedge, kit, specialty, origins, price, hidden extras, arrival and problems', () => {
+    it('opens a cell: its wedge, kit, specialty, origins, price, arrival and problems; no chests', () => {
         const view = world();
         const ring2 = view.container.querySelector('[data-cell][data-ring="2"]');
         fireEvent.click(ring2);
@@ -78,7 +78,7 @@ describe('the World plan', () => {
         expect(panel.getByText('Highland (mountain)')).toBeTruthy();
         expect(view.container.querySelectorAll('[data-cell-panel] [data-origin]').length).toBeGreaterThan(0);
         expect(view.container.querySelectorAll('[data-cell-panel] [data-price]').length).toBeGreaterThan(0);
-        expect(panel.getByText(/Worth 10 of ring 2's 10/)).toBeTruthy();
+        expect(panel.queryByText('Chests')).toBeNull();
         expect(panel.getByText(/\d × Goblin/)).toBeTruthy();
         // The camps on its mat, by name, the ring's guaranteed ones marked.
         expect(view.container.querySelector('[data-cell-panel] [data-cell-camps]').textContent).toMatch(/Goblin Camp/);

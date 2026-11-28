@@ -83,12 +83,11 @@ function oldSave() {
                 id: '1,-1', ring: 1,
                 origins: [{ id: OLD.den, line: 'beasts', role: 'main' }],
                 camps: [OLD.den],
-                extras: [{ id: OLD.den, kind: 'treasure', value: 6 }],
                 arrival: [{ typeId: OLD.token, count: 3 }],
                 extreme: { kind: 'composition', focus: OLD.den },
                 requires: { items: [{ itemId: OLD.item, qty: 40 }], skills: [{ skill: 'forestry', level: 5 }] }
             },
-            { id: '2,0', ring: 2, origins: [], camps: [], extras: [], arrival: [], extreme: { kind: 'layout', layout: OLD.den }, requires: null }
+            { id: '2,0', ring: 2, origins: [], camps: [], arrival: [], extreme: { kind: 'layout', layout: OLD.den }, requires: null }
         ],
         problems: []
     };
@@ -157,11 +156,10 @@ describe('a renamed id is followed everywhere a save holds it', () => {
         expect(s.atlas.regions.region_1.board).toBeNull();
     });
 
-    it('the world map\'s places: origins, camps, chests, arrivals, a wild focus and the price', () => {
+    it('the world map\'s places: origins, camps, arrivals, a wild focus and the price', () => {
         const [cell, wild] = s.world.cells;
         expect(cell.origins[0]).toEqual({ id: NEW.den, line: 'beasts', role: 'main' });
         expect(cell.camps).toEqual([NEW.den]);
-        expect(cell.extras[0].id).toBe(NEW.den);
         expect(cell.arrival).toEqual([{ typeId: NEW.token, count: 3 }]);
         expect(cell.extreme.focus).toBe(NEW.den);
         expect(cell.requires.items).toEqual([{ itemId: NEW.item, qty: 40 }]);
