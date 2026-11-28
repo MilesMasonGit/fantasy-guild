@@ -1,8 +1,10 @@
 {
-  "title": "Coins are reset: prices sit on the coin curves",
+  "title": "The three rings arrive at about level 10, 30 and 50",
   "date": "2026-11-27",
-  "summary": "The coin reset is in the game's data. Shop Tokens, Guild Hall ranks and the first ring of places ask coins sized by the coin rule, and enemies and Hideout thefts pay about half a worker. Leaving the Starter Camp now takes about 41 minutes for one hero (it was 14), when the hero is level 10 or 11. The owner ruled that the three rings arrive at about level 10, 30 and 50; the places are being re-placed before rings 2 and 3 are priced.",
+  "summary": "The ring prices are in the game's data. Ring 1 asks level 5 and 2,100 coins and is reached about 41 minutes in, at level 10 or 11. Ring 2 (silver, mythril) asks level 24 and 13,000 coins and is reached about 4 hours 10 minutes in, at about level 30. Ring 3 (gold onward) asks level 45 and 150,000 coins; its level part comes about 11 hours in, and its coins are sized by the coin rule but cannot be timed until the read-out is fixed.",
   "checked": [
+    "After the ring pack, 2026-11-27 (workspace revision 110): the first ring-2 place (Drake Roost) arrives 4 h 10 in against a 3 h 50 target for level 30; Birch at 5 h 37 and the first iron place in ring 1 at 2 h 16 (level 20 is 1 h 44), because each further place costs its ring's coins again. The Starter Camp exit holds at 41 minutes. Days to 99 unchanged. The read-out matches the sandbox test of the pack check for check; 746 warnings, of which 55 are camps reached early after the re-placing (with the director).",
+    "What the read-out cannot say yet: when a guild reaches ring 3. It times the 150,000 coins at an early-game income and shows 43 hours, and its stage timer still assumes one ring per age. Both are with the director.",
     "After the coin reset, 2026-11-27 (workspace revision 107): all 115 coin prices are within the tolerance of the coin curve. The way out of the Starter Camp comes at 41 minutes against 35 (19 % over, inside the 25 %); Plane 1's at 1 h 12 against 1 h 44 and Plane 2's at 3 h 33 against 3 h 50, both waiting on rings 2 and 3. A worker sells about 3,600 coins an hour in the Starter Camp, 4,100 in Plane 1, 9,400 in Plane 2 and 16,000 to 54,000 in Plane 3; Goblin thefts fell from 6,350 an hour to about 1,800.",
     "Days to 99 for a maxed hero against 12.65, same date: Smithing 12.6, Cooking 12.8, Mining 14.2, Alchemy 14.4, Farming 15.3, Construction 15.8, Crafting 16.1, Forestry 21.2, Fishing 23.8. Fishing and Forestry are the two still far off. The ledger counts 692 warnings (734 before the three packs).",
     "The Starter Camp's coin curve gives two answers by turns, because what a hero sells there depends on which Guild Hall ranks the reference guild can afford. The pack took numbers inside the tolerance of both (250, 1,500 and 2,100).",
@@ -21,8 +23,10 @@
     "The method itself, with two read-only readings of the CMS's simulator and ledger: docs/active/balance_method_review.md. The page is on the curve by construction (XP is worked back from the curve), so it cannot test whether a guild's set-up is realistic; only the ledger or play can."
   ],
   "moved": [
+    "Synced by the owner, 2026-11-27: the ring pack, 5 entries. Ring 2 asks level 24 and 13,000 coins (was level 15 and 590); ring 3 level 45 and 150,000 (was level 30 and 8,700); Birdwatcher 8 to 13 XP, Elixir of Ironskin 9 to 12, Iron Dagger 8 to 11, Iron Wand 13 to 18.",
+    "Synced by the owner, 2026-11-27: the content session's re-placing pack. Ring 1 holds the copper and iron ages, ring 2 silver, mythril, marble, birch, giant mushroom and maple (levels 30 to 49), ring 3 gold and cedar onward (from level 50).",
     "Synced by the owner, 2026-11-27: the coin reset pack, 71 entries. Five Shop Tokens 420 to 250 coins; every Guild Hall rank to 1,500, 3,000, 9,100 or 19,000 by its stage; settling a place in ring 1 420 to 2,100; coins a kill on all 25 enemies at half a worker's rate (Goblin 28 to 15, bosses 170 to 390, Troll 1,400); coins a theft on three camps (Goblin 28 to 8).",
-    "Ruled by the owner, 2026-11-27: the three rings arrive at about level 10, 30 and 50 (about 40 minutes, 4 hours and 15 hours in), each asking a level a few below the target and a coin price, so a guild that sells well arrives a little sooner. The iron-age places move into ring 1, ring 2 holds silver and gold, ring 3 mythril onward. This replaces the ruling of rings asking level 10 and 20, which measured at 65 minutes for the Starter Camp.",
+    "Ruled by the owner, 2026-11-27: the three rings arrive at about level 10, 30 and 50 (about 40 minutes, 4 hours and 15 hours in), each asking a level a few below the target and a coin price, so a guild that sells well arrives a little sooner. The iron-age places move into ring 1; ring 2 holds levels 30 to 49 and ring 3 from 50. This replaces the ruling of rings asking level 10 and 20, which measured at 65 minutes for the Starter Camp.",
     "Ruled by the owner, 2026-11-27: a rare drop is worth more in proportion to its rarity, not squared (a Bird Nest fell from 85 coins to 23), and a lone hero making slowly in the first levels is accepted.",
     "Synced by the owner, 2026-11-27: the XP corrections pack (64 values), the Bird Nest packs from the content session, and the rare-drop worths.",
     "Staged with the owner's yes, 2026-11-27: the XP corrections pack, 64 XP values. Five early recipes were held back from the tool's 66: Copper Ingot and Shrimp unchanged, Charcoal 5, Elixir of Ironskin 9, Birdwatcher 8. Raised as the tool proposed, each became the best XP in its skill until about level 40, because the next station runs the same recipe about 1.7 times faster.",
@@ -59,21 +63,20 @@
     "Fixed earlier today: food costed like armour, Water counts, unlocks moving below an ingredient, and action lengths trimmed so whole XP pays exactly."
   ],
   "proposals": [
-    "Held for the next pack, not yet put to the owner: four small XP raises the corrections tool now proposes (Birdwatcher 8 to 13, Elixir of Ironskin 9 to 12, Iron Dagger 8 to 11, Iron Wand 13 to 18). They go with the ring pack.",
-    "For the next pack: ring 2 and ring 3 levels and coins, and the stage time targets, once the places are re-placed."
+    "To put to the owner: whether a second and later place in the same ring should cost the ring's full coins again. Today it does, so the first iron place comes about half an hour after level 20.",
+    "To correct in a later pack if needed: ring 3's 150,000 coins, once the read-out can time late coins."
   ],
   "gaps": [
-    "New, 2026-11-27: with the rings at about level 10, 30 and 50, the places need re-placing between rings (iron age into ring 1, silver and gold in ring 2, mythril onward in ring 3). It is the first entry in docs/active/balance_gaps.md, for the content session.",
+    "Done, 2026-11-27: the places were re-placed between the three rings by the content session.",
     "The first 15 levels of Smithing, Crafting and Alchemy run slow with one hero. The owner accepted it: nothing to fill.",
     "15 stretches are open for the content session, in docs/active/balance_gaps.md. The longest: Forestry 81 to 98 (17 days typical on Ebony alone), Fletching 86 to 98 and Crafting 87 to 98 (13 days each), Farming 88 to 98 (12 days).",
     "Nine of the fifteen are a skill's last run to 99. Smithing and Cooking don't have one, because they have something new at 98 and 99.",
     "Cooking, Smithing and Enchanting: none."
   ],
   "waiting": [
-    "On the content session: re-place the places between the three rings (a change pack for the owner).",
-    "On the balancer, after that: one pack for ring 2 and 3 levels, their coins and the stage time targets, with the four small XP raises.",
-    "On the owner, later: whether a typical player re-judges drinks as the guild grows and how the typical player buys Guild Hall ranks; three rules still to set (cycles a summon lasts, crop growing time, how far apart chains of one tier may pay).",
-    "On the balancer: Fishing and Forestry pace, and Steady Stills rank 1, which now pays back in about 5 hours against a 2-hour target.",
+    "On the director: the read-out judges rings by their target level, times late coins at the right income and shows when each ring is reached; 55 camps the re-placing made reachable early.",
+    "On the owner, later: the cost of further places in a ring; whether a typical player re-judges drinks as the guild grows and how the typical player buys Guild Hall ranks; three rules still to set (cycles a summon lasts, crop growing time, how far apart chains of one tier may pay).",
+    "On the balancer: Fishing and Forestry pace; Steady Stills rank 1, which pays back in about 5 hours against a 2-hour target; the chain XP warnings the re-placing added.",
     "On the content session: the fifteen long stretches; 76 live entries that got no numbers; late-game yield beyond buildings."
   ]
 }
