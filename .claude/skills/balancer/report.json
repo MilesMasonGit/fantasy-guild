@@ -1,8 +1,11 @@
 {
-  "title": "Rings priced, crops spread, and six rules settled",
-  "date": "2026-11-27",
-  "summary": "The three rings arrive at about level 10, 30 and 50, and the crops now differ: food crops grow from 48 minutes to 2 hours as their level rises and herbs are the quick, small crop, with Farming's pace unchanged. The owner settled six open rules: later places in a ring cost a quarter more each, drinks are re-judged, Guild Hall ranks are bought on the payback sum, chains of a level pay within 2 times, Fields keep the long wait, and a summoning lasts about 100 cycles.",
+  "title": "Guild Hall ranks are small, cheap steps",
+  "date": "2026-11-28",
+  "summary": "Guild Hall ranks are repriced by what they save: a first rank costs about 37 items and 27 coins and earns itself back in about an hour, where it cost 1,500 coins and took about 47 hours. A typical hero now holds most ranks and is back inside the bound in Smithing and Construction. Crafting, Cooking and Alchemy are still over it, after the change to how a typical player judges drinks landed the same day. The rings arrive at about level 10, 30 and 50 and the crops are spread by level.",
   "checked": [
+    "After the Guild Hall price pack and the drinks change, 2026-11-28 (workspace revision 120). A typical hero against a maxed one, days to 99: Smithing 1.30 (was 1.44), Construction 1.45 (1.54), Fishing 1.30 (1.34), Mining 1.06, Farming 1.00, Forestry 1.01; still over the 1.45 bound: Crafting 1.53, Cooking 1.52, Alchemy 1.50. A maxed hero's pace is unchanged. 708 warnings (746 before).",
+    "In the sandbox with the Hall pack alone, Crafting read 1.33 and Cooking 1.49; with the drinks change on top Crafting reads 1.53 and Alchemy 20 for a typical player moved from 2 h 53 to 4 h 46. So the drinks change, not the Hall prices, is what holds those three skills over the bound; three drinks now pay back under 4 times their making (Banana Smoothie, Hot Milk, Prospector's Draught).",
+    "Guild Hall ranks against the payback curve: 13 still pay back slower and 11 quicker, of 72. The slow ones ask items the guild cannot make yet at that point, so a lower quantity does not help.",
     "After the crop pack, 2026-11-27 (workspace revision 115): days to 99 for a maxed hero are unchanged in every skill and nothing arrives more than a few minutes sooner or later. Starter Camp exit 41 minutes; first ring-2 place 4 h 10 in. 746 warnings.",
     "A typical player's days to 99 rose when the Guild Hall buying rule reached the read-out, not from a pack: Smithing 16.7 to 18.1, Alchemy 19.3 to 21.5, Construction 23.0 to 24.4, Fishing 30.4 to 32.0. Typical is now 1.47 to 1.56 times behind maxed in Alchemy, Construction, Cooking and Crafting, over the 1.45 bound.",
     "Chain XP, judged by level and not by tier: the check's count of 65 chains came from one middle for levels 17 to 99. The clear outliers are cooked fish (10 to 19 times the middle), gem jewellery and swordfish dishes (a fifth to a fiftieth), and copper gear paying about 5 times iron gear, which is the early XP that holds the first levels on the curve.",
@@ -27,6 +30,8 @@
     "The method itself, with two read-only readings of the CMS's simulator and ledger: docs/active/balance_method_review.md. The page is on the curve by construction (XP is worked back from the curve), so it cannot test whether a guild's set-up is realistic; only the ledger or play can."
   ],
   "moved": [
+    "Synced by the owner, 2026-11-28: the Guild Hall price pack, 50 ranks on 29 stars. A first rank about 37 items and 27 coins (was hundreds to thousands of items and 1,500 coins); an iron rank about 35 items and 400 coins (was 9,100). Bunk Beds unchanged.",
+    "Ruled by the owner, 2026-11-28: a Guild Hall rank is a small, cheap step, priced by what it saves over the payback time, not a big purchase.",
     "Synced by the owner, 2026-11-27: the seed chance fix, 7 crops. All 16 crops now hold their intended seed chance as the stored base. The CMS's Recalculate may still tune a seed chance up or down from that base, as it does for any chance drop: it has set Mint's to 60 % from a base of 43 %.",
     "Synced by the owner, 2026-11-27: the crop pack, 16 crops. Food crops grow 48 minutes for 8 harvests below level 10, rising to 2 hours for 20 from level 70; herbs 45 minutes for 4, rising to 79 for 7. Harvests an hour of growing stay as they were.",
     "Ruled by the owner, 2026-11-27: Fields keep a long wait and a big harvest in items and XP, which is Farming's identity; herbs grow faster and give less; growing time rises with the crop's level.",
@@ -86,8 +91,8 @@
     "Cooking, Smithing and Enchanting: none."
   ],
   "waiting": [
-    "On the director: the read-out judges rings by their target level and times late coins at the right income; the chain XP check compares chains of about the same level; the read-out prices a ring's places in the order a guild reaches them; a typical player re-judges drinks.",
-    "On the balancer: the typical player's gap in Alchemy, Construction, Cooking and Crafting; Fishing and Forestry pace; the clear chain XP outliers once the check is fixed; Steady Stills rank 1's payback.",
-    "On the content session: the fifteen long stretches; 76 live entries that got no numbers; late-game yield beyond buildings."
+    "On the balancer: why a typical hero stays behind in Crafting, Cooking and Alchemy after the drinks change, and the three drinks that pay back too little; Fishing and Forestry pace; the Goblin's new Oak Wood and Coal drops; the clear chain XP outliers once the check is fixed.",
+    "On the director: coin checks judge a Hall rank by its payback; the read-out judges rings by their target level and times late coins; the chain XP check compares chains of about the same level; places priced in the order a guild reaches them.",
+    "On the content session: Hall ranks whose price asks items the guild cannot make yet, and Fir Woodpile's first rank, which gives 0.5 %; the fifteen long stretches; 76 live entries that got no numbers."
   ]
 }
