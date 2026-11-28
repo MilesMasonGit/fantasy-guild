@@ -1,8 +1,12 @@
 {
-  "title": "The three rings arrive at about level 10, 30 and 50",
+  "title": "Rings priced, crops spread, and six rules settled",
   "date": "2026-11-27",
-  "summary": "The ring prices are in the game's data. Ring 1 asks level 5 and 2,100 coins and is reached about 41 minutes in, at level 10 or 11. Ring 2 (silver, mythril) asks level 24 and 13,000 coins and is reached about 4 hours 10 minutes in, at about level 30. Ring 3 (gold onward) asks level 45 and 150,000 coins; its level part comes about 11 hours in, and its coins are sized by the coin rule but cannot be timed until the read-out is fixed.",
+  "summary": "The three rings arrive at about level 10, 30 and 50, and the crops now differ: food crops grow from 48 minutes to 2 hours as their level rises and herbs are the quick, small crop, with Farming's pace unchanged. The owner settled six open rules: later places in a ring cost a quarter more each, drinks are re-judged, Guild Hall ranks are bought on the payback sum, chains of a level pay within 2 times, Fields keep the long wait, and a summoning lasts about 100 cycles.",
   "checked": [
+    "After the crop pack, 2026-11-27 (workspace revision 115): days to 99 for a maxed hero are unchanged in every skill and nothing arrives more than a few minutes sooner or later. Starter Camp exit 41 minutes; first ring-2 place 4 h 10 in. 746 warnings.",
+    "A typical player's days to 99 rose when the Guild Hall buying rule reached the read-out, not from a pack: Smithing 16.7 to 18.1, Alchemy 19.3 to 21.5, Construction 23.0 to 24.4, Fishing 30.4 to 32.0. Typical is now 1.47 to 1.56 times behind maxed in Alchemy, Construction, Cooking and Crafting, over the 1.45 bound.",
+    "Chain XP, judged by level and not by tier: the check's count of 65 chains came from one middle for levels 17 to 99. The clear outliers are cooked fish (10 to 19 times the middle), gem jewellery and swordfish dishes (a fifth to a fiftieth), and copper gear paying about 5 times iron gear, which is the early XP that holds the first levels on the curve.",
+    "Found in the Sync: Recalculate puts a recipe output's chance back to its stored base chance, so seven of the sixteen seed chances stayed at their old value. Farming still returns more seeds than it sows; a seven-entry follow-up pack sets the base chance too.",
     "After the ring pack, 2026-11-27 (workspace revision 110): the first ring-2 place (Drake Roost) arrives 4 h 10 in against a 3 h 50 target for level 30; Birch at 5 h 37 and the first iron place in ring 1 at 2 h 16 (level 20 is 1 h 44), because each further place costs its ring's coins again. The Starter Camp exit holds at 41 minutes. Days to 99 unchanged. The read-out matches the sandbox test of the pack check for check; 746 warnings, of which 55 are camps reached early after the re-placing (with the director).",
     "What the read-out cannot say yet: when a guild reaches ring 3. It times the 150,000 coins at an early-game income and shows 43 hours, and its stage timer still assumes one ring per age. Both are with the director.",
     "After the coin reset, 2026-11-27 (workspace revision 107): all 115 coin prices are within the tolerance of the coin curve. The way out of the Starter Camp comes at 41 minutes against 35 (19 % over, inside the 25 %); Plane 1's at 1 h 12 against 1 h 44 and Plane 2's at 3 h 33 against 3 h 50, both waiting on rings 2 and 3. A worker sells about 3,600 coins an hour in the Starter Camp, 4,100 in Plane 1, 9,400 in Plane 2 and 16,000 to 54,000 in Plane 3; Goblin thefts fell from 6,350 an hour to about 1,800.",
@@ -23,6 +27,13 @@
     "The method itself, with two read-only readings of the CMS's simulator and ledger: docs/active/balance_method_review.md. The page is on the curve by construction (XP is worked back from the curve), so it cannot test whether a guild's set-up is realistic; only the ledger or play can."
   ],
   "moved": [
+    "Synced by the owner, 2026-11-27: the crop pack, 16 crops. Food crops grow 48 minutes for 8 harvests below level 10, rising to 2 hours for 20 from level 70; herbs 45 minutes for 4, rising to 79 for 7. Harvests an hour of growing stay as they were.",
+    "Ruled by the owner, 2026-11-27: Fields keep a long wait and a big harvest in items and XP, which is Farming's identity; herbs grow faster and give less; growing time rises with the crop's level.",
+    "Ruled by the owner, 2026-11-27: each further place in a ring costs a quarter more than the one before, coins and item quantities, counted per ring; the first place keeps its price. Ring 1 runs from 2,100 coins to about 6,400 for its sixth place. Built by the director the same day.",
+    "Ruled by the owner, 2026-11-27: a typical player re-judges a drink as the setup grows, and buys a Guild Hall rank on the same payback sum that prices it.",
+    "Ruled by the owner, 2026-11-27: chains of about the same level pay within 2 times of each other, pace comes first, and only clear outliers are corrected.",
+    "Ruled by the owner, 2026-11-27: one summoning lasts about 100 work cycles and costs about a quarter of what the summon brings in.",
+    "Synced by the owner, 2026-11-27: chests left the game (the content session's two packs); new worlds no longer look for them.",
     "Synced by the owner, 2026-11-27: the ring pack, 5 entries. Ring 2 asks level 24 and 13,000 coins (was level 15 and 590); ring 3 level 45 and 150,000 (was level 30 and 8,700); Birdwatcher 8 to 13 XP, Elixir of Ironskin 9 to 12, Iron Dagger 8 to 11, Iron Wand 13 to 18.",
     "Synced by the owner, 2026-11-27: the content session's re-placing pack. Ring 1 holds the copper and iron ages, ring 2 silver, mythril, marble, birch, giant mushroom and maple (levels 30 to 49), ring 3 gold and cedar onward (from level 50).",
     "Synced by the owner, 2026-11-27: the coin reset pack, 71 entries. Five Shop Tokens 420 to 250 coins; every Guild Hall rank to 1,500, 3,000, 9,100 or 19,000 by its stage; settling a place in ring 1 420 to 2,100; coins a kill on all 25 enemies at half a worker's rate (Goblin 28 to 15, bosses 170 to 390, Troll 1,400); coins a theft on three camps (Goblin 28 to 8).",
@@ -63,8 +74,9 @@
     "Fixed earlier today: food costed like armour, Water counts, unlocks moving below an ingredient, and action lengths trimmed so whole XP pays exactly."
   ],
   "proposals": [
-    "To put to the owner: whether a second and later place in the same ring should cost the ring's full coins again. Today it does, so the first iron place comes about half an hour after level 20.",
-    "To correct in a later pack if needed: ring 3's 150,000 coins, once the read-out can time late coins."
+    "Waiting for the owner's yes: a seven-entry pack that makes seven seed chances stick (Turnip, Cabbage, Garlic, Tomato, Mint, Rose, Mandrake).",
+    "To correct in a later pack if needed: ring 3's 150,000 coins, once the read-out can time late coins.",
+    "Later: whether a Composter should add a share of the harvests and not 1 flat, now that crops hold from 4 to 20."
   ],
   "gaps": [
     "Done, 2026-11-27: the places were re-placed between the three rings by the content session.",
@@ -74,9 +86,8 @@
     "Cooking, Smithing and Enchanting: none."
   ],
   "waiting": [
-    "On the director: the read-out judges rings by their target level, times late coins at the right income and shows when each ring is reached; 55 camps the re-placing made reachable early.",
-    "On the owner, later: the cost of further places in a ring; whether a typical player re-judges drinks as the guild grows and how the typical player buys Guild Hall ranks; three rules still to set (cycles a summon lasts, crop growing time, how far apart chains of one tier may pay).",
-    "On the balancer: Fishing and Forestry pace; Steady Stills rank 1, which pays back in about 5 hours against a 2-hour target; the chain XP warnings the re-placing added.",
+    "On the director: the read-out judges rings by their target level and times late coins at the right income; the chain XP check compares chains of about the same level; the read-out prices a ring's places in the order a guild reaches them; a typical player re-judges drinks.",
+    "On the balancer: the typical player's gap in Alchemy, Construction, Cooking and Crafting; Fishing and Forestry pace; the clear chain XP outliers once the check is fixed; Steady Stills rank 1's payback.",
     "On the content session: the fifteen long stretches; 76 live entries that got no numbers; late-game yield beyond buildings."
   ]
 }
