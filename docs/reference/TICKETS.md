@@ -26,7 +26,7 @@ here.
 - **Before closing a batch**: the merge gate in
   [`docs/reference/TESTING.md`](TESTING.md) (tests, bench, cycles).
 
-**Next free number: T-758**
+**Next free number: T-759**
 
 ---
 
@@ -46,6 +46,7 @@ here.
 
 | ID | Pri | Status | Summary | Origin |
 |---|---|---|---|---|
+| T-758 | P2 | open | *For: director.* **A world camp takes its stage from its enemies, as a world place does from its materials**: the ledger gives a line origin the plan tier of its main material (`worldRungs`, `ledger/engine.js`), but a guaranteed camp only its ring, so once the rings follow level bands (owner, 2026-11-28: ring 1 levels 10 to 29) the iron-age camps in ring 1 (Ember Vents, Sulphur Rocks, Frog Pond, Smoking Crater, Basking Stone, Toxic Pool) read as ring 1 stage, and the iron ore, fir wood and lizard scale they drop pull the iron gear with them: 63 'reachable before its tier' warnings in the rings pack's gate, none real in play (the fights ask Combat 15 to 25). Done when a camp's rung is the highest plan tier of the enemies it spawns, as an origin's is of its materials, and the rings pack's gate loses those warnings. | CON |
 | T-756 | P2 | closed | *For: director.* **Withdrawn (owner, 2026-11-27): the rings keep the levels they ask.** Measured with the coin prices, level 10 and 20 put the Starter Camp's way out at about 65 minutes against 35. The owner chose ring 1 at level 5 with 2,100 coins, which a player reaches at about level 10; ring 2 is being talked through with the balancer (BALANCE_RULES section 8). The levels are a world setting a pack can carry (`prices.<ring>.skills`), so nothing is needed in code. | BAL |
 | T-754 | P3 | open | *For: director (engineer).* **Recalculate never offers a source that deadlocks the price walk**: today the "would out-rank Apple Tree" card for Apple Seed, if accepted, blocks 169 rows and leaves 78 more items with no value, because Apple Tree anchors the Bird Nest and waits on Apple Seed while the seed's new source (Search, later the Nest's Use) waits on the Nest. The election should neither offer nor keep a source that needs an item whose anchor co-produces the drop. Until then: don't accept that card. | T-751 engineer 2026-11-27 |
 | T-748 | P4 | blocked | *For: balancer, then director.* **Typical re-judges a drink as its setup grows** and drops it once it stops paying back, rather than judging it once early against a slow, nearly bare setup (the gate reads 2 to 8x what the same drink reads on the finished setup). A rule change to the reference guild: blocked until the three packs and the coin reset land; the balancer puts it to the owner as multiple choice with T-734 part B. | T-739 builder, balancer 2026-11-27 |
