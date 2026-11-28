@@ -160,12 +160,7 @@ export default function LedgerSettings() {
           <div className="flex items-center gap-2">
             Typical takes a building, a camp, a tool or gear that pays for itself within
             <NumberInput value={settings.paybackHours} min={0.1} onCommit={(v) => save({ paybackHours: v })} label="Payback hours" width={60} />
-            hours of work,
-          </div>
-          <div className="flex items-center gap-2">
-            and a Guild Hall rank that pays for itself on one work within
-            <NumberInput value={settings.hallPaybackHours} min={0.1} onCommit={(v) => save({ hallPaybackHours: v })} label="Guild Hall payback hours" width={60} />
-            hours (what Typical buys; the pages' colours and the proposed prices follow the payback curve over all the work a rank boosts).
+            hours of work, and a Guild Hall rank that pays for itself on the payback curve (1 hour × 24^(L / 80) at the level its tier opens at).
           </div>
           <div className="flex items-center gap-2">
             Typical drinks a drink or work potion only where its batch pays back

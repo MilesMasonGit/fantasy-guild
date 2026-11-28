@@ -292,9 +292,10 @@ a camp's copies from the setup. Wound Time and Loadout Slots are no rate (fights
 **The profiles.** A rank is on offer to a piece of work when its rules can reach it, from the tier
 the owner gave the rank, once its price can be had. **Bare** holds none. **Typical** takes a rank
 when the hours its price takes to gather, at Typical's rates **before the Hall** (so a star never
-prices itself and the pricing cannot loop), are under the **Hall's payback time** (`hallPaybackHours`,
-24 h by default: the owner, 2026-10-30, "about a day"; buildings, camps, tools, gear and drinks keep
-`paybackHours`, 2 h) times the hours it saves an hour of the work (its share of the work's worth: items at their Bare hours, XP at the work's own
+prices itself and the pricing cannot loop), are under the **payback curve** at the level the rank's
+tier opens at (1 h x 24^(L / 80), BALANCE_RULES section 5; T-734 retired the Hall's own 24-hour
+`hallPaybackHours`; buildings, camps, tools, gear and drinks keep `paybackHours`, 2 h) times the
+hours it saves an hour of the work (its share of the work's worth: items at their Bare hours, XP at the work's own
 rate; at the Hall, the hours its lines would take to gather). A closed star is opened through the
 cheapest stars before it (their rank 1 added to the price); a rank that gives a work nothing (the XP
 floor can make two ranks equal) is bought on the way to the one above. **Maxed** takes every rank.
