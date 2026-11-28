@@ -111,7 +111,7 @@ describe('The Farming chain in shipped data (7.4)', () => {
             expect(herbGarden.needsTool).toBeUndefined();
         });
 
-        it('the Field offers the Wheat crop at Farming 4: 1 Wheat Seed, grows an hour, harvested ten times for Wheat and a 40% Wheat Seed', () => {
+        it('the Field offers the Wheat crop at Farming 4: 1 Wheat Seed, grows 48 minutes, harvested eight times for Wheat and a 43% Wheat Seed', () => {
             const pool = recipesForToken(getTokenType('token_wheat_field'));
             expect(pool.map((r) => r.id)).toContain('recipe_wheat');
             const wheat = recipes.find((r) => r.id === 'recipe_wheat');
@@ -120,10 +120,10 @@ describe('The Farming chain in shipped data (7.4)', () => {
             // It names no station kind: every Farming station offers it.
             expect(wheat.stationKinds ?? []).toEqual([]);
             expect(wheat.inputs).toEqual([{ itemId: 'item_wheat_seed', quantity: 1 }]);
-            expect(wheat.crop).toMatchObject({ growMs: 3600000, load: 10 });
+            expect(wheat.crop).toMatchObject({ growMs: 2880000, load: 8 });
             const out = Object.fromEntries(wheat.outputs.map((o) => [o.itemId, o]));
             expect(out.item_wheat).toMatchObject({ chance: 100, minQty: 1, maxQty: 2 });
-            expect(out.item_wheat_seed).toMatchObject({ chance: 40, minQty: 1, maxQty: 1 });
+            expect(out.item_wheat_seed).toMatchObject({ chance: 43, minQty: 1, maxQty: 1 });
         });
     });
 

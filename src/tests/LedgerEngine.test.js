@@ -7,8 +7,7 @@ import {
     buildWorld, computeReach, describePath, ingredientTree, treeSummary, buildLedger, hubsOf,
     itemKey, tokenKey, recipeKey, LUCK_BELOW,
 } from '../systems/progression/ledger/engine.js';
-import { normaliseWorldTables } from '../config/worldTablesShape.js';
-import { ledgerContent, withIronChest, withoutOrigin } from './fixtures/ledgerWorld.js';
+import { ledgerContent, withIronCache, withoutOrigin } from './fixtures/ledgerWorld.js';
 import { setHallSky } from '../config/guildUpgrades.js';
 import { withRequiredThree } from './fixtures/hallSky.js';
 
@@ -109,27 +108,27 @@ describe('reach: the world\'s rings and the tiers they open', () => {
 
 describe('reach: one-off finds', () => {
     it('leaves a one-off find out of first reach and keeps it on the side', () => {
-        const l = buildLedger(withIronChest());
+        const l = buildLedger(withIronCache());
         const iron = l.reachOf(itemKey('item_iron_ore'));
         expect(iron).toMatchObject({ tier: 2, sureTier: 2, luckOnly: false, via: tokenKey('token_iron_vein'), oneOffOnly: false });
-        expect(iron.oneOffFind).toEqual({ tier: 1, via: tokenKey('token_iron_chest'), name: 'Iron Chest' });
-        expect(l.pathOf(itemKey('item_iron_ore'))).not.toMatch(/Iron Chest/);
-        // The chest itself stands in some worlds' ring 1.
-        expect(l.reachOf(tokenKey('token_iron_chest'))).toMatchObject({ tier: 1, maybe: true });
+        expect(iron.oneOffFind).toEqual({ tier: 1, via: tokenKey('token_iron_cache'), name: 'Iron Cache' });
+        expect(l.pathOf(itemKey('item_iron_ore'))).not.toMatch(/Iron Cache/);
+        // The cache itself stands in some worlds' ring 1.
+        expect(l.reachOf(tokenKey('token_iron_cache'))).toMatchObject({ tier: 1, maybe: true });
         expect(l.reachOf(itemKey('item_copper_ore')).oneOffFind).toBeNull();
     });
 
     it('reads an entry only a one-off find gets as luck only, down the chain', () => {
-        const l = buildLedger(withoutOrigin(withIronChest(), 'token_iron_vein'));
-        expect(l.reachOf(itemKey('item_iron_ore'))).toMatchObject({ tier: 1, sureTier: null, luckOnly: true, oneOffOnly: true, via: tokenKey('token_iron_chest') });
+        const l = buildLedger(withoutOrigin(withIronCache(), 'token_iron_vein'));
+        expect(l.reachOf(itemKey('item_iron_ore'))).toMatchObject({ tier: 1, sureTier: null, luckOnly: true, oneOffOnly: true, via: tokenKey('token_iron_cache') });
         expect(l.reachOf(itemKey('item_iron_ingot'))).toMatchObject({ tier: 1, sureTier: null, luckOnly: true, oneOffOnly: true });
     });
 
     it('counts a one-off Token the player can get again (bought, built) as a sure way', () => {
-        const ws = withIronChest();
-        ws.tokens.token_iron_chest.shop = { price: [], section: 'general' };
+        const ws = withIronCache();
+        ws.tokens.token_iron_cache.shop = { price: [], section: 'general' };
         const l = buildLedger(ws);
-        expect(l.reachOf(itemKey('item_iron_ore'))).toMatchObject({ tier: 0, luckOnly: false, via: tokenKey('token_iron_chest'), oneOffFind: null });
+        expect(l.reachOf(itemKey('item_iron_ore'))).toMatchObject({ tier: 0, luckOnly: false, via: tokenKey('token_iron_cache'), oneOffFind: null });
     });
 });
 
@@ -209,18 +208,6 @@ describe('over the shipped content', () => {
         const ingot = l.treeOf('item_iron_ingot');
         expect(ingot.origins.map((o) => o.id).sort()).toEqual(['item_coal', 'item_iron_ore']);
         expect(ingot.effortMs).toBeGreaterThan(0);
-    });
-
-    it('reaches Iron Ore without the Iron Chest, which stays on the side as a one-off find', () => {
-        const content = {
-            items: read('items.json'), tokens: read('tokens.json'), recipes: read('tokenRecipes.json'),
-            effects: read('effects.json'), starterCamp: read('starterCamp.json'), worldTables: normaliseWorldTables(read('world.json')),
-        };
-        const l = buildLedger(content);
-        const iron = l.reachOf(itemKey('item_iron_ore'));
-        expect(iron.via).not.toBe(tokenKey('token_iron_chest'));
-        expect(l.pathOf(itemKey('item_iron_ore'))).not.toMatch(/Iron Chest|Copper Chest/);
-        expect(iron.oneOffFind).toMatchObject({ via: tokenKey('token_iron_chest') });
     });
 });
 

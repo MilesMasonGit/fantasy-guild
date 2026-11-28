@@ -269,29 +269,15 @@ describe('World generation: specialties, kits and the value budget', () => {
         for (const kit of ['highland', 'woodland', 'plains', 'wetland', 'riverside']) expect(counts[`arcane:${kit}`]).toBeGreaterThan(0);
     });
 
-    it('a strict cell\'s hidden extras are worth its ring\'s value within 10 %', () => {
-        for (let seed = 1; seed <= 300; seed++) {
-            for (const cell of make(seed, STRICT_ONLY).cells.filter(c => c.ring > 0)) {
-                const target = FIXTURE_WORLD_TABLES.ringValue[cell.ring];
-                expect(Math.abs(cell.value - target)).toBeLessThanOrEqual(target * 0.1);
-                expect(cell.extras.reduce((n, e) => n + e.value, 0)).toBe(cell.value);
-            }
-        }
-    });
 
-    it('an extra that is not a chest is dropped and said, so no world holds one', () => {
-        const tables = tablesWith({ extras: [{ id: 'mod_gone', kind: 'modifier', value: 10 }, { id: 'chest_kept', kind: 'treasure', value: 10 }] });
-        expect(tables.extras.map(e => e.id)).toEqual(['chest_kept']);
-        expect(tables.issues.join(' ')).toMatch(/An extra was dropped/);
-        expect(make(5, tables).cells.flatMap(c => c.extras).every(e => e.id === 'chest_kept')).toBe(true);
-    });
-
-    it('extras that cannot reach a ring\'s value are reported, not stretched', () => {
-        const tables = tablesWith({ extras: [{ id: 'chest_tiny', kind: 'treasure', value: 1 }] });
+    it('a world hides no chests: an old list of extras and ring values in the tables is ignored, unsaid', () => {
+        const tables = tablesWith({ extras: [{ id: 'chest_kept', kind: 'treasure', value: 10 }], ringValue: { 1: 10, 2: 10, 3: 10 }, valueTolerance: 0 });
+        expect(tables).not.toHaveProperty('extras');
+        expect(tables).not.toHaveProperty('ringValue');
+        expect(tables.issues).toEqual(tablesWith({}).issues);
         const world = make(5, tables);
-        const value = world.problems.filter(p => p.kind === PROBLEM.VALUE);
-        expect(value).toHaveLength(36);
-        expect(findings(world, tables).filter(f => f.check === WORLD_CHECK.VALUE)).toHaveLength(36);
+        expect(world.cells.some(c => 'extras' in c || 'value' in c)).toBe(false);
+        expect(JSON.stringify(world)).toBe(JSON.stringify(make(5, tablesWith({}))));
     });
 });
 
@@ -338,14 +324,6 @@ describe('World checks: each one can fail', () => {
         const order = ['mining', 'forestry', 'farming', 'fishing', 'mining', 'alchemy', 'combat', 'forestry', 'farming', 'fishing', 'alchemy', 'combat'];
         walk.forEach((cell, i) => { cell.specialty = order[i]; });
         expect(findings(late).some(f => f.check === WORLD_CHECK.PITY)).toBe(true);
-    });
-
-    it('extras off the ring\'s value', () => {
-        const world = copy(good);
-        const cell = cellOf(world, 1);
-        cell.extras.push({ id: 'chest_camp', kind: 'treasure', value: 8 });
-        cell.value += 8;
-        expect(findings(world).some(f => f.check === WORLD_CHECK.VALUE)).toBe(true);
     });
 
     it('iron to reach iron: a ring-2 cell asking a ring-2 material', () => {

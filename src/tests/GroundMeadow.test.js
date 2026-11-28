@@ -253,23 +253,24 @@ describe('⭐ a meadow Region places exactly as before (decision 15)', () => {
  * hitbox grew from 80% to 90%: a layout keeps the placement rule's own gaps. Recorded again when the
  * shipped mat became 1920 × 1040 (12 by 6.5 steps): new Regions are laid out on it. Recorded again
  * when Tokens came to stand edges touching (hitbox 100%, no overlap), and when every Token became
- * one size (the small bush is now standard).
+ * one size (the small bush is now standard). Recorded again without the fixture's ruins when chests
+ * left the game: the same print before and after the treasure placement went, so a Region without
+ * chests lays out as it did.
  */
-const LAYOUT_FINGERPRINT = '458dc412';
+const LAYOUT_FINGERPRINT = 'cdebff8b';
 
 registerTokenTypes({
     gm_oak: { id: 'gm_oak', name: 'GM Oak', tokenType: 'resource', size: 1, uses: 5, requiresHero: true, config: { skill: 'logging', skillRequired: 1, cycleTimeMs: 3000, inputs: [], outputs: [] } },
     gm_bush: { id: 'gm_bush', name: 'GM Bush', tokenType: 'resource', artSize: 'small', uses: 5, requiresHero: true, config: { skill: 'logging', skillRequired: 1, cycleTimeMs: 3000, inputs: [], outputs: [] } },
     gm_ore: { id: 'gm_ore', name: 'GM Ore', tokenType: 'resource', size: 2, uses: 5, requiresHero: true, config: { skill: 'mining', skillRequired: 1, cycleTimeMs: 3000, inputs: [], outputs: [] } },
     gm_fish: { id: 'gm_fish', name: 'GM Fish', tokenType: 'resource', size: 1, uses: 5, requiresHero: true, config: { skill: 'fishing', skillRequired: 1, cycleTimeMs: 3000, inputs: [], outputs: [] } },
-    gm_camp: { id: 'gm_camp', name: 'GM Camp', tokenType: 'spawner', size: 1, uses: null, requiresHero: false, config: null },
-    gm_ruins: { id: 'gm_ruins', name: 'GM Ruins', tokenType: 'resource', size: 1, uses: 1, requiresHero: true, config: { skill: 'logging', skillRequired: 1, cycleTimeMs: 3000, inputs: [], outputs: [] } }
+    gm_camp: { id: 'gm_camp', name: 'GM Camp', tokenType: 'spawner', size: 1, uses: null, requiresHero: false, config: null }
 });
 
 const FOREST_MAP = { id: 'gm_forest', kind: 'base', biome: 'forest', points: 40, nodes: [{ typeId: 'gm_oak', weight: 5 }, { typeId: 'gm_bush', weight: 2 }] };
 const MOUNTAIN_MAP = { id: 'gm_mountain', kind: 'base', biome: 'mountain', points: 36, nodes: [{ typeId: 'gm_ore', weight: 2 }, { typeId: 'gm_bush', weight: 1 }] };
 const COAST_MAP = { id: 'gm_coast', kind: 'base', biome: 'coast', points: 24, nodes: [{ typeId: 'gm_fish', weight: 3 }, { typeId: 'gm_oak', weight: 1 }] };
-const CAMPS = { camps: [{ typeId: 'gm_camp', count: 2 }], treasures: [{ typeId: 'gm_ruins', count: 2 }] };
+const CAMPS = { camps: [{ typeId: 'gm_camp', count: 2 }] };
 
 describe('⭐ a layout of Tokens with no "Stands on" is exactly as before', () => {
     beforeEach(freshGame);

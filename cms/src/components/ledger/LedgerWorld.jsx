@@ -339,7 +339,7 @@ function Name({ entryKey, context, onOpen }) {
   );
 }
 
-/** One cell: where it is, what it holds, what it asks, what it hides, who holds it on arrival, and its problems. */
+/** One cell: where it is, what it holds, what it asks, who holds it on arrival, and its problems. */
 function CellPanel({ plan, context, cell, onOpen, onPick }) {
   const mat = plan.mats.get(cell.id);
   const found = plan.byCell.get(cell.id) || [];
@@ -347,7 +347,6 @@ function CellPanel({ plan, context, cell, onOpen, onPick }) {
   const ringOfItem = (id) => plan.reach.get(itemKey(id))?.tier;
   const asked = cell.requires?.items || [];
   const effort = asked.reduce((n, i) => n + i.qty * context.effortOf(i.itemId), 0);
-  const target = cell.ring >= 1 && cell.ring <= STRICT_RINGS ? tables.ringValue[cell.ring] : null;
   const heroes = mat ? heroesOf(mat, tables) : {};
   const kit = kitById(tables, cell.kit);
   return (
@@ -400,16 +399,6 @@ function CellPanel({ plan, context, cell, onOpen, onPick }) {
           <p className="text-gray-500">
             {heroTime(effort)} of hero time at the content&apos;s own rates
             {cell.payFrom.length > 0 && ` · gathered at ${cell.payFrom.map((id) => context.cellName(plan.world.cells.find((c) => c.id === id))).join(' and ')}`}
-          </p>
-        </div>
-      )}
-
-      {cell.ring > 0 && (
-        <div className="space-y-1">
-          <h4 className={sectionHead}>Chests</h4>
-          {cell.extras.map((e, i) => <p key={`${e.id}${i}`} className="text-gray-400">{context.nameOf(tokenKey(e.id))} <span className="text-gray-500">({e.kind}, worth {e.value})</span></p>)}
-          <p className="text-gray-500">
-            Worth {cell.value}{target !== null ? ` of ring ${cell.ring}'s ${target} (±${Math.round(tables.valueTolerance * 100)} %)` : ''}.
           </p>
         </div>
       )}

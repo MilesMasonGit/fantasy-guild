@@ -104,7 +104,7 @@ const FIXTURE_SPECIALTY = Object.freeze({ highland: 'mining', woodland: 'forestr
 /**
  * A ring-1 place of kit `kitId` that is on no world map, for looking at a written mat: the line
  * that leans most to the kit as its own (every origin of its ring-1 table), one origin blended in
- * from another line, the kit's specialty, no hidden extras, and the ring's arrival at its largest,
+ * from another line, the kit's specialty, and the ring's arrival at its largest,
  * of its commonest enemy. Its seed differs each time, so a second press writes another layout.
  */
 export function fixtureCell(kitId, { ring = 1 } = {}) {
@@ -121,7 +121,7 @@ export function fixtureCell(kitId, { ring = 1 } = {}) {
     return {
         id: `qa_${kitId}`, q: 0, r: 0, ring, tier: ring, wedge: line.id, wild: false,
         seed: seedFromText(`qa|${kitId}|${n}`),
-        origins, kit: kitId, specialty: FIXTURE_SPECIALTY[kitId] || line.skill, extras: [], value: 0,
+        origins, kit: kitId, specialty: FIXTURE_SPECIALTY[kitId] || line.skill,
         requires: { items: [], skills: [] }, payFrom: [], extreme: null,
         arrival: enemy ? [{ typeId: enemy, count: table.count[1] }] : []
     };

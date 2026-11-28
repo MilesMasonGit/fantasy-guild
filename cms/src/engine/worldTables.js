@@ -85,7 +85,7 @@ export function keyedWorld(raw) {
 }
 
 /** The parts of a record compared as wholes in a review: changed or not. */
-const WHOLE_PARTS = Object.freeze(['kits', 'arrival', 'prices', 'keys', 'extras', 'ringValue', 'specialties', 'heroTokens', 'neighbours', 'wild', 'biomes', 'placePriceGrowth']);
+const WHOLE_PARTS = Object.freeze(['kits', 'arrival', 'prices', 'keys', 'specialties', 'heroTokens', 'neighbours', 'wild', 'biomes', 'placePriceGrowth']);
 
 /**
  * What a world entry changes, for the review page: origins and guaranteed camps in and out per line

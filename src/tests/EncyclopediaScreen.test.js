@@ -255,7 +255,7 @@ describe('after the owner\'s third look', () => {
         const { container } = open();
         expect(q(container, '[data-codex-or]')).toBeNull();
         expect(container.textContent).not.toMatch(/\bor\b/i);
-        expect(qa(container, '[data-codex-band]').length).toBe(3);
+        expect(qa(container, '[data-codex-band]').length).toBe(2);
     });
 
     it('a count beside a box is an arrow tab pointing the way: ‹ on its left, › on its right', () => {

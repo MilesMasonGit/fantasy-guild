@@ -11,8 +11,7 @@ import { WATER_KIND } from './WaterShapes.js';
  *
  * The `water_*` maps are a biome's map that names one
  * variety of its water (`inland`), for the dev panel's water views; the `place_*` maps and the
- * `*_stocked` maps, each with an enemy camp and a Test Chest (a dev-only Token the dev panel
- * registers), are for its placement views.
+ * `*_camp` maps, each with an enemy camp, are for its placement views.
  */
 
 const BASE_MAPS = Object.freeze({
@@ -99,13 +98,9 @@ const BASE_MAPS = Object.freeze({
 });
 
 const GOBLIN_CAMP = Object.freeze([Object.freeze({ typeId: 'token_goblin_camp', count: 1 })]);
-const TEST_CHEST = Object.freeze([Object.freeze({ typeId: 'dev_treasure_chest', count: 1 })]);
 
 /** A dev map with an enemy camp of its own. */
 const withCamp = (base) => Object.freeze({ ...BASE_MAPS[base], id: `dev_map_${base}_camp`, camps: GOBLIN_CAMP });
-
-/** A dev map with an enemy camp and a Test Chest of its own, for the placement views. */
-const stocked = (base) => Object.freeze({ ...BASE_MAPS[base], id: `dev_map_${base}_stocked`, camps: GOBLIN_CAMP, treasures: TEST_CHEST });
 
 /** A biome's dev map naming one variety of water. */
 const withWater = (base, kind) => Object.freeze({ ...BASE_MAPS[base], id: `dev_map_water_${kind}`, inland: kind });
@@ -113,10 +108,9 @@ const withWater = (base, kind) => Object.freeze({ ...BASE_MAPS[base], id: `dev_m
 export const DEV_MAPS = Object.freeze({
     ...BASE_MAPS,
     mountain_camp: withCamp('mountain'),
-    place_meadow_stocked: stocked('place_meadow'),
-    place_lake_stocked: stocked('place_lake'),
-    forest_stocked: stocked('forest'),
-    mountain_stocked: stocked('mountain'),
+    place_meadow_camp: withCamp('place_meadow'),
+    place_lake_camp: withCamp('place_lake'),
+    forest_camp: withCamp('forest'),
     water_lake_river: withWater('meadow', WATER_KIND.LAKE_RIVER),
     water_lake: withWater('meadow', WATER_KIND.LAKE),
     water_river: withWater('meadow', WATER_KIND.RIVER),

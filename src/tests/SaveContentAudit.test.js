@@ -239,7 +239,8 @@ describe('every place a save holds content, not only the mat the guild is on', (
         expect(byId.token_ghost_wolf).toMatchObject({ kind: 'Token', places: ['arriving at a place on the world map'] });
         expect(byId.token_ghost_origin.places).toEqual(['waiting at a place on the world map']);
         expect(byId.token_ghost_camp.places).toEqual(['waiting at a place on the world map']);
-        expect(byId.token_ghost_chest.places).toEqual(['waiting at a place on the world map']);
+        // An old save's chest never comes onto a mat, so it is no ghost to warn of.
+        expect(byId.token_ghost_chest).toBeUndefined();
         expect(byId.ghost_ore).toMatchObject({ kind: 'item', places: ['asked as the price of a place on the world map'] });
         // A settled place, and the Hall's own, are history: what they held is on a Region's mat now.
         expect(byId.token_ghost_settled).toBeUndefined();

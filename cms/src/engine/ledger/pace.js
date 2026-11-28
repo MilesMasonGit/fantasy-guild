@@ -2317,8 +2317,8 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
      * The material a rank of a tier is priced in: an item first had at that tier (the owner's tier
      * for it, else when it is first reached), gathered rather than made at a station, the most of it
      * an hour at Typical before the Hall, of the star's own skill where one is; else the tier before.
-     * A skill that is the best gatherer of nothing by then (Smithing, Cooking, Crafting with its
-     * chests) is priced in its main input instead: the gathered item its work spends most of, at that
+     * A skill that is the best gatherer of nothing by then (Smithing, Cooking, Crafting) is
+     * priced in its main input instead: the gathered item its work spends most of, at that
      * tier or the nearest before it. Never what the star itself pays.
      */
     function materialFor(star, tier, cap) {

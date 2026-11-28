@@ -55,7 +55,7 @@ export function previewWorld(seed) {
  * The world's own checks that are the ledger's checks F (`ledger/world.js`): a world rolled for a
  * new game must have none of them. The rest are holes in the tables, the same in every world.
  */
-export const ROLL_CHECKS = Object.freeze([WORLD_CHECK.PRICE_RING, WORLD_CHECK.KEY_REACH, WORLD_CHECK.COVERAGE, WORLD_CHECK.VALUE]);
+export const ROLL_CHECKS = Object.freeze([WORLD_CHECK.PRICE_RING, WORLD_CHECK.KEY_REACH, WORLD_CHECK.COVERAGE]);
 
 /** How many seeds a roll tries for a world with none of {@link ROLL_CHECKS}. */
 export const ROLL_TRIES = 20;

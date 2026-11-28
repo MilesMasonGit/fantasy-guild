@@ -21,12 +21,12 @@ import { stationSkillOf } from '../../../../src/systems/effects/statements.js';
  * - **A world for a seed, read as places** ({@link worldPlan}): the generated world, each cell's mat
  *   (`cellMat.js`, as settling writes it), and a reach over the content with each inner cell put
  *   in: a cell places what its mat holds (origins, everyday nodes,
- *   camps, chests, its arrival) at its ring.
+ *   camps, its arrival) at its ring.
  * - **Checks F** on that world: a ring-N cell asking ring-N materials; a key material not a step from
  *   every frontier; the inner rings not covering every Live entry; a wild origin no wedge places; a
- *   cell's extras off its ring's value; a ring past the first with no Guild Hall star to open it, or
+ *   ring past the first with no Guild Hall star to open it, or
  *   whose star cannot be lit with what earlier rings give. The world's own rules (`world/checks.js`)
- *   are read here too: the four that are checks F under these names, the rest as "another rule of
+ *   are read here too: the three that are checks F under these names, the rest as "another rule of
  *   the world".
  * - **Ring stars**: a cell of a ring a Guild Hall star opens is settled only once that star is lit
  *   (`engine.hallStarRules`), so what the ring places waits for the star's price.
@@ -55,20 +55,18 @@ export const WORLD_F = Object.freeze({
     KEY_REACH: 'world-key-reach',
     COVERAGE: 'world-coverage',
     NO_WEDGE: 'world-no-wedge',
-    VALUE: 'world-value',
     RING_STAR: 'world-ring-star',
     RULE: 'world-rule'
 });
 
-/** The checks F: the five the owner named, and the ring stars (brief 380 M4); a world passes when none of them finds anything. */
-export const F_CHECKS = Object.freeze([WORLD_F.PRICE_RING, WORLD_F.KEY_REACH, WORLD_F.COVERAGE, WORLD_F.NO_WEDGE, WORLD_F.VALUE, WORLD_F.RING_STAR]);
+/** The checks F: the owner's, and the ring stars; a world passes when none of them finds anything. */
+export const F_CHECKS = Object.freeze([WORLD_F.PRICE_RING, WORLD_F.KEY_REACH, WORLD_F.COVERAGE, WORLD_F.NO_WEDGE, WORLD_F.RING_STAR]);
 
 /** The world's own checks that are checks F; any other is "another rule of the world". */
 const AS_F = Object.freeze({
     [WORLD_CHECK.PRICE_RING]: WORLD_F.PRICE_RING,
     [WORLD_CHECK.KEY_REACH]: WORLD_F.KEY_REACH,
-    [WORLD_CHECK.COVERAGE]: WORLD_F.COVERAGE,
-    [WORLD_CHECK.VALUE]: WORLD_F.VALUE
+    [WORLD_CHECK.COVERAGE]: WORLD_F.COVERAGE
 });
 
 /** Author-facing words, kept together for translation. */
@@ -172,17 +170,12 @@ export function placementOf(tables) {
     return out;
 }
 
-/** The Token ids a generated cell may hold as a chest: the tables' extras. */
-function treasureIdsOf(tables) {
-    return new Set(tables.extras.map(e => e.id));
-}
-
 /**
  * The Tokens that are had only in the wild: their own work yields a material, nothing in the content
  * makes them (no growth, turn, spawn, build, Shop or Hall: only a place), and they are no enemy,
- * camp, station, Foundation or treasure.
+ * camp, station or Foundation.
  */
-function wildOriginIds(ledgerWorld, materialsOf, treasures) {
+function wildOriginIds(ledgerWorld, materialsOf) {
     const made = new Set();
     for (const rule of ledgerWorld.rules) {
         if (PLACING.has(rule.how)) continue;
@@ -191,7 +184,7 @@ function wildOriginIds(ledgerWorld, materialsOf, treasures) {
     const out = [];
     for (const [id, def] of Object.entries(ledgerWorld.tokens)) {
         if (isObject(def.enemy) || isObject(def.spawner) || isObject(def.foundation) || stationSkillOf(def)) continue;
-        if (treasures.has(id) || made.has(tokenKey(id)) || !materialsOf(id).length) continue;
+        if (made.has(tokenKey(id)) || !materialsOf(id).length) continue;
         out.push(id);
     }
     return out;
@@ -237,7 +230,7 @@ export function worldContext(content, { baseTables, ledger = null, tierLevels = 
         if (!parked(id)) origins.push({ check: WORLD_F.NO_WEDGE, key: tokenKey(id), severity: SEVERITY.WARN, message: WORLD_PLAN_TEXT.unknownWedge(wedge), related: [] });
     }
     const said = new Set(unknown.map(u => u.id));
-    for (const id of wildOriginIds(lw, materialsOf, treasureIdsOf(tables))) {
+    for (const id of wildOriginIds(lw, materialsOf)) {
         if (placed.has(id) || campTokens.has(id) || said.has(id) || parked(id)) continue;
         const yields = materialsOf(id).map(m => nameOf(itemKey(m))).join(', ');
         origins.push({ check: WORLD_F.NO_WEDGE, key: tokenKey(id), severity: SEVERITY.WARN, message: WORLD_PLAN_TEXT.noWedge(yields), related: materialsOf(id).map(itemKey) });
@@ -272,12 +265,11 @@ export function originFindings(content, { baseTables, ledger = null } = {}) {
     return worldContext(content, { baseTables, ledger }).origins;
 }
 
-/** Every Token a cell's mat stands on it: nodes, camps, chests and its arrival. */
+/** Every Token a cell's mat stands on it: nodes, camps and its arrival. */
 function placedTokens(mat) {
     const out = new Set();
     for (const n of mat.nodes) out.add(n.typeId);
     for (const c of mat.camps) out.add(c.typeId);
-    for (const t of mat.treasures) out.add(t.typeId);
     for (const a of mat.arrival) out.add(a.typeId);
     return [...out];
 }
@@ -386,7 +378,6 @@ function checksOn(ctx, world, mats, { reach, index, names, rungs = new Map() }) 
         let subject;
         if (f.itemId) subject = itemKey(f.itemId);
         else if (f.origin) subject = tokenKey(f.origin);
-        else if (check === WORLD_F.VALUE) subject = WORLD_PLAN_TEXT.ring(cell?.ring);
         else if (f.check === WORLD_CHECK.NO_MAIN && cell) subject = WORLD_PLAN_TEXT.noMain(ctx.lineName(cell.wedge), cell.ring);
         else subject = `${f.check}${Number.isInteger(f.ring ?? cell?.ring) ? `: ${WORLD_PLAN_TEXT.ring(f.ring ?? cell.ring)}` : ''}`;
         const key = /^(item|token):/.test(subject) ? subject : null;

@@ -83,7 +83,7 @@ describe('⭐ a guaranteed camp on its cell\'s mat', () => {
     const kitWith = (work) => ({ ...PLACEHOLDER_WORLD_TABLES.kits[0], work, camps: ['token_goblin_camp'], bossCamps: ['token_chief_tent'] });
     const cellOf = (camps, specialty = 'mining') => ({
         id: '1,-1', q: 1, r: -1, ring: 1, tier: 1, wedge: 'ores', wild: false, seed: 42, kit: 'highland', specialty,
-        origins: [{ id: 'token_copper_ore_vein', line: 'ores', role: 'main' }], extras: [], camps, arrival: [], extreme: null
+        origins: [{ id: 'token_copper_ore_vein', line: 'ores', role: 'main' }], camps, arrival: [], extreme: null
     });
     const tablesWithKit = (work) => normaliseWorldTables({ ...PLACEHOLDER_WORLD_TABLES, kits: [kitWith(work), ...PLACEHOLDER_WORLD_TABLES.kits.slice(1)] });
 

@@ -10,8 +10,7 @@ import { isRosterFull } from '../systems/hero/logic/HeroLifecycle.js';
 import * as World from '../systems/world/World.js';
 import { nextSeed } from '../systems/atlas/seededRandom.js';
 import { cleanGuildName, guildNameOf, renameGuild, GUILD_NAME_MAX } from '../systems/core/GuildName.js';
-import { setWorldTablesForTests, resetWorldTablesForTests } from '../config/registries/worldTablesRegistry.js';
-import { FIXTURE_WORLD_RAW } from './fixtures/worldTables.js';
+import { setWorldTablesForTests, resetWorldTablesForTests, worldTables } from '../config/registries/worldTablesRegistry.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as LimesLessons from '../systems/quests/LimesLessons.js';
 import * as LimesGuide from '../systems/quests/LimesGuide.js';
@@ -122,8 +121,12 @@ describe('⭐ a reroll never gives a world that fails the checks F', () => {
     afterEach(() => resetWorldTablesForTests());
 
     it('a seed whose world fails one is passed over for the next seed that passes', () => {
-        // Fixture tables with no tolerance on a place's chests: now and then a world misses it.
-        setWorldTablesForTests({ ...FIXTURE_WORLD_RAW, valueTolerance: 0 });
+        // A ring-2 origin made a key of ring 1: a ring-2 place gathering its price from a ring-1
+        // place may then ask that ring-2 material (iron to reach iron), in some worlds only.
+        const inForce = worldTables();
+        const firstRing = new Set(inForce.lines.flatMap(l => l.origins[1].map(o => o.id)));
+        const later = inForce.lines.flatMap(l => l.origins[2].map(o => o.id)).find(id => !firstRing.has(id));
+        setWorldTablesForTests({ ...inForce, keys: { ...inForce.keys, 1: [...inForce.keys[1], later] } });
         let bad = null;
         for (let seed = 1; seed <= 400 && bad === null; seed++) {
             if (World.findingsOf(World.previewWorld(seed)).some(f => World.ROLL_CHECKS.includes(f.check))) bad = seed;

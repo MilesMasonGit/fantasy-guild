@@ -268,7 +268,6 @@ function cellFollowing(cell, { item, token }) {
     let out = cell;
     out = mapField(out, 'origins', list => mapList(list, o => mapField(o, 'id', token)));
     out = mapField(out, 'camps', list => mapList(list, c => (typeof c === 'string' ? token(c) : mapField(c, 'id', token))));
-    out = mapField(out, 'extras', list => mapList(list, e => mapField(e, 'id', token)));
     out = mapField(out, 'arrival', list => mapList(list, r => mapField(r, 'typeId', token)));
     // A wild place made of one origin names it; a wild layout names a layout, not content.
     out = mapField(out, 'extreme', x => (x?.kind === 'composition' ? mapField(x, 'focus', token) : x));

@@ -25,10 +25,9 @@ import { ORIGIN_ROLE, EXTREME } from './generate.js';
  * 3. Work for a skill nothing fills goes to the cell's own line, so the heroes kept busy hold;
  *    every origin the map shows stands on the mat at least once; and past {@link MAX_HEROES} the
  *    kit's largest everyday share gives way.
- * 4. **Chests**: the cell's treasures, as generated (`generate.js`, step 7).
- * 5. **Wild extremes**: one origin almost everywhere (`wild.compositionShare` of the nodes), or an
+ * 4. **Wild extremes**: one origin almost everywhere (`wild.compositionShare` of the nodes), or an
  *    odd layout ({@link LAYOUT_GROUND}).
- * 6. **Terrain**: its biome's row in the world tables (`biomeTerrain.js`): the inland water shapes
+ * 5. **Terrain**: its biome's row in the world tables (`biomeTerrain.js`): the inland water shapes
  *    it may roll, its sea's share and its Stone patches, each range rolled once; **arrival**: the
  *    enemies the place arrives with.
  *
@@ -132,7 +131,7 @@ function tokensFor(tables, skill, heroes) {
  * @returns {{
  *   biome: string, heroes: Record<string, number>,
  *   nodes: {typeId: string, count: number, skill: string|null}[],
- *   camps: {typeId: string, count: number}[], treasures: {typeId: string, count: number}[],
+ *   camps: {typeId: string, count: number}[],
  *   arrival: {typeId: string, count: number}[],
  *   stone: {outcrops: number, ridge: boolean}, water: number, inland: string|string[],
  *   rare: string|null, extreme: object|null
@@ -265,11 +264,6 @@ export function cellMat(cell, tables, { skillOf = () => null, hallOrigins = [] }
     }
     if (ground.nodes > 1 && total > 0) counts = apportion(counts, Math.round(total * ground.nodes));
 
-    const treasures = new Map();
-    for (const extra of cell?.extras || []) {
-        if (extra.kind === 'treasure') addTo(treasures, extra.id, 1);
-    }
-
     const biome = kitBiome(tables, cell?.kit);
     const row = biomeRow(tables, biome);
     const terrain = rollBiomeTerrain(row, mulberry32(seedFromText(`${cell?.seed >>> 0}|terrain`)));
@@ -281,7 +275,6 @@ export function cellMat(cell, tables, { skillOf = () => null, hallOrigins = [] }
         nodes: Object.entries(counts).filter(([, n]) => n > 0).sort(([a], [b]) => byText(a, b))
             .map(([typeId, count]) => ({ typeId, count, skill: skillOfNode.get(typeId) ?? null })),
         camps: list(camps),
-        treasures: list(treasures),
         arrival: (cell?.arrival || []).map(r => ({ ...r })),
         stone: { outcrops: terrain.stone + (ground.stone || 0), ridge: !!ground.ridge },
         water: Number.isFinite(ground.water) ? ground.water : terrain.sea,

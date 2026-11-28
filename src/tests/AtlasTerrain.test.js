@@ -26,14 +26,13 @@ const plains = base('plains', 40, [{ typeId: 'oak', weight: 3 }, { typeId: 'berr
 const mountain = base('mountain', 36, [{ typeId: 'copper', weight: 1 }, { typeId: 'coal', weight: 1 }]);
 const coast = base('coast', 12, [{ typeId: 'fishing_spot', weight: 1 }]);
 const camp = { camps: [{ typeId: 'goblin_camp', count: 2 }] };
-const ruins = { treasures: [{ typeId: 'ruins', count: 2 }] };
 
 const SEEDS = Array.from({ length: 10 }, (_, i) => seedFromText(`terrain-${i}`));
 const RECIPES = {
     'Forest': [{ ...forest, ...camp }],
-    'Forest + Mountain': [{ ...forest, ...camp, ...ruins }, mountain],
-    'Coast': [{ ...coast, ...camp, ...ruins }],
-    'Coast + Forest + Mountain': [{ ...coast, ...camp, ...ruins }, forest, mountain]
+    'Forest + Mountain': [{ ...forest, ...camp }, mountain],
+    'Coast': [{ ...coast, ...camp }],
+    'Coast + Forest + Mountain': [{ ...coast, ...camp }, forest, mountain]
 };
 
 const terrainOfBiome = (summary, biome) => summary.ground.terrains[biome] || DEFAULT_TERRAIN;
@@ -112,7 +111,7 @@ describe('the terrain map', () => {
         const full = base('coastal_wilds', 1000, [
             { typeId: 'fishing_spot', weight: 1 }, { typeId: 'oak', weight: 2 }, { typeId: 'copper', weight: 2 }
         ], { biome: 'coast' });
-        const summary = budget([{ ...full, ...camp, ...ruins }], { cap: 256 });
+        const summary = budget([{ ...full, ...camp }], { cap: 256 });
         for (const seed of SEEDS.slice(0, 5)) {
             const result = layout(summary, options(seed));
             expect(result.unplaced).toEqual([]);

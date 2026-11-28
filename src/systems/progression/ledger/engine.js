@@ -17,7 +17,7 @@ import { fishBait, fishCycleMs, fishLevel } from '../../../config/registries/fis
 import { spotOf, arrivesByItself, groundWaterKinds, WATER_KIND } from '../../../config/registries/fishingSpots.js';
 import { rareTableOf, rareEntryChances } from '../../../config/registries/rareTables.js';
 import { toolOf, neededToolOf, toolMeets, starterToolIds } from '../../../config/registries/toolKinds.js';
-import { STRICT_RINGS, SKILL_OF, EXTRA_KIND, kitBiome } from '../../../config/worldTablesShape.js';
+import { STRICT_RINGS, SKILL_OF, kitBiome } from '../../../config/worldTablesShape.js';
 import { biomeRow } from '../../../config/biomeTerrain.js';
 import { normaliseEventTable, isRunnable } from '../../../config/eventTable.js';
 import { EVENT_WAIT_MIN_MS, EVENT_WAIT_MAX_MS } from '../../../config/eventTiming.js';
@@ -681,7 +681,7 @@ export function buildWorld(content = {}, { tierLevels = null } = {}) {
         if (gives.length) add({ id: `hold:${id}`, how: HOW.HOLD, via: itemKey(id), needs: [itemKey(id)], gives });
     }
     // A one-off find: a Token that wears out for good, which only a map or a modifier places, or only
-    // some worlds hold (a treasure). Its work is there once, by chance, so reach keeps it on the side
+    // some worlds hold. Its work is there once, by chance, so reach keeps it on the side
     // rather than as a way in. One every world places for sure is had, however soon it wears out.
     const placedBy = new Map();
     for (const rule of rules) {
@@ -1032,17 +1032,12 @@ function worldRules(tables, { add, names, placeable, ringNeeds = () => [], rungs
     }
 
     // Only in some worlds: a kit's camps (its everyday ones where it has combat work or combat is a
-    // specialty, its boss camps with a combat specialty), the chests, the arrivals.
+    // specialty, its boss camps with a combat specialty), the arrivals.
     const combatSpecialty = list(tables.specialties).includes(COMBAT);
     for (const kit of kits) {
         const ids = [...((kit.work?.[COMBAT] > 0 || combatSpecialty) ? kit.camps : []), ...(combatSpecialty ? kit.bossCamps : [])];
         if (!ids.length) continue;
         for (const ring of rings) for (const line of linesFor([kit.id], ring)) place(`kit:${kit.id}:${line.id}:${ring}`, line.id, ring, ids, true);
-    }
-    for (const extra of list(tables.extras)) {
-        const ids = extra.kind === EXTRA_KIND.TREASURE ? [extra.id] : [];
-        const where = extra.lines ? lines.filter(l => extra.lines.includes(l.id)) : lines;
-        for (const ring of extra.rings || rings) for (const line of order(where, ring)) place(`extra:${extra.id}:${line.id}:${ring}`, line.id, ring, ids, true);
     }
     for (const ring of rings) {
         const arrival = tables.arrival?.[ring];

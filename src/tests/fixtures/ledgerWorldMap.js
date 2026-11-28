@@ -2,8 +2,8 @@
 //
 // Every line has an origin in every strict ring: the fixture's own veins, trees, hive and coast where
 // it has them, a plain node (`token_<line>_<ring>`, yielding `item_<line>_<ring>`) elsewhere. One kit
-// with a goblin camp and the Chief's Tent as its boss camp; iron the key of ring 2; every cell's
-// extras exactly its ring's value; prices dearer ring by ring; a Guild Hall star opening each ring
+// with a goblin camp and the Chief's Tent as its boss camp; iron the key of ring 2; prices dearer
+// ring by ring; a Guild Hall star opening each ring
 // past the first, paid with Copper Ore. Generated from, every world keeps
 // every rule of checks F, so a test breaks one rule at a time.
 
@@ -42,9 +42,6 @@ export const WORLD_FIXTURE_RAW = Object.freeze({
     heroTokens: { combat: 1 },
     specialties: ['mining', 'forestry', 'farming', 'fishing', 'alchemy', 'combat'],
     pityWindow: 4,
-    extras: [{ id: 'token_fixture_chest', kind: 'treasure', value: 10 }],
-    ringValue: { 1: 10, 2: 10, 3: 10 },
-    valueTolerance: 0.1,
     prices: {
         1: { items: [{ qty: 5 }], skills: [{ skill: 'line', level: 2 }] },
         2: { items: [{ qty: 10 }, { qty: 5, from: 'hall' }], skills: [{ skill: 'line', level: 10 }] },
@@ -63,10 +60,6 @@ export const WORLD_FIXTURE_TABLES = normaliseWorldTables(WORLD_FIXTURE_RAW);
 /** The fixture world's content: the ledger fixture with a plain node and its material for every gap. */
 export function worldWorkspace() {
     const ws = ledgerWorkspace();
-    ws.tokens.token_fixture_chest = {
-        id: 'token_fixture_chest', name: 'Fixture Chest', uses: 1,
-        config: { skill: 'crafting', skillRequired: 1, cycleTimeMs: 10000, xp: 1, inputs: [], outputs: [{ itemId: 'item_copper_ore', chance: 100, minQty: 4, maxQty: 8 }] }
-    };
     for (const [line, skill] of Object.entries(LINE_SKILL)) {
         for (let ring = 1; ring <= 3; ring++) {
             const id = nodeId(line, ring);

@@ -255,8 +255,7 @@ describe('the layout', () => {
         for (const cap of [128, 256]) {
             it(`a full Region at a cap of ${cap} places every Token legally`, () => {
                 const summary = fullBudget(cap, ['oak', 'fir', 'copper', 'coal'], {
-                    camps: [{ typeId: 'goblin_camp', count: 2 }],
-                    treasures: [{ typeId: 'ruins', count: 2 }]
+                    camps: [{ typeId: 'goblin_camp', count: 2 }]
                 });
                 expect(summary.total).toBe(cap / 2);
                 for (const seed of SEEDS) {
@@ -294,15 +293,6 @@ describe('the layout', () => {
             }
         });
 
-        it('treasures are placed once each', () => {
-            const summary = budget([{ ...FOREST, treasures: [{ typeId: 'ruins', count: 1 }, { typeId: 'cache', count: 2 }] }], { cap: 128 });
-            for (const seed of SEEDS.slice(0, 6)) {
-                const treasures = layout(summary, options(seed)).nodes.filter(n => n.role === ROLE.TREASURE);
-                expect(treasures.map(t => t.typeId).sort()).toEqual(['cache', 'cache', 'ruins']);
-                const spots = new Set(treasures.map(t => `${t.x},${t.y}`));
-                expect(spots.size).toBe(3);
-            }
-        });
     });
 });
 
@@ -358,8 +348,7 @@ describe('the game\'s side of the layout (layoutInputs)', () => {
                     { typeId: 'atlas_t_cedar', weight: 1 }, { typeId: 'atlas_t_sapling', weight: 2 },
                     { typeId: 'atlas_t_coast', weight: 3 }
                 ], {
-                    camps: [{ typeId: 'atlas_t_camp', count: 2 }],
-                    treasures: [{ typeId: 'atlas_t_ruins', count: 1 }]
+                    camps: [{ typeId: 'atlas_t_camp', count: 2 }]
                 })
             ], { cap });
             for (const seed of SEEDS.slice(0, 4)) {
@@ -441,7 +430,7 @@ describe('purity guards', () => {
 
     it('Budget, Layout, TerrainMap and WaterShapes read no clock, no board and no Mat Tuner', () => {
         const imports = (file) => [...code(file).matchAll(/from\s*['"]([^'"]+)['"]/g)].map(m => m[1]);
-        expect(imports('Layout.js')).toEqual(['./seededRandom.js', '../../config/registries/reachRegistry.js', './TerrainMap.js', './WaterShapes.js', './StoneShapes.js']);
+        expect(imports('Layout.js')).toEqual(['./seededRandom.js', './TerrainMap.js', './WaterShapes.js', './StoneShapes.js']);
         expect(imports('Budget.js')).toEqual(['../../config/registries/tokenRegistry.js', './TerrainMap.js', './WaterShapes.js']);
         expect(imports('TerrainMap.js')).toEqual(['./WaterShapes.js']);
         expect(imports('WaterShapes.js')).toEqual([]);

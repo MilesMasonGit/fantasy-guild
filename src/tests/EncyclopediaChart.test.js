@@ -8,7 +8,7 @@ import {
 } from '../ui/components/encyclopedia/encyclopediaChart.js';
 import { lengthText } from '../utils/Formatters.js';
 import { HOW, COMBAT, itemKey, tokenKey, recipeKey } from '../systems/progression/ledger/engine.js';
-import { ledgerContent, withIronChest } from './fixtures/ledgerWorld.js';
+import { ledgerContent, withIronCache } from './fixtures/ledgerWorld.js';
 import en from '../i18n/en.json';
 
 /**
@@ -26,7 +26,7 @@ const R = recipeKey;
 
 /** The fixture with a Fire Elemental that also drops Iron Ore, sometimes: three ways to Iron Ore. */
 function threeWaysToIronOre() {
-    const ws = withIronChest();
+    const ws = withIronCache();
     ws.tokens.token_fire_elemental.config.outputs.push({ itemId: 'item_iron_ore', chance: 40, minQty: 1, maxQty: 1 });
     return ws;
 }
@@ -60,12 +60,12 @@ describe('ways in: one per recipe, stacked "or" branches, the most usual first',
         expect(craft.inputs).toEqual([{ key: I('item_iron_ore'), quantity: 2 }, { key: I('item_coal'), quantity: 2 }]);
     });
 
-    it('an ore: the vein first, then the drop, then the one-off chest', () => {
+    it('an ore: the vein first, then the drop, then the one-off cache', () => {
         const ways = waysIn(book, I('item_iron_ore'));
         expect(ways.map(w => [w.how, w.from])).toEqual([
             [HOW.WORK, T('token_iron_vein')],
             [HOW.DROP, T('token_fire_elemental')],
-            [HOW.WORK, T('token_iron_chest')]
+            [HOW.WORK, T('token_iron_cache')]
         ]);
         expect(ways[1].chance).toBeCloseTo(0.4);
     });
@@ -167,9 +167,9 @@ describe('what a step asks of a hero, on its line', () => {
         expect(requirementOf(book, I('item_iron_ore'))).toBeNull();
     });
 
-    it('a vein or a chest: the skill to work it; an enemy: Combat at its level; a station: nothing', () => {
+    it('a vein or a cache: the skill to work it; an enemy: Combat at its level; a station: nothing', () => {
         expect(requirementOf(book, T('token_iron_vein'))).toEqual({ skill: 'mining', level: 15 });
-        expect(requirementOf(book, T('token_iron_chest'))).toEqual({ skill: 'crafting', level: 1 });
+        expect(requirementOf(book, T('token_iron_cache'))).toEqual({ skill: 'crafting', level: 1 });
         expect(requirementOf(book, T('token_goblin'))).toEqual({ skill: COMBAT, level: 5 });
         expect(requirementOf(book, T('token_furnace'))).toBeNull();
     });
@@ -621,7 +621,7 @@ describe('a word on every line that is not used up (the owner\'s pick C, 6 Novem
         expect(word(inWord(book, I('item_iron_ingot'), T('token_furnace')))).toBe('madeAt');
         expect(word(inWord(book, T('token_smithy'), T('token_wood_foundation')))).toBe('builtOn');
         expect(word(inWord(book, I('item_iron_ore'), T('token_iron_vein')))).toBe('gives');
-        expect(word(inWord(book, I('item_iron_ore'), T('token_iron_chest')))).toBe('opens');
+        expect(word(inWord(book, I('item_iron_ore'), T('token_iron_cache')))).toBe('gives');
         expect(word(inWord(book, I('item_iron_ore'), T('token_fire_elemental')))).toBe('drops');
         expect(word(inWord(book, I('item_shrimp'), T('token_coast')))).toBe('catch');
         expect(word(inWord(book, I('item_bird_nest'), T('token_birdwatcher')))).toBe('bonus');
@@ -643,7 +643,7 @@ describe('a word on every line that is not used up (the owner\'s pick C, 6 Novem
         expect([word, tip].map(f => f(outWord(book, R('recipe_wheat'), I('item_wheat'))))).toEqual(['makes', 'recipeMakes']);
         expect(word(outWord(book, T('token_iron_vein'), I('item_iron_ore')))).toBe('gives');
         expect(word(outWord(book, T('token_iron_vein'), T('token_fire_elemental')))).toBe('spawns');
-        expect(word(outWord(book, T('token_iron_chest'), I('item_iron_ore')))).toBe('opens');
+        expect(word(outWord(book, T('token_iron_cache'), I('item_iron_ore')))).toBe('gives');
         expect(word(outWord(book, T('token_goblin'), I('item_bones')))).toBe('drops');
         expect(word(outWord(book, T('token_coast'), I('item_trout')))).toBe('catch');
         expect(word(outWord(book, T('token_oak_sapling'), T('token_oak_tree')))).toBe('grows');
@@ -740,7 +740,7 @@ describe('a word on every line that is not used up (the owner\'s pick C, 6 Novem
         const ore = chart.ins[0].inputs[0].id;
         chart = chartOf(book, I('item_iron_ingot'), { grown: new Set([ore]) });
         const lay = layoutChart(chart);
-        expect(lay.words.map(w => w.word).sort()).toEqual(['drops', 'gives', 'madeAt', 'opens']);
+        expect(lay.words.map(w => w.word).sort()).toEqual(['drops', 'gives', 'gives', 'madeAt']);
         // Iron Ore's three ways each on their band, the Furnace's "made at" on the start's one way.
         expect(new Set(lay.words.map(w => w.pairs[0].join('|'))).size).toBe(lay.words.length);
         wordsSitClear(lay);
@@ -918,7 +918,7 @@ describe('the shipped content', () => {
         expect(ways[0].inputs.map(i => i.key).sort()).toEqual([I('item_coal'), I('item_iron_ore')]);
         expect(ways.filter(w => w.how === HOW.CRAFT)).toHaveLength(1);
         expect(wayInRequirement(book, ways[0])).toMatchObject({ skill: 'smithing', level: 20 });
-        expect(ways.map(w => w.from)).toEqual(expect.arrayContaining([T('token_fire_elemental_chief'), T('token_iron_chest')]));
+        expect(ways.map(w => w.from)).toEqual(expect.arrayContaining([T('token_fire_elemental_chief')]));
     });
 
     it('the Iron Smithy is built on a Stone Foundation; an Oak Forest on Farmland', () => {
@@ -951,9 +951,9 @@ describe('the shipped content', () => {
 });
 
 describe('the fixture world stays as the tests assume', () => {
-    it('has the Smithy built on a Foundation and the Iron Chest as a one-off find', () => {
-        const book = buildEncyclopedia(withIronChest());
-        expect(book.sourcesOf(I('item_iron_ore')).find(r => r.via === T('token_iron_chest'))?.oneOff).toBe(true);
+    it('has the Smithy built on a Foundation and the Iron Cache as a one-off find', () => {
+        const book = buildEncyclopedia(withIronCache());
+        expect(book.sourcesOf(I('item_iron_ore')).find(r => r.via === T('token_iron_cache'))?.oneOff).toBe(true);
         expect(buildEncyclopedia(ledgerContent()).sourcesOf(R('recipe_build_smithy'))[0].how).toBe(HOW.BUILD);
         expect(KIND.ITEM).toBe('items');
     });

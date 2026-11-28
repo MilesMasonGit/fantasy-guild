@@ -14,7 +14,7 @@ import { RegistryManager } from '../systems/progression/RegistryManager.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import { GameState } from '../state/GameState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { ledgerContent, withIronChest } from './fixtures/ledgerWorld.js';
+import { ledgerContent, withIronCache } from './fixtures/ledgerWorld.js';
 
 /**
  * ⭐ The Encyclopedia's progress (brief 470 E3): a count and a bar per kind at the foot of the left
@@ -45,13 +45,13 @@ describe('what counts toward a total', () => {
         expect(after).toEqual({ kind: KIND.ITEM, found: 1, total: before.total + 1 });
     });
 
-    it('a Token only some worlds hold (a chest) counts only once had', () => {
-        const chestBook = buildEncyclopedia(withIronChest());
-        const chest = chestBook.entryOf('token:token_iron_chest');
+    it('a Token only some worlds hold counts only once had', () => {
+        const chestBook = buildEncyclopedia(withIronCache());
+        const chest = chestBook.entryOf('token:token_iron_cache');
         expect(chestBook.reachOf(chest.key)?.maybe).toBe(true);
         expect(countsTowardTotal(chestBook, chest, none())).toBe(false);
         const got = none();
-        got.tokens.add('token_iron_chest');
+        got.tokens.add('token_iron_cache');
         expect(countsTowardTotal(chestBook, chest, got)).toBe(true);
     });
 

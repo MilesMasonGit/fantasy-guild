@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { budget, ROLE } from '../systems/atlas/Budget.js';
 import {
-    layout, campBand, COMFORT_GAP, CAMP_BAND, NOOK_BAND, RARE_KEEP, NEAR_WATER, HIDE_BAND, AFFINITY
+    layout, campBand, COMFORT_GAP, CAMP_BAND, NOOK_BAND, RARE_KEEP, NEAR_WATER, AFFINITY
 } from '../systems/atlas/Layout.js';
 import { seedFromText } from '../systems/atlas/seededRandom.js';
-import { TERRAIN, cellIndex, decodeTerrain, islandsOf, shoreDistance } from '../systems/atlas/TerrainMap.js';
+import { TERRAIN, cellIndex, decodeTerrain, shoreDistance } from '../systems/atlas/TerrainMap.js';
 import { affinityRule, kindOf } from '../systems/atlas/layoutInputs.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 
@@ -15,9 +15,8 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 
 /**
  * The placement rounds (`place1.py`, `place2.py` in `docs/active/research/ground_gen/`):
- * natural clumps, kinds where they belong, rarer further out, and camps and treasures with a
- * reason. Each rule is measured over many seeds on the shipped mat with standard bodies; the
- * kinds come from the game's own seam (`layoutInputs.affinityRule`), which reads the words of
+ * natural clumps, kinds where they belong, rarer further out, and camps with a reason. Each rule
+ * is measured over many seeds on the shipped mat with standard bodies; the kinds come from the game's own seam (`layoutInputs.affinityRule`), which reads the words of
  * these made-up ids as it reads real ones. Every rule here failed on the layout before them,
  * except the guards (no kind to lean to, the kind table, the result's order).
  */
@@ -57,13 +56,13 @@ function clusters(nodes, link) {
     return out;
 }
 
-/** The stored ground read back: its cells, which are water, and the islands the water surrounds. */
+/** The stored ground read back: its cells, and which are water. */
 function groundOfResult(result) {
     const map = decodeTerrain(result.terrain);
     const wet = map.legend.indexOf(TERRAIN.WATER);
     const water = map.cells.map(k => (k === wet ? 1 : 0));
     const cellOf = (p) => cellIndex(map, p.x, p.y, map.cell);
-    return { map, water, cellOf, islands: islandsOf(map, water, cellOf(result.hall)) };
+    return { map, water, cellOf };
 }
 
 describe('natural clumps: uneven groves, tight in the middle and looser at the rim, a few alone', () => {
@@ -202,7 +201,7 @@ describe('rarer further out', () => {
     });
 });
 
-describe('camps and treasures with a reason', () => {
+describe('camps with a reason', () => {
     const camped = (nodes) => budget([
         base('forest', 40, nodes, { camps: [{ typeId: 'camp', count: 1 }] })
     ], { cap: 128 });
@@ -243,58 +242,6 @@ describe('camps and treasures with a reason', () => {
         }
     });
 
-    it('a treasure stands on a lake\'s island when there is one, and no node takes the island', () => {
-        const summary = budget([
-            base('lakeland', 26, [{ typeId: 'oak_tree', weight: 2 }, { typeId: 'red_bush', weight: 1 }], { biome: 'meadow', inland: 'lake', treasures: [{ typeId: 'chest', count: 1 }] })
-        ], { cap: 128 });
-        let isles = 0;
-        for (let k = 0; k < 80; k++) {
-            const result = layout(summary, options(seedFromText(`isle-${k}`)));
-            const { islands, cellOf } = groundOfResult(result);
-            if (!islands.some(i => i.length >= 2)) continue;
-            isles++;
-            const chest = result.nodes.find(n => n.role === ROLE.TREASURE);
-            const isle = islands.find(i => i.includes(cellOf(chest)));
-            expect(isle, `isle-${k}`).toBeDefined();
-            expect(result.nodes.filter(n => n.role === ROLE.NODE && isle.includes(cellOf(n)))).toEqual([]);
-        }
-        expect(isles).toBeGreaterThan(5);
-    });
-
-    it('with no island, a treasure hides away from the Hall, among the groves', () => {
-        const summary = budget([
-            base('forest', 40, [{ typeId: 'oak_tree', weight: 6 }, { typeId: 'red_bush', weight: 2 }], { treasures: [{ typeId: 'chest', count: 1 }] })
-        ], { cap: 128 });
-        const screens = [];
-        for (const seed of SEEDS) {
-            const result = layout(summary, options(seed));
-            const chest = result.nodes.find(n => n.role === ROLE.TREASURE);
-            expect(campBand(chest, ART, MAT)).toBeGreaterThanOrEqual(HIDE_BAND);
-            screens.push(result.nodes.filter(n => n.role === ROLE.NODE && d2(n, chest) < 240 * 240).length);
-        }
-        expect(mean(screens)).toBeGreaterThan(2);
-    });
-});
-
-describe('islands on the ground grid (islandsOf)', () => {
-    it('finds dry land the water surrounds, a diagonal joining it, never the edge\'s or the Hall\'s', () => {
-        // 7 × 6 cells: a lake with a two-cell island, a lone dry cell joined to the shore only
-        // diagonally (still the shore), and dry land at the edge beyond the lake.
-        const rows = [
-            '.......',
-            '.~~~~~.',
-            '.~##~~.',
-            '.~~~~#~',
-            '.~~~~~~',
-            '.......'
-        ];
-        const grid = { cols: 7, rows: 6 };
-        const water = Uint8Array.from(rows.join('').split('').map(ch => (ch === '~' ? 1 : 0)));
-        expect(islandsOf(grid, water, 0)).toEqual([[16, 17]]);
-        // The Hall's own land is never an island.
-        expect(islandsOf(grid, water, 16)).toEqual([]);
-        expect(islandsOf(grid, new Uint8Array(42), 0)).toEqual([]);
-    });
 });
 
 describe('the result', () => {
@@ -302,8 +249,7 @@ describe('the result', () => {
         const summary = budget([
             // The camps' wraps are placed first, and the rare maple before the bushes.
             base('forest', 40, [{ typeId: 'oak_tree', weight: 20 }, { typeId: 'red_bush', weight: 10 }, { typeId: 'maple_tree', weight: 1 }], {
-                camps: [{ typeId: 'camp', count: 2 }],
-                treasures: [{ typeId: 'chest', count: 1 }]
+                camps: [{ typeId: 'camp', count: 2 }]
             })
         ], { cap: 128 });
         const want = summary.entries.flatMap(e => Array.from({ length: e.count }, () => `${e.role}|${e.typeId}`));

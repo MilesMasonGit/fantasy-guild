@@ -1038,7 +1038,6 @@ function noteWorld(state, note) {
         const waiting = 'waiting at a place on the world map';
         for (const origin of cell.origins || []) note('Token', origin?.id, waiting);
         for (const camp of cell.camps || []) note('Token', typeof camp === 'string' ? camp : camp?.id, waiting);
-        for (const extra of cell.extras || []) note('Token', extra?.id, waiting);
         if (cell.extreme?.kind === 'composition') note('Token', cell.extreme.focus, waiting);
         for (const row of cell.arrival || []) note('Token', row?.typeId, 'arriving at a place on the world map');
         for (const row of cell.requires?.items || []) note('item', row?.itemId, 'asked as the price of a place on the world map');
