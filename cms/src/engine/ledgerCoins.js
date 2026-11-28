@@ -2,6 +2,7 @@ import { workspacePace } from './ledgerReport.js';
 import { PROFILE, PROFILES } from './ledger/pace.js';
 import { tierLabel, isPlanned } from '../../../src/systems/progression/ledger/plan.js';
 import { derivedCoinWorth, isCoinWorthPinned, coinsInPlay } from './ledger/coins.js';
+import { grownPrice, PLACE_PRICE_GROWTH_DEFAULT } from '../../../src/config/worldTablesShape.js';
 
 /**
  * The ledger's coins over the CMS workspace (brief 870 C3), for the content agent's coin pack
@@ -13,8 +14,9 @@ import { derivedCoinWorth, isCoinWorthPinned, coinsInPlay } from './ledger/coins
  */
 
 /**
- * The workspace's coins: `{ supply, prices, drops, thefts, worth, ms }`. A supply row's profiles
- * hold every way to earn; its `selling` the Typical worker's selling alone, what a price is set on.
+ * The workspace's coins: `{ supply, prices, drops, thefts, worth, placePriceGrowth, ms }`. A supply
+ * row's profiles hold every way to earn; its `selling` the Typical worker's selling alone, what a
+ * price is set on. A ring's row is its first place's price; `placePriceGrowth` grows each further one.
  */
 export function workspaceCoins(state = {}) {
     const started = Date.now();
@@ -41,10 +43,19 @@ export function workspaceCoins(state = {}) {
         if (isCoinWorthPinned(item)) pinned++;
     }
     const inPlay = coinsInPlay({ tokens: state.tokens, hallStars: state.hallStars, world: state.world });
-    return { supply, prices: pace.coinPrices(), drops: pace.coinDrops(), thefts: pace.coinThefts(), worth: { priced, pinned, inPlay }, ms: Date.now() - started };
+    const growth = Number(state.world?.placePriceGrowth);
+    const placePriceGrowth = Number.isFinite(growth) && growth >= 1 ? growth : PLACE_PRICE_GROWTH_DEFAULT;
+    return { supply, prices: pace.coinPrices(), drops: pace.coinDrops(), thefts: pace.coinThefts(), worth: { priced, pinned, inPlay }, placePriceGrowth, ms: Date.now() - started };
 }
 
 const round = (n) => (Number.isFinite(n) ? Math.round(n) : n);
+
+/** What the further places of a ring ask, by their order in it: the 2nd, the 3rd and the ring's last (6 a step out). */
+export function furtherPlaces(coins, ring, growth = PLACE_PRICE_GROWTH_DEFAULT) {
+    const tables = { placePriceGrowth: growth };
+    return [2, 3, 6 * ring].filter((n, i, all) => all.indexOf(n) === i).map((n) => ({ place: n, coins: grownPrice(coins, tables, n - 1) }));
+}
+const ordinal = (n) => (n === 2 ? '2nd' : n === 3 ? '3rd' : `${n}th`);
 
 /** The coins in plain text, for the change pack tool. */
 export function coinsText(result, { rows = 40 } = {}) {
@@ -68,7 +79,10 @@ export function coinsText(result, { rows = 40 } = {}) {
         const what = `${p.name}${p.kind === 'hall' ? ` rank ${p.rank}` : ''}`;
         const now = p.coins > 0 ? `asks ${p.coins}` : 'asks none';
         const at = p.tier === null ? '' : ` at ${tierLabel(p.tier)}`;
-        lines.push(`- ${what} (${p.kind}${at}): ${now}; ${p.proposed !== null ? `proposed ${p.proposed} (${p.minutes} min on the ${p.curve} curve of ${round(p.perHour)} an hour)` : `no proposal: ${p.why}`}`);
+        const further = p.kind === 'ring' && p.coins > 0
+            ? ` for its first place, each further place ${result.placePriceGrowth ?? PLACE_PRICE_GROWTH_DEFAULT} times the one before (${furtherPlaces(p.coins, p.ring, result.placePriceGrowth).map((f) => `${ordinal(f.place)} ${f.coins}`).join(', ')})`
+            : '';
+        lines.push(`- ${what} (${p.kind}${at}): ${now}${further}; ${p.proposed !== null ? `proposed ${p.proposed} (${p.minutes} min on the ${p.curve} curve of ${round(p.perHour)} an hour)` : `no proposal: ${p.why}`}`);
     }
     if (result.prices.length > rows) lines.push(`- and ${result.prices.length - rows} more`);
     const half = (row, each, word) => `half a worker's selling there (${round(row.sellingPerHour)} an hour) is ${each ?? '—'} a ${word}`;

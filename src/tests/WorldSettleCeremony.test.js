@@ -275,7 +275,7 @@ describe('⭐ every enemy can be reached', () => {
             const crew = heroes(1);
             for (const cell of world.cells.filter(c => c.ring === 1)) {
                 for (const { skill, level } of cell.requires.skills) addXP(crew[0].id, skill, Math.max(0, xpForLevel(level) - (GameState.heroes[0].skills[skill]?.xp || 0)));
-                for (const { itemId, qty } of cell.requires.items) InventoryManager.addItem(itemId, qty);
+                for (const { itemId, need } of World.priceOf(cell).items) InventoryManager.addItem(itemId, need);
                 stockSettleCoins(cell);
                 const result = World.settleCell(cell.id);
                 expect(result.success, `${seed} ${cell.id}: ${result.reason}`).toBe(true);

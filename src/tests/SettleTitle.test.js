@@ -135,7 +135,7 @@ describe('⭐ the title on settling a place', () => {
         const cell = World.currentWorld().cells.filter(c => c.ring === 1)[1];
         const hero = GameState.heroes[0];
         for (const { skill, level } of cell.requires.skills) addXP(hero.id, skill, Math.max(0, xpForLevel(level) - (hero.skills[skill]?.xp || 0)));
-        for (const { itemId, qty } of cell.requires.items) InventoryManager.addItem(itemId, qty);
+        for (const { itemId, need } of World.priceOf(cell).items) InventoryManager.addItem(itemId, need);
         stockSettleCoins(cell);
         act(() => { expect(World.settleCell(cell.id).success).toBe(true); });
         act(() => { vi.advanceTimersByTime(SETTLE_TITLE.delayMs + 10); });

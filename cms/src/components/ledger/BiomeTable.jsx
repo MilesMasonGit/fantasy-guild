@@ -39,7 +39,7 @@ const percentOf = (share) => Math.round(share * 1000) / 10;
  * A number typed in and kept on Enter or on leaving the box; anything not a number goes back.
  * Keyed by its value where it is used, so a value changed elsewhere starts it afresh.
  */
-function NumberBox({ value, min, max, step = 1, label, onCommit, disabled }) {
+export function NumberBox({ value, min, max, step = 1, label, onCommit, disabled }) {
   const [text, setText] = useState(String(value));
   const commit = () => {
     const n = Number(text);

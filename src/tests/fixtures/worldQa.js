@@ -46,7 +46,7 @@ export function meetFrontierPrices() {
     const stars = new Set();
     let coins = 0;
     for (const cell of frontier) {
-        for (const { itemId, qty } of cell.requires?.items || []) items.set(itemId, (items.get(itemId) || 0) + qty);
+        for (const { itemId, need } of World.priceOf(cell).items) items.set(itemId, (items.get(itemId) || 0) + need);
         for (const { skill, level } of cell.requires?.skills || []) skills.set(skill, Math.max(skills.get(skill) || 0, level));
         coins += settleCoinsOf(cell);
         const lock = World.ringLockOf(cell);
