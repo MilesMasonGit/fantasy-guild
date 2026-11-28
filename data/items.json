@@ -580,14 +580,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1,
+    "value": 3,
     "valueSource": "token_maple_tree",
     "autoSyncId": true,
     "id": "item_maple_wood",
     "tags": [
       "Wood"
     ],
-    "coinWorth": 1
+    "coinWorth": 3
   },
   "item_mahogany_wood": {
     "name": "Mahogany Wood",
@@ -597,14 +597,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 2,
+    "value": 8,
     "valueSource": "token_mahogany_tree",
     "autoSyncId": true,
     "id": "item_mahogany_wood",
     "tags": [
       "Wood"
     ],
-    "coinWorth": 2
+    "coinWorth": 8
   },
   "item_ebony_wood": {
     "name": "Ebony Wood",
@@ -614,14 +614,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 4,
+    "value": 18,
     "valueSource": "token_ebony_tree",
     "autoSyncId": true,
     "id": "item_ebony_wood",
     "tags": [
       "Wood"
     ],
-    "coinWorth": 4
+    "coinWorth": 18
   },
   "item_cedar_wood": {
     "name": "Cedar Wood",
@@ -631,14 +631,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1,
+    "value": 5,
     "valueSource": "token_cedar_tree",
     "autoSyncId": true,
     "id": "item_cedar_wood",
     "tags": [
       "Wood"
     ],
-    "coinWorth": 1
+    "coinWorth": 5
   },
   "item_birch_wood": {
     "name": "Birch Wood",
@@ -648,14 +648,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1,
+    "value": 2,
     "valueSource": "token_birch_tree",
     "autoSyncId": true,
     "id": "item_birch_wood",
     "tags": [
       "Wood"
     ],
-    "coinWorth": 1
+    "coinWorth": 2
   },
   "item_iron_ore": {
     "name": "Iron Ore",
@@ -1010,14 +1010,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 2,
+    "value": 14,
     "valueSource": "token_fossil_bed",
     "autoSyncId": true,
     "id": "item_bones",
     "tags": [
       "Material"
     ],
-    "coinWorth": 2
+    "coinWorth": 14
   },
   "item_oak_seedling": {
     "name": "Oak Seedling",
@@ -1062,14 +1062,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 2,
+    "value": 1,
     "valueSource": "token_ripe_wheat",
     "autoSyncId": true,
     "id": "item_wheat_seed",
     "tags": [
       "Seed"
     ],
-    "coinWorth": 2
+    "coinWorth": 1
   },
   "item_apple_seed": {
     "name": "Apple Seed",
@@ -1079,14 +1079,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1,
+    "value": 2,
     "valueSource": "token_apple_tree",
     "autoSyncId": true,
     "id": "item_apple_seed",
     "tags": [
       "Seed"
     ],
-    "coinWorth": 1
+    "coinWorth": 2
   },
   "item_torch": {
     "name": "Torch",
@@ -1148,7 +1148,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 31,
+    "value": 18,
     "valueSource": "token_birch_tree",
     "autoSyncId": true,
     "id": "item_birch_seedling",
@@ -1156,7 +1156,7 @@
       "Seed",
       "Tree"
     ],
-    "coinWorth": 31
+    "coinWorth": 18
   },
   "item_fir_seedling": {
     "name": "Fir Seedling",
@@ -1166,7 +1166,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 18,
+    "value": 10,
     "valueSource": "token_fir_tree",
     "autoSyncId": true,
     "id": "item_fir_seedling",
@@ -1174,7 +1174,7 @@
       "Seed",
       "Tree"
     ],
-    "coinWorth": 18
+    "coinWorth": 10
   },
   "item_maple_seedling": {
     "name": "Maple Seedling",
@@ -1184,7 +1184,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 46,
+    "value": 26,
     "valueSource": "token_maple_tree",
     "autoSyncId": true,
     "id": "item_maple_seedling",
@@ -1192,7 +1192,7 @@
       "Seed",
       "Tree"
     ],
-    "coinWorth": 46
+    "coinWorth": 26
   },
   "item_ebony_seedling": {
     "name": "Ebony Seedling",
@@ -1202,7 +1202,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 236,
+    "value": 134,
     "valueSource": "token_ebony_tree",
     "autoSyncId": true,
     "id": "item_ebony_seedling",
@@ -1210,7 +1210,7 @@
       "Seed",
       "Tree"
     ],
-    "coinWorth": 236
+    "coinWorth": 134
   },
   "item_cedar_seedling": {
     "name": "Cedar Seedling",
@@ -1220,7 +1220,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 70,
+    "value": 40,
     "valueSource": "token_cedar_tree",
     "autoSyncId": true,
     "id": "item_cedar_seedling",
@@ -1228,7 +1228,7 @@
       "Seed",
       "Tree"
     ],
-    "coinWorth": 70
+    "coinWorth": 40
   },
   "item_mahogany_seedling": {
     "name": "Mahogany Seedling",
@@ -1238,7 +1238,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 102,
+    "value": 58,
     "valueSource": "token_mahogany_tree",
     "autoSyncId": true,
     "id": "item_mahogany_seedling",
@@ -1246,7 +1246,7 @@
       "Seed",
       "Tree"
     ],
-    "coinWorth": 102
+    "coinWorth": 58
   },
   "item_copper_pickaxe": {
     "name": "Copper Pickaxe",
@@ -1313,7 +1313,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 129,
+    "value": 131,
     "valueSource": "recipe_mythril_pickaxe",
     "autoSyncId": true,
     "id": "item_mythril_pickaxe",
@@ -1331,7 +1331,7 @@
         "scale": 3
       }
     ],
-    "coinWorth": 129
+    "coinWorth": 131
   },
   "item_adamantium_pickaxe": {
     "name": "Adamantine Pickaxe",
@@ -1341,7 +1341,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 2288,
+    "value": 2295,
     "valueSource": "recipe_adamantium_pickaxe",
     "autoSyncId": true,
     "id": "item_adamantium_pickaxe",
@@ -1359,7 +1359,7 @@
         "scale": 4
       }
     ],
-    "coinWorth": 2288
+    "coinWorth": 2295
   },
   "item_darkmetal_pickaxe": {
     "name": "Darkmetal Pickaxe",
@@ -1369,7 +1369,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 931,
+    "value": 945,
     "valueSource": "recipe_darkmetal_pickaxe",
     "autoSyncId": true,
     "id": "item_darkmetal_pickaxe",
@@ -1387,7 +1387,7 @@
         "scale": 5
       }
     ],
-    "coinWorth": 931
+    "coinWorth": 945
   },
   "item_copper_woodaxe": {
     "name": "Copper Woodaxe",
@@ -1621,7 +1621,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "consumable",
-    "value": 15,
+    "value": 27,
     "valueSource": "recipe_elixir_of_valor",
     "autoSyncId": true,
     "effects": [
@@ -1635,7 +1635,7 @@
       "Potion",
       "Elixir"
     ],
-    "coinWorth": 15
+    "coinWorth": 27
   },
   "item_elixir_of_ironskin": {
     "name": "Elixir of Ironskin",
@@ -1669,7 +1669,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "consumable",
-    "value": 20,
+    "value": 6,
     "valueSource": "recipe_birdwatcher",
     "autoSyncId": true,
     "effects": [
@@ -1682,7 +1682,7 @@
     "tags": [
       "Potion"
     ],
-    "coinWorth": 20
+    "coinWorth": 6
   },
   "item_bird_nest": {
     "name": "Bird Nest",
@@ -1692,14 +1692,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 85,
+    "value": 23,
     "valueSource": "token_apple_tree",
     "autoSyncId": true,
     "id": "item_bird_nest",
     "tags": [
       "Material"
     ],
-    "coinWorth": 85,
+    "coinWorth": 23,
     "use": {
       "drops": [
         {
@@ -1874,7 +1874,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 10,
+    "value": 4,
     "valueSource": "use:item_bird_nest",
     "autoSyncId": true,
     "id": "item_lavender_seed",
@@ -1882,7 +1882,7 @@
       "Seed",
       "Herb"
     ],
-    "coinWorth": 10
+    "coinWorth": 4
   },
   "item_trout": {
     "name": "Trout",
@@ -2006,14 +2006,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 16,
+    "value": 2,
     "valueSource": "recipe_potato",
     "autoSyncId": true,
     "id": "item_worm",
     "tags": [
       "Bait"
     ],
-    "coinWorth": 16
+    "coinWorth": 2
   },
   "item_trap": {
     "name": "Trap",
@@ -2217,14 +2217,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 28,
+    "value": 15,
     "valueSource": "token_grapevine",
     "autoSyncId": true,
     "id": "item_grape_seed",
     "tags": [
       "Seed"
     ],
-    "coinWorth": 28
+    "coinWorth": 15
   },
   "item_lizard_scale": {
     "name": "Lizard Scale",
@@ -3046,7 +3046,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 128,
+    "value": 130,
     "valueSource": "recipe_mythril_woodaxe",
     "autoSyncId": true,
     "tool": {
@@ -3064,7 +3064,7 @@
         "scale": 3
       }
     ],
-    "coinWorth": 128
+    "coinWorth": 130
   },
   "item_adamantine_woodaxe": {
     "name": "Adamantine Woodaxe",
@@ -3074,7 +3074,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 2287,
+    "value": 2292,
     "valueSource": "recipe_adamantine_woodaxe",
     "autoSyncId": true,
     "tool": {
@@ -3092,7 +3092,7 @@
         "scale": 4
       }
     ],
-    "coinWorth": 2287
+    "coinWorth": 2292
   },
   "item_darkmetal_woodaxe": {
     "name": "Darkmetal Woodaxe",
@@ -3102,7 +3102,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 907,
+    "value": 913,
     "valueSource": "recipe_darkmetal_woodaxe",
     "autoSyncId": true,
     "tool": {
@@ -3120,7 +3120,7 @@
         "scale": 5
       }
     ],
-    "coinWorth": 907
+    "coinWorth": 913
   },
   "item_iron_shield": {
     "name": "Iron Shield",
@@ -3158,7 +3158,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 70,
+    "value": 72,
     "valueSource": "recipe_mythril_dagger",
     "autoSyncId": true,
     "id": "item_mythril_dagger",
@@ -3180,7 +3180,7 @@
       "Dagger"
     ],
     "levelRequired": 40,
-    "coinWorth": 70
+    "coinWorth": 72
   },
   "item_mythril_sword": {
     "name": "Mythril Sword",
@@ -3190,7 +3190,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 132,
+    "value": 134,
     "valueSource": "recipe_mythril_sword",
     "autoSyncId": true,
     "id": "item_mythril_sword",
@@ -3211,7 +3211,7 @@
         "scale": 1
       }
     ],
-    "coinWorth": 132
+    "coinWorth": 134
   },
   "item_mythril_helmet": {
     "name": "Mythril Helmet",
@@ -3248,7 +3248,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 207,
+    "value": 209,
     "valueSource": "recipe_mythril_shield",
     "autoSyncId": true,
     "id": "item_mythril_shield",
@@ -3266,7 +3266,7 @@
       "magic": 20,
       "stealth": 20
     },
-    "coinWorth": 207
+    "coinWorth": 209
   },
   "item_mythril_chestplate": {
     "name": "Mythril Chestplate",
@@ -3303,7 +3303,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 1145,
+    "value": 1152,
     "valueSource": "recipe_adamantine_dagger",
     "autoSyncId": true,
     "id": "item_adamantine_dagger",
@@ -3325,7 +3325,7 @@
       "Dagger"
     ],
     "levelRequired": 60,
-    "coinWorth": 1145
+    "coinWorth": 1152
   },
   "item_adamantine_sword": {
     "name": "Adamantine Sword",
@@ -3335,7 +3335,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 2288,
+    "value": 2295,
     "valueSource": "recipe_adamantine_sword",
     "autoSyncId": true,
     "id": "item_adamantine_sword",
@@ -3356,7 +3356,7 @@
         "scale": 1
       }
     ],
-    "coinWorth": 2288
+    "coinWorth": 2295
   },
   "item_adamantine_helmet": {
     "name": "Adamantine Helmet",
@@ -3393,7 +3393,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 3432,
+    "value": 3438,
     "valueSource": "recipe_adamantine_shield",
     "autoSyncId": true,
     "id": "item_adamantine_shield",
@@ -3411,7 +3411,7 @@
       "magic": 25,
       "stealth": 25
     },
-    "coinWorth": 3432
+    "coinWorth": 3438
   },
   "item_adamantine_chestplate": {
     "name": "Adamantine Chestplate",
@@ -3448,7 +3448,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 489,
+    "value": 503,
     "valueSource": "recipe_darkmetal_dagger",
     "autoSyncId": true,
     "id": "item_darkmetal_dagger",
@@ -3470,7 +3470,7 @@
       "Dagger"
     ],
     "levelRequired": 80,
-    "coinWorth": 489
+    "coinWorth": 503
   },
   "item_darkmetal_sword": {
     "name": "Darkmetal Sword",
@@ -3480,7 +3480,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 948,
+    "value": 962,
     "valueSource": "recipe_darkmetal_sword",
     "autoSyncId": true,
     "id": "item_darkmetal_sword",
@@ -3501,7 +3501,7 @@
         "scale": 1
       }
     ],
-    "coinWorth": 948
+    "coinWorth": 962
   },
   "item_darkmetal_helmet": {
     "name": "Darkmetal Helmet",
@@ -3538,7 +3538,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 1463,
+    "value": 1477,
     "valueSource": "recipe_darkmetal_shield",
     "autoSyncId": true,
     "id": "item_darkmetal_shield",
@@ -3556,7 +3556,7 @@
       "magic": 30,
       "stealth": 30
     },
-    "coinWorth": 1463
+    "coinWorth": 1477
   },
   "item_darkmetal_chestplate": {
     "name": "Darkmetal Chestplate",
@@ -3625,7 +3625,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 43,
+    "value": 44,
     "valueSource": "recipe_silver_dagger",
     "autoSyncId": true,
     "id": "item_silver_dagger",
@@ -3648,7 +3648,7 @@
       "Silver"
     ],
     "levelRequired": 30,
-    "coinWorth": 43
+    "coinWorth": 44
   },
   "item_silver_sword": {
     "name": "Silver Sword",
@@ -3658,7 +3658,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 80,
+    "value": 81,
     "valueSource": "recipe_silver_sword",
     "autoSyncId": true,
     "id": "item_silver_sword",
@@ -3680,7 +3680,7 @@
         "scale": 1
       }
     ],
-    "coinWorth": 80
+    "coinWorth": 81
   },
   "item_masterwork_blade": {
     "name": "Masterwork Blade",
@@ -3690,7 +3690,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 1605,
+    "value": 1619,
     "valueSource": "recipe_masterwork_blade",
     "autoSyncId": true,
     "id": "item_masterwork_blade",
@@ -3711,7 +3711,7 @@
         "scale": 1
       }
     ],
-    "coinWorth": 1605
+    "coinWorth": 1619
   },
   "item_potato": {
     "name": "Potato",
@@ -3772,14 +3772,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 10,
+    "value": 4,
     "autoSyncId": true,
     "id": "item_carrot_seed",
     "tags": [
       "Seed"
     ],
     "valueSource": "use:item_bird_nest",
-    "coinWorth": 10
+    "coinWorth": 4
   },
   "item_onion": {
     "name": "Onion",
@@ -3806,14 +3806,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 10,
+    "value": 4,
     "autoSyncId": true,
     "id": "item_onion_seed",
     "tags": [
       "Seed"
     ],
     "valueSource": "use:item_bird_nest",
-    "coinWorth": 10
+    "coinWorth": 4
   },
   "item_celery": {
     "name": "Celery",
@@ -3823,14 +3823,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1,
+    "value": 2,
     "valueSource": "recipe_celery",
     "autoSyncId": true,
     "id": "item_celery",
     "tags": [
       "Vegetable"
     ],
-    "coinWorth": 1
+    "coinWorth": 2
   },
   "item_celery_seed": {
     "name": "Celery Seed",
@@ -3840,14 +3840,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 10,
+    "value": 4,
     "autoSyncId": true,
     "id": "item_celery_seed",
     "tags": [
       "Seed"
     ],
     "valueSource": "use:item_bird_nest",
-    "coinWorth": 10
+    "coinWorth": 4
   },
   "item_leek": {
     "name": "Leek",
@@ -3857,14 +3857,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1,
+    "value": 3,
     "valueSource": "recipe_leek",
     "autoSyncId": true,
     "id": "item_leek",
     "tags": [
       "Vegetable"
     ],
-    "coinWorth": 1
+    "coinWorth": 3
   },
   "item_leek_seed": {
     "name": "Leek Seed",
@@ -3874,14 +3874,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 10,
+    "value": 4,
     "autoSyncId": true,
     "id": "item_leek_seed",
     "tags": [
       "Seed"
     ],
     "valueSource": "use:item_bird_nest",
-    "coinWorth": 10
+    "coinWorth": 4
   },
   "item_turnip": {
     "name": "Turnip",
@@ -3891,14 +3891,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1,
+    "value": 5,
     "valueSource": "recipe_turnip",
     "autoSyncId": true,
     "id": "item_turnip",
     "tags": [
       "Vegetable"
     ],
-    "coinWorth": 1
+    "coinWorth": 5
   },
   "item_turnip_seed": {
     "name": "Turnip Seed",
@@ -3908,14 +3908,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 60,
+    "value": 11,
     "autoSyncId": true,
     "id": "item_turnip_seed",
     "tags": [
       "Seed"
     ],
     "valueSource": "use:item_bird_nest",
-    "coinWorth": 60
+    "coinWorth": 11
   },
   "item_cabbage": {
     "name": "Cabbage",
@@ -3925,14 +3925,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1,
+    "value": 5,
     "valueSource": "recipe_cabbage",
     "autoSyncId": true,
     "id": "item_cabbage",
     "tags": [
       "Vegetable"
     ],
-    "coinWorth": 1
+    "coinWorth": 5
   },
   "item_cabbage_seed": {
     "name": "Cabbage Seed",
@@ -3942,14 +3942,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 60,
+    "value": 11,
     "autoSyncId": true,
     "id": "item_cabbage_seed",
     "tags": [
       "Seed"
     ],
     "valueSource": "use:item_bird_nest",
-    "coinWorth": 60
+    "coinWorth": 11
   },
   "item_garlic": {
     "name": "Garlic",
@@ -3959,14 +3959,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1,
+    "value": 8,
     "valueSource": "recipe_garlic",
     "autoSyncId": true,
     "id": "item_garlic",
     "tags": [
       "Vegetable"
     ],
-    "coinWorth": 1
+    "coinWorth": 8
   },
   "item_garlic_seed": {
     "name": "Garlic Seed",
@@ -3976,14 +3976,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 60,
+    "value": 11,
     "autoSyncId": true,
     "id": "item_garlic_seed",
     "tags": [
       "Seed"
     ],
     "valueSource": "use:item_bird_nest",
-    "coinWorth": 60
+    "coinWorth": 11
   },
   "item_tomato": {
     "name": "Tomato",
@@ -3993,14 +3993,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1,
+    "value": 9,
     "valueSource": "recipe_tomato",
     "autoSyncId": true,
     "id": "item_tomato",
     "tags": [
       "Vegetable"
     ],
-    "coinWorth": 1
+    "coinWorth": 9
   },
   "item_tomato_seed": {
     "name": "Tomato Seed",
@@ -4010,14 +4010,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 60,
+    "value": 11,
     "autoSyncId": true,
     "id": "item_tomato_seed",
     "tags": [
       "Seed"
     ],
     "valueSource": "use:item_bird_nest",
-    "coinWorth": 60
+    "coinWorth": 11
   },
   "item_corn": {
     "name": "Corn",
@@ -4027,14 +4027,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 6,
+    "value": 17,
     "valueSource": "recipe_corn",
     "autoSyncId": true,
     "id": "item_corn",
     "tags": [
       "Vegetable"
     ],
-    "coinWorth": 6
+    "coinWorth": 17
   },
   "item_corn_seed": {
     "name": "Corn Seed",
@@ -4044,14 +4044,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 60,
+    "value": 11,
     "autoSyncId": true,
     "id": "item_corn_seed",
     "tags": [
       "Seed"
     ],
     "valueSource": "use:item_bird_nest",
-    "coinWorth": 60
+    "coinWorth": 11
   },
   "item_emberroot": {
     "name": "Emberroot",
@@ -4061,14 +4061,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 17,
+    "value": 28,
     "valueSource": "recipe_emberroot",
     "autoSyncId": true,
     "id": "item_emberroot",
     "tags": [
       "Vegetable"
     ],
-    "coinWorth": 17
+    "coinWorth": 28
   },
   "item_emberroot_seed": {
     "name": "Emberroot Seed",
@@ -4078,14 +4078,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 60,
+    "value": 11,
     "autoSyncId": true,
     "id": "item_emberroot_seed",
     "tags": [
       "Seed"
     ],
     "valueSource": "use:item_bird_nest",
-    "coinWorth": 60
+    "coinWorth": 11
   },
   "item_voidcap": {
     "name": "Voidcap",
@@ -4095,14 +4095,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 36,
+    "value": 46,
     "valueSource": "recipe_voidcap",
     "autoSyncId": true,
     "id": "item_voidcap",
     "tags": [
       "Vegetable"
     ],
-    "coinWorth": 36
+    "coinWorth": 46
   },
   "item_voidcap_seed": {
     "name": "Voidcap Seed",
@@ -4112,14 +4112,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 60,
+    "value": 11,
     "autoSyncId": true,
     "id": "item_voidcap_seed",
     "tags": [
       "Seed"
     ],
     "valueSource": "use:item_bird_nest",
-    "coinWorth": 60
+    "coinWorth": 11
   },
   "item_milk": {
     "name": "Milk",
@@ -4274,14 +4274,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 8,
+    "value": 9,
     "valueSource": "recipe_mirepoix",
     "autoSyncId": true,
     "id": "item_mirepoix",
     "tags": [
       "Cooking"
     ],
-    "coinWorth": 8
+    "coinWorth": 9
   },
   "item_onion_soup": {
     "name": "Onion Soup",
@@ -4492,7 +4492,7 @@
     "stackable": true,
     "restoreAmount": 25,
     "equipSlot": "food",
-    "value": 26,
+    "value": 29,
     "valueSource": "recipe_potato_leek_stew",
     "autoSyncId": true,
     "id": "item_potato_leek_stew",
@@ -4500,7 +4500,7 @@
       "Food",
       "Cooked"
     ],
-    "coinWorth": 26
+    "coinWorth": 29
   },
   "item_stout": {
     "name": "Stout",
@@ -4628,7 +4628,7 @@
     "stackable": true,
     "restoreAmount": 31,
     "equipSlot": "food",
-    "value": 33,
+    "value": 42,
     "valueSource": "recipe_garden_stew",
     "autoSyncId": true,
     "id": "item_garden_stew",
@@ -4636,7 +4636,7 @@
       "Food",
       "Cooked"
     ],
-    "coinWorth": 33
+    "coinWorth": 42
   },
   "item_peach_nectar": {
     "name": "Peach Nectar",
@@ -4741,14 +4741,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 28,
+    "value": 58,
     "valueSource": "recipe_sofrito",
     "autoSyncId": true,
     "id": "item_sofrito",
     "tags": [
       "Cooking"
     ],
-    "coinWorth": 28
+    "coinWorth": 58
   },
   "item_tomato_soup": {
     "name": "Tomato Soup",
@@ -4758,7 +4758,7 @@
     "stackable": true,
     "restoreAmount": 37,
     "equipSlot": "food",
-    "value": 41,
+    "value": 65,
     "valueSource": "recipe_tomato_soup",
     "autoSyncId": true,
     "id": "item_tomato_soup",
@@ -4766,7 +4766,7 @@
       "Food",
       "Cooked"
     ],
-    "coinWorth": 41
+    "coinWorth": 65
   },
   "item_orange_juice": {
     "name": "Orange Juice",
@@ -4855,7 +4855,7 @@
     "stackable": true,
     "restoreAmount": 42,
     "equipSlot": "food",
-    "value": 81,
+    "value": 113,
     "valueSource": "recipe_hearty_potato_stew",
     "autoSyncId": true,
     "id": "item_hearty_potato_stew",
@@ -4863,7 +4863,7 @@
       "Food",
       "Cooked"
     ],
-    "coinWorth": 81
+    "coinWorth": 113
   },
   "item_wine": {
     "name": "Wine",
@@ -4952,7 +4952,7 @@
     "stackable": true,
     "restoreAmount": 46,
     "equipSlot": "food",
-    "value": 108,
+    "value": 150,
     "valueSource": "recipe_golden_stew",
     "autoSyncId": true,
     "id": "item_golden_stew",
@@ -4960,7 +4960,7 @@
       "Food",
       "Cooked"
     ],
-    "coinWorth": 108
+    "coinWorth": 150
   },
   "item_banana_smoothie": {
     "name": "Banana Smoothie",
@@ -5099,7 +5099,7 @@
     "stackable": true,
     "restoreAmount": 51,
     "equipSlot": "food",
-    "value": 161,
+    "value": 205,
     "valueSource": "recipe_emberroot_soup",
     "autoSyncId": true,
     "id": "item_emberroot_soup",
@@ -5107,7 +5107,7 @@
       "Food",
       "Cooked"
     ],
-    "coinWorth": 161
+    "coinWorth": 205
   },
   "item_watermelon_cooler": {
     "name": "Watermelon Cooler",
@@ -5213,7 +5213,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "drink",
-    "value": 38,
+    "value": 47,
     "valueSource": "recipe_ember_ale",
     "autoSyncId": true,
     "id": "item_ember_ale",
@@ -5226,7 +5226,7 @@
         "scale": 1
       }
     ],
-    "coinWorth": 38
+    "coinWorth": 47
   },
   "item_swordfish_in_sofrito": {
     "name": "Swordfish in Sofrito",
@@ -5253,7 +5253,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "drink",
-    "value": 32,
+    "value": 34,
     "valueSource": "recipe_spiced_wine",
     "autoSyncId": true,
     "id": "item_spiced_wine",
@@ -5266,7 +5266,7 @@
         "scale": 1
       }
     ],
-    "coinWorth": 32
+    "coinWorth": 34
   },
   "item_ember_stew": {
     "name": "Ember Stew",
@@ -5293,7 +5293,7 @@
     "stackable": true,
     "restoreAmount": 57,
     "equipSlot": "food",
-    "value": 327,
+    "value": 377,
     "valueSource": "recipe_voidcap_soup",
     "autoSyncId": true,
     "id": "item_voidcap_soup",
@@ -5301,7 +5301,7 @@
       "Food",
       "Cooked"
     ],
-    "coinWorth": 327
+    "coinWorth": 377
   },
   "item_voidcap_tea": {
     "name": "Voidcap Tea",
@@ -5311,7 +5311,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "drink",
-    "value": 68,
+    "value": 78,
     "valueSource": "recipe_voidcap_tea",
     "autoSyncId": true,
     "id": "item_voidcap_tea",
@@ -5324,7 +5324,7 @@
         "scale": 1
       }
     ],
-    "coinWorth": 68
+    "coinWorth": 78
   },
   "item_voidcap_pie": {
     "name": "Voidcap Pie",
@@ -5351,7 +5351,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "drink",
-    "value": 46,
+    "value": 48,
     "valueSource": "recipe_dark_mead",
     "autoSyncId": true,
     "id": "item_dark_mead",
@@ -5364,7 +5364,7 @@
         "scale": 1
       }
     ],
-    "coinWorth": 46
+    "coinWorth": 48
   },
   "item_harvest_platter": {
     "name": "Harvest Platter",
@@ -5430,7 +5430,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "drink",
-    "value": 59,
+    "value": 63,
     "valueSource": "recipe_elder_draught",
     "autoSyncId": true,
     "id": "item_elder_draught",
@@ -5443,7 +5443,7 @@
         "scale": 1
       }
     ],
-    "coinWorth": 59
+    "coinWorth": 63
   },
   "item_hide": {
     "name": "Hide",
@@ -5505,7 +5505,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 18,
+    "value": 26,
     "autoSyncId": true,
     "id": "item_maple_plank",
     "tags": [
@@ -5513,7 +5513,7 @@
       "Plank"
     ],
     "valueSource": "recipe_maple_plank",
-    "coinWorth": 18
+    "coinWorth": 26
   },
   "item_mahogany_plank": {
     "name": "Mahogany Plank",
@@ -5523,7 +5523,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 43,
+    "value": 79,
     "autoSyncId": true,
     "id": "item_mahogany_plank",
     "tags": [
@@ -5531,7 +5531,7 @@
       "Plank"
     ],
     "valueSource": "recipe_mahogany_plank",
-    "coinWorth": 43
+    "coinWorth": 79
   },
   "item_ebony_plank": {
     "name": "Ebony Plank",
@@ -5541,7 +5541,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 104,
+    "value": 216,
     "autoSyncId": true,
     "id": "item_ebony_plank",
     "tags": [
@@ -5549,7 +5549,7 @@
       "Plank"
     ],
     "valueSource": "recipe_ebony_plank",
-    "coinWorth": 104
+    "coinWorth": 216
   },
   "item_iron_nails": {
     "name": "Iron Nails",
@@ -5871,14 +5871,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 249,
+    "value": 137,
     "autoSyncId": true,
     "id": "item_red_scale",
     "tags": [
       "Material"
     ],
     "valueSource": "token_fossil_bed",
-    "coinWorth": 249
+    "coinWorth": 137
   },
   "item_dragonscale": {
     "name": "Dragonscale",
@@ -5888,14 +5888,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1145,
+    "value": 630,
     "autoSyncId": true,
     "id": "item_dragonscale",
     "tags": [
       "Material"
     ],
     "valueSource": "recipe_dragonscale",
-    "coinWorth": 1145
+    "coinWorth": 630
   },
   "item_dragonscale_hat": {
     "name": "Dragonscale Hat",
@@ -5905,7 +5905,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hat",
-    "value": 3950,
+    "value": 2173,
     "autoSyncId": true,
     "id": "item_dragonscale_hat",
     "tags": [
@@ -5921,7 +5921,7 @@
       "electric": 25
     },
     "valueSource": "recipe_dragonscale_hat",
-    "coinWorth": 3950
+    "coinWorth": 2173
   },
   "item_dragonscale_shield": {
     "name": "Dragonscale Shield",
@@ -5931,7 +5931,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 3950,
+    "value": 2173,
     "autoSyncId": true,
     "id": "item_dragonscale_shield",
     "tags": [
@@ -5948,7 +5948,7 @@
     },
     "offHand": true,
     "valueSource": "recipe_dragonscale_shield",
-    "coinWorth": 3950
+    "coinWorth": 2173
   },
   "item_dragonscale_chest": {
     "name": "Dragonscale Chest",
@@ -5958,7 +5958,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "chest",
-    "value": 6584,
+    "value": 3622,
     "autoSyncId": true,
     "id": "item_dragonscale_chest",
     "tags": [
@@ -5974,7 +5974,7 @@
       "electric": 30
     },
     "valueSource": "recipe_dragonscale_chest",
-    "coinWorth": 6584
+    "coinWorth": 3622
   },
   "item_uncut_topaz": {
     "name": "Uncut Topaz",
@@ -5984,14 +5984,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1,
+    "value": 2,
     "autoSyncId": true,
     "id": "item_uncut_topaz",
     "tags": [
       "Gem"
     ],
     "valueSource": "token_geode",
-    "coinWorth": 1
+    "coinWorth": 2
   },
   "item_cut_topaz": {
     "name": "Cut Topaz",
@@ -6001,14 +6001,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 9,
+    "value": 11,
     "autoSyncId": true,
     "id": "item_cut_topaz",
     "tags": [
       "Gem"
     ],
     "valueSource": "recipe_cut_topaz",
-    "coinWorth": 9
+    "coinWorth": 11
   },
   "item_uncut_ruby": {
     "name": "Uncut Ruby",
@@ -6018,14 +6018,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1,
+    "value": 3,
     "autoSyncId": true,
     "id": "item_uncut_ruby",
     "tags": [
       "Gem"
     ],
     "valueSource": "token_geode",
-    "coinWorth": 1
+    "coinWorth": 3
   },
   "item_cut_ruby": {
     "name": "Cut Ruby",
@@ -6035,14 +6035,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 11,
+    "value": 15,
     "autoSyncId": true,
     "id": "item_cut_ruby",
     "tags": [
       "Gem"
     ],
     "valueSource": "recipe_cut_ruby",
-    "coinWorth": 11
+    "coinWorth": 15
   },
   "item_uncut_sapphire": {
     "name": "Uncut Sapphire",
@@ -6052,14 +6052,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1,
+    "value": 3,
     "autoSyncId": true,
     "id": "item_uncut_sapphire",
     "tags": [
       "Gem"
     ],
     "valueSource": "token_geode",
-    "coinWorth": 1
+    "coinWorth": 3
   },
   "item_cut_sapphire": {
     "name": "Cut Sapphire",
@@ -6069,14 +6069,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 11,
+    "value": 15,
     "autoSyncId": true,
     "id": "item_cut_sapphire",
     "tags": [
       "Gem"
     ],
     "valueSource": "recipe_cut_sapphire",
-    "coinWorth": 11
+    "coinWorth": 15
   },
   "item_uncut_emerald": {
     "name": "Uncut Emerald",
@@ -6086,14 +6086,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 2,
+    "value": 4,
     "autoSyncId": true,
     "id": "item_uncut_emerald",
     "tags": [
       "Gem"
     ],
     "valueSource": "token_geode",
-    "coinWorth": 2
+    "coinWorth": 4
   },
   "item_cut_emerald": {
     "name": "Cut Emerald",
@@ -6103,14 +6103,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 13,
+    "value": 17,
     "autoSyncId": true,
     "id": "item_cut_emerald",
     "tags": [
       "Gem"
     ],
     "valueSource": "recipe_cut_emerald",
-    "coinWorth": 13
+    "coinWorth": 17
   },
   "item_uncut_amethyst": {
     "name": "Uncut Amethyst",
@@ -6154,14 +6154,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 123,
+    "value": 33,
     "autoSyncId": true,
     "id": "item_uncut_diamond",
     "tags": [
       "Gem"
     ],
     "valueSource": "token_geode",
-    "coinWorth": 123
+    "coinWorth": 33
   },
   "item_cut_diamond": {
     "name": "Cut Diamond",
@@ -6171,14 +6171,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 283,
+    "value": 76,
     "autoSyncId": true,
     "id": "item_cut_diamond",
     "tags": [
       "Gem"
     ],
     "valueSource": "recipe_cut_diamond",
-    "coinWorth": 283
+    "coinWorth": 76
   },
   "item_silver_topaz_ring": {
     "name": "Silver Topaz Ring",
@@ -6188,7 +6188,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "trinket",
-    "value": 80,
+    "value": 82,
     "autoSyncId": true,
     "id": "item_silver_topaz_ring",
     "tags": [
@@ -6202,7 +6202,7 @@
       }
     ],
     "valueSource": "recipe_silver_topaz_ring",
-    "coinWorth": 80
+    "coinWorth": 82
   },
   "item_silver_ruby_ring": {
     "name": "Silver Ruby Ring",
@@ -6212,7 +6212,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "trinket",
-    "value": 79,
+    "value": 83,
     "autoSyncId": true,
     "id": "item_silver_ruby_ring",
     "tags": [
@@ -6226,7 +6226,7 @@
       }
     ],
     "valueSource": "recipe_silver_ruby_ring",
-    "coinWorth": 79
+    "coinWorth": 83
   },
   "item_silver_sapphire_ring": {
     "name": "Silver Sapphire Ring",
@@ -6236,7 +6236,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "trinket",
-    "value": 80,
+    "value": 84,
     "autoSyncId": true,
     "id": "item_silver_sapphire_ring",
     "tags": [
@@ -6250,7 +6250,7 @@
       }
     ],
     "valueSource": "recipe_silver_sapphire_ring",
-    "coinWorth": 80
+    "coinWorth": 84
   },
   "item_silver_emerald_ring": {
     "name": "Silver Emerald Ring",
@@ -6260,7 +6260,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "trinket",
-    "value": 84,
+    "value": 88,
     "autoSyncId": true,
     "id": "item_silver_emerald_ring",
     "tags": [
@@ -6274,7 +6274,7 @@
       }
     ],
     "valueSource": "recipe_silver_emerald_ring",
-    "coinWorth": 84
+    "coinWorth": 88
   },
   "item_silver_amethyst_ring": {
     "name": "Silver Amethyst Ring",
@@ -6308,7 +6308,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "trinket",
-    "value": 370,
+    "value": 151,
     "autoSyncId": true,
     "id": "item_silver_diamond_ring",
     "tags": [
@@ -6322,7 +6322,7 @@
       }
     ],
     "valueSource": "recipe_silver_diamond_ring",
-    "coinWorth": 370
+    "coinWorth": 151
   },
   "item_silver_topaz_amulet": {
     "name": "Silver Topaz Amulet",
@@ -6332,7 +6332,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "trinket",
-    "value": 103,
+    "value": 105,
     "autoSyncId": true,
     "id": "item_silver_topaz_amulet",
     "tags": [
@@ -6346,7 +6346,7 @@
       }
     ],
     "valueSource": "recipe_silver_topaz_amulet",
-    "coinWorth": 103
+    "coinWorth": 105
   },
   "item_silver_ruby_amulet": {
     "name": "Silver Ruby Amulet",
@@ -6356,7 +6356,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "trinket",
-    "value": 99,
+    "value": 103,
     "autoSyncId": true,
     "id": "item_silver_ruby_amulet",
     "tags": [
@@ -6370,7 +6370,7 @@
       }
     ],
     "valueSource": "recipe_silver_ruby_amulet",
-    "coinWorth": 99
+    "coinWorth": 103
   },
   "item_silver_sapphire_amulet": {
     "name": "Silver Sapphire Amulet",
@@ -6380,7 +6380,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "trinket",
-    "value": 101,
+    "value": 105,
     "autoSyncId": true,
     "id": "item_silver_sapphire_amulet",
     "tags": [
@@ -6394,7 +6394,7 @@
       }
     ],
     "valueSource": "recipe_silver_sapphire_amulet",
-    "coinWorth": 101
+    "coinWorth": 105
   },
   "item_silver_emerald_amulet": {
     "name": "Silver Emerald Amulet",
@@ -6404,7 +6404,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "trinket",
-    "value": 105,
+    "value": 109,
     "autoSyncId": true,
     "id": "item_silver_emerald_amulet",
     "tags": [
@@ -6418,7 +6418,7 @@
       }
     ],
     "valueSource": "recipe_silver_emerald_amulet",
-    "coinWorth": 105
+    "coinWorth": 109
   },
   "item_silver_amethyst_amulet": {
     "name": "Silver Amethyst Amulet",
@@ -6452,7 +6452,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "trinket",
-    "value": 385,
+    "value": 173,
     "autoSyncId": true,
     "id": "item_silver_diamond_amulet",
     "tags": [
@@ -6466,7 +6466,7 @@
       }
     ],
     "valueSource": "recipe_silver_diamond_amulet",
-    "coinWorth": 385
+    "coinWorth": 173
   },
   "item_gold_topaz_ring": {
     "name": "Gold Topaz Ring",
@@ -6476,7 +6476,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "trinket",
-    "value": 191,
+    "value": 193,
     "autoSyncId": true,
     "id": "item_gold_topaz_ring",
     "tags": [
@@ -6490,7 +6490,7 @@
       }
     ],
     "valueSource": "recipe_gold_topaz_ring",
-    "coinWorth": 191
+    "coinWorth": 193
   },
   "item_gold_ruby_ring": {
     "name": "Gold Ruby Ring",
@@ -6500,7 +6500,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "trinket",
-    "value": 185,
+    "value": 189,
     "autoSyncId": true,
     "id": "item_gold_ruby_ring",
     "tags": [
@@ -6514,7 +6514,7 @@
       }
     ],
     "valueSource": "recipe_gold_ruby_ring",
-    "coinWorth": 185
+    "coinWorth": 189
   },
   "item_gold_sapphire_ring": {
     "name": "Gold Sapphire Ring",
@@ -6524,7 +6524,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "trinket",
-    "value": 188,
+    "value": 192,
     "autoSyncId": true,
     "id": "item_gold_sapphire_ring",
     "tags": [
@@ -6538,7 +6538,7 @@
       }
     ],
     "valueSource": "recipe_gold_sapphire_ring",
-    "coinWorth": 188
+    "coinWorth": 192
   },
   "item_gold_emerald_ring": {
     "name": "Gold Emerald Ring",
@@ -6548,7 +6548,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "trinket",
-    "value": 193,
+    "value": 197,
     "autoSyncId": true,
     "id": "item_gold_emerald_ring",
     "tags": [
@@ -6562,7 +6562,7 @@
       }
     ],
     "valueSource": "recipe_gold_emerald_ring",
-    "coinWorth": 193
+    "coinWorth": 197
   },
   "item_gold_amethyst_ring": {
     "name": "Gold Amethyst Ring",
@@ -6596,7 +6596,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "trinket",
-    "value": 471,
+    "value": 264,
     "autoSyncId": true,
     "id": "item_gold_diamond_ring",
     "tags": [
@@ -6610,7 +6610,7 @@
       }
     ],
     "valueSource": "recipe_gold_diamond_ring",
-    "coinWorth": 471
+    "coinWorth": 264
   },
   "item_gold_topaz_amulet": {
     "name": "Gold Topaz Amulet",
@@ -6620,7 +6620,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "trinket",
-    "value": 218,
+    "value": 220,
     "autoSyncId": true,
     "id": "item_gold_topaz_amulet",
     "tags": [
@@ -6634,7 +6634,7 @@
       }
     ],
     "valueSource": "recipe_gold_topaz_amulet",
-    "coinWorth": 218
+    "coinWorth": 220
   },
   "item_gold_ruby_amulet": {
     "name": "Gold Ruby Amulet",
@@ -6644,7 +6644,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "trinket",
-    "value": 211,
+    "value": 215,
     "autoSyncId": true,
     "id": "item_gold_ruby_amulet",
     "tags": [
@@ -6658,7 +6658,7 @@
       }
     ],
     "valueSource": "recipe_gold_ruby_amulet",
-    "coinWorth": 211
+    "coinWorth": 215
   },
   "item_gold_sapphire_amulet": {
     "name": "Gold Sapphire Amulet",
@@ -6668,7 +6668,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "trinket",
-    "value": 214,
+    "value": 218,
     "autoSyncId": true,
     "id": "item_gold_sapphire_amulet",
     "tags": [
@@ -6682,7 +6682,7 @@
       }
     ],
     "valueSource": "recipe_gold_sapphire_amulet",
-    "coinWorth": 214
+    "coinWorth": 218
   },
   "item_gold_emerald_amulet": {
     "name": "Gold Emerald Amulet",
@@ -6692,7 +6692,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "trinket",
-    "value": 219,
+    "value": 223,
     "autoSyncId": true,
     "id": "item_gold_emerald_amulet",
     "tags": [
@@ -6706,7 +6706,7 @@
       }
     ],
     "valueSource": "recipe_gold_emerald_amulet",
-    "coinWorth": 219
+    "coinWorth": 223
   },
   "item_gold_amethyst_amulet": {
     "name": "Gold Amethyst Amulet",
@@ -6740,7 +6740,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "trinket",
-    "value": 500,
+    "value": 293,
     "autoSyncId": true,
     "id": "item_gold_diamond_amulet",
     "tags": [
@@ -6754,7 +6754,7 @@
       }
     ],
     "valueSource": "recipe_gold_diamond_amulet",
-    "coinWorth": 500
+    "coinWorth": 293
   },
   "item_mint": {
     "name": "Mint",
@@ -6781,7 +6781,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 10,
+    "value": 4,
     "autoSyncId": true,
     "id": "item_mint_seed",
     "tags": [
@@ -6789,7 +6789,7 @@
       "Herb"
     ],
     "valueSource": "use:item_bird_nest",
-    "coinWorth": 10
+    "coinWorth": 4
   },
   "item_rose": {
     "name": "Rose",
@@ -6799,14 +6799,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1,
+    "value": 3,
     "valueSource": "recipe_rose",
     "autoSyncId": true,
     "id": "item_rose",
     "tags": [
       "Herb"
     ],
-    "coinWorth": 1
+    "coinWorth": 3
   },
   "item_rose_seed": {
     "name": "Rose Seed",
@@ -6816,7 +6816,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 60,
+    "value": 11,
     "autoSyncId": true,
     "id": "item_rose_seed",
     "tags": [
@@ -6824,7 +6824,7 @@
       "Herb"
     ],
     "valueSource": "use:item_bird_nest",
-    "coinWorth": 60
+    "coinWorth": 11
   },
   "item_mandrake": {
     "name": "Mandrake",
@@ -6834,14 +6834,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1,
+    "value": 5,
     "valueSource": "recipe_mandrake",
     "autoSyncId": true,
     "id": "item_mandrake",
     "tags": [
       "Herb"
     ],
-    "coinWorth": 1
+    "coinWorth": 5
   },
   "item_mandrake_seed": {
     "name": "Mandrake Seed",
@@ -6851,7 +6851,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 60,
+    "value": 11,
     "autoSyncId": true,
     "id": "item_mandrake_seed",
     "tags": [
@@ -6859,7 +6859,7 @@
       "Herb"
     ],
     "valueSource": "use:item_bird_nest",
-    "coinWorth": 60
+    "coinWorth": 11
   },
   "item_moonpetal": {
     "name": "Moonpetal",
@@ -6869,14 +6869,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 8,
+    "value": 15,
     "valueSource": "recipe_moonpetal",
     "autoSyncId": true,
     "id": "item_moonpetal",
     "tags": [
       "Herb"
     ],
-    "coinWorth": 8
+    "coinWorth": 15
   },
   "item_moonpetal_seed": {
     "name": "Moonpetal Seed",
@@ -6886,7 +6886,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 60,
+    "value": 11,
     "autoSyncId": true,
     "id": "item_moonpetal_seed",
     "tags": [
@@ -6894,7 +6894,7 @@
       "Herb"
     ],
     "valueSource": "use:item_bird_nest",
-    "coinWorth": 60
+    "coinWorth": 11
   },
   "item_starflower": {
     "name": "Starflower",
@@ -6904,14 +6904,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 28,
+    "value": 34,
     "valueSource": "recipe_starflower",
     "autoSyncId": true,
     "id": "item_starflower",
     "tags": [
       "Herb"
     ],
-    "coinWorth": 28
+    "coinWorth": 34
   },
   "item_starflower_seed": {
     "name": "Starflower Seed",
@@ -6921,7 +6921,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 60,
+    "value": 11,
     "autoSyncId": true,
     "id": "item_starflower_seed",
     "tags": [
@@ -6929,7 +6929,7 @@
       "Herb"
     ],
     "valueSource": "use:item_bird_nest",
-    "coinWorth": 60
+    "coinWorth": 11
   },
   "item_mushroom": {
     "name": "Mushroom",
@@ -6979,7 +6979,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "consumable",
-    "value": 5,
+    "value": 6,
     "valueSource": "recipe_scholars_tonic",
     "autoSyncId": true,
     "id": "item_scholars_tonic",
@@ -6992,7 +6992,7 @@
         "scale": 1
       }
     ],
-    "coinWorth": 5
+    "coinWorth": 6
   },
   "item_bountiful_draught": {
     "name": "Bountiful Draught",
@@ -7070,7 +7070,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "consumable",
-    "value": 157,
+    "value": 163,
     "valueSource": "recipe_elixir_of_legends",
     "autoSyncId": true,
     "id": "item_elixir_of_legends",
@@ -7084,7 +7084,7 @@
         "scale": 1
       }
     ],
-    "coinWorth": 157
+    "coinWorth": 163
   },
   "item_masters_draught": {
     "name": "Master's Draught",
@@ -7094,7 +7094,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "consumable",
-    "value": 59,
+    "value": 64,
     "valueSource": "recipe_masters_draught",
     "autoSyncId": true,
     "id": "item_masters_draught",
@@ -7107,7 +7107,7 @@
         "scale": 1
       }
     ],
-    "coinWorth": 59
+    "coinWorth": 64
   },
   "item_marble": {
     "name": "Marble",
@@ -7219,14 +7219,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 50,
+    "value": 58,
     "valueSource": "recipe_maple_frame",
     "autoSyncId": true,
     "id": "item_maple_frame",
     "tags": [
       "Material"
     ],
-    "coinWorth": 50
+    "coinWorth": 58
   },
   "item_marble_block": {
     "name": "Marble Block",
@@ -7253,14 +7253,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 102,
+    "value": 138,
     "valueSource": "recipe_mahogany_frame",
     "autoSyncId": true,
     "id": "item_mahogany_frame",
     "tags": [
       "Material"
     ],
-    "coinWorth": 102
+    "coinWorth": 138
   },
   "item_ebony_frame": {
     "name": "Ebony Frame",
@@ -7270,14 +7270,14 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 223,
+    "value": 335,
     "valueSource": "recipe_ebony_frame",
     "autoSyncId": true,
     "id": "item_ebony_frame",
     "tags": [
       "Material"
     ],
-    "coinWorth": 223
+    "coinWorth": 335
   },
   "item_basalt_block": {
     "name": "Basalt Block",
@@ -7334,7 +7334,7 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 54,
+    "value": 62,
     "valueSource": "recipe_master_rod",
     "autoSyncId": true,
     "tool": {
@@ -7347,7 +7347,7 @@
       "Tool",
       "Fishing"
     ],
-    "coinWorth": 54
+    "coinWorth": 62
   },
   "item_oyster": {
     "name": "Oyster",
@@ -7622,7 +7622,7 @@
     "stackable": false,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 165,
+    "value": 173,
     "valueSource": "recipe_mythril_harpoon",
     "autoSyncId": true,
     "id": "item_mythril_harpoon",
@@ -7634,7 +7634,7 @@
       "tier": 1,
       "baitSaving": 0
     },
-    "coinWorth": 165
+    "coinWorth": 173
   },
   "item_adamantine_harpoon": {
     "name": "Adamantine Harpoon",
@@ -7644,7 +7644,7 @@
     "stackable": false,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 2336,
+    "value": 2377,
     "valueSource": "recipe_adamantine_harpoon",
     "autoSyncId": true,
     "id": "item_adamantine_harpoon",
@@ -7656,7 +7656,7 @@
       "tier": 2,
       "baitSaving": 1
     },
-    "coinWorth": 2336
+    "coinWorth": 2377
   },
   "item_darkmetal_harpoon": {
     "name": "Darkmetal Harpoon",
@@ -7666,7 +7666,7 @@
     "stackable": false,
     "restoreAmount": 0,
     "equipSlot": "hand",
-    "value": 1024,
+    "value": 1136,
     "valueSource": "recipe_darkmetal_harpoon",
     "autoSyncId": true,
     "id": "item_darkmetal_harpoon",
@@ -7678,7 +7678,7 @@
       "tier": 3,
       "baitSaving": 2
     },
-    "coinWorth": 1024
+    "coinWorth": 1136
   },
   "item_copper_prospecting_map": {
     "id": "item_copper_prospecting_map",

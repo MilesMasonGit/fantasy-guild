@@ -8709,7 +8709,7 @@
       },
       {
         "itemId": "item_celery_seed",
-        "chance": 20,
+        "chance": 40,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
@@ -8834,7 +8834,7 @@
       },
       {
         "itemId": "item_turnip_seed",
-        "chance": 25,
+        "chance": 40,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
@@ -8897,7 +8897,7 @@
       },
       {
         "itemId": "item_cabbage_seed",
-        "chance": 25,
+        "chance": 40,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
@@ -8960,7 +8960,7 @@
       },
       {
         "itemId": "item_garlic_seed",
-        "chance": 30,
+        "chance": 40,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
@@ -9023,7 +9023,7 @@
       },
       {
         "itemId": "item_tomato_seed",
-        "chance": 35,
+        "chance": 40,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
@@ -9262,8 +9262,8 @@
       {
         "itemId": "item_mint",
         "chance": 100,
-        "minQty": 1,
-        "maxQty": 2,
+        "minQty": 2,
+        "maxQty": 3,
         "baseQty": {
           "min": 1,
           "max": 2
@@ -9273,7 +9273,7 @@
       },
       {
         "itemId": "item_mint_seed",
-        "chance": 10,
+        "chance": 30,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
@@ -9337,7 +9337,7 @@
       },
       {
         "itemId": "item_rose_seed",
-        "chance": 18,
+        "chance": 30,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
@@ -9401,7 +9401,7 @@
       },
       {
         "itemId": "item_mandrake_seed",
-        "chance": 25,
+        "chance": 30,
         "minQty": 1,
         "maxQty": 1,
         "baseQty": {
