@@ -14,6 +14,7 @@ import {
 } from '../../cms/src/engine/ledger/calibration.js';
 import { paceWorkspace } from './fixtures/paceWorld.js';
 import { withRequiredThree } from './fixtures/hallSky.js';
+import { WORLD_FIXTURE_RAW, worldWorkspace } from './fixtures/ledgerWorldMap.js';
 
 /**
  * The Ledger's pace in the CMS (brief 290 L5): checks D in the Problems list, the Pace page (stages,
@@ -209,5 +210,39 @@ describe('the tab', { timeout: 20000 }, () => {
         fireEvent.change(consumables, { target: { value: '120' } });
         fireEvent.blur(consumables);
         expect(store().planSettings.boostTargets.consumable).toEqual([{ tier: 0, pct: 120 }]);
+    });
+});
+
+// ⭐ A further place of its ring asks its ring's price grown by its order (BALANCE_RULES section 8): the way out says which.
+describe('the way out of a further place', { timeout: 20000 }, () => {
+    beforeEach(() => {
+        globalThis.fetch = vi.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve({}), text: () => Promise.resolve('') }));
+        useEntityStore.setState(empty);
+        useSimulationStore.setState({ simRows: [] });
+        // The fixture world, ring 1 asking 30 coins; the trees line's ring 1 also lists a Plane 2 origin, and ring 2 asks
+        // level 40, so Plane 1's way out is that later place of ring 1, the last of its timed places.
+        const ws = worldWorkspace();
+        ws.items.item_copper_ore.value = 1;
+        const world = structuredClone(WORLD_FIXTURE_RAW);
+        world.prices[1] = { ...world.prices[1], skills: [{ skill: 'line', level: 3 }], coins: 30 };
+        world.prices[2] = { ...world.prices[2], skills: [{ skill: 'line', level: 40 }] };
+        const trees = world.lines.find((l) => l.id === 'trees');
+        trees.origins[1] = [...trees.origins[1], { id: 'token_trees_2', weight: 1 }];
+        store().hydrate({ ...ws, world });
+    });
+    afterEach(() => {
+        cleanup();
+        globalThis.fetch = originalFetch;
+        useEntityStore.setState(empty);
+    });
+
+    it('⭐ names its order in its ring beside the coins it asks; the ring\'s first place says nothing more', () => {
+        const view = render(React.createElement(LedgerPanel, { setCurrentView: () => {} }));
+        fireEvent.click(view.getByRole('tab', { name: 'Pace' }));
+        // The 6th place: 30 coins x 1.25^5, rounded.
+        expect(view.container.querySelector('[data-stage="1"] [data-stage-gate]').textContent).toMatch(/Trees ring 1, .+: Forestry \d+ \+ 92 coins \(its ring's 6th place\)/);
+        const camp = view.container.querySelector('[data-stage="0"] [data-stage-gate]').textContent;
+        expect(camp).toMatch(/Ores ring 1: Mining 3 \+ 30 coins/);
+        expect(camp).not.toMatch(/place\)/);
     });
 });

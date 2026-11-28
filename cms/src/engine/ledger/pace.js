@@ -14,7 +14,7 @@ import { HALL_NODE, ROSTER_STAR } from '../../../../src/config/guildUpgrades.js'
 import { planOf, PLAN_STATUS, tierLabel, tierLevelAt } from '../../../../src/systems/progression/ledger/plan.js';
 import { xpForLevel, MAX_SKILL_LEVEL } from '../../../../src/utils/XPCurve.js';
 import { SKILLS, SKILL_LAYERS } from '../../../../src/config/registries/skillRegistry.js';
-import { STRICT_RINGS } from '../../../../src/config/worldTablesShape.js';
+import { STRICT_RINGS, grownPrice, placePriceFactor } from '../../../../src/config/worldTablesShape.js';
 import { stationKindOf } from '../../../../src/systems/effects/statements.js';
 import { HIDEOUT_KIND, stealOf, crimeLevelOf, caughtCurveOf, caughtChance } from '../../../../src/config/registries/crime.js';
 import { shopCoinsOf, enemyCoinDropOf } from '../../../../src/config/registries/coinCosts.js';
@@ -49,8 +49,10 @@ import { shopCoinsOf, enemyCoinDropOf } from '../../../../src/config/registries/
  * - **Coins** (brief 870 C3): the guild's coin supply at a stage, the best one hero earns
  *   ({@link COINS}: selling what a work makes at its coin worth less what it spends, a kill's Coin
  *   drop, a Hideout's thefts); a price that asks coins (a Shop Token, a Guild Hall rank, settling a
- *   ring) gathers them beside its items, so its step waits for them; a coin cost proposed from its
- *   coin curve, everyday or big by kind of purchase (`coinPrices`).
+ *   place) gathers them beside its items, so its step waits for them; a coin cost proposed from its
+ *   coin curve, everyday or big by kind of purchase (`coinPrices`). A place asks its ring's coins
+ *   grown by its order in the ring, the order the guild first reaches the ring's places in
+ *   (`placeOrder`); a ring's proposal is its first place's price.
  * - **The curve's player is Maxed** ({@link TARGET}, owner 2026-11-07: the curve describes a well-
  *   optimized player): walls, long waits, the stages and the ring stars are read at Maxed; Typical
  *   and Bare are held to their bounds against the curve.
@@ -75,6 +77,9 @@ import { shopCoinsOf, enemyCoinDropOf } from '../../../../src/config/registries/
  */
 
 const HOUR_MS = 3_600_000;
+
+/** The path memos' key for a time worked out with every place at its ring's first price ({@link buildPace}'s first pass). */
+const FIRST_PRICE = '|first';
 
 /** The player the pace curve and the stage budgets describe: Maxed, the well-optimized player (brief 880 L3). */
 export const TARGET = PROFILE.MAXED;
@@ -123,6 +128,8 @@ export const PACE_TEXT = Object.freeze({
     /** A number to two places, no trailing zeros: "4.67", "2". */
     figure: (n) => `${Math.round(n * 100) / 100}`,
     pieces: (n) => (n === 1 ? 'one piece of work' : `${n} pieces of work`),
+    /** A place's order in its ring: "1st", "2nd", "3rd", "11th". */
+    ordinal: (n) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th'}`,
     earning: (n) => `earning ${n} ${n === 1 ? 'coin' : 'coins'}`,
     noCoins: 'nothing earns its coins by then',
     coinSupply: (name, coins, stage) => `${name} asks ${coins} ${coins === 1 ? 'coin' : 'coins'}, but nothing the guild has by ${stage} earns coins: give what its work makes a coin worth (a value), an enemy a Coin drop or a steal table coins.`,
@@ -884,6 +891,71 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         return level;
     }
 
+    // ── the order a ring's places are settled in ────────────────────────────────────────────────
+    // The nth place a guild settles in a ring asks the ring's coins x the growth^(n - 1), as the game
+    // prices it (`worldTablesShape.placePriceFactor`). The ledger's places are not cells and the game
+    // keeps no order for them, so the reference guild settles each as soon as it can: a ring's places
+    // are ordered by when they are first had with every place at its ring's price (a first pass, its
+    // times kept apart in the path memos under `FIRST_PRICE`), and every time is then worked out with
+    // each place at its order's price. Each profile's guild keeps its own order.
+    const placeTables = ledger.world.worldTables;
+    /** Whether a further place asks more than the first: at a growth of 1 no time waits on a first pass. */
+    const placesGrow = placePriceFactor(placeTables, 1) !== 1;
+    /** Each strict ring's places in the order the engine made them (line by line, a line's later rungs after it): the tie-break. */
+    const placesOfRing = new Map();
+    for (const rule of ledger.world.rules || []) {
+        const key = rule.how === HOW.SETTLE && Number.isInteger(rule.ring) ? rule.gives[0]?.key : null;
+        const at = key ? reach.get(key) : null;
+        if (!at || at.planned || at.rule !== rule || !Number.isInteger(at.tier)) continue;
+        if (!placesOfRing.has(rule.ring)) placesOfRing.set(rule.ring, []);
+        placesOfRing.get(rule.ring).push(key);
+    }
+    let atFirstPrice = false;
+    const orderMemo = new Map();
+    /**
+     * A ring's places at a profile, soonest first: `Map<key, { order, before, firstHours, complete }>`,
+     * `order` from 1, `before` the places settled before it, `firstHours` when it is first had at its
+     * ring's price. A place whose time is a floor (a level fights train) comes after every timed one,
+     * as a way out does ({@link gateOf}); ties keep the engine's order.
+     */
+    function ringOrder(ring, profile) {
+        const memoKey = `${ring}|${profile}`;
+        if (orderMemo.has(memoKey)) return orderMemo.get(memoKey);
+        const was = atFirstPrice;
+        atFirstPrice = true;
+        let timed;
+        try {
+            timed = (placesOfRing.get(ring) || []).map((key, i) => {
+                const r = arrivalOf(key, profile);
+                return { key, i, hours: r.hours, complete: r.complete };
+            });
+        } finally {
+            atFirstPrice = was;
+        }
+        timed.sort((a, b) => b.complete - a.complete || (a.hours === b.hours ? 0 : a.hours - b.hours) || a.i - b.i);
+        const out = new Map(timed.map((t, n) => [t.key, { order: n + 1, before: n, firstHours: t.hours, complete: t.complete }]));
+        orderMemo.set(memoKey, out);
+        return out;
+    }
+    /** The coins a place asks at a profile: its rule's (the ring's price) grown by the places of its ring settled before it. */
+    function placeCoins(key, rule, profile) {
+        const coins = rule.coins || 0;
+        if (!(coins > 0) || !placesGrow || atFirstPrice || !Number.isInteger(rule.ring)) return coins;
+        const at = ringOrder(rule.ring, profile).get(key);
+        return at ? grownPrice(coins, placeTables, at.before) : coins;
+    }
+    /** A ring's places at a profile in the order its guild settles them, each with its price and times ({@link ringOrder}). */
+    function placeRows(ring, profile) {
+        return [...ringOrder(ring, profile)].map(([key, o]) => {
+            const rule = reach.get(key).rule;
+            const r = arrivalOf(key, profile);
+            return {
+                key, name: nameOf(key), ring, rung: rule.floor, order: o.order, ringCoins: rule.coins || 0, coins: placeCoins(key, rule, profile),
+                firstHours: o.firstHours, hours: r.hours, complete: r.complete
+            };
+        });
+    }
+
     // ── path time ──────────────────────────────────────────────────────────────────────────────
     const gatherHours = (inputs, profile, cap, coins = 0, from = undefined) => {
         // One hero on each item, and one earning its coins: the slowest sets the time.
@@ -968,8 +1040,9 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         }
         case HOW.SETTLE: {
             // A ring's coins are earned with what the rings before it give: settling is the way in.
-            if (!(rule.coins > 0)) return done(0);
-            const g = gatherHours([], profile, Math.min(cap, budgetTierOf(rule.ring ?? rule.floor)), rule.coins, start);
+            const coins = placeCoins(give.key, rule, profile);
+            if (!(coins > 0)) return done(0);
+            const g = gatherHours([], profile, Math.min(cap, budgetTierOf(rule.ring ?? rule.floor)), coins, start);
             return done(g.hours, priceWhy(g), { gather: g });
         }
         case HOW.SPAWN: {
@@ -1019,7 +1092,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
      * step's own time, `waitsOn` what set the start (a need's key, a skill level, or nothing).
      */
     function readyOf(key, profile, seen = new Set()) {
-        const memoKey = `${key}|${profile}`;
+        const memoKey = `${key}|${profile}${atFirstPrice ? FIRST_PRICE : ''}`;
         if (pathMemo.has(memoKey)) return pathMemo.get(memoKey);
         const at = reach.get(key);
         if (!at || at.planned || !Number.isInteger(at.tier) || !at.rule) {
@@ -1119,7 +1192,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
      * a regrowth, a trickle) asks none.
      */
     function stepPartsOf(key, profile) {
-        const memoKey = `${key}|${profile}`;
+        const memoKey = `${key}|${profile}${atFirstPrice ? FIRST_PRICE : ''}`;
         if (partsMemo.has(memoKey)) return partsMemo.get(memoKey);
         const at = reach.get(key);
         const rule = at?.rule;
@@ -1138,7 +1211,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                 out = { ...base, goods: rule.inputs || [], coins: rule.coins || 0 };
                 break;
             case HOW.SETTLE:
-                out = { ...base, coins: rule.coins || 0, coinCap: Math.min(cap, budgetTierOf(rule.ring ?? rule.floor)) };
+                out = { ...base, coins: placeCoins(key, rule, profile), coinCap: Math.min(cap, budgetTierOf(rule.ring ?? rule.floor)) };
                 break;
             case HOW.CRAFT: {
                 const recipe = rates.recipes[parseKey(rule.via).id];
@@ -1271,7 +1344,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
      * heroes set it.
      */
     function arrivalOf(key, profile) {
-        const memoKey = `${key}|${profile}`;
+        const memoKey = `${key}|${profile}${atFirstPrice ? FIRST_PRICE : ''}`;
         if (arrivalMemo.has(memoKey)) return arrivalMemo.get(memoKey);
         const r = readyOf(key, profile);
         let out;
@@ -1390,8 +1463,10 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
      * price (`priceHours`: its coins, earned from then), the path (`pathHours`); and the guild's
      * hero-hours for both (`heroHours`: each level's work and the price once), put in by the guild's
      * heroes ({@link hoursForWork}). What else settling it needs (the place before, the ring's star)
-     * is left out: it has its own times. `levels` (`{ skill: level }`) and `coins` time it as if it
-     * asked those instead.
+     * is left out: it has its own times. Its `coins` are its ring's price grown by its order in the
+     * ring at the curve's player (`order`, {@link ringOrder}; null at a growth of 1), `ringCoins` the
+     * ring's price. `levels` (`{ skill: level }`) and `coins` (the ring's price, grown by the same
+     * order) time it as if it asked those instead.
      */
     function placeWayOut(key, tier, { levels = null, coins = null } = {}) {
         const at = reach.get(key);
@@ -1423,14 +1498,16 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         const give = rule.gives.find(x => x.key === key) || { key, chance: 1 };
         const price = stepOf(rule, give, TARGET, at.tier, start);
         const pathHours = start + price.hours;
+        const asked = placeCoins(key, rule, TARGET);
         // A settle step's work is its coins earned (`stepWork`), worked out here for the coins asked.
         const priceWork = rule === base ? stepWork(key, TARGET, new Map())
-            : rule.coins > 0 ? coinCostHours(rule.coins, TARGET, Math.min(at.tier, budgetTierOf(rule.ring ?? rule.floor))) : 0;
+            : asked > 0 ? coinCostHours(asked, TARGET, Math.min(at.tier, budgetTierOf(rule.ring ?? rule.floor))) : 0;
         const heroHours = levelHeroHours + priceWork;
         const workHours = Number.isFinite(heroHours) ? hoursForWork(heroHours) : Infinity;
         const hours = Math.max(pathHours, workHours);
+        const order = placesGrow && Number.isInteger(rule.ring) ? ringOrder(rule.ring, TARGET).get(key)?.order ?? null : null;
         return {
-            place: key, name: nameOf(key), ring: rule.ring ?? null, asks, coins: rule.coins || 0,
+            place: key, name: nameOf(key), ring: rule.ring ?? null, asks, coins: asked, ringCoins: rule.coins || 0, order,
             levelHours: start, priceHours: price.hours, pathHours, levelHeroHours, heroHours, workHours, hours,
             byWork: Number.isFinite(hours) && workHours > pathHours, complete: complete && Number.isFinite(hours),
             floor: Number.isFinite(hours) ? floor : []
@@ -1443,7 +1520,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
      * The way out of a stage at the curve's player (BALANCE_RULES section 8, owner 2026-11-26:
      * leaving a stage means settling the next place): the soonest of the next stage's places
      * ({@link placeWayOut}), with the stage's heroes, a fully timed one before any floor.
-     * `{ tier, next, why, heroes, place, name, ring, asks: [{ skill, level, hours }], coins,
+     * `{ tier, next, why, heroes, place, name, ring, asks: [{ skill, level, hours }], coins, ringCoins, order,
      * levelHours, priceHours, pathHours, levelHeroHours, heroHours, workHours, hours, byWork, complete,
      * floor, needs: [{ key, name, hours }], places }`: `why` is null, `'last'` for the last stage, or
      * `'none'` when no place is of the next stage's tier; `floor` why its time is a floor
@@ -2896,14 +2973,24 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
         /** The way out of a stage: the soonest of the next stage's places, its levels and its price, with the stage's heroes (what its budget times). */
         gateOf,
         /**
-         * A stage's way out re-timed as if its place asked other levels (`{ skill: level }`) or coins:
-         * what moving its settle level or its ring's coins would give. Null when the stage has no way out.
+         * A stage's way out re-timed as if its place asked other levels (`{ skill: level }`) or its ring
+         * other coins (the ring's price, which the place asks grown by its order): what moving its
+         * settle level or its ring's coins would give. Null when the stage has no way out.
          */
         wayOutWith: (tier, { levels = null, coins = null } = {}) => {
             const g = gateOf(tier);
             return g.place ? placeWayOut(g.place, tier, { levels, coins }) : null;
         },
         ringOpensAt,
+        /**
+         * A strict ring's places in the order a profile's guild settles them (each as soon as it can, by
+         * when it is first had at its ring's price), each priced by that order: `[{ key, name, ring, rung,
+         * order, ringCoins, coins, firstHours, hours, complete }]`, `coins` what it asks, `hours` when it
+         * is had at that price, `firstHours` at its ring's price. Empty for a ring with no place.
+         */
+        placeOrder: (ring, profile = TARGET) => placeRows(ring, profile),
+        /** How much dearer each further place in a ring is than the one before (`placePriceGrowth`). */
+        placePriceGrowth: placePriceFactor(placeTables, 1),
         hallPaybacks,
         hallGuildPaybacks,
         chainXpRows,

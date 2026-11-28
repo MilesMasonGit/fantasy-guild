@@ -6,6 +6,7 @@ import { minutesPerLevelAt, boostBudgetAt, chainHeroesAt } from './ledger/settin
 import { COMBAT, parseKey } from '../../../src/systems/progression/ledger/engine.js';
 import { PLAN_STATUS, tierLabel } from '../../../src/systems/progression/ledger/plan.js';
 import { MAX_SKILL_LEVEL } from '../../../src/utils/XPCurve.js';
+import { STRICT_RINGS } from '../../../src/config/worldTablesShape.js';
 
 /**
  * The ledger's read-out for an agent (`npm run cms -- ledger`): the pace of each skill at three
@@ -25,7 +26,7 @@ import { MAX_SKILL_LEVEL } from '../../../src/utils/XPCurve.js';
  */
 
 export const READOUT_FORMAT = 'fantasy-guild-ledger-readout';
-export const READOUT_VERSION = 7;
+export const READOUT_VERSION = 8;
 
 /** The solver's players and the ledger profiles they are read at. */
 export const READOUT_PROFILES = Object.freeze({ opt: PROFILE.MAXED, typ: PROFILE.TYPICAL, bare: PROFILE.BARE });
@@ -42,6 +43,7 @@ export const NOTES = Object.freeze([
     'heroes lists the reference guild\'s heroes by stage (BALANCE_RULES section 8: about one a tier, a Ledger setting), each arriving as the curve reaches its tier, and the heroes one chain has there (chainHeroes: the guild\'s, at most one maker and gatherersPerMaker gatherers).',
     'gatherers and brewers (per level and profile) are the heroes a level\'s work needs besides its maker to run in full: the gatherers down its chain and the brewers of the drinks and potions its boosts spend (each with their own gatherers), at the same profile\'s setup. chain is the share of its full pace the level runs at: the chain\'s heroes over the heroes it needs, each doing its share of everything in turn, at most 1. guild is the hero-hours the level takes: its hours times the chain\'s heroes at work, the lesser of what it needs and what it has.',
     'A stage\'s minutes are its way out (owner, 2026-11-26: leaving a stage means settling the next place), what its budget times (offPct): gate is the soonest of the next stage\'s places, its level in the one or two skills it asks (asks, each by its own hero: levelMinutes) then its settle price (coins, earned from then: priceMinutes), along pathMinutes, and no sooner than the stage\'s heroes can put in that work (heroMinutes at workMinutes; byWork says they set it). needs lists what else settling it needs (the place before, the ring\'s star) at their arrivals, as information. A place\'s goods are the world seed\'s, which the ledger does not hold: the price is its coins, so every way out is a floor while its goods are not counted (floor, with its reasons in floorWhy; a level trained by fights, which are not timed, is another). gateWhy says why a stage has no way out (the last stage; no place of the next tier).',
+    'places lists the world\'s places ring by ring (one per wedge and ring, and one for each later rung its origins are of; not cells), in the order the curve\'s player settles them, with each player\'s own order (opt, typ): a guild settles each place as soon as it can, so a ring\'s places are ordered by when they are first had with every place at the ring\'s price (firstMinutes), and the nth then asks the ring\'s coins (ringCoins) times growth^(n - 1), rounded (coins; BALANCE_RULES section 8), and is had at minutes. Every time in the read-out is worked out at those prices; a stage\'s way out asks its place\'s (gate.coins, its order gate.order, its ring\'s price gate.ringCoins). A place whose time is a floor comes after every timed one. The goods a place asks would grow the same way, but the ledger does not count them.',
     'A stage\'s content is its full content, information only and held to no budget: the later of its slowest entry\'s arrival and the time the guild\'s heroes take to put in all the work planned for it and the stages before (workMinutes, from heroMinutes of hero time: each level and each price once); pathMinutes is the slowest entry\'s path with every skill levelled side by side, and byWork says the heroes set it. An entry\'s arrival is likewise the later of its path and its own path\'s work.',
     'layouts times each skill\'s days to 99 at both layouts (a camp working the sparse or the dense layout\'s nodes; a site worked from a spawner, a Forest, an Orchard or a Quarry, the whole allowance of each of the layout\'s layoutSpawners: Ledger settings; the pace and everything else here is the timed one) and warns where they differ past the tolerance; nodesOff lists the nodes the dense layout makes past the tolerance more of (the layout check), with each layout\'s nodes.',
     'site (per entry with a work, at opt and typ) is the buildings its profile stands round the work in its site\'s places (BALANCE_RULES section 5: sitePlaces.places round the node, of which its camp, spawners and nodes, the one worked among them, take taken; room is what they leave, at most sitePlaces.buildings, at most sitePlaces.perKind boosting one kind), each with its copies and the kinds it boosts, and the camp it works from with the nodes that hands it and the spawners they stand for.',
@@ -188,11 +190,28 @@ function gateText(g) {
     return {
         place: g.place, name: g.name, ring: g.ring, places: g.places,
         asks: g.asks.map((a) => ({ skill: a.skill, level: a.level, minutes: a.hours === null ? null : minutes(a.hours) })), coins: g.coins,
+        ringCoins: g.ringCoins ?? g.coins, order: g.order ?? null,
         minutes: minutes(g.hours), levelMinutes: minutes(g.levelHours), priceMinutes: minutes(g.priceHours), pathMinutes: minutes(g.pathHours),
         workMinutes: minutes(g.workHours), heroMinutes: minutes(g.heroHours), byWork: g.byWork, complete: g.complete,
         floor: g.floor.length > 0, floorWhy: g.floor.map((f) => PACE_TEXT.wayOutFloor[f]),
         needs: g.needs.map((n) => ({ key: n.key, name: n.name, minutes: minutes(n.hours) })),
     };
+}
+
+/**
+ * The world's places ring by ring, in the order the curve's player settles them (`pace.placeOrder`),
+ * each with its order, the coins it asks and when it is had at opt and typ (each player its own order).
+ */
+function placesOf(pace) {
+    const out = [];
+    for (let ring = 1; ring <= STRICT_RINGS; ring++) {
+        const typ = new Map(pace.placeOrder(ring, PROFILE.TYPICAL).map((p) => [p.key, p]));
+        for (const p of pace.placeOrder(ring, PROFILE.MAXED)) {
+            const at = (x) => (x ? { order: x.order, coins: x.coins, minutes: minutes(x.hours), firstMinutes: minutes(x.firstHours), complete: x.complete } : null);
+            out.push({ key: p.key, name: p.name, ring, rung: p.rung, ringCoins: p.ringCoins, opt: at(p), typ: at(typ.get(p.key)) });
+        }
+    }
+    return { growth: pace.placePriceGrowth, places: out };
 }
 
 /** The highest level its reach asks of a skill other than Combat, as `{ skill, level }`. */
@@ -365,6 +384,7 @@ export function ledgerReadout(state = {}, { report = null, layouts = true, withP
         pace: skills,
         rows,
         stages,
+        places: placesOf(pace),
         layouts: layoutsOf(pace, layouts),
         boostBudget: budgetOf(pace),
         coins: coinsOf(pace),
@@ -391,11 +411,22 @@ export function readoutText(out) {
     lines.push('', 'Stage | the way out at Maxed (what the budget times) | budget | heroes | full content, information: Maxed time, entries (untimed), the heroes\' work');
     for (const s of out.stages) {
         const g = s.gate;
-        const asks = g ? [...g.asks.map((a) => `${a.skill} ${a.level}`), ...(g.coins > 0 ? [`${g.coins} coins`] : [])].join(' + ') : '';
+        const further = g?.order > 1 ? ` (ring ${g.ring}'s ${PACE_TEXT.ordinal(g.order)} place, the ring's ${g.ringCoins})` : '';
+        const asks = g ? [...g.asks.map((a) => `${a.skill} ${a.level}`), ...(g.coins > 0 ? [`${g.coins} coins${further}`] : [])].join(' + ') : '';
         const way = g ? `${fmtMin(g.minutes)}${s.offPct === null ? '' : ` (${s.offPct > 0 ? '+' : ''}${s.offPct} %)`}: ${g.name}, ${asks}${g.byWork ? ', its heroes set it' : ''}${g.floor ? `, a floor (${g.floorWhy.join('; ')})` : ''}` : s.gateWhy;
         const c = s.content;
         const content = c.entries ? `${fmtMin(c.minutes)}, ${c.entries} (${c.untimed})${c.workMinutes !== undefined ? `, ${fmtMin(c.workMinutes)}${c.byWork ? ' (sets it)' : ''}` : ''}` : 'nothing planned';
         lines.push(`${s.label} | ${way} | ${fmtMin(s.budgetMinutes)} | ${s.heroes} | ${content}`);
+    }
+    const places = out.places?.places || [];
+    if (places.length) {
+        lines.push('', `Places, ring by ring in the order Maxed settles them, each asking the ring's coins x ${out.places.growth} for each place before it: order, coins, had at Maxed [Typical's order, coins, time]:`);
+        for (let ring = 1; ring <= STRICT_RINGS; ring++) {
+            const own = places.filter((p) => p.ring === ring);
+            if (!own.length) continue;
+            const one = (p) => `${p.opt.order} ${p.name} ${p.opt.coins} ${fmtMin(p.opt.minutes)}${p.typ ? ` [${p.typ.order}, ${p.typ.coins}, ${fmtMin(p.typ.minutes)}]` : ''}`;
+            lines.push(`Ring ${ring}: ${own.map(one).join('; ')}`);
+        }
     }
     const l = out.layouts;
     if (l?.skipped) {

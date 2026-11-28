@@ -1,5 +1,5 @@
 import { workspacePace } from './ledgerReport.js';
-import { PROFILE, PROFILES } from './ledger/pace.js';
+import { PROFILE, PROFILES, PACE_TEXT } from './ledger/pace.js';
 import { tierLabel, isPlanned } from '../../../src/systems/progression/ledger/plan.js';
 import { derivedCoinWorth, isCoinWorthPinned, coinsInPlay } from './ledger/coins.js';
 import { grownPrice, PLACE_PRICE_GROWTH_DEFAULT } from '../../../src/config/worldTablesShape.js';
@@ -14,9 +14,11 @@ import { grownPrice, PLACE_PRICE_GROWTH_DEFAULT } from '../../../src/config/worl
  */
 
 /**
- * The workspace's coins: `{ supply, prices, drops, thefts, worth, placePriceGrowth, ms }`. A supply
- * row's profiles hold every way to earn; its `selling` the Typical worker's selling alone, what a
- * price is set on. A ring's row is its first place's price; `placePriceGrowth` grows each further one.
+ * The workspace's coins: `{ supply, prices, drops, thefts, worth, placePriceGrowth, places, ms }`. A
+ * supply row's profiles hold every way to earn; its `selling` the Typical worker's selling alone, what
+ * a price is set on. A ring's row is its first place's price; `placePriceGrowth` grows each further
+ * one, and `places` (by ring) holds each place in the order Typical settles them, with the coins it
+ * asks by that order and when it is had (`pace.placeOrder`).
  */
 export function workspaceCoins(state = {}) {
     const started = Date.now();
@@ -45,7 +47,13 @@ export function workspaceCoins(state = {}) {
     const inPlay = coinsInPlay({ tokens: state.tokens, hallStars: state.hallStars, world: state.world });
     const growth = Number(state.world?.placePriceGrowth);
     const placePriceGrowth = Number.isFinite(growth) && growth >= 1 ? growth : PLACE_PRICE_GROWTH_DEFAULT;
-    return { supply, prices: pace.coinPrices(), drops: pace.coinDrops(), thefts: pace.coinThefts(), worth: { priced, pinned, inPlay }, placePriceGrowth, ms: Date.now() - started };
+    const prices = pace.coinPrices();
+    const places = {};
+    for (const p of prices) {
+        if (p.kind !== 'ring' || !(p.coins > 0)) continue;
+        places[p.ring] = pace.placeOrder(p.ring, PROFILE.TYPICAL).map((x) => ({ key: x.key, name: x.name, order: x.order, coins: x.coins, hours: x.hours }));
+    }
+    return { supply, prices, drops: pace.coinDrops(), thefts: pace.coinThefts(), worth: { priced, pinned, inPlay }, placePriceGrowth, places, ms: Date.now() - started };
 }
 
 const round = (n) => (Number.isFinite(n) ? Math.round(n) : n);
@@ -55,7 +63,6 @@ export function furtherPlaces(coins, ring, growth = PLACE_PRICE_GROWTH_DEFAULT) 
     const tables = { placePriceGrowth: growth };
     return [2, 3, 6 * ring].filter((n, i, all) => all.indexOf(n) === i).map((n) => ({ place: n, coins: grownPrice(coins, tables, n - 1) }));
 }
-const ordinal = (n) => (n === 2 ? '2nd' : n === 3 ? '3rd' : `${n}th`);
 
 /** The coins in plain text, for the change pack tool. */
 export function coinsText(result, { rows = 40 } = {}) {
@@ -80,9 +87,12 @@ export function coinsText(result, { rows = 40 } = {}) {
     const at = (p) => (p.tier === null ? '' : ` at ${tierLabel(p.tier)}`);
     lines.push(`Prices: ${curved.length}, ${asking.length} asking coins. What the coin curves propose for each (the coins one hero earns selling there in its curve's minutes: everyday for a Shop Token, big for a ring):`);
     for (const p of curved.slice(0, rows)) {
-        const further = p.kind === 'ring' && p.coins > 0
-            ? ` for its first place, each further place ${result.placePriceGrowth ?? PLACE_PRICE_GROWTH_DEFAULT} times the one before (${furtherPlaces(p.coins, p.ring, result.placePriceGrowth).map((f) => `${ordinal(f.place)} ${f.coins}`).join(', ')})`
-            : '';
+        const growth = result.placePriceGrowth ?? PLACE_PRICE_GROWTH_DEFAULT;
+        const settled = p.kind === 'ring' ? result.places?.[p.ring] || [] : [];
+        const further = p.kind !== 'ring' || !(p.coins > 0) ? ''
+            : settled.length
+                ? ` for its first place, each further place ${growth} times the one before; Typical settles its ${settled.length} place${settled.length === 1 ? '' : 's'} in this order (coins asked, had at): ${settled.map((s) => `${PACE_TEXT.ordinal(s.order)} ${s.name} ${s.coins} at ${PACE_TEXT.hours(s.hours)}`).join(', ')}`
+                : ` for its first place, each further place ${growth} times the one before (${furtherPlaces(p.coins, p.ring, result.placePriceGrowth).map((f) => `${PACE_TEXT.ordinal(f.place)} ${f.coins}`).join(', ')})`;
         lines.push(`- ${p.name} (${p.kind}${at(p)}): ${now(p)}${further}; ${p.proposed !== null ? `proposed ${p.proposed} (${p.minutes} min on the ${p.curve} curve of ${round(p.perHour)} an hour)` : `no proposal: ${p.why}`}`);
     }
     if (curved.length > rows) lines.push(`- and ${curved.length - rows} more`);
