@@ -127,35 +127,60 @@ describe("a drink or work potion's batch pays back at least 4x its making", () =
     });
 });
 
-describe("a batch's second number: the same dose on Typical's finished setup", () => {
-    it('rides on the row beside the gate ratio, which it leaves as it was, and changes no finding', () => {
+describe("the batch-payback check reads the gate's ratio on the setup Typical holds once its choices are made", () => {
+    it('the row is the dose against Typical\'s finished setup on that work, its own place taken off', () => {
         const c = ruleContent({ sky: false });
         const pace = paceOf(c);
         const beer = pace.batchPaybackRows().find(r => r.item === 'item_beer');
-        const gate = pace.profiles.profileOf(beer.work.target, 'typical', beer.cap).batches.get('item_beer');
-        expect(beer.ratio).toBe(gate.ratio);
-        expect(Number.isFinite(beer.finishedRatio)).toBe(true);
-        // Measured the old way: Typical's setup with the dose off, against the same with it on.
+        const typical = pace.profiles.profileOf(beer.work.target, 'typical', beer.cap);
+        expect(beer.ratio).toBe(typical.batches.get('item_beer').ratio);
         const ctx = pace.profiles.contextOf(beer.work.target);
         const offer = pace.profiles.offers(ctx, beer.cap).find(o => o.id === 'item_beer');
-        const setup = pace.profiles.profileOf(beer.work.target, 'typical', beer.cap).setup;
-        const base = { ...setup, consumables: (setup.consumables || []).filter(x => x !== 'item_beer') };
+        const base = { ...typical.setup, consumables: (typical.setup.consumables || []).filter(x => x !== 'item_beer') };
         const book = buildRateBook(c);
-        const old = batchPaybackOf(book.rateOf(beer.work.target, base), book.rateOf(beer.work.target, offer.apply(base)), 'item_beer', (i) => pace.heroHoursOf(i, 'bare', beer.cap));
-        expect(beer.finishedRatio).toBeCloseTo(old.ratio);
-        expect(pace.findings().filter(x => x.check === 'batch-payback').map(x => x.key)).toEqual(['item_beer'].map(i => 'item:' + i));
+        const finished = batchPaybackOf(book.rateOf(beer.work.target, base), book.rateOf(beer.work.target, offer.apply(base)), 'item_beer', (i) => pace.heroHoursOf(i, 'bare', beer.cap));
+        expect(beer.ratio).toBeCloseTo(finished.ratio, 9);
+        expect(beer).not.toHaveProperty('finishedRatio');
+        expect(pace.findings().filter(x => x.check === 'batch-payback').map(x => x.key)).toEqual(['item:item_beer']);
+    });
+
+    it('on the vein the gate reads the dose on the camp and the mines Typical holds there, not on the bare vein', () => {
+        const pace = paceOf(ruleContent({ sky: false }));
+        const vein = pace.works.find(w => pace.workName(w) === 'Copper Vein');
+        const typical = pace.profiles.profileOf(vein.target, 'typical', vein.tier);
+        expect(typical.chosen.map(x => x.id)).toContain('token_mining_camp');
+        // 1200 cycles an hour on the camp: 48 doses of a 14 s brew for +10 % XP is 0.54x (0.1 / (48 × 14 s)).
+        expect(typical.batches.get('item_beer').ratio).toBeCloseTo(0.1 / (1200 / DOSE_LENGTH[DOSE.DRINK] * (14 / 3600)), 6);
     });
 });
 
-describe('Typical takes a drink or work potion only where its batch pays back', () => {
+describe('Typical takes a drink or work potion only where its batch pays back, judged again as its setup grows', () => {
     const takes = (pace, row, profile) => (pace.profiles.profileOf(row.work.target, profile, row.cap).setup.consumables || []).includes(row.item);
     const judged = (pace, row) => pace.profiles.profileOf(row.work.target, 'typical', row.cap).batches.get(row.item);
-    // Two beers a brew: half the making a dose.
-    const twoBeers = () => {
-        const c = ruleContent({ sky: false });
+    // So many beers a brew: a dose takes that much less of the making.
+    const beers = (n, c = ruleContent({ sky: false })) => {
         const brew = c.recipes.find(r => r.id === 'recipe_beer').outputs[0];
-        brew.minQty = brew.maxQty = 2;
+        brew.minQty = brew.maxQty = n;
         return c;
+    };
+    const twoBeers = () => beers(2);
+    // Coffee: 30 % off every cycle, four a 10 s brew of one oak.
+    const withCoffee = (c) => {
+        c.effects.pw_fx_quick = { id: 'pw_fx_quick', name: 'Quick', statements: [{ id: 'stm_pw_quick', keyword: 'provides', to: { mode: 'all', value: '' }, reach: 'nearby', payload: { type: 'WORK_TIME', bucket: 'percentage', value: -0.3 } }] };
+        c.effects.pw_fx_coffee = { id: 'pw_fx_coffee', name: 'Coffee drink', statements: [{ id: 'stm_pw_coffee', keyword: 'applies', to: { mode: 'all', value: '' }, target: { role: 'actor' }, when: { event: 'WORK_START', scope: 'self' }, payload: { effectId: 'pw_fx_quick', scale: 1, durationMs: 0, forCycle: true, chance: 100 } }] };
+        c.items.item_coffee = { id: 'item_coffee', name: 'Coffee', type: 'drink', equipSlot: 'drink', stackable: true, effects: [{ effectId: 'pw_fx_coffee', scale: 1 }], plan: { tier: 0 } };
+        c.recipes.push({ id: 'recipe_coffee', name: 'Coffee', skill: 'cooking', levelRequirement: 1, stationKinds: ['still'], durationMs: 10000, xp: 1, inputs: [{ itemId: 'item_oak_wood', quantity: 1 }], outputs: [{ itemId: 'item_coffee', chance: 100, minQty: 4, maxQty: 4 }] });
+        return c;
+    };
+    const veinOf = (pace) => pace.works.find(w => pace.workName(w) === 'Copper Vein');
+    const doseOn = (pace, work, id, profile = 'typical') => (pace.profiles.profileOf(work.target, profile, work.tier).setup.consumables || []).includes(id);
+    // The dose's batch on the bare vein, as the gate once judged it, before anything else was bought.
+    const bareRatio = (c, pace, work, id) => {
+        const ctx = pace.profiles.contextOf(work.target);
+        const bare = pace.profiles.profileOf(work.target, 'bare', work.tier).setup;
+        const offer = pace.profiles.offers(ctx, work.tier).find(o => o.id === id);
+        const book = buildRateBook(c);
+        return batchPaybackOf(book.rateOf(work.target, bare), book.rateOf(work.target, offer.apply(bare)), id, (i) => pace.heroHoursOf(i, 'bare', work.tier)).ratio;
     };
 
     it('Typical leaves a drink whose batch pays back under the factor; Maxed still takes it; Bare takes none', () => {
@@ -168,16 +193,47 @@ describe('Typical takes a drink or work potion only where its batch pays back', 
         expect(takes(pace, beer, 'bare')).toBe(false);
     });
 
+    it('a drink taken on the nearly bare vein is dropped once the camp Typical buys there makes its batch short', () => {
+        const c = twoBeers();
+        const pace = paceOf(c);
+        const vein = veinOf(pace);
+        // On the bare vein (240 cycles an hour, a refill a minute) a dose of a 7 s brew pays back 5.4x: past 4x.
+        expect(bareRatio(c, pace, vein, 'item_beer')).toBeCloseTo(0.1 / (240 / DOSE_LENGTH[DOSE.DRINK] * (7 / 3600)), 6);
+        expect(bareRatio(c, pace, vein, 'item_beer')).toBeGreaterThanOrEqual(settingsOf().batchPayback);
+        const typical = pace.profiles.profileOf(vein.target, 'typical', vein.tier);
+        expect(typical.chosen.map(x => x.id)).toContain('token_mining_camp');
+        // On the camp's 1200 cycles an hour it is 1.07x: dropped, and the gate's ratio is that one.
+        expect(doseOn(pace, vein, 'item_beer')).toBe(false);
+        expect(typical.declined).toContain('item_beer');
+        expect(typical.batches.get('item_beer').ratio).toBeCloseTo(0.1 / (1200 / DOSE_LENGTH[DOSE.DRINK] * (7 / 3600)), 6);
+        // Maxed still takes it.
+        expect(doseOn(pace, vein, 'item_beer', 'maxed')).toBe(true);
+    });
+
+    it('a drink kept out early by another is taken once the grown setup makes the other short and it still pays', () => {
+        const c = withCoffee(beers(8));
+        const pace = paceOf(c);
+        const vein = veinOf(pace);
+        // On the bare vein Coffee pays back 6.4x and lifts more than Beer, so it took the one place; on the camp it is 1.3x.
+        expect(bareRatio(c, pace, vein, 'item_coffee')).toBeGreaterThanOrEqual(settingsOf().batchPayback);
+        const typical = pace.profiles.profileOf(vein.target, 'typical', vein.tier);
+        expect(typical.batches.get('item_coffee').ratio).toBeLessThan(settingsOf().batchPayback);
+        expect(doseOn(pace, vein, 'item_coffee')).toBe(false);
+        // Beer, eight a brew: 0.1 / (48 × 1.75 s) is 4.3x on the camp, so it takes the place.
+        expect(typical.batches.get('item_beer').ratio).toBeCloseTo(0.1 / (1200 / DOSE_LENGTH[DOSE.DRINK] * (1.75 / 3600)), 6);
+        expect(doseOn(pace, vein, 'item_beer')).toBe(true);
+    });
+
     it('the check reads the ratio Typical judged the dose by on the same work, so it never calls short a dose Typical buys', () => {
-        const pace = paceOf(twoBeers());
+        const pace = paceOf(beers(4));
         const beer = pace.batchPaybackRows().find(r => r.item === 'item_beer');
         expect(beer.ratio).toBe(judged(pace, beer).ratio);
-        // Bought on the vein, where a dose's 25 cycles are a quarter of the supply's 240 an hour (a refill a minute):
-        // 0.1 / (9.6 × 7 s) is 5.4x. Measured on its Typical setup when done, the row read 3.6x at the Still.
-        expect(pace.workName(beer.work)).toMatch(/Vein$/);
-        expect(beer.ratio).toBeCloseTo(0.1 / (240 / DOSE_LENGTH[DOSE.DRINK] * (7 / 3600)), 6);
-        expect(beer.ratio).toBeGreaterThanOrEqual(settingsOf().batchPayback);
+        // Bought at the Still (360 cycles an hour, nothing else to buy): 0.1 / (14.4 × 3.5 s) is 7.1x.
+        // On the vein's camp it is 2.1x, so the vein leaves it.
+        expect(pace.workName(beer.work)).toBe('Beer at Still');
+        expect(beer.ratio).toBeCloseTo(0.1 / (360 / DOSE_LENGTH[DOSE.DRINK] * (3.5 / 3600)), 6);
         expect(takes(pace, beer, 'typical')).toBe(true);
+        expect(doseOn(pace, veinOf(pace), 'item_beer')).toBe(false);
         expect(pace.findings().some(f => f.check === 'batch-payback')).toBe(false);
     });
 
@@ -310,7 +366,7 @@ describe('the read-out and the Ledger page carry them', () => {
         expect(rc.chainXp.find(c => c.item === 'item_cake')).toMatchObject({ links: 3, raw: 4, rawMinutes: 0.667, xpPerHour: 3480, median: 1800, offPct: 93.3, off: true, warn: false });
         expect(rc.chainXp.find(c => c.item === 'item_plank')).toMatchObject({ off: false, warn: false });
         expect(rc.batches.factor).toBe(4);
-        expect(rc.batches.rows.every(b => b.finishedRatio === null || Number.isFinite(b.finishedRatio))).toBe(true);
+        expect(rc.batches.rows.every(b => !('finishedRatio' in b))).toBe(true);
         expect(rc.batches.rows.find(b => b.item === 'item_beer')).toMatchObject({ doseCycles: DOSE_LENGTH[DOSE.DRINK], short: true });
         expect(rc.hallGuild.find(h => h.id === 'ph_gold' && h.rank === 1)).toMatchObject({ off: true });
         for (const check of ['chain-xp', 'batch-payback', 'hall-guild-payback']) expect(out.checks.some(x => x.check === check), check).toBe(true);

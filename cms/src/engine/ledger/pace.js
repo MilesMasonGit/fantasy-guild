@@ -2,7 +2,7 @@
 
 import { buildRateBook, LIFECYCLE, WORK, FACTOR } from './rates.js';
 import { EFFECT_TYPES } from '../../../../src/systems/effects/constants.js';
-import { buildProfiles, targetKey, PROFILE, PROFILES, PROFILE_TEXT, BOOST_KIND, BOOST_KIND_TEXT, boostKindOf, BEFORE_HALL, pickKindOf, RARE_FIND_KINDS, gainOf, batchPaybackOf, repeatedByHero } from './profiles.js';
+import { buildProfiles, targetKey, PROFILE, PROFILES, PROFILE_TEXT, BOOST_KIND, BOOST_KIND_TEXT, boostKindOf, BEFORE_HALL, pickKindOf, RARE_FIND_KINDS, gainOf, repeatedByHero } from './profiles.js';
 import { starAddsRate } from './hall.js';
 import { settingsOf, minutesPerLevelAt, minutesToReach, formatMinutes, levelAtMinutes, coinMinutesAt, COIN_CURVE, boostBudgetAt, BOOST_BUDGET_KINDS, heroesAt, chainHeroesAt, paybackHoursAt } from './settings.js';
 import { ledgerCoinWorth } from './coins.js';
@@ -2633,30 +2633,19 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
      * Every drink and work potion's batch payback (BALANCE_RULES section 5: a batch saves at least
      * `settings.batchPayback` times the hero time it took to make, ingredients included), as Typical's
      * own gate judged it (`batchPaybackOf` in `profiles.js`, kept on each profile as `batches`): on each work it is
-     * offered at, at that work's Typical setup at the stage both are had, against the setup Typical held
-     * when it last weighed the dose. Each row is the work it pays back best on, so a row short of the
+     * offered at, at that work's Typical setup at the stage both are had, against the setup Typical holds
+     * there once its choices are made (a dose holding its place judged without itself, one kept out by
+     * another judged in that one's place). Each row is the work it pays back best on, so a row short of the
      * factor is a dose Typical takes on no work. `gain` is the work it saves an hour (as a boost's
      * strength is read: the larger of its items' worth and its XP), `doses` what it spends of it an hour
      * at the game's dose length (the rate calculator reads it from `consumableRule.js`), `doseCycles`
      * the cycles one lasts, `unitHours` the hero-hours one takes to make with its ingredients, `spends`
      * the hours an hour its doses take to make, and `ratio` the one over the other. A craft's batch is
-     * so many doses for so many times one's making, so the ratio is the batch's. `finishedRatio` is the
-     * same dose's ratio against Typical's finished setup on that work (the dose and its slot's others
-     * taken off first): information only, no finding reads it.
-     * `[{ item, name, tier, cap, work, gain, doses, doseCycles, unitHours, spends, ratio, finishedRatio }]`, by name.
+     * so many doses for so many times one's making, so the ratio is the batch's.
+     * `[{ item, name, tier, cap, work, gain, doses, doseCycles, unitHours, spends, ratio }]`, by name.
      */
     function batchPaybackRows() {
         if (batchMemo) return batchMemo;
-        // The same drink measured against Typical's finished setup, itself and its slot-mates taken off first.
-        const finishedRatioOf = (ctx, work, setup, id, cap) => {
-            const offers = profiles.offers(ctx, cap).filter(o => o.kind === BOOST_KIND.CONSUMABLE);
-            const offer = offers.find(o => o.id === id);
-            if (!offer) return null;
-            const mates = new Set(offers.filter(o => o.id === id || (offer.slot && o.slot === offer.slot)).map(o => o.id));
-            const base = { ...setup, consumables: list(setup.consumables).filter(c => !mates.has(c)) };
-            const f = batchPaybackOf(rates.rateOf(work.target, base), rates.rateOf(work.target, offer.apply(base)), id, (item) => unitHours(item, cap));
-            return f ? f.ratio : null;
-        };
         const best = new Map();
         for (const work of works) {
             if (work.tier === null || !counted(work.entry)) continue;
@@ -2673,7 +2662,7 @@ export function buildPace(content, ledger, rawSettings = null, { book = null, re
                 if (!b) continue;
                 const prev = best.get(id);
                 if (!prev || b.ratio > prev.ratio) {
-                    best.set(id, { item: id, name: nameOf(key), tier: effTier(key) ?? tier, cap, work, ...b, finishedRatio: finishedRatioOf(ctx, work, typical.setup, id, cap) });
+                    best.set(id, { item: id, name: nameOf(key), tier: effTier(key) ?? tier, cap, work, ...b });
                 }
             }
         }
