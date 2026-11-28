@@ -25,7 +25,7 @@ import { MAX_SKILL_LEVEL } from '../../../src/utils/XPCurve.js';
  */
 
 export const READOUT_FORMAT = 'fantasy-guild-ledger-readout';
-export const READOUT_VERSION = 6;
+export const READOUT_VERSION = 7;
 
 /** The solver's players and the ledger profiles they are read at. */
 export const READOUT_PROFILES = Object.freeze({ opt: PROFILE.MAXED, typ: PROFILE.TYPICAL, bare: PROFILE.BARE });
@@ -50,7 +50,7 @@ export const NOTES = Object.freeze([
     'Arrivals (arriveOpt, arriveTyp) are minutes from a new game along the ledger\'s path; null when never reached, and for Planned entries (the ledger times nothing Planned).',
     'The solver\'s curve is its own dials; curve here is the CMS pace rule (Ledger settings) at that level, and the stages\' budgets follow from it.',
     'boostBudget lists the budget\'s cells by tier and, under over, every total a profile holds over its cell (the boost-budget check).',
-    'ruleChecks holds the three checks the balance rules promise, with the rows behind their findings: chainXp, each chain\'s total XP an hour of the gathering behind it (every link at its authored XP, Bare and no perks, over rawMinutes, the minutes its raw inputs take to gather, each at its Bare source\'s rate, a rare drop at its find rate; a chain ends at an item no station spends) against its tier\'s median (null with fewer than three chains), off past the tolerance and warn beyond chainXpWarnFactor times or under it (the chain-xp check, BALANCE_RULES section 1); batches, each drink and work potion\'s batch payback on the repeatable work it pays back best on at Typical (the work it saves an hour over the hours an hour its doses take to make, ingredients included, at the game\'s dose length: doseCycles), short under factor (the batch-payback check, section 5); finishedRatio is the same dose against the finished Typical setup on that work, information only; hallGuild, each Guild Hall rank\'s payback counting every boosted work the reference guild\'s heroes can work at once, against the payback curve (1 hour x 24^(L / 80) at the level its tier opens at), off past the tolerance either way (the hall-guild-payback check, section 5); unreachable where its price cannot be gathered by its stage (the hall-price-unreachable check), never off.',
+    'ruleChecks holds the three checks the balance rules promise, with the rows behind their findings: chainXp, each chain\'s total XP an hour of the gathering behind it (every link at its authored XP, Bare and no perks, over rawMinutes, the minutes its raw inputs take to gather, each at its Bare source\'s rate, a rare drop at its find rate; a chain ends at an item no station spends) against its tier\'s median (null with fewer than three chains), off past the tolerance and warn beyond chainXpWarnFactor times or under it (the chain-xp check, BALANCE_RULES section 1); batches, each drink and work potion\'s batch payback on the repeatable work it pays back best on at Typical (the work it saves an hour over the hours an hour its doses take to make, ingredients included, at the game\'s dose length: doseCycles), judged on the setup Typical holds on that work once its choices are made, short under factor (the batch-payback check, section 5); hallGuild, each Guild Hall rank\'s payback counting every boosted work the reference guild\'s heroes can work at once, against the payback curve (1 hour x 24^(L / 80) at the level its tier opens at), off past the tolerance either way (the hall-guild-payback check, section 5); unreachable where its price cannot be gathered by its stage (the hall-price-unreachable check), never off.',
     'coins holds the two coin curves (BALANCE_RULES section 7, Ledger settings, minutes of one hero\'s selling from a stage on: everyday for a Shop Token or a Foundation, one level\'s time; big for settling a place or a Guild Hall star, half the payback curve) and every price that asks coins with its curve, its minutes there, the income it is earned at (perHour) and the coins the curve proposes; off marks one beyond the tolerance from it.',
 ]);
 
@@ -262,7 +262,7 @@ function ruleChecksOf(pace) {
             factor,
             rows: pace.batchPaybackRows().map((b) => ({
                 item: b.item, name: b.name, tier: b.tier, work: pace.workName(b.work), doseCycles: round(b.doseCycles, 2), gain: round(b.gain, 4),
-                dosesPerHour: round(b.doses, 3), unitMinutes: minutes(b.unitHours), ratio: Number.isFinite(b.ratio) ? round(b.ratio, 2) : null, finishedRatio: Number.isFinite(b.finishedRatio) ? round(b.finishedRatio, 2) : null, short: b.ratio < factor - 1e-9,
+                dosesPerHour: round(b.doses, 3), unitMinutes: minutes(b.unitHours), ratio: Number.isFinite(b.ratio) ? round(b.ratio, 2) : null, short: b.ratio < factor - 1e-9,
             })),
         },
         hallGuild: pace.hallGuildPaybacks().map((h) => ({

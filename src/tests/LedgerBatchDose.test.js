@@ -22,8 +22,8 @@ describe('the batch check follows the game\'s dose length', () => {
         const pace = buildPace(c, buildLedger(c));
         const beer = pace.batchPaybackRows().find(r => r.item === 'item_beer');
         expect(beer.doseCycles).toBeCloseTo(100);
-        // On the Copper Vein (240 cycles an hour, a refill a minute) a dose is 2.4 an hour, of a 14 s brew: 10.7x, past 4x.
-        expect(beer.ratio).toBeCloseTo(0.1 / (240 / 100 * (14 / 3600)), 6);
+        // Best at the Still (360 cycles an hour): a dose is 3.6 an hour, of a 14 s brew: 7.1x, past 4x.
+        expect(beer.ratio).toBeCloseTo(0.1 / (360 / 100 * (14 / 3600)), 6);
         expect(pace.findings().some(f => f.check === 'batch-payback')).toBe(false);
     });
 });

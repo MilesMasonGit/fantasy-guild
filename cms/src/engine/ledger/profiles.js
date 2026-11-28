@@ -601,12 +601,14 @@ export function buildProfiles(book, {
      * A drink or work potion's batch payback on this work as Typical weighs it, from the setup it holds
      * to the same with the dose ({@link batchPaybackOf}); null where it is not held to it (a build, a
      * fight or Passive Production) or there is none. Each one goes in `judged`, the last for a dose
-     * standing: the batch-payback check reads these, so the check and Typical never measure apart.
+     * standing (one that saves nothing there clears it): the batch-payback check reads these, so the
+     * check and Typical never measure apart.
      */
     function judgeBatch(ctx, r0, r1, id, cap, judged) {
         if (!(batchPayback > 0) || !repeatedByHero(ctx.kind)) return null;
         const b = batchPaybackOf(r0, r1, id, (item) => unitHours(item, cap));
         if (b) judged.set(id, b);
+        else judged.delete(id);
         return b;
     }
 
@@ -758,12 +760,38 @@ export function buildProfiles(book, {
                         if (!(payback <= (o.kind === BOOST_KIND.HALL ? hallHorizon(o) : horizon))) continue;
                         if (!best || payback < best.payback || (payback === best.payback && gain > best.gain)) best = { o, next, r, gain, payback, price, step };
                     }
-                    if (!best) break;
+                    if (!best) {
+                        // A drink costs nothing up front, so it is taken first, on a nearly bare setup: judged again on
+                        // the setup held now, it is dropped once its batch stops paying back, and its place offered again.
+                        const short = chosen.filter(c => c.kind === BOOST_KIND.CONSUMABLE).find(c => {
+                            const consumables = [...(setup.consumables || [])];
+                            consumables.splice(consumables.indexOf(c.id), 1);
+                            const base = { ...setup, consumables };
+                            const r0 = book.numbersOf(target, base);
+                            const batch = judgeBatch(ctx, r0, rate, c.id, cap, judged);
+                            if (!(batch && batch.ratio < batchPayback - 1e-9)) return false;
+                            setup = base;
+                            rate = r0;
+                            return true;
+                        });
+                        if (!short) break;
+                        chosen = chosen.filter(c => c !== short);
+                        if (!declined.includes(short.id)) declined.push(short.id);
+                        continue;
+                    }
                     setup = best.next;
                     rate = best.r;
                     chosen.push({ kind: best.o.kind, id: best.o.id, factor: best.o.factor, slot: best.o.slot ?? null, gain: best.gain, payback: best.payback, price: best.price, ...hallPick(best.o, best.step) });
                     // A building stays on offer for its next place.
                     if (best.o.kind !== BOOST_KIND.SUPPORT) left = left.filter(o => o !== best.o);
+                }
+                // A drink kept out by the one holding its place is judged on the same setup, in that one's place,
+                // so no judgement it leaves is the early, nearly bare one.
+                for (const o of pool) {
+                    if (o.kind !== BOOST_KIND.CONSUMABLE || !o.slot || chosen.some(c => c.id === o.id) || !slotFull(chosen, o)) continue;
+                    const mates = new Set(chosen.filter(c => c.slot === o.slot).map(c => c.id));
+                    const base = { ...setup, consumables: (setup.consumables || []).filter(id => !mates.has(id)) };
+                    judgeBatch(ctx, book.numbersOf(target, base), book.numbersOf(target, o.apply(base)), o.id, cap, judged);
                 }
             }
         }
