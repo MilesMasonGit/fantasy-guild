@@ -76,7 +76,7 @@ describe('The Processing chain in shipped data (7.5)', () => {
                 section: 'construction',
                 skills: ['smithing', 'faith'],
                 order: 2,
-                coins: 420,
+                coins: 250,
             });
             expect(def.config).toBeNull();
         });

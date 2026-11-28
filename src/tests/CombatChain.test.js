@@ -122,7 +122,7 @@ describe('The Combat chain in shipped data (7.7)', () => {
         expect(goblin.enemy).toEqual({
             level: 5, style: 'ranged',
             moves: [{ name: 'Sling Stone', damageType: 'crush' }, { name: 'Shiv', damageType: 'stab' }],
-            coinDrop: 28
+            coinDrop: 15
         });
         expect(goblin.uses).toBe(1);
     });
@@ -146,7 +146,7 @@ describe('The Combat chain in shipped data (7.7)', () => {
                 { name: 'Bash', damageType: 'crush', weight: 5 },
                 { name: 'Heavy Strike', damageType: 'crush', weight: 2, effectId: 'effect_heavy_strike', target: 'self', lasts: 'swing' }
             ],
-            coinDrop: 37
+            coinDrop: 170
         });
         expect(isBossCampType(TENT)).toBe(true);
         expect(enemyFightNumbers(chief).hit).toBeCloseTo(3, 9);

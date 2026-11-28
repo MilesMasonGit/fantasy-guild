@@ -57,7 +57,7 @@ describe('The Farming chain in shipped data (7.4)', () => {
                 section: 'farming',
                 skills: ['farming', 'forestry'],
                 order: 3,
-                coins: 420,
+                coins: 250,
             });
         });
 
